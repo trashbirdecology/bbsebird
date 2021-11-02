@@ -8,26 +8,29 @@ time_to_decimal <- function(x) {
 
 
 # Unpack files in a directory ---------------------------------------------
-unpack_dir <- function(dir="data-raw", overwrite=FALSE){
-  ebd.files <- grep("doccor", list.files(dir, full.names=TRUE), value=TRUE)
+#' @title unpack_ebird
+#' @description Unpacks the eBird files (EBD and SamplingEvent data). Saves all unpacked data to a subdirectory (see: parameter dir)
+#' @param dir Directory where the packed ebird data files are stored and into which files will unpack.
+#' @param overwrite Logical. Default=FALSE will not overwrite existing files in dir.
+#' @spp.ind A species indicator, used to identify which .zip files should be unpacked. Defaults to 'doccor' (Double-crested Cormorant).
+unpack_ebird <- function(dir="data-raw/ebird-data",
+                         overwrite=FALSE,
+                         spp.ind="doccor"
+                         ){
+  suppressWarnings(dir.create(dir))
+  ebd.files <- grep(spp.ind, list.files(dir, full.names=TRUE), value=TRUE)
+  ebd.packed <- grep(".zip", ebd.files, value=TRUE)
 
-  for(i in seq_along(ebd.files)){
-      tmp<-stringr::str_remove(ebd.files[i], ".zip")
-      if(tmp %in% list.files(dir)){
-        menu(choices=c("Yes", "No"),
-              "testyes",
-             cat("Unpacking cancelled.\n")
-             )
-       if(overwrite=TRUE) unzip(, exdir=dir)
-      }else()
-
+  for(i in seq_along(ebd.packed)){
+      ebd.unpacked <- stringr::str_replace(ebd.files[i], ".zip", ".txt")
+      if(!ebd.unpacked %in% list.files(dir, full.names = TRUE)) ind=TRUE else(ind=FALSE)
+      if(ebd.unpacked %in% list.files(dir, full.names = TRUE) & overwrite) ind=TRUE
+      if(ind) {message(paste("...unpacking file ", ebd.packed[i], " ", i," of ", length(ebd.packed)))
+      unzip(ebd.packed[i], exdir=dir)
   }
+  }
+}
 
-    # Unzip the States.zip into the sb_id item directory
-  unzip(list.files(sb_dir, full.names=TRUE, pattern="States.zip"), exdir = sb_dir)
-  # create an object containing all .zip files in the sb_dir
-  states.zipped <- list.files(state_dir, full.names=TRUE, ".zip")
+# END FUNS -----------------------------------------------------------------
 
-  # UNPACK ALL STATES FILES -------------------------------------------------
-  # If neither state nor country are specified, just unpack all the state files.
-  if(is.null(state) & is.null(country)){lapply(states.zipped, unzip, exdir=state_dir)}
+
