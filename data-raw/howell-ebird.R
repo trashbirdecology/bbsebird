@@ -1,24 +1,28 @@
-# Libraries and functions -----------------------------------------------------
+# I CANT DO THIS ON MY MACHINE
 
-# Load libraries
+# Housekeeping ------------------------------------------------------------
+# Load libraries ### need to put into package
 library(auk)
 library(lubridate)
 library(sf)
 library(gridExtra)
 library(tidyverse)
+if(.Platform$OS.type=="unix") library(unix)
 
-# Increase memory limit
-# memory.limit(100000) ## THIS IS WINDOWS SPECIFIC SO WILL NEED TO CHECK IF MACHIEN IS WINDOWS THEN DO IT
+# Adjust memory limit to handle large eBird data files depending on OS
+if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
+if(.Platform$OS.type=="unix") unix::rlimit_as(1e12)#prob unnecessary
 
-# Load the most recently retrieved eBird Basic Dataset -----------------------------------------
-## This dataset is pretty large, so will need to be updated manually.
 
-# To produce zero-filled data, provide an EBD and sampling event data file
+# LOAD EBIRD DATA ---------------------------------------------------------------
+## The ebird data datasets are pretty large, so will need to be updated manually.
+## The EBD must be manually downloaded with permission through ebird.org/data/request
+## Therefore, this function relies on a locally-stored version of the eBird data.
+## For this modeling framework we need zero-filled data, which requires both the EBD and the Sampling Events
 
-# eBird Basic Dataset (EBD)
-
+# eBird Basic Dataset (EBD) -----------------------------------------
 # Sampling events
-f_smp <-"./data/ebird/ebd_dcco_relAug-2021/ebd_sampling_relAug-2021.txt"
+f_smp <-"/data-raw/ebd_sampling_relAug-2021.txt"
 
 # Create a reference to an eBird Basic Dataset (EBD) and sampling event file in
 # preparation for filtering using AWK.
@@ -34,9 +38,8 @@ ebd_filters <- ebd %>%
   # restrict to Stationary and Traveling checklists
   auk_protocol(c("Stationary", "Traveling")) %>%
   # restrict to complete checklists (needed for zero-filled data)
-  auk_complete()
+  auk_complete() ## JLB: need to make sure this has zeroes..
 
-ebd_filters
 
 # Set up output files
 f_ebd <- "./data/ebird/ebd_dcco_relAug-2021/ebd_dcco_US_CA_2003_2021.txt"
@@ -89,44 +92,32 @@ ebd_zf <- ebd_zf %>%
 #    number_observers <= 10)
 
 
-ebird <- # ebd_zf_filtered %>%
-  ebd_zf %>%
-  select(checklist_id, observer_id, sampling_event_identifier,
-         scientific_name,
-         observation_count, species_observed,
-         state_code, locality_id, latitude, longitude,
-         #protocol_type,
-         I_stationary,
-         all_species_reported,
-         observation_date, year, day_of_year,
-         time_observations_started,
-         # duration_minutes,
-         effort_hours,
-         effort_distance_km,
-         number_observers,
-         score)
+ebird <-  ebd_zf %>%
+  select(
+    checklist_id,
+    observer_id,
+    sampling_event_identifier,
+    scientific_name,
+    observation_count,
+    species_observed,
+    state_code,
+    locality_id,
+    latitude,
+    longitude,
+    #protocol_type,
+    I_stationary,
+    all_species_reported,
+    observation_date,
+    year,
+    day_of_year,
+    time_observations_started,
+    # duration_minutes,
+    effort_hours,
+    effort_distance_km,
+    number_observers,
+    score
+  )
 
-write_csv(ebird, "./data/formatted/ebd_dcco_zf_2021-10-05.csv", na = "")
 
-
-# Old eBird data carpentry-----------------------------------------------------
-
-## Load data
-#dcco_ebird_db <- DBI::dbConnect(RSQLite::SQLite(), "./data/ebird/doccor-ERD2019-ORIN-20201008-3e741b65_data.db")
-#src_dbi(dcco_ebird_db)
-
-## Make a dataframe out of the SQLite database
-#dcco_ebird_erd <- tbl(dcco_ebird_db, "erd") %>%
-#collect()
-
-#DBI::dbDisconnect(dcco_ebird_db) # call when finished working with a connection
-
-#dcco_ebird <- dcco_ebird_erd %>%
-#  filter(!is.na(obs)) # remove checklists with missing counts
-
-#rm(dcco_ebird_erd)
-
-## Remove duplicate dcco_ebird sampling events. These are normally removed by the AUK package from Cornell, but here I am using the raw data.
-#dcco_ebird <- dcco_ebird[!duplicated(dcco_ebird$SAMPLING_EVENT_ID),]
-#saveRDS(dcco_ebird, file="./data/formatted/dcco_ebird_20201008_2021-03-23.rds")
+# Save data to package -------------------------------------------------------------
 
