@@ -42,6 +42,7 @@ ebd_filters <- ebd %>%
   # restrict to Stationary and Traveling checklists
   auk_protocol(c("Stationary", "Traveling")) %>%
   # restrict to complete checklists (needed for zero-filled data)
+  auk_year(c(2008:2020)) %>%
   auk_complete()
 
 # only run if the files don't already exist - this will take several hours
@@ -50,6 +51,6 @@ if (!file.exists(ebd.out)) {
 }
 
 
-# Zero-fill the text file (takes a while.....)
+# Zero-fill the text file (takes a while)
 ebd_zf <- auk_zerofill(ebd.out, checklist.out, collapse=TRUE)
 
