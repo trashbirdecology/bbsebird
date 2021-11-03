@@ -17,7 +17,7 @@ if(.Platform$OS.type=="unix") library(unix)
 if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
 if(.Platform$OS.type=="unix") unix::rlimit_as(1e12)#prob unnecessary
 
-#### IMPORTANT:::SPECIFICATIONS FOR THIS EXAMPLE --TO BE CHANGED EVENTUALLY TO BE GENERALIZABLE 
+#### IMPORTANT:::SPECIFICATIONS FOR THIS EXAMPLE --TO BE CHANGED EVENTUALLY TO BE GENERALIZABLE
 states<-paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV"))
 
 # Unpack ebird data for a given species -------------------------------------------
@@ -37,18 +37,15 @@ checklist.out <- "data-raw/ebird-data/checklist_dcco_filtered.txt"
 
 # Define filters ----------------------------------------------------------
 ebd <-  auk_ebd(f_ebd,f_samp)
-ebd_filters <- ebd %>% 
-  auk_state(paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV"))) %>% 
+ebd_filters <- ebd %>%
+  auk_state(paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV"))) %>%
   # restrict to Stationary and Traveling checklists
   auk_protocol(c("Stationary", "Traveling")) %>%
   # restrict to complete checklists (needed for zero-filled data)
   auk_year(c(2008:2020)) %>%
   auk_complete()
 
-# only run if the files don't already exist - this will take several hours
-if (!file.exists(ebd.out)) {
-  auk_filter(ebd_filters, file = ebd.out, file_sampling = checklist.out)
-}
+auk_filter(ebd_filters, file = ebd.out, file_sampling = checklist.out, overwrite=TRUE)
 
 
 # Zero-fill the text file (takes a while)
