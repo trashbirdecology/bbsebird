@@ -3,7 +3,7 @@
 ## not sure exactly yet what functions are necessary/useful, so throwing the workflow in here and we will add as we go.
 
 # Libraries ---------------------------------------------------------------
-devtools::install_github("trashbirdecology/bbsassistant",ref="convert-to-50-stop", force=TRUE)
+devtools::install_github("trashbirdecology/bbsassistant",ref="convert-to-50-stop", force=FALSE)
 library(auk)
 library(bbsAssistant)
 library(dplyr)
@@ -41,16 +41,26 @@ if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
 
 # Data specifications -----------------------------------------------------
 # Specify region(s), specie(S) and temporal period(s) to use for data subsetting, etc.
-interest.spatial<-NULL
-interest.species<-c("DCCO", "DCCOR", "Double-crested Cormorant") ## need to provide a lookup-table relating the ebird to BBS taxa, including codes
+interest.spatial<-c("North America")
+interest.species<-c("DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") ## need to provide a lookup-table relating the ebird to BBS taxa, including codes
 interest.temporal<-1970:2019
+include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
 
 # Munge BBS data ----------------------------------------------------------
-  grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
+  bbs <- grab_bbs_data(sb_dir=dir.bbs.out, overwrite = TRUE) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
+  if(exists("sb_items"))rm(sb_items)
+
+## Filter by species of interest. ### GO TO FUNCTION PROBABLY OR ADD TO BBSASSISTANT....
+(bbs.species <- bbs$species_list %>% filter(str_detect(tolower(English_Common_Name), paste(tolower(interest.species), collapse="|"))))
+if(!include.unid) bbs.species <- bbs.species %>% filter(!str_detect(tolower(English_Common_Name), "unid"))
+message(cat("The following species are included in the BBS dataset: ",bbs.species$English_Common_Name))
+
+bbs$observations[bbs$observations$AOU %in% bbs.species$AOU]
+temp=unlist(bbs)
 
 
-  # Munge eBird data --------------------------------------------------------
-
+# Munge eBird data --------------------------------------------------------
+  ebird <- NULL
 
 
 
