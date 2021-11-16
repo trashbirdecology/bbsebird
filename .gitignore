@@ -36,16 +36,7 @@ vignettes/*.pdf
 rsconnect/
 .Rproj.user
 .DS_Store
-data-raw/ebd_US_doccor_relSep-2021.zip
-data-raw/ebd_CA_doccor_relSep-2021.zip
-data-raw/ebird-data/ebd_CA_doccor_relSep-2021.zip
-data-raw/ebird-data/ebd_sampling_relAug-2021.txt
-data-raw/ebird-data/ebd_US_doccor_relSep-2021.txt
-data-raw/ebird-data/ebd_US_doccor_relSep-2021.zip
-data-raw/ebird-data/eBird_Basic_Dataset_Metadata_v1.13.pdf
-data-raw/ebird-data/recommended_citation.txt
-data-raw/ebird-data/IBACodes.txt
-data-raw/ebird-data/terms_of_use.txt
-data-raw/ebird-data/USFWSCodes.txt
-data-raw/ebird-data/ebd_CA_doccor_relSep-2021.txt
 desktop.ini
+
+# Ignore entire local data saves
+data-local/

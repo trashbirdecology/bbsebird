@@ -7,10 +7,10 @@
 ## This function allows for one species and one or more regions (e.g. CA and US).
 ### FOR NOW, HOWEVER, I AM JUST WRITING THIS FUNCTION TO WORK FOR THE US-STATES IN THE
 ### PACIFCI FLWAY
-library(auk)
 library(lubridate)
 library(sf)
 library(gridExtra)
+
 library(tidyverse)
 # Adjust memory limit to handle large eBird data files depending on OS
 if(.Platform$OS.type=="unix") library(unix)
