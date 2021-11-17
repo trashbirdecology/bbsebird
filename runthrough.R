@@ -8,6 +8,13 @@ library(auk)
 library(bbsAssistant)
 library(dplyr)
 library(stringr)
+library(rgdal)
+library(sp)
+library(maps)
+library(ggplot2)
+library(mapproj)
+options(stringsAsFactors = FALSE)
+
 
 
 # Memory limits -----------------------------------------------------------
@@ -31,13 +38,15 @@ if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
   ## bbs data is much smaller than eBird, so storing in the project directory is feasible
   ## specify dir.ebird.out as the location where you will save local, post-munging ebird data (as .rda/.rds)
   dir.bbs.out <- "data-local/bbs"
+  ## BBS Route location shapefiles
+    cws.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
+    usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/usgs"
 
 # GeoSpatial data
   dir.spatial.out <- "data-local/spatial"
 
   if(!"data-local" %in% list.files())dir.create("data-local")
   sapply(c(dir.ebird.out, dir.bbs.out, dir.spatial.out), dir.create)
-
 
 # Data specifications -----------------------------------------------------
 # Specify region(s), specie(S) and temporal period(s) to use for data subsetting, etc.
@@ -46,17 +55,24 @@ interest.species<-c("DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested
 interest.temporal<-1970:2019
 include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
 
+
+# Munge BBS route shapefiles ----------------------------------------------
+bbs_routes_sldf <- munge.bbs.route.shps(cws.routes.dir = cws.routes.dir,
+                                        usgs.routes.dir = usgs.routes.dir)
+
+
 # Munge BBS data ----------------------------------------------------------
-  bbs <- grab_bbs_data(sb_dir=dir.bbs.out, overwrite = TRUE) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
-  if(exists("sb_items"))rm(sb_items)
+  bbs <- grab_bbs_data(sb_dir=dir.bbs.out, overwrite = FALSE) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
+  if(exists("sb_items"))rm(sb_items) # id like to add an arg to grab_bbs_data that prevents output of sb_items...
 
-## Filter by species of interest. ### GO TO FUNCTION PROBABLY OR ADD TO BBSASSISTANT....
-(bbs.species <- bbs$species_list %>% filter(str_detect(tolower(English_Common_Name), paste(tolower(interest.species), collapse="|"))))
-if(!include.unid) bbs.species <- bbs.species %>% filter(!str_detect(tolower(English_Common_Name), "unid"))
-message(cat("The following species are included in the BBS dataset: ",bbs.species$English_Common_Name))
+  # filter by species
+  bbs.subset<-filter.bbs.by.species(bbs, search = interest.species)
 
-bbs$observations[bbs$observations$AOU %in% bbs.species$AOU]
-temp=unlist(bbs)
+
+
+# ## Filter by species of interest. ### GO TO FUNCTION PROBABLY OR ADD TO BBSASSISTANT....
+# (bbs.species <- bbs$species_list %>% filter(str_detect(tolower(English_Common_Name), paste(tolower(interest.species), collapse="|"))))
+# if(!include.unid) bbs.species <- bbs.species %>% filter(!str_detect(tolower(English_Common_Name), "unid"))
 
 
 # Munge eBird data --------------------------------------------------------
