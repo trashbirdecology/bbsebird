@@ -57,22 +57,16 @@ include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid specie
 
 
 # Munge BBS route shapefiles ----------------------------------------------
-bbs_routes_sldf <- munge.bbs.route.shps(cws.routes.dir = cws.routes.dir,
+bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
                                         usgs.routes.dir = usgs.routes.dir)
 
 
 # Munge BBS data ----------------------------------------------------------
-  bbs <- grab_bbs_data(sb_dir=dir.bbs.out, overwrite = FALSE) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
+  bbs <- grab_bbs_data(sb_dir=dir.bbs.out, overwrite = TRUE) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
   if(exists("sb_items"))rm(sb_items) # id like to add an arg to grab_bbs_data that prevents output of sb_items...
 
-  # filter by species
-  bbs.subset<-filter.bbs.by.species(bbs, search = interest.species)
-
-
-
-# ## Filter by species of interest. ### GO TO FUNCTION PROBABLY OR ADD TO BBSASSISTANT....
-# (bbs.species <- bbs$species_list %>% filter(str_detect(tolower(English_Common_Name), paste(tolower(interest.species), collapse="|"))))
-# if(!include.unid) bbs.species <- bbs.species %>% filter(!str_detect(tolower(English_Common_Name), "unid"))
+  # filter by species of interest
+    bbs.subset<-filter_bbs_by_species(bbs, search = interest.species)
 
 
 # Munge eBird data --------------------------------------------------------
