@@ -28,7 +28,7 @@ if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
 # ebird data
   ## because the ebird data is so massive, it's inconvenient to store inside the package.
   ## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
-  dir.ebird.in <- "C:\\Users\\jburnett\\OneDrive - DOI\\research\\cormorants\\dubcorm-data-backup"
+  dir.ebird.in <- "C:\\Users\\jburnett\\OneDrive - DOI\\research\\cormorants\\dubcorm-data-backup\\ebird"
   ## AUK package maintainers suggest setting  this directory using auk::auk_set_ebd_path
   auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
   ## specify dir.ebird.out as the location where you will save local, post-munging ebird data (as .rda/.rds)
@@ -50,9 +50,9 @@ if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
 
 # Data specifications -----------------------------------------------------
 # Specify region(s), specie(S) and temporal period(s) to use for data subsetting, etc.
-interest.spatial<-c("North America")
-interest.species<-c("DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") ## need to provide a lookup-table relating the ebird to BBS taxa, including codes
-interest.temporal<-1970:2019
+interest.spatial <- paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV"))
+interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") ## need to provide a lookup-table relating the ebird to BBS taxa, including codes
+interest.temporal <- 1970:2019
 include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
 
 

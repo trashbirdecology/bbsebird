@@ -12,10 +12,7 @@ library(sf)
 library(gridExtra)
 
 library(tidyverse)
-# Adjust memory limit to handle large eBird data files depending on OS
-if(.Platform$OS.type=="unix") library(unix)
-if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
-if(.Platform$OS.type=="unix") unix::rlimit_as(1e12)#prob unnecessary
+
 
 #### IMPORTANT:::SPECIFICATIONS FOR THIS EXAMPLE --TO BE CHANGED EVENTUALLY TO BE GENERALIZABLE
 states<-paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV"))
