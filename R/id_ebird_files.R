@@ -6,13 +6,14 @@
 #' @param country.code.identifier Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c
 #'
 
-id_ebird_files <-function(dir.ebird.in, spatial=NULL, species=NULL, country.code.identifier="iso2c"){
+id_ebird_files <-function(dir.ebird.in, spatial=NULL, species=NULL, country.code.identifier="iso2c", sampling.events=TRUE){
 
 # browser()
 
 ## List all files in ebird in dir
 fns.ebird.in <- tolower(list.files(dir.ebird.in))
 fns.ebird.in <- fns.ebird.in[str_detect(fns.ebird.in, pattern=".zip|.tar|.gz")==FALSE]# remove the .zip/.tar
+sampling.fn <-  fns.ebird.in[str_detect(fns.ebird.in, pattern="sampling")] # grab this/these files for later.
 # ## throw a warning stating that there are no decompressed files in this directory
 #     if (!any(str_detect(fns.ebird.in, ".zip|.tar|.gz"))) {
 #       message(
@@ -57,11 +58,13 @@ fns.ebird.in=fns.ebird.in[str_detect(fns.ebird.in, "conduct|terms_of_use|metadat
 # throw message stating these are the target files import
 cat(
   "The following files were identified as target eBird files for import, according to your spatial and species filters (or lack thereof):\n",
-  paste(fns.ebird.in, "\n")
+  paste(fns.ebird.in ,"\n"), paste(sampling.fn)
 )
 
 # return the full path
-fns.ebird.in = paste0(dir.ebird.in, fns.ebird.in)
+fns.ebird.in = paste0(dir.ebird.in,"/", c(fns.ebird.in, sampling.fn))
+
+
 return(fns.ebird.in)
 
 }
