@@ -40,3 +40,5 @@ desktop.ini
 
 # Ignore entire local data saves
 data-local/
+ebd_filtered_grja.txt
+ebd_US_doccor_relSep-2021.txt
