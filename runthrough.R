@@ -30,7 +30,7 @@ if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
   ## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
   dir.ebird.in <- "C:\\Users\\jburnett\\OneDrive - DOI\\research\\cormorants\\dubcorm-data-backup\\ebird"
   ## AUK package maintainers suggest setting  this directory using auk::auk_set_ebd_path
-  auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
+  # auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
   ## specify dir.ebird.out as the location where you will save local, post-munging ebird data (as .rda/.rds)
   dir.ebird.out <- "data-local/ebird"
 
@@ -50,7 +50,7 @@ if(.Platform$OS.type=="windows") round(memory.limit()/2^20, 2)
 
 # Data specifications -----------------------------------------------------
 # Specify region(s), specie(S) and temporal period(s) to use for data subsetting, etc.
-interest.spatial <- paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV"))
+# interest.spatial <- paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV")) # states / province / territory
 interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") ## need to provide a lookup-table relating the ebird to BBS taxa, including codes
 interest.temporal <- 1970:2019
 include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
@@ -70,7 +70,13 @@ bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
 
 
 # Munge eBird data --------------------------------------------------------
-  ebird <- NULL
+  # The ebird data should be in directory ebird.data.in.
+    ## Functions in this section will import, munge, and save those files as .rds.
+    ## Currently, this script / package does not use Auk to manipulate the ebird data using awk.
+    ## Auk seems significantly slower than just importing as .txt and munging, at least when working with a single species
+    dir.ebird.in
+    list.files(dir.ebird.in)
+    ebird <- NULL
 
 
 
