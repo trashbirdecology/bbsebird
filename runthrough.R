@@ -89,65 +89,55 @@ fns.ebird.in <- id_ebird_files(dir.ebird.in, species=interest.species)
 ## use Auk to subset and import zero-filled data
 auk::auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
 
-
-# CRAP??? -----------------------------------------------------------------
-
-
-auk.time=Sys.time()
-ebird <- list()# ebird observations data
-ebird.zf <- list() #zero-filled data
-
-for(i in seq_along(fns.ebird.in)){
-  #skip the sampling events file...
-  if(i==1) {f_samp_in <- list.files(dir.ebird.in, "ebd_sampling", full.names=TRUE)
-            f_samp_in <- f_samp_in[!str_detect(f_samp_in, ".tar|.gz|.zip")]
-  }
-  if(str_detect(fns.ebird.in[i], 'sampling_events'))next()
-  # specify file names for ebd in and out
-  f_ebd_in <- fns.ebird.in[i]
-  f_ebd_out <-  paste0(dir.ebird.in,"/ebd_filtered_out_", i ,".txt")
-  # sampling events file out
-  f_samp_out <- paste0(dir.ebird.in,"/sampling_filtered_out_", i ,".txt")
-  # filter and save to file the filtered data
-
-  samp <- auk_sampling(file=f_samp_in
-
-                        )
-
-  filters <- auk_ebd(file = f_ebd_in,
-                     file_sampling = f_samp) %>%
-    auk_species(species = "Double-crested Cormorant", taxonomy_version = 2021) %>%
-    auk_country(country = c("United States", "Canada")) %>%
-    auk_complete() %>%
-    auk_protocol(c("Stationary", "Traveling"))
-
-filtered <- auk_filter(filters,
-                       file=f_ebd_out,
-                       file_sampling = f_samp_out,
-                       overwrite=TRUE)
-
-ebd_zf <- auk_zerofill(ebd, samp)
+f_samp_in <- list.files(dir.ebird.in, "ebd_sampling", full.names=TRUE)
+f_samp_in <- f_samp_in[!str_detect(f_samp_in, ".tar|.gz|.zip")]
 
 
-ebird[[i]] <- read_ebd(filtered) ## takes quite a while...
-ebird.zf[[i]] <- auk_zerofill(ebird[[i]], sampling_events = f_samp, collapse=TRUE)
-}
+# make_ebird_data(fns.ebird.in, dir.ebird.in)
 
-Sys.time()-auk.time
-
-# to produce zero-filled data, provide an EBD and sampling event data file
-f_ebd
-f_samp
-filters <- auk_ebd(f_ebd, file_sampling = f_smp) %>%
-  auk_species("Collared Kingfisher") %>%
-  auk_time(c("06:00", "10:00")) %>%
-  auk_complete()
-
-### checklists/sampling events
-
-# Zero-fill
-
-
+get_ebird_sampling_events(dir=dir.ebird.in)
+#   f_ebd_in <- fns.ebird.in[i]
+#   f_ebd_out <-  paste0(dir.ebird.in,"/ebd_filtered_out_", i ,".txt")
+#   # sampling events file out
+#   f_samp_out <- paste0(dir.ebird.in,"/sampling_filtered_out_", i ,".txt")
+#   # filter and save to file the filtered data
+#
+#   samp <- auk_sampling(file=f_samp_in)
+#
+#   filters <- auk_ebd(file = f_ebd_in,
+#                      file_sampling = f_samp) %>%
+#     auk_species(species = "Double-crested Cormorant", taxonomy_version = 2021) %>%
+#     auk_country(country = c("United States", "Canada")) %>%
+#     auk_complete() %>%
+#     auk_protocol(c("Stationary", "Traveling"))
+#
+# filtered <- auk_filter(filters,
+#                        file=f_ebd_out,
+#                        file_sampling = f_samp_out,
+#                        overwrite=TRUE)
+#
+# ebd_zf <- auk_zerofill(ebd, samp)
+#
+#
+# ebird[[i]] <- read_ebd(filtered) ## takes quite a while...
+# ebird.zf[[i]] <- auk_zerofill(ebird[[i]], sampling_events = f_samp, collapse=TRUE)
+# }
+#
+# Sys.time()-auk.time
+#
+# # to produce zero-filled data, provide an EBD and sampling event data file
+# f_ebd
+# f_samp
+# filters <- auk_ebd(f_ebd, file_sampling = f_smp) %>%
+#   auk_species("Collared Kingfisher") %>%
+#   auk_time(c("06:00", "10:00")) %>%
+#   auk_complete()
+#
+# ### checklists/sampling events
+#
+# # Zero-fill
+#
+#
 
 
 # ebird <- readRDS("data-local/ebird/dcco_ebird_2020-10-13.rds")

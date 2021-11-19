@@ -8,9 +8,16 @@
 #' @export get_ebird_sampling_events
 #'
 
-get_ebird_sampling_events <- function(fn=NULL, dir=NULL, dir.out="data-local/ebird", n=NULL, n.amer=TRUE, complete=TRUE, protocol.type=c("Traveling", "Stationary"),
-                                      overwrite=FALSE
-                                      ){
+get_ebird_sampling_events <-
+  function(fn = NULL,
+           dir = NULL,
+           dir.out = "data-local/ebird",
+           n = 8000000,
+           n.amer = TRUE,
+           complete = TRUE,
+           protocol.type = c("Traveling", "Stationary")
+           ){
+
   # create directories if necessary for storing data.
   suppressWarnings(dir.create('data-local')); suppressWarnings(dir.create(dir.out))
 
@@ -23,17 +30,6 @@ get_ebird_sampling_events <- function(fn=NULL, dir=NULL, dir.out="data-local/ebi
   }
   if(is.null(dir.out)) dir.out <- dir
 
-  # check to see if .rds file containing smapling data already exists.
-  if(overwrite==FALSE){
-    temp=c(list.files(dir,pattern="sampling_events.rds", full.names=TRUE),
-           list.files(dir.out,pattern="sampling_events.rds", full.names=TRUE))
-    if(length(temp)>0){
-      message("Sampling events compressed RDS already exists. Importing from file, ", temp[1])
-      # read in the file if it exists
-      ebird.events.df <- readRDS(temp)
-      return(ebird.events.df)
-    }
-  }
 
 # if multuiple sampling files exist let user decide which to use.
 if(length(fn)>1){
@@ -48,52 +44,46 @@ if(is.null(n)){
   n=R.utils::countLines(fn, chunkSize=1000)
   }
 
-n.lines.total = n
-n.lines.df.max = 5000 # max nu lines to import per df at a time
-n.dfs.out = n.lines.total/n.lines.df.max
-n.dfs.per.list = 50 # iteratively save the data when we hit every Nth df
-n.files.out = round(n.dfs.out/n.dfs.per.file)+1
-# create an interval for reading lines
-ind.lines.interval = seq(2,n.lines.total, n.lines.df.max) # start at row two to avoid importing the header.
-ind.lines.subset = ind.lines.interval[ c( rep(FALSE, n.dfs.per.list), TRUE ) ]
 
 
-# Initializes the progress bar
-pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = n.files.out)
-pb$tick(0)
-# Create headers
-headers <- read.csv(fn, header=FALSE, sep="\t", skip=0, nrows = 1)#import the header..
-# create an index for the i-loop over which we will create a single output file, comprising n.dfs.per.file dfs smashed together..
-for(j in 1:n.files.out){
-pb$tick(1) # progress bar
-  if(j==1){lines.start=2}else(lines.start=ind.lines.subset[j-1]+1)
-  lines.end=ind.lines.subset[j]
-  interval=seq(lines.start, lines.end, n.lines.df.max)
-  ebird.events <- list() # init empty list on each j-loop
+  #setup parallel backend to use many processors
+  cores=parallel::detectCores()
+  cl <- parallel::makeCluster(cores[1]-2) #not to overload your computer
+  doParallel::registerDoParallel(cl)
 
-# create empty list
-# loop over the entire .txt file for sampling events.
-for(i in seq_along(interval)) { # go along the entire sampling events dataframe
-  # print(i)
+  # create indices for splitting up file
+  n.lines.total = n
+  n.lines.df.max = 500000 # max nu lines to import per df at a time
+  n.dfs.out = as.integer(round(n.lines.total/n.lines.df.max)+1)
+  # create an interval for reading lines
+  interval.start = seq(2,n.lines.total, n.lines.df.max) # start at row two to avoid importing the header.
+  interval.end = interval.start+n.lines.df.max
+  # create headers
+  headers <- read.csv(fn, header=FALSE, sep="\t", skip=0, nrows = 1)#import the header..
+
+
+  foreach(i=interval.start, j=interval.end, .combine='c') %dopar% {
+    library(tidyverse)
+    library(auk)
     df = read.csv(
       fn,
       header = FALSE,
       sep = "\t",
-      skip = interval[i],
-      nrows =n.lines.df.max
-    )
+      skip = i,
+      nrows =n.lines.df.max)
+    colnames(df) <- headers
+    ebird.events <- df %>%
+      filter(country %in% c("United States", "Mexico", "Canada"))
+    saveRDS(ebird.events, file=paste0(dir.out, "/sampling_events_",
+                                      Sys.Date(),"_",
+                                      i,"_to_",j,
+                                      ".rds"), compress=TRUE)
 
-  colnames(df) <- headers
-  ebird.events[[i]] <- df %>%
-    filter(country %in% c("United States", "Mexico", "Canada"))
 
-}
+  }
 
-ebird.events.df <- bind_rows(ebird.events)
-saveRDS(ebird.events.df, file=paste0(dir.out, "/sampling_events_",j,"_.rds"), compress=TRUE)
-rm(ebird.events.df)
-} # end j-loop
 
+# Grab the list of shit
 samp.fns <- list.files(dir.out, pattern = "sampling_events_", full.names=TRUE)
 return(samp.fns)
 
