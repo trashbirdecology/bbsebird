@@ -1,4 +1,9 @@
-make_ebird_data <- function(){
+#' @title Create eBird presence-absence data
+#' @description
+#' @param fns.ebird.in
+#' @param dir.ebird.in
+#' @export make_ebird_data
+make_ebird_data <- function(fns.ebird.in, dir.ebird.in){
 
 f_ebd <- fns.ebird.in[i]
 f_smp <- f_samp_in
@@ -20,6 +25,7 @@ ebd_sed_filtered <- auk_filter(filters,
                                file_sampling = ebd_sed_filtered$output_sampling)
 
 ebd_zf <- auk_zerofill(ebd_sed_filtered)
-
+fn=paste0(dir.ebird.in, "ebd_zf_filtered_",i,".rds")
+writeRDS(ebd_zf,
 
 }
