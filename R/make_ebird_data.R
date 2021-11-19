@@ -15,17 +15,25 @@ filters <-  ebd %>%
   auk_complete() %>%
   auk_protocol(c("Stationary", "Traveling"))
 
-ebd_sed_filtered <- filters
-ebd_sed_filtered$output <- "data-local/ebird/ebd-filtered.txt"
-ebd_sed_filtered$output_sampling <- "data-local/ebird/sampling-filtered.txt"
+ebd_filtered <- filters
+ebd_filtered$output <- "data-local/ebird/ebd-filtered.txt"
+ebd_filtered$output_sampling <- "data-local/ebird/sampling-filtered.txt"
 
 
-ebd_sed_filtered <- auk_filter(filters,
-                               file = ebd_sed_filtered$output,
-                               file_sampling = ebd_sed_filtered$output_sampling)
+ebd_filtered <- auk_filter(filters,
+                               file = ebd_filtered$output,
+                               file_sampling = ebd_filtered$output_sampling)
 
-ebd_zf <- auk_zerofill(ebd_sed_filtered)
+ebd_zf <- auk_zerofill(ebd_filtered)
 fn=paste0(dir.ebird.in, "ebd_zf_filtered_",i,".rds")
-writeRDS(ebd_zf,
+writeRDS(ebd_zf,filename=fn)
+
+# head(ebd_zf$observations)
+# glimpse(ebd_zf$sampling_events)
+## if necessary, craete a singel df (but less comp efficient)
+# ebd_zf_df <- auk_zerofill(ebd_filtered, collapse = TRUE)
+# ebd_zf_df <- collapse_zerofill(ebd_zf)
+# class(ebd_zf_df)
+# ebd_zf_df
 
 }

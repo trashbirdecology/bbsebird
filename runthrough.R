@@ -90,13 +90,16 @@ fns.ebird.in <- id_ebird_files(dir.ebird.in, species=interest.species)
 auk::auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
 
 
+# CRAP??? -----------------------------------------------------------------
+
+
 auk.time=Sys.time()
 ebird <- list()# ebird observations data
 ebird.zf <- list() #zero-filled data
 
 for(i in seq_along(fns.ebird.in)){
   #skip the sampling events file...
-  if(i==1) {f_samp_in <-  list.files(dir.ebird.in, "ebd_sampling", full.names=TRUE)
+  if(i==1) {f_samp_in <- list.files(dir.ebird.in, "ebd_sampling", full.names=TRUE)
             f_samp_in <- f_samp_in[!str_detect(f_samp_in, ".tar|.gz|.zip")]
   }
   if(str_detect(fns.ebird.in[i], 'sampling_events'))next()
