@@ -29,8 +29,7 @@ f_samp <-grep(".txt", grep("sampling" ,fns, value = TRUE), value=TRUE) # paige's
 # Set up output files
 ebd.out <- "data-raw/ebird-data/ebd_dcco_filtered.txt"
 checklist.out <- "data-raw/ebird-data/checklist_dcco_filtered.txt"
-
-
+# browser()
 # Define filters ----------------------------------------------------------
 ebd <-  auk_ebd(f_ebd,f_samp)
 ebd_filters <- ebd %>%
