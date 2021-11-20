@@ -15,7 +15,7 @@ library(maps)
 library(ggplot2)
 library(mapproj)
 library(doParallel)
-library(data.table)
+library(multidplyr)
 # library(bigreadr) # used in get_ebird_sampling_events to deadl with large dsamplin gevents data
 ## not sure i need
 library(gridExtra)
@@ -38,13 +38,14 @@ options(stringsAsFactors = FALSE)
   ## because the ebird data is so massive, it's inconvenient to store inside the package.
   ## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
   dir.ebird.in <- "C:\\Users\\jburnett\\OneDrive - DOI\\research\\cormorants\\dubcorm-data-backup\\ebird"
-  ## AUK package maintainers suggest setting  this directory using auk::auk_set_ebd_path
-  # auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
+  dir.ebird.out <- "data-local/ebird/"
+  auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
 
   # BBS data
   ## bbs data is much smaller than eBird, so storing in the project directory is feasible
   ## specify dir.ebird.out as the location where you will save local, post-munging ebird data (as .rda/.rds)
-  dir.bbs.out <- "data-local/bbs"
+  dir.bbs.out <- "data-local/bbs/"
+
   ## BBS Route location shapefiles
     cws.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
     usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/usgs"
@@ -59,7 +60,9 @@ options(stringsAsFactors = FALSE)
 # Specify region(s), specie(S) and temporal period(s) to use for data subsetting, etc.
 # interest.spatial <- paste0("US-", c("OR", "CA","WA", "ID", "AZ", "NV")) # states / province / territory
 interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") ## need to provide a lookup-table relating the ebird to BBS taxa, including codes
-interest.temporal <- 1970:2019
+interest.spatial <- c("United States", "Canada", "CAN", "CA","US", "USA")
+ebird.protocol <- c("Traveling", "Stationary")
+complete.checklists.only=TRUE
 include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
 map.region <- c("Canada","USA", "Mexico") # used to create base maps and spatial grid system.
 # grid.size <- c(1, "deg")
@@ -70,24 +73,35 @@ grid.size <- c(6, "km")
     ## Functions in this section will import, munge, and save those files as .rds.
     ## Currently, this script / package does not use Auk to manipulate the ebird data using awk.
     ## Auk seems significantly slower than just importing as .txt and munging, at least when working with a single species
-
+devtools::load_all()
 ## using spatial/species filters, see what files are available for import from dir.ebird.in
 fns.ebird.in <- id_ebird_files(dir.ebird.in, species=interest.species)## I SHOULD HIDE THIS FUNCTIOn I THINK
 f_samp <- fns.ebird.in[str_detect(fns.ebird.in,"ebd_sampling_rel")]
-f_ebd  <- fns.ebird.in[str_detect(fns.ebird.in,"doccor")]
-auk.time=Sys.time()
-ebird_sampling <- vroom::vroom(f_samp) # about two minutes...about 78million rows for DOCCOR N. Amer
-gc()
-ebird_observations <- do.call(dplyr::bind_rows,lapply(f_ebd, vroom))
-gc()
-Sys.time()-auk.time
+f_ebd  <- fns.ebird.in[str_detect(fns.ebird.in,"doccor")][1]
 
-### filter the sampling events data frame (to be thrown into a munge_ebird() function)
-ebird_sampling <- ebird_sampling %>%
-  dplyr::select(-c(`TRIP COMMENTS`, `GROUP IDENTIFIER`, `LAST EDITED DATE`)) %>%
-  filter(country %in% c("United States", "Canada", "CA", "US", 'USA')) %>%
-  filter(`PROTOCOL TYPE` %in% c("Traveling","Stationary")) %>%
-  filter(`ALL SPECIES REPORTED` == 1)
+ebd <- auk_ebd(file=f_ebd, file_sampling = f_samp)
+traceback()
+
+
+# auk.time=Sys.time()
+# ebird_sampling <- vroom::vroom(f_samp) # about two minutes...about 78million rows for DOCCOR N. Amer
+# gc()
+# ebird_observations <- do.call(dplyr::bind_rows,lapply(f_ebd, vroom))
+# write.txt(ebird_observations, file=paste0(dir.ebird.out,"ebird_observations", Sys.Date() ,".rds"))
+# gc()
+# Sys.time()-auk.time
+#
+# ### filter the sampling events data frame (to be thrown into a munge_ebird() function)
+# ## I need to parallelize this -- pref. with MULTIDPLYR to keep tidy formatting..
+# ebird_sampling <- ebird_sampling %>%
+#   dplyr::select(-c(`TRIP COMMENTS`, `GROUP IDENTIFIER`, `LAST EDITED DATE`)) %>%
+#   filter(country %in% c("United States", "Canada", "CA", "US", 'USA')) %>%
+#   filter(`PROTOCOL TYPE` %in% c("Traveling","Stationary")) %>%
+#   filter(`ALL SPECIES REPORTED` == 1)
+# saveRDS(ebird_sampling, file=paste0(dir.ebird.out,"ebird_sampling_subset_", Sys.Date() ,".rds"))
+# ## here is a check toe nsure all checklists are available inthe samping data frame
+# missing <- setdiff(unique(ebird_observations$`SAMPLING EVENT IDENTIFIER`),unique(ebird_sampling$`SAMPLING EVENT IDENTIFIER`))
+
 
 
 

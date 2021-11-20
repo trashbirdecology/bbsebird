@@ -4,7 +4,6 @@
 #' @param dir.ebird.out Where to store the munged versions of the data.
 #' @export munge_ebird
 
-
 munge_ebird <- function(dir.ebird.in, dir.ebird.out, interest.species=NULL, interest.spatial=NULL){
 
   ebird.fns <- tolower(list.files(dir.ebird.in, full.names=TRUE))

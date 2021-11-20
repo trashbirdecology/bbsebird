@@ -44,8 +44,6 @@ if(is.null(n)){
   n=R.utils::countLines(f_samp, chunkSize=1000)
   }
 
-
-
 #setup parallel backend to use many processors
 cores=parallel::detectCores()
 cl <- parallel::makeCluster(cores[1]-2) #not to overload your computer
