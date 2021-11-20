@@ -72,15 +72,22 @@ grid.size <- c(6, "km")
     ## Auk seems significantly slower than just importing as .txt and munging, at least when working with a single species
 
 ## using spatial/species filters, see what files are available for import from dir.ebird.in
-fns.ebird.in <- id_ebird_files(dir.ebird.in, species=interest.species)
-# get_ebird_sampling_events(dir=dir.ebird.in)
+fns.ebird.in <- id_ebird_files(dir.ebird.in, species=interest.species)## I SHOULD HIDE THIS FUNCTIOn I THINK
 f_samp <- fns.ebird.in[str_detect(fns.ebird.in,"ebd_sampling_rel")]
 f_ebd  <- fns.ebird.in[str_detect(fns.ebird.in,"doccor")]
-
 auk.time=Sys.time()
-ebird_sampling <- vroom::vroom(f_samp) # about two minutes...
-ebird_observations <- vroom::vroom(f_ebd) # about two minutes...
+ebird_sampling <- vroom::vroom(f_samp) # about two minutes...about 78million rows for DOCCOR N. Amer
+gc()
+ebird_observations <- do.call(dplyr::bind_rows,lapply(f_ebd, vroom))
+gc()
 Sys.time()-auk.time
+
+### filter the sampling events data frame (to be thrown into a munge_ebird() function)
+ebird_sampling <- ebird_sampling %>%
+  dplyr::select(-c(`TRIP COMMENTS`, `GROUP IDENTIFIER`, `LAST EDITED DATE`)) %>%
+  filter(country %in% c("United States", "Canada", "CA", "US", 'USA')) %>%
+  filter(`PROTOCOL TYPE` %in% c("Traveling","Stationary")) %>%
+  filter(`ALL SPECIES REPORTED` == 1)
 
 
 
