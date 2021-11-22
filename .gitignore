@@ -41,3 +41,4 @@ desktop.ini
 # Ignore entire local data saves
 data-local/
 examples/data/
+data-in/

@@ -5,9 +5,9 @@ rm(list=ls())
 gc()
 # Libraries ---------------------------------------------------------------
 devtools::install_github("trashbirdecology/bbsassistant",ref="convert-to-50-stop", force=FALSE)
+library(bbsAssistant)
 library(auk)
 library(hms) ## for some reason zerofiltering function in auk cannot find this fun?
-library(bbsAssistant)
 library(dplyr)
 library(stringr)
 library(rgdal)
@@ -72,6 +72,23 @@ options(stringsAsFactors = FALSE)
   # grid.size <- c(1, "deg")
   grid.size <- c(6, "km")
 
+# Munge BBS data ----------------------------------------------------------
+bbs <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
+if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
+
+# filter by species of interest
+bbs.subset <- filter_bbs_by_species(bbs, search = interest.species)
+
+# Munge BBS route shapefiles ----------------------------------------------
+bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
+                                        usgs.routes.dir = usgs.routes.dir,
+                                        proj.target = "USGS")
+
+
+
+
+
+
 # Munge eBird data --------------------------------------------------------
   # The ebird data should be in directory ebird.data.in.
     ## Functions in this section will import, munge, and save those files as .rds.
@@ -82,25 +99,7 @@ devtools::load_all()
 # Get the list of potential files for import. This will be used in get_ebird()
 (fn_zf <- list.files(dir.ebird.out, "rds"))
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
-# get_ebird()
-# ebd_zf <- readRDS(fn_zf)
-
-
-
-# Munge BBS route shapefiles ----------------------------------------------
-bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
-                                        usgs.routes.dir = usgs.routes.dir,
-                                        proj.target = "USGS")
-
-
-
-# Munge BBS data ----------------------------------------------------------
-bbs <- grab_bbs_data(sb_dir=dir.bbs.out, overwrite = TRUE) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
-if(exists("sb_items"))rm(sb_items) # id like to add an arg to grab_bbs_data that prevents output of sb_items...
-
-# filter by species of interest
-bbs.subset<-filter_bbs_by_species(bbs, search = interest.species)
-
+ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
 
 # Spatial Grid System ------------------------------------------------------------
 ## I think i want to make this a function...
