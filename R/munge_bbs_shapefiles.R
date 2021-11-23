@@ -54,8 +54,6 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   usgs_routes@data$RouteLength = usgs_routes@data$rte_length
   cws_routes@data$RouteLength = cws_routes@data$Shape_Leng
 
-
-
   # Join the two SpatialLinesDataFrames for CWS and USGS route spatial layers
   # first, keep only the variables that have been mapped back to the BBS observations dataset.
   colnames <- intersect(names(usgs_routes), names(cws_routes))
@@ -70,6 +68,10 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
 
   # join the two SLDFs
   bbs_routes_sldf <- rbind(usgs_routes.subset, cws_routes.subset)
+
+  # create var RTENO for quick indexing.
+  names(bbs_routes_sldf)
+  bbs_routes_sldf@data<-make.rteno(bbs_routes_sldf@data)
 
   return(bbs_routes_sldf)
 

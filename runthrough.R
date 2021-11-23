@@ -91,21 +91,14 @@ region_codes.subset <- region_codes %>% filter(CountryNum %in% c(124, 840))
 bbs.subset$routes <- bbs.subset$routes %>%
   filter(!StateNum %in% region_codes$StateNum[tolower(region_codes.subset$State) %in% c("Alaska", "Canada")])
 
-# need to troubleshoot these. ## will need to go back and double check this..
-missing.routes <- bbs.subset$routes[which(!bbs.subset$routes$Route %in% bbs_routes_sldf$Route),]
-# td=tempdir(); write.csv(missing.routes, paste0(td,'/missingroutes.csv'))
-
-
-# remove the observations not aligning to the routes identified.
-## create a column for country-state-route identifier
-bbs.subset$observations$RTENO
-bbs_routes_sldf$RTENO = paste0(bbs_routes_sldf$, bbs_routes_sldf$
-
 
 # Munge BBS route shapefiles ----------------------------------------------
 bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
                                         usgs.routes.dir = usgs.routes.dir,
                                         proj.target = "USGS")
+# need to troubleshoot these. ## will need to go back and double check this..
+(missing.routes <- bbs.subset$routes[which(!bbs.subset$routes$Route %in% bbs_routes_sldf$Route),])
+td=tempdir(); write.csv(missing.routes, paste0(td,'/missingroutes.csv'))
 
 
 

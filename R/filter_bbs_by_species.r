@@ -34,7 +34,7 @@ filter_bbs_by_species <- function(list, search = interest.species, zero.fill=TRU
   }else(zeroes=NULL)
 
   # create final df for the list
-  list$observations <- bind_rows(myspp.obs, zeroes)
+  list$observations <- bind_rows(myspp.obs, zeroes) %>% distinct(RTENO, AOU, Year, .keep_all = TRUE)
 
 
   print(cat("The following species are in your BBS data: ", paste(unique(list$species_list$English_Common_Name))))
