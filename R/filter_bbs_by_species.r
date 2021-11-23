@@ -7,7 +7,6 @@
 #' @param search A vector of one or more species (using English Common Name) to subset the data by. Capitalization ignored.
 #' @param zero.fill If a single species is provided, this function will output list$observations with zero-filled data.
 #' @export
-#'
 
 filter_bbs_by_species <- function(list, search = interest.species, zero.fill=TRUE){#, unid=FALSE) {
   # grab the unique AOU codes
@@ -15,7 +14,7 @@ filter_bbs_by_species <- function(list, search = interest.species, zero.fill=TRU
     mutate(across(starts_with("English_Common_Name"), tolower)) %>%
     filter(across(any_of("English_Common_Name"), ~ .x %in% tolower(search)))
 
-  # remve routedataid
+  # remvoe routedataid
   list$observations <- list$observations%>%
     dplyr::select(-RouteDataID)
 
@@ -33,9 +32,12 @@ filter_bbs_by_species <- function(list, search = interest.species, zero.fill=TRU
                 zeroes[grepl("Stop|stop|STOP", names( zeroes ))]<-0 # force all values to zero
   }else(zeroes=NULL)
 
-  # create final df for the list
+  # create final observations df for the list
   list$observations <- bind_rows(myspp.obs, zeroes) %>% distinct(RTENO, AOU, Year, .keep_all = TRUE)
 
+
+  list$observations$RTENO <- as.character(list$observations$RTENO)
+  list$routes$RTENO <- as.character(list$routes$RTENO)
 
   print(cat("The following species are in your BBS data: ", paste(unique(list$species_list$English_Common_Name))))
   return(list) # return the entire list now as a subset of the original list
