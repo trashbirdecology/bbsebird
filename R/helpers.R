@@ -1,3 +1,14 @@
+
+# make var RTENO ----------------------------------------------------------
+make.rteno <- function(x){
+  RTENO=paste0(
+    str_pad(x$CountryNum, width=3, side="left", pad="0"),
+    str_pad(x$StateNum, width=2, side="left", pad="0"),
+    str_pad(x$Route, width=3, side="left", pad="0"))
+  x = x %>% mutate(RTENO=RTENO)
+}
+
+
 # mode --------------------------------------------------------------------
 get_mode <- function(x) {
   ux <- unique(x)
