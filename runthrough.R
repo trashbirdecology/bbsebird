@@ -79,7 +79,6 @@ if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_b
 
 # filter by species of interest, zero-fill
 bbs.subset <- filter_bbs_by_species(list = bbs, search = interest.species, zero.fill=TRUE)
-
 # ## TRYING TO FIGURE OUT WHERE I AM LOSING THE ROUTES.
 # trsub=bbs.subset$routes %>% filter(StateNum %in% c("02","03","58", 2, 3, 58)) %>%
 #   distinct(CountryNum, StateNum, Route) %>%
@@ -107,8 +106,6 @@ bbs.subset$observations <- bbs.subset$observations %>%
   filter(CountryNum %in% c(124, 840))  %>%
   # Keep only RPID=101
   filter(RPID==101)
-
-
 # remove HI and AK from the bbs.subset dataset
 data(region_codes) # region codes from bbsAssistant package.
 region_codes.subset <- region_codes %>%
@@ -138,7 +135,7 @@ bbs_routes_sldf.subset <- bbs_routes_sldf[bbs_routes_sldf@data$RTENO %in% bbs.su
   # which routes are missing from the spatial shapefile layer
 
 #### PROBLEMS TO SOLVE: MISSING ROUTES
-bbs.subset$routes[which(!bbs.subset$routes$RTENO %in% bbs_routes_sldf.subset$RTENO), ] %>%
+bbs.subset$routes[which(!bbs.subset$routes$RTENO %in% bbs_routes_sldf.subset$RTENO),] %>%
   distinct(RTENO, .keep_all = TRUE) %>%
   group_by(CountryNum, StateNum) %>%
   summarise(n()) %>% left_join(region_codes) %>%
@@ -153,10 +150,9 @@ setdiff(unique(bbs.subset$observations$RTENO),
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
 
-# force ebird to a spatial layer
-coordinates(ebd_zf) ~ c(ebd_zf$longitude, ebd_zf$latitude)
-
-
+# convert ebd to spatial object
+ebd_zf_sf <- ebd_zf %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 
 # Creata a spatial grid ------------------------------------------------------------
 ## I think i want to make this a function...
