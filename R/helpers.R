@@ -1,5 +1,5 @@
 
-# make var RTENO ----------------------------------------------------------
+# create var RTENO for quick indexing.
 make.rteno <- function(x){
   RTENO=paste0(
     str_pad(x$CountryNum, width=3, side="left", pad="0"),
@@ -7,7 +7,6 @@ make.rteno <- function(x){
     str_pad(x$Route, width=3, side="left", pad="0"))
   x = x %>% mutate(RTENO=RTENO)
 }
-
 
 # mode --------------------------------------------------------------------
 get_mode <- function(x) {
@@ -44,12 +43,12 @@ song <- function() {
 
 # windows alert -----------------------------------------------------------
 windows_alert <- function(message=rep("The really long process you started has completed. Hopefully you got it right the first time and don't have to redo it....that took a while.....BEEEEEEEEEEEEEEEP", 3)){
-if(.Platform$OS.type == "windows"){return()} # only run for windows OS
-system2(command = "PowerShell",
-        args = c("-Command",
-                 "\"Add-Type -AssemblyName System.Speech;",
-                 "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                 paste0("$speak.Speak('", message, "');\"")
-        ))
-  }
+  if(.Platform$OS.type == "windows"){return()} # only run for windows OS
+  system2(command = "PowerShell",
+          args = c("-Command",
+                   "\"Add-Type -AssemblyName System.Speech;",
+                   "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
+                   paste0("$speak.Speak('", message, "');\"")
+          ))
+}
 
