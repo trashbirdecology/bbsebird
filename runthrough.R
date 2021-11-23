@@ -68,7 +68,7 @@ options(stringsAsFactors = FALSE)
   ebird.protocol <- c("Traveling", "Stationary")
   complete.checklists.only <- TRUE
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
-  map.region <- c("Canada","USA", "Mexico") # used to create base maps and spatial grid system.
+  map.region <- c("Canada","USA") # used to create base maps and spatial grid system.
   # grid.size <- c(1, "deg")
   grid.size <- c(6, "km")
 
@@ -76,8 +76,31 @@ options(stringsAsFactors = FALSE)
 bbs <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
 if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
 
+
 # filter by species of interest
-bbs.subset <- filter_bbs_by_species(bbs, search = interest.species)
+bbs.subset <- filter_bbs_by_species(bbs, search = interest.species, zero.fill=TRUE)
+bbs.subset$routes <- bbs.subset$routes %>%
+# keep only Canada and US (excluding HI and AK)
+  filter(CountryNum %in% c(124, 840))  %>%
+  # Keep only RPID=101
+  filter(RouteTypeID==1)
+
+# remove HI and AK
+data(region_codes) # region codes from bbsAssistant package.
+region_codes.subset <- region_codes %>% filter(CountryNum %in% c(124, 840))
+bbs.subset$routes <- bbs.subset$routes %>%
+  filter(!StateNum %in% region_codes$StateNum[tolower(region_codes.subset$State) %in% c("Alaska", "Canada")])
+
+# need to troubleshoot these. ## will need to go back and double check this..
+missing.routes <- bbs.subset$routes[which(!bbs.subset$routes$Route %in% bbs_routes_sldf$Route),]
+# td=tempdir(); write.csv(missing.routes, paste0(td,'/missingroutes.csv'))
+
+
+# remove the observations not aligning to the routes identified.
+## create a column for country-state-route identifier
+bbs.subset$observations$RTENO
+bbs_routes_sldf$RTENO = paste0(bbs_routes_sldf$, bbs_routes_sldf$
+
 
 # Munge BBS route shapefiles ----------------------------------------------
 bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
@@ -88,12 +111,7 @@ bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
 
 
 
-
 # Munge eBird data --------------------------------------------------------
-  # The ebird data should be in directory ebird.data.in.
-    ## Functions in this section will import, munge, and save those files as .rds.
-    ## Currently, this script / package does not use Auk to manipulate the ebird data using awk.
-    ## Auk seems significantly slower than just importing as .txt and munging, at least when working with a single species
 devtools::load_all()
 
 # Get the list of potential files for import. This will be used in get_ebird()
@@ -105,11 +123,11 @@ ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
 ## I think i want to make this a function...
 
 ## create map data for N. America
-for(i in seq_along(region)){
+for(i in seq_along(map.region)){
  if(i==1){map.df<-list()}
- map.df[[i]] <- map_data("world", region=region[i])
- if(i==length(region)){
-   names(map.df)<-region
+ map.df[[i]] <- map_data("world", region=map.region[i])
+ if(i==length(map.region)){
+   names(map.df)<-map.region
    map.df=bind_rows(map.df)
    }
 }
@@ -121,10 +139,9 @@ n.amer <- SpatialPointsDataFrame(
   spTransform(proj4string(bbs_routes_sldf))
 
 ## create grid
-# x=spsample(x=n.amer, n=1000, "regular")
 xy <- expand.grid(x = n.amer$long, y = n.amer$lat)
 plot(xy)
 
-
-# extent.bbs <- sp::bbox(bbs_routes_sldf)
+extent.bbs <- sp::bbox(bbs_routes_sldf)
+extent.bbs <- sp::bbox(bbs_routes_sldf)
 
