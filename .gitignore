@@ -42,3 +42,6 @@ desktop.ini
 data-local/
 examples/data/
 data-in/
+missingroutes.csv
+missingroutesbyregion.csv
+routes.csv
