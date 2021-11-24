@@ -11,7 +11,8 @@ library(hms) ## for some reason zerofiltering function in auk cannot find this f
 library(dplyr)
 library(stringr)
 library(rgdal)
-library(sp)
+library(sp) ## goign to stick with sp and rgdal for now unless it gives me reason not to...
+# library(sf)
 library(maps)
 library(ggplot2)
 library(mapproj)
@@ -70,21 +71,21 @@ devtools::load_all()
   complete.checklists.only <- TRUE
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
   map.region <- c("Canada","USA") # used to create base maps and spatial grid system.
-  # grid.size <- c(1, "deg")
-  grid.size <- c(6, "km")
+  grid.size <- c(111/16, "deg")
+  # grid.size <- c(6, "km")
 
 # Munge BBS data ----------------------------------------------------------
 bbs <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
 if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
 
 # filter by species of interest, zero-fill
-bbs.subset <- filter_bbs_by_species(list = bbs, search = interest.species, zero.fill=TRUE)
+bbs <- filter_bbs_by_species(list = bbs, search = interest.species, zero.fill=TRUE)
 # ## TRYING TO FIGURE OUT WHERE I AM LOSING THE ROUTES.
-# trsub=bbs.subset$routes %>% filter(StateNum %in% c("02","03","58", 2, 3, 58)) %>%
+# trsub=bbs$routes %>% filter(StateNum %in% c("02","03","58", 2, 3, 58)) %>%
 #   distinct(CountryNum, StateNum, Route) %>%
 #   group_by(CountryNum, StateNum) %>%
 #   summarise(n())
-# tosub<- bbs.subset$observations %>% filter(StateNum %in% c("02","03","58", 2,3,58)) %>%
+# tosub<- bbs$observations %>% filter(StateNum %in% c("02","03","58", 2,3,58)) %>%
 #   distinct(CountryNum, StateNum, Route) %>%
 #   group_by(CountryNum, StateNum) %>%
 #   summarise(n())
@@ -100,13 +101,12 @@ bbs.subset <- filter_bbs_by_species(list = bbs, search = interest.species, zero.
 # trsub
 # to
 # tosub
-
-bbs.subset$observations <- bbs.subset$observations %>%
+bbs$observations <- bbs$observations %>%
 # keep only Canada and US (excluding HI and AK)
   filter(CountryNum %in% c(124, 840))  %>%
   # Keep only RPID=101
   filter(RPID==101)
-# remove HI and AK from the bbs.subset dataset
+# remove HI and AK from the bbs dataset
 data(region_codes) # region codes from bbsAssistant package.
 region_codes.subset <- region_codes %>%
   filter(CountryNum %in% c(124, 840)) # keep US and CAN only
@@ -115,14 +115,14 @@ statenums.remove <- region_codes.subset$StateNum[tolower(region_codes.subset$Sta
 region_codes.subset <- region_codes.subset %>%
   filter(!StateNum %in% statenums.remove) # remove states specified above US and CAN only
 
-bbs.subset$observations <- bbs.subset$observations %>%
+bbs$observations <- bbs$observations %>%
   filter(!StateNum %in% statenums.remove)
 
 ## Finally, remove all the unnecessary routes in bbs$routes
-bbs.subset$routes <- bbs.subset$routes %>% filter(RTENO %in% bbs.subset$observations$RTENO)
+bbs$routes <- bbs$routes %>% filter(RTENO %in% bbs$observations$RTENO)
 
-## A TEST
-if(!all(bbs.subset$routes$RTENO %in% bbs.subset$observations$RTENO)) stop("something is wrong use traceback()")
+## A TEST!
+if(!all(bbs$routes$RTENO %in% bbs$observations$RTENO)) stop("something is wrong use traceback()")
 
 
 # Munge BBS route shapefiles ----------------------------------------------
@@ -131,16 +131,16 @@ bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
                                         proj.target = "USGS")
 # Keep only the routes that are in the observations data frame
   ## i.e. remove the unwanted routes by spatial filter and, if zero.fill=FALSE, also by species.
-bbs_routes_sldf.subset <- bbs_routes_sldf[bbs_routes_sldf@data$RTENO %in% bbs.subset$observations$RTENO,]
+bbs_routes_sldf <- bbs_routes_sldf[bbs_routes_sldf@data$RTENO %in% bbs$observations$RTENO,]
   # which routes are missing from the spatial shapefile layer
 
 #### PROBLEMS TO SOLVE: MISSING ROUTES
-bbs.subset$routes[which(!bbs.subset$routes$RTENO %in% bbs_routes_sldf.subset$RTENO),] %>%
+bbs$routes[which(!bbs$routes$RTENO %in% bbs_routes_sldf$RTENO),] %>%
   distinct(RTENO, .keep_all = TRUE) %>%
   group_by(CountryNum, StateNum) %>%
   summarise(n()) %>% left_join(region_codes) %>%
   write.csv('missingroutesbyregion.csv')
-setdiff(unique(bbs.subset$observations$RTENO),
+setdiff(unique(bbs$observations$RTENO),
         unique(bbs_routes_sldf@data$RTENO)) %>%  ## which of A are not in B
   write.csv('missingroutes.csv')
 
@@ -150,13 +150,21 @@ setdiff(unique(bbs.subset$observations$RTENO),
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
 
+## remove Alaska and Hawaii
+ebd_zf <- ebd_zf %>% filter(!state %in% c("hawaii", "alaska"))
+
+
+# Create eBird spatial -----------------------------------------------------
 # convert ebd to spatial object
-ebd_zf_sf <- ebd_zf %>%
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+coordinates(ebd_zf) <- ~longitude + latitude # 1-2 minutes for all of N.Amer.
+# define projection for lat long
+proj4string(ebd_zf) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# match proj of BBS
+proj4string(ebd_zf) <- proj4string(bbs_routes_sldf)
+
 
 # Creata a spatial grid ------------------------------------------------------------
 ## I think i want to make this a function...
-
 ## initialize map data for N. America
 for(i in seq_along(map.region)){
  if(i==1){map.df<-list()}
@@ -166,18 +174,19 @@ for(i in seq_along(map.region)){
    map.df=bind_rows(map.df)
    }
 }
-## convert data frame to sf object
+## create a base map for North America
 n.amer <- SpatialPointsDataFrame(
   coords = map.df[, c("long", "lat")],
   data = map.df,
   proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")) %>%
   spTransform(proj4string(bbs_routes_sldf))
 
+
 ## create grid
-xy <- expand.grid(x = n.amer$long, y = n.amer$lat)
-plot(xy)
+# xy <- expand.grid(x = n.amer$long, y = n.amer$lat)
+# plot(xy)
 
-extent.bbs <- sp::bbox(bbs_routes_sldf)
-
-extent.bbs <- sp::bbox(ebd_zf)
+# extent.bbs <- sp::bbox(bbs_routes_sldf)
+#
+# extent.bbs <- sp::bbox(ebd_zf)
 

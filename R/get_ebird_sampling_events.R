@@ -1,4 +1,4 @@
-#' @title
+#' @title Retrieve the eBird sampling events from local directory.
 #' @description The eBird sampling events data is quite large, often maxing out available RAM even when R's memory.limit() is set to max. This function splits the sampling event data into smaller files and uses `auk` functions to import.
 #' @param f_samp Filename for the sampling .txt file. Either f_samp or dir must be specified.
 #' @param dir Directory for where the sampling event file(s) are stored. Either f_samp or dir must be specified.

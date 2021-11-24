@@ -1,5 +1,5 @@
-#' @title
-#' @description
+#' @title ...
+#' @description ...
 #' @param dir.ebird.in Directory for where the ebird data are stored.
 #' @param spatial Character vector comprising state/province or country abbreviations. If not specified, will identify the files associated with the country-level data.
 #' @param species Character vector comprising species identifiers.

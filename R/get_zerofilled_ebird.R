@@ -19,7 +19,7 @@ f_ebd_zf_out <- paste0(dir.ebird.munged,"zf_", mmyyyy,"_out.txt")
 
 ## filter the ebd data and saves to local file if DNE or overwrite is TRUE. otherwise, does nothing.
 if (!file.exists(f_ebd_out)|(file.exists(f_ebd_out) & overwrite==TRUE)) {
-  print("This process will take 2 or 3 minutes.")
+  print("Filtering the eBird data. This process may take 2 or 3 minutes.")
     #point to relevant files for auk
     ebd <- auk_ebd(file=f_ebd_in, file_sampling = f_samp_in)
     #define the filters for use in AWK
@@ -41,7 +41,7 @@ if (!file.exists(f_ebd_out)|(file.exists(f_ebd_out) & overwrite==TRUE)) {
 
 ## zero-fill the data if the zero-filled .txt doesn't already exist (or if overwrite is true)
 if (!file.exists(f_ebd_zf_out)|(file.exists(f_ebd_zf_out) & overwrite==TRUE)) {
-  print("Creating the zero-filled data. This takes like 10-20 minutes. ")
+  print("Creating the zero-filled data. This takes 10-20 minutes. Go pet your dog, grab a coffee, or write. ")
     ebd_zf <- auk_zerofill(ebd_filtered, # the output filenames should already be defined in ebd_filtered$output
         collapse = TRUE) # collapse turns the list into a single dataframe. false will return a list.
     # write the files to avoid wait times for zero-filling

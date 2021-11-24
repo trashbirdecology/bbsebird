@@ -12,7 +12,7 @@ time_to_decimal <- function(x) {
 #' @description Unpacks the eBird files (EBD and SamplingEvent data). Saves all unpacked data to a subdirectory (see: parameter dir)
 #' @param dir Directory where the packed ebird data files are stored and into which files will unpack.
 #' @param overwrite Logical. Default=FALSE will not overwrite existing files in dir.
-#' @spp.ind A species indicator (using eBird terminology), used to identify which .zip files should be unpacked. Defaults to 'doccor' (Double-crested Cormorant).
+#' @param spp.ind A species indicator (using eBird terminology), used to identify which .zip files should be unpacked. Defaults to 'doccor' (Double-crested Cormorant).
 unpack_ebird <- function(dir="data-raw/ebird-data",
                          overwrite=FALSE,
                          spp.ind="doccor" ## defaults to double-crested cormorant

@@ -4,7 +4,7 @@
 #' @param cws.layer Name of the layer to import. Defaults to "ALL_ROUTES"
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
 #' @param usgs.layer Name of the layer to import.
-#' @proj.target One of c("USGS", "CWS"). The remaining datafile will be transformed to match the projection of proj.target.
+#' @param proj.target One of c("USGS", "CWS"). The remaining datafile will be transformed to match the projection of proj.target.
 #' @export
 
 munge_bbs_shapefiles <- function(cws.routes.dir,
