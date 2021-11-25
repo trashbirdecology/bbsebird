@@ -4,3 +4,12 @@
 ^data-in$
 ^dubcorms\.Rproj$
 ^\.Rproj\.user$
+^.*\.Rproj$
+^\.github$
+^docs$
+inst/examples/
+png$
+Makefile
+^README\.md$
+^codecov\.yml$
+^NEWS\.md$
