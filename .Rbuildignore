@@ -1,3 +1,6 @@
 ^data-raw$
+^data-local$
+^examples$
+^data-in$
 ^dubcorms\.Rproj$
 ^\.Rproj\.user$
