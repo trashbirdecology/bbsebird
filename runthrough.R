@@ -11,6 +11,7 @@ library(hms) ## for some reason zerofiltering function in auk cannot find this f
 library(dplyr)
 library(stringr)
 library(rgdal)
+library(spData) # world map
 library(sp) ## goign to stick with sp and rgdal for now unless it gives me reason not to...
 # library(sf)
 library(maps)
@@ -69,10 +70,18 @@ devtools::load_all()
   # interest.spatial <- c("United States", "Canada", "CAN", "CA","US", "USA")
   ebird.protocol <- c("Traveling", "Stationary")
   complete.checklists.only <- TRUE
+  crs.target <- 4326
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
-  map.region <- c("Canada","USA") # used to create base maps and spatial grid system.
-  grid.size <- c(111/16, "deg")
+  map.region <- c("Canada","USA", "United States", "United States of America") # used to create base maps and spatial grid system.
+  grid.size <- c(111/16)#, "deg") "(111km per decimal degree)"
   # grid.size <- c(6, "km")
+
+# Create a spatial grid ------------------------------------------------------------
+n.amer <- world %>%  # from spData package, uses natural earth data
+  filter(name_long %in% map.region)
+n.amer <-st_transform(n.amer, crs.target)
+
+
 
 # Munge BBS data ----------------------------------------------------------
 bbs <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
@@ -161,31 +170,4 @@ proj4string(ebd_zf) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0
 ebd_zf <- spTransform(ebd_zf, proj4string(bbs_routes_sldf))
 
 
-
-# Creata a spatial grid ------------------------------------------------------------
-## I think i want to make this a function...
-## initialize map data for N. America
-for(i in seq_along(map.region)){
- if(i==1){map.df<-list()}
- map.df[[i]] <- map_data("world", region=map.region[i])
- if(i==length(map.region)){
-   names(map.df)<-map.region
-   map.df=bind_rows(map.df)
-   }
-}
-## create a base map for North America
-n.amer <- SpatialPointsDataFrame(
-  coords = map.df[, c("long", "lat")],
-  data = map.df,
-  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")) %>%
-  spTransform(proj4string(bbs_routes_sldf))
-
-
-## create grid
-# xy <- expand.grid(x = n.amer$long, y = n.amer$lat)
-# plot(xy)
-
-# extent.bbs <- sp::bbox(bbs_routes_sldf)
-#
-# extent.bbs <- sp::bbox(ebd_zf)
 
