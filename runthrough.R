@@ -138,17 +138,16 @@ bbs$routes[which(!bbs$routes$RTENO %in% bbs_routes_sldf$RTENO),] %>%
   distinct(RTENO, .keep_all = TRUE) %>%
   group_by(CountryNum, StateNum) %>%
   summarise(n()) %>% left_join(region_codes) %>%
-  write.csv('missingroutesbyregion.csv')
+  write.csv('data-local/missingroutesbyregion.csv')
 setdiff(unique(bbs$observations$RTENO),
         unique(bbs_routes_sldf@data$RTENO)) %>%  ## which of A are not in B
-  write.csv('missingroutes.csv')
+  write.csv('data-local/missingroutes.csv')
 
 # Munge eBird data --------------------------------------------------------
 # Get the list of potential files for import. This will be used in get_ebird()
 (fn_zf <- list.files(dir.ebird.out, "rds"))
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
-ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
-
+if(!exists("ebd_zf")) ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
 ## remove Alaska and Hawaii
 ebd_zf <- ebd_zf %>% filter(!state %in% c("hawaii", "alaska"))
 
@@ -156,10 +155,11 @@ ebd_zf <- ebd_zf %>% filter(!state %in% c("hawaii", "alaska"))
 # Create eBird spatial -----------------------------------------------------
 # convert ebd to spatial object
 coordinates(ebd_zf) <- ~longitude + latitude # 1-2 minutes for all of N.Amer.
-# define projection for lat long
+# define projection for lat long (ebird documentation states CRS is 4326)
 proj4string(ebd_zf) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 # match proj of BBS
-proj4string(ebd_zf) <- proj4string(bbs_routes_sldf)
+ebd_zf <- spTransform(ebd_zf, proj4string(bbs_routes_sldf))
+
 
 
 # Creata a spatial grid ------------------------------------------------------------
