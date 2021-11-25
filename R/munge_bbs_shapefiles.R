@@ -92,14 +92,13 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   bbs_sf <- st_as_sf(bbs_routes_sldf)
 
 
-
   return(bbs_sf)
 
 }
 
 
-## check out this example on identifying distance between points and nearest line
-# https://gis.stackexchange.com/questions/269746/find-nearest-line-segment-to-each-point-in-r
+## side note for jlb: check out this example on identifying distance between points and nearest line
+                      # https://gis.stackexchange.com/questions/269746/find-nearest-line-segment-to-each-point-in-r
 
 
 

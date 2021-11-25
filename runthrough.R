@@ -5,6 +5,7 @@ rm(list=ls())
 gc()
 # Libraries ---------------------------------------------------------------
 devtools::install_github("trashbirdecology/bbsassistant",ref="convert-to-50-stop", force=FALSE)
+devtools::install_github("ropensci/rnaturalearthhires") ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
 library(bbsAssistant)
 library(auk)
 library(hms) ## for some reason zerofiltering function in auk cannot find this fun?
@@ -12,6 +13,8 @@ library(dplyr)
 library(stringr)
 library(rgdal)
 library(spData) # world map
+library(rnaturalearth) # state and prov data?
+library(rnaturalearthhires) # ne_states needs this idfk why
 library(sp) ## goign to stick with sp and rgdal for now unless it gives me reason not to...
 # library(sf)
 library(maps)
@@ -73,14 +76,20 @@ devtools::load_all()
   crs.target <- 4326
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
   map.region <- c("Canada","USA", "United States", "United States of America") # used to create base maps and spatial grid system.
-  grid.size <- c(111/16)#, "deg") "(111km per decimal degree)"
-  # grid.size <- c(6, "km")
+  grid.size <- c(6/111.111)# unit: deg (b/c 1 degree ~ 111.111 km)
+  region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut") #
+
+
 
 # Create a spatial grid ------------------------------------------------------------
-n.amer <- world %>%  # from spData package, uses natural earth data
-  filter(name_long %in% map.region)
-n.amer <-st_transform(n.amer, crs.target)
+n.amer <- ne_states(country = map.region, returnclass = "sf") %>%
+  # remove region(s)
+  filter(!tolower(name) %in% tolower(region.remove))
+# unique(n.amer$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
+plot(n.amer)
 
+# throw a grid over the layer
+n.amer.grid  <- st_make_grid(n.amer, cellsize=grid.size)
 
 
 # Munge BBS data ----------------------------------------------------------
