@@ -84,7 +84,16 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   # join the two SLDFs
   bbs_routes_sldf <- rbind(usgs_routes.subset, cws_routes.subset)
 
-  return(bbs_routes_sldf)
+
+  ## convert sldf to sf object
+  ### I use readOGR to pull in the shaepfiles because the CWS routes was created with an old GDAL version, adn the workarounds are really cumbersome to get them to match.
+  ### see issue https://gis.stackexchange.com/questions/30785/how-to-stop-writeogr-from-abbreviating-field-names-when-using-esri-shapefile-d, and
+  ###  https://github.com/r-spatial/sf/issues/427
+  bbs_sf <- st_as_sf(bbs_routes_sldf)
+
+
+
+  return(bbs_sf)
 
 }
 
