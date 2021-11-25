@@ -79,7 +79,7 @@ bbs <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of th
 if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
 
 # filter by species of interest, zero-fill
-bbs <- filter_bbs_by_species(list = bbs, search = interest.species, zero.fill=TRUE)
+if(!exists("bbs")) bbs <- filter_bbs_by_species(list = bbs, search = interest.species, zero.fill=TRUE)
 # ## TRYING TO FIGURE OUT WHERE I AM LOSING THE ROUTES.
 # trsub=bbs$routes %>% filter(StateNum %in% c("02","03","58", 2, 3, 58)) %>%
 #   distinct(CountryNum, StateNum, Route) %>%
@@ -124,9 +124,8 @@ bbs$routes <- bbs$routes %>% filter(RTENO %in% bbs$observations$RTENO)
 ## A TEST!
 if(!all(bbs$routes$RTENO %in% bbs$observations$RTENO)) stop("something is wrong use traceback()")
 
-
 # Munge BBS route shapefiles ----------------------------------------------
-bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
+if(!exists("bbs_routes_sldf")) bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
                                         usgs.routes.dir = usgs.routes.dir,
                                         proj.target = "USGS")
 # Keep only the routes that are in the observations data frame

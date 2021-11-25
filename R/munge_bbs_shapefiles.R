@@ -32,8 +32,8 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   usgs_routes <- readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
 
   # PROJECTIONS
-  if(proj.target=="USGS") proj.target=proj4string(usgs_routes)
-  if(proj.target=="CWS") proj.target=proj4string(cws_routes)
+  if(proj.target %in% c("USGS","usgs")) proj.target=proj4string(usgs_routes)
+  if(proj.target%in% c("cws","CWS")) proj.target=proj4string(cws_routes)
   usgs_routes <- spTransform(usgs_routes, proj.target)
   cws_routes <- spTransform(cws_routes, proj.target)
 
