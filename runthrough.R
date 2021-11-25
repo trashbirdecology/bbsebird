@@ -73,24 +73,57 @@ devtools::load_all()
   # interest.spatial <- c("United States", "Canada", "CAN", "CA","US", "USA")
   ebird.protocol <- c("Traveling", "Stationary")
   complete.checklists.only <- TRUE
-  crs.target <- 4326
+  crs.target <- 5070 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
-  map.region <- c("Canada","USA", "United States", "United States of America") # used to create base maps and spatial grid system.
-  grid.size <- c(6/111.111)# unit: deg (b/c 1 degree ~ 111.111 km)
+  countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps and spatial grid system.
+  d.km=2*(50+10)*1.609344 #km conversion of (50 mile routes + 10miles buffer)*2 to ensure route always falls within a single cell
+  grid.size=d.km/111.111  # grid will be in degrees, so convert from km to ~deg using 1deg=111.111km
   region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut") #
+  states <- c('Iowa','Illinois', 'Indiana', 'Michigan', 'Minnesota', 'New York', 'Ohio', 'Pennsylvania',  'Wisconsin',  'Ontario')
+# Munge BBS route shapefiles ----------------------------------------------
+  if(!exists("bbs_routes_sldf")) bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
+                                                                         usgs.routes.dir = usgs.routes.dir,
+                                                                         proj.target = "USGS")
+  # Keep only the routes that are in the observations data frame
+  ## i.e. remove the unwanted routes by spatial filter and, if zero.fill=FALSE, also by species.
+  bbs_routes_sldf <- bbs_routes_sldf[bbs_routes_sldf@data$RTENO %in% bbs$observations$RTENO,]
+  # which routes are missing from the spatial shapefile layer
 
-
+  # #### PROBLEMS TO SOLVE: MISSING ROUTES
+  # bbs$routes[which(!bbs$routes$RTENO %in% bbs_routes_sldf$RTENO),] %>%
+  #   distinct(RTENO, .keep_all = TRUE) %>%
+  #   group_by(CountryNum, StateNum) %>%
+  #   summarise(n()) %>% left_join(region_codes) %>%
+  #   write.csv('data-local/missingroutesbyregion.csv')
+  # setdiff(unique(bbs$observations$RTENO),
+  #         unique(bbs_routes_sldf@data$RTENO)) %>%  ## which of A are not in B
+  #   write.csv('data-local/missingroutes.csv')
 
 # Create a spatial grid ------------------------------------------------------------
-n.amer <- ne_states(country = map.region, returnclass = "sf") %>%
+n.amer <- ne_states(country = countries, returnclass = "sf") %>%
   # remove region(s)
+  filter(tolower(name) %in% tolower(states)) %>%
   filter(!tolower(name) %in% tolower(region.remove))
-# unique(n.amer$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
-plot(n.amer)
-
 # throw a grid over the layer
-n.amer.grid  <- st_make_grid(n.amer, cellsize=grid.size)
+# n.amer.grid  <- st_make_grid(n.amer, cellsize=grid.size, square=FALSE, what="centers") # square=FALSE produces hexagonal
+n.amer.grid  <- st_make_grid(n.amer, cellsize = grid.size, square=FALSE) # square=FALSE produces hexagonal
+n.amer.grid <- st_transform(n.amer.grid, crs=crs.target)
+n.amer <- st_transform(n.amer, crs=crs.target)
+bbs_routes_sldf <- st_transform(bbs_routes_sldf, crs=crs.target)
 
+plot(n.amer.grid, axes=TRUE)
+plot(st_geometry(n.amer), add=TRUE)
+
+st_join(n.amer, n.amer.grid, join=st_contains)
+
+# join bbs to grid
+plot(st_transform(n.amer.grid, crs=4326))
+plot(st_transform(n.amer, crs=4326))
+plot(st_transform(bbs_routes_sldf, crs=4326))
+
+
+# unique(n.amer$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
+# plot(n.amer)
 
 # Munge BBS data ----------------------------------------------------------
 bbs <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
@@ -142,24 +175,6 @@ bbs$routes <- bbs$routes %>% filter(RTENO %in% bbs$observations$RTENO)
 ## A TEST!
 if(!all(bbs$routes$RTENO %in% bbs$observations$RTENO)) stop("something is wrong use traceback()")
 
-# Munge BBS route shapefiles ----------------------------------------------
-if(!exists("bbs_routes_sldf")) bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
-                                        usgs.routes.dir = usgs.routes.dir,
-                                        proj.target = "USGS")
-# Keep only the routes that are in the observations data frame
-  ## i.e. remove the unwanted routes by spatial filter and, if zero.fill=FALSE, also by species.
-bbs_routes_sldf <- bbs_routes_sldf[bbs_routes_sldf@data$RTENO %in% bbs$observations$RTENO,]
-  # which routes are missing from the spatial shapefile layer
-
-#### PROBLEMS TO SOLVE: MISSING ROUTES
-bbs$routes[which(!bbs$routes$RTENO %in% bbs_routes_sldf$RTENO),] %>%
-  distinct(RTENO, .keep_all = TRUE) %>%
-  group_by(CountryNum, StateNum) %>%
-  summarise(n()) %>% left_join(region_codes) %>%
-  write.csv('data-local/missingroutesbyregion.csv')
-setdiff(unique(bbs$observations$RTENO),
-        unique(bbs_routes_sldf@data$RTENO)) %>%  ## which of A are not in B
-  write.csv('data-local/missingroutes.csv')
 
 # Munge eBird data --------------------------------------------------------
 # Get the list of potential files for import. This will be used in get_ebird()
@@ -168,7 +183,6 @@ fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 if(!exists("ebd_zf")) ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
 ## remove Alaska and Hawaii
 ebd_zf <- ebd_zf %>% filter(!state %in% c("hawaii", "alaska"))
-
 
 # Create eBird spatial -----------------------------------------------------
 # convert ebd to spatial object
