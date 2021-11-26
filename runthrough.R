@@ -76,20 +76,83 @@ devtools::load_all()
   crs.target <- 5070 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
   countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps and spatial grid system.
-  d.km=2*(50+10)*1.609344 #km conversion of (50 mile routes + 10miles buffer)*2 to ensure route always falls within a single cell
-  grid.size=d.km/111.111  # grid will be in degrees, so convert from km to ~deg using 1deg=111.111km
+  diam.km=1.61*(50+10) #km conversion of (50 mile routes + 10miles buffer)*X to ensure route always falls within a single cell
   region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut") #
-  states <- c('Iowa','Illinois', 'Indiana', 'Michigan', 'Minnesota', 'New York', 'Ohio', 'Pennsylvania',  'Wisconsin',  'Ontario')
-# Munge BBS route shapefiles ----------------------------------------------
-  if(!exists("bbs_routes_sldf")) bbs_routes_sldf <- munge_bbs_shapefiles(cws.routes.dir = cws.routes.dir,
-                                                                         usgs.routes.dir = usgs.routes.dir,
-                                                                         proj.target = "USGS")
-  # Keep only the routes that are in the observations data frame
-  ## i.e. remove the unwanted routes by spatial filter and, if zero.fill=FALSE, also by species.
-  bbs_routes_sldf <- bbs_routes_sldf[bbs_routes_sldf@data$RTENO %in% bbs$observations$RTENO,]
+  states <-
+    c(
+      'Iowa',
+      'Illinois',
+      'Indiana',
+      'Michigan',
+      'Minnesota',
+      # 'New York',
+      'Ohio',
+      # 'Pennsylvania',
+      'Wisconsin',
+      'Ontario'
+    )
+
+  # Munge BBS data ----------------------------------------------------------
+  if(!exists("bbs.orig")) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
+  if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
+  # filter by species of interest, zero-fill
+  bbs <- filter_bbs_by_species(list = bbs.orig, search = interest.species,
+                               zero.fill=TRUE, active.only=TRUE)
+  bbs$weather <- make.rteno(bbs$weather) # create var called RTENO (need to fix this in bbsassistant)
+  bbs$vehicle_data <- make.rteno(bbs$vehicle_data) # create var called RTENO (need to fix this in bbsassistant)
+  bbs$weather <- bbs$weather %>%
+    filter(QualityCurrentID==1)
+  bbs$observers <- bbs$weather %>%
+    mutate(Date= as.Date(paste(Day, Month, Year, sep="/"), format="%d/%m/%Y")) %>%
+    dplyr::select(ObsN, RTENO, Date, TotalSpp, Month, Day) %>%
+  ##create binary for if observer's first year on the BBS and on the route
+  group_by(ObsN) %>% #observation identifier (number)
+    mutate(ObsFirstYearOnBBS = ifelse(Date==min(Date), 1, 0)) %>%
+    group_by(ObsN, RTENO) %>%
+    mutate(ObsFirstYearOnRTENO = ifelse(Date==min(Date), 1, 0)) %>%
+    ungroup() # to be safe
+  bbs$observations <- bbs$observations %>%
+    # keep only Canada and US (excluding HI and AK)
+    filter(CountryNum %in% c(124, 840))  %>%
+    # Keep only RPID=101
+    filter(RPID==101) %>%
+    filter(RTENO %in% bbs$weather$RTENO)
+  # remove HI and AK from the bbs dataset
+  # data(region_codes) # region codes from bbsAssistant package.
+  region_codes.subset <- region_codes %>%
+    filter(CountryNum %in% c(124, 840)) # keep US and CAN only
+  # have to split up the state num and country num process b/c of Mexico's character issues.
+  statenums.remove <- region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% c("alaska", "hawaii")]
+  region_codes.subset <- region_codes.subset %>%
+    filter(!StateNum %in% statenums.remove) # remove states specified above US and CAN only
+  bbs$observations <- bbs$observations %>%
+    filter(!StateNum %in% statenums.remove)
+  ## Finally, remove all the unnecessary routes in bbs$routes and weather and vehicle
+  bbs$routes <- bbs$routes %>% filter(RTENO %in% bbs$observations$RTENO)
+  bbs$weather <- bbs$weather %>% filter(RTENO %in% bbs$observations$RTENO)
+  bbs$vehicle_data <- bbs$vehicle_data %>% filter(RTENO %in% bbs$observations$RTENO)
+
+  ## A TEST!
+  if(!all(bbs$routes$RTENO %in% bbs$observations$RTENO)) stop("something is wrong use traceback()")
+  if(!all(bbs$weather$RTENO %in% bbs$observations$RTENO)) stop("something is wrong use traceback()")
+  if(!all(bbs$vehicle_data$RTENO %in% bbs$observations$RTENO)) stop("something is wrong use traceback()")
+  if(!all(bbs$observations$RTENO %in% bbs$routes$RTENO)) stop("something is wrong use traceback()")
+  if(!all(bbs$observations$RTENO %in% bbs$weather$RTENO)) stop("something is wrong use traceback()")
+  if(!all(bbs$observations$RTENO %in% bbs$vehicle_data$RTENO)) warning("Some vehicle data missing. Don't worry about it unless you're using vehicle data in the model.")
+
+  # Munge BBS route shapefiles ----------------------------------------------
+  bbs_routes <-
+    munge_bbs_shapefiles(
+      cws.routes.dir = cws.routes.dir,
+      usgs.routes.dir = usgs.routes.dir,
+      crs.target =
+        crs.target
+    ) %>%
+  ## remove the routes not in the observations dataset
+    filter(RTENO %in% bbs$observations$RTENO)
   # which routes are missing from the spatial shapefile layer
 
-  # #### PROBLEMS TO SOLVE: MISSING ROUTES
+  # #### PROBLEMS TO SOLVE: MISSING ROUTES ### RUN AFTER IMPORTING BBS OBS DATA
   # bbs$routes[which(!bbs$routes$RTENO %in% bbs_routes_sldf$RTENO),] %>%
   #   distinct(RTENO, .keep_all = TRUE) %>%
   #   group_by(CountryNum, StateNum) %>%
@@ -100,80 +163,36 @@ devtools::load_all()
   #   write.csv('data-local/missingroutes.csv')
 
 # Create a spatial grid ------------------------------------------------------------
-n.amer <- ne_states(country = countries, returnclass = "sf") %>%
+grid.size = c(diam.km*1000,diam.km*1000)/2 ## convert km to m // but tits too large....weird...
+study.area <- ne_states(country = countries, returnclass = "sf") %>%
   # remove region(s)
   filter(tolower(name) %in% tolower(states)) %>%
-  filter(!tolower(name) %in% tolower(region.remove))
+  filter(!tolower(name) %in% tolower(region.remove)) %>%
+  st_transform(study.area, crs=crs.target)
+# unique(study.area$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
 # throw a grid over the layer
-# n.amer.grid  <- st_make_grid(n.amer, cellsize=grid.size, square=FALSE, what="centers") # square=FALSE produces hexagonal
-n.amer.grid  <- st_make_grid(n.amer, cellsize = grid.size, square=FALSE) # square=FALSE produces hexagonal
-n.amer.grid <- st_transform(n.amer.grid, crs=crs.target)
-n.amer <- st_transform(n.amer, crs=crs.target)
-bbs_routes_sldf <- st_transform(bbs_routes_sldf, crs=crs.target)
+  grid <- study.area %>%
+    st_make_grid(cellsize = grid.size, square = FALSE) %>%
+    st_intersection(study.area) %>%
+    st_cast("MULTIPOLYGON") %>%
+    st_sf() %>%
+    mutate(id = row_number()) %>%
+    st_transform(crs=crs.target)
 
-plot(n.amer.grid, axes=TRUE)
-plot(st_geometry(n.amer), add=TRUE)
-
-st_join(n.amer, n.amer.grid, join=st_contains)
-
-# join bbs to grid
-plot(st_transform(n.amer.grid, crs=4326))
-plot(st_transform(n.amer, crs=4326))
-plot(st_transform(bbs_routes_sldf, crs=4326))
+# Visualize to check
+plot(st_geometry(grid), axes=TRUE)
+plot(st_filter(bbs_routes, grid), add=T)
+mapview::mapview(st_filter(bbs_routes, grid)) # interactive, openstreetmap
 
 
-# unique(n.amer$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
-# plot(n.amer)
+## Join BBS routes to grid.
+bbs_routes_grid <- grid %>%
+  st_join(bbs_routes)
 
-# Munge BBS data ----------------------------------------------------------
-bbs <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
-if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
+test=merge(bbs_routes_grid, bbs$observations)
+plot(test) # will plot RTENO, id, RouteName
 
-# filter by species of interest, zero-fill
-if(!exists("bbs")) bbs <- filter_bbs_by_species(list = bbs, search = interest.species, zero.fill=TRUE)
-# ## TRYING TO FIGURE OUT WHERE I AM LOSING THE ROUTES.
-# trsub=bbs$routes %>% filter(StateNum %in% c("02","03","58", 2, 3, 58)) %>%
-#   distinct(CountryNum, StateNum, Route) %>%
-#   group_by(CountryNum, StateNum) %>%
-#   summarise(n())
-# tosub<- bbs$observations %>% filter(StateNum %in% c("02","03","58", 2,3,58)) %>%
-#   distinct(CountryNum, StateNum, Route) %>%
-#   group_by(CountryNum, StateNum) %>%
-#   summarise(n())
-# tr=bbs$routes %>% filter(StateNum %in% c("02","03","58", 2,3,58)) %>%
-#   distinct(CountryNum, StateNum, Route) %>%
-#   group_by(CountryNum, StateNum) %>%
-#   summarise(n())
-# to<- bbs$observations %>% filter(StateNum %in% c("02","03","58", 2,3,58)) %>%
-#   distinct(CountryNum, StateNum, Route) %>%
-#   group_by(CountryNum, StateNum) %>%
-#   summarise(n())
-# tr
-# trsub
-# to
-# tosub
-bbs$observations <- bbs$observations %>%
-# keep only Canada and US (excluding HI and AK)
-  filter(CountryNum %in% c(124, 840))  %>%
-  # Keep only RPID=101
-  filter(RPID==101)
-# remove HI and AK from the bbs dataset
-data(region_codes) # region codes from bbsAssistant package.
-region_codes.subset <- region_codes %>%
-  filter(CountryNum %in% c(124, 840)) # keep US and CAN only
-# have to split up the state num and country num process b/c of Mexico's character issues.
-statenums.remove <- region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% c("alaska", "hawaii")]
-region_codes.subset <- region_codes.subset %>%
-  filter(!StateNum %in% statenums.remove) # remove states specified above US and CAN only
-
-bbs$observations <- bbs$observations %>%
-  filter(!StateNum %in% statenums.remove)
-
-## Finally, remove all the unnecessary routes in bbs$routes
-bbs$routes <- bbs$routes %>% filter(RTENO %in% bbs$observations$RTENO)
-
-## A TEST!
-if(!all(bbs$routes$RTENO %in% bbs$observations$RTENO)) stop("something is wrong use traceback()")
+test2=merge(test, bbs$routes)
 
 
 # Munge eBird data --------------------------------------------------------

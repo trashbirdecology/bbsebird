@@ -6,10 +6,10 @@
 #' @param list A list with element "species_list", obtained from running bbsAssistant::get_bbs_data()...
 #' @param search A vector of one or more species (using English Common Name) to subset the data by. Capitalization ignored.
 #' @param zero.fill If TRUE and a single species is provided in 'search', this function will output list$observations with zero-filled data.
+#' @param active.only Logical. If TRUE keep only active routes. Discontinued routes will be discarded.
 #' @export
 
-filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.fill=TRUE){#, unid=FALSE) {
-
+filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.fill=TRUE, active.only=TRUE){
   # grab the unique AOU codes
   list$species_list <- list$species_list %>%
     mutate(across(starts_with("English_Common_Name"), tolower)) %>%
@@ -31,21 +31,31 @@ filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.
     warning(
       "When zero.fill=TRUE, only a single species should be provided in interest.species. Using first species in the list. ")
   }
-
+# browser()
   if(zero.fill){
-    unused <- setdiff(list$observations, myspp.obs)
+    unused <- setdiff(list$observations, myspp.obs) ## I think
     zeroes <- unused %>% distinct(RTENO, Year, .keep_all = TRUE) %>%
       mutate(AOU = unique(myspp.obs$AOU)[1])
-    zeroes[grepl("Stop|stop|STOP", names(zeroes))] <-
-      0 # force all values to zero
+    zeroes[grepl("Stop|stop|STOP", names(zeroes))] <- 0 # force all values to zero
   }else{zeroes = NULL}
-
+# if(!zero.fill) zeroes = NULL # i know this doesnt make sense, but for some reason when i put this inside the if statement aobve it performs horrifically outside the function...no clue
   # create final observations df for the list
   list$observations <- bind_rows(myspp.obs, zeroes) %>% distinct(RTENO, AOU, Year, .keep_all = TRUE)
 
   list$observations$RTENO <- as.character(list$observations$RTENO) # just precaution
   list$routes$RTENO <- as.character(list$routes$RTENO) # just precaution
 
-  print(cat("The following species are in your BBS data: ", paste(unique(list$species_list$English_Common_Name))))
+
+  # remove discontinued routes if specified
+  if(active.only){
+    # keep active in routes
+    list$routes <- list$routes %>%
+      filter(Active == 1)
+    # remove the removed routes from observations
+    list$observations <- list$observations %>%
+      filter(list$observations$RTENO %in% unique(list$routes$RTENO))
+  }
+  toprint=unique(list$species_list$English_Common_Name)
+  print(paste0("The following species are in your BBS data: ", toprint))
   return(list) # return the entire list now as a subset of the original list
 }

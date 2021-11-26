@@ -12,7 +12,8 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir
                                  # usgs.layer="bbsrte_2012_alb", # this one is from Sauer
                                  usgs.layer="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020", # this was gift by Dave and Danny-DO NT SHARE
-                                 proj.target="USGS" # defaults to the USGS projection.
+                                 proj.target="USGS",  # defaults to the USGS projection.
+                                 crs.target=5070
 ){
   # Warning for proceeding when SLDFs already exist in the workspace
   if(exists("bbs_routes_sldf")|"SpatialLinesDataFrame" %in% sapply(ls(), function(x){class(get(x))})){
@@ -31,13 +32,10 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   ### Ex:  state 46 and route 029, RTENO==46029
   usgs_routes <- readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
 
-  # PROJECTIONS
-  if(proj.target %in% c("USGS","usgs")) proj.target=proj4string(usgs_routes)
-  if(proj.target%in% c("cws","CWS")) proj.target=proj4string(cws_routes)
-  usgs_routes <- spTransform(usgs_routes, proj.target)
-  cws_routes <- spTransform(cws_routes, proj.target)
+  # Match the projections just to merge them
+  usgs_routes <- spTransform(usgs_routes, proj4string(cws_routes))
 
-  # Housekeeping for USGS and CWS routes to match BBS dataset release
+  # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
   # These fields are applicable only to the Sauer shapefile.
   if(usgs.layer=="bbsrte_2012_alb"){
   usgs_routes@data$CountryNum=840
@@ -47,7 +45,6 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   usgs_routes@data$RouteLength = usgs_routes@data$rte_length
   usgs_routes@data<- make.rteno(usgs_routes@data)
   }
-
   # this is for the layer shared by Dave Z. and Danny L.
   if(usgs.layer=="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020"){
     usgs_routes@data <- tidyr::separate(
@@ -91,6 +88,9 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   ###  https://github.com/r-spatial/sf/issues/427
   bbs_sf <- st_as_sf(bbs_routes_sldf)
 
+  ## fix the sf to crs.target
+  crs.string=CRS(paste0("+init=epsg:", crs.target))
+  bbs_sf <- st_transform(bbs_sf, crs = crs.string)
 
   return(bbs_sf)
 
