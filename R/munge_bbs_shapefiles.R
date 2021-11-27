@@ -4,7 +4,6 @@
 #' @param cws.layer Name of the layer to import. Defaults to "ALL_ROUTES"
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
 #' @param usgs.layer Name of the layer to import.
-#' @param proj.target One of c("USGS", "CWS"). The remaining datafile will be transformed to match the projection of proj.target.
 #' @export
 
 munge_bbs_shapefiles <- function(cws.routes.dir,
@@ -12,19 +11,18 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir
                                  # usgs.layer="bbsrte_2012_alb", # this one is from Sauer
                                  usgs.layer="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020", # this was gift by Dave and Danny-DO NT SHARE
-                                 proj.target="USGS",  # defaults to the USGS projection.
                                  crs.target=5070
 ){
   # Warning for proceeding when SLDFs already exist in the workspace
-  if(exists("bbs_routes_sldf")|"SpatialLinesDataFrame" %in% sapply(ls(), function(x){class(get(x))})){
-    ind=menu(title = "Objects of class SpatialLinesDataFrame already exist. This function may take 1-2 minutes.Are you sure you want to proceed?",
+  if(exists("bbs_routes")|"SpatialLinesDataFrame" %in% sapply(ls(), function(x){class(get(x))})){
+    ind=menu(title = "bbs_routes may already exist. This function may take 1-2 minutes.Are you sure you want to proceed?",
              choices = c("Yes!", "No."))
     if(ind==2) stop("Function cancelled.")
   }
 
   # LOAD DATA
   ## CWS route shapefiles
-  cws.gdb = list.files(cws.routes.dir, pattern=".gdb",full.names=TRUE) %>% str_remove(".zip") %>% unique()
+  cws.gdb <- list.files(cws.routes.dir, pattern=".gdb",full.names=TRUE) %>% str_remove(".zip") %>% unique()
   cws_routes <- readOGR(dsn=cws.gdb,layer=cws.layer)
   ## USGS route shapefiles (circa. 2012)
   ## USGS BBS routes layer obtained from John Sauer.
@@ -43,7 +41,7 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
   usgs_routes@data$RouteName = usgs_routes@data$RTENAME
   usgs_routes@data$RouteLength = usgs_routes@data$rte_length
-  usgs_routes@data<- make.rteno(usgs_routes@data)
+  usgs_routes@data <- make.rteno(usgs_routes@data)
   }
   # this is for the layer shared by Dave Z. and Danny L.
   if(usgs.layer=="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020"){
@@ -60,7 +58,9 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   cws_routes@data$Route= substr(cws_routes@data$ProvRoute, 3,5)
   cws_routes@data$RouteName = str_replace_all(cws_routes@data$Nbr_FullNa, "[:digit:]|-", "")#remove route no and prov no
   cws_routes@data$RouteName = trimws(cws_routes@data$RouteName, "left")#whitespace
-  cws_routes@data$RouteLength = cws_routes@data$Shape_Leng
+  cws_routes@data = cws_routes@data %>%
+    rename(RouteLength=Shape_Length)
+
   # create var RTENO for quick indexing.
   cws_routes@data<-make.rteno(cws_routes@data)
 
@@ -79,18 +79,19 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
 
 
   # join the two SLDFs
-  bbs_routes_sldf <- rbind(usgs_routes.subset, cws_routes.subset)
-
+  bbs_routes <- rbind(usgs_routes.subset, cws_routes.subset)
 
   ## convert sldf to sf object
   ### I use readOGR to pull in the shaepfiles because the CWS routes was created with an old GDAL version, adn the workarounds are really cumbersome to get them to match.
   ### see issue https://gis.stackexchange.com/questions/30785/how-to-stop-writeogr-from-abbreviating-field-names-when-using-esri-shapefile-d, and
   ###  https://github.com/r-spatial/sf/issues/427
-  bbs_sf <- st_as_sf(bbs_routes_sldf)
+  bbs_sf <- sf::st_as_sf(bbs_routes)
 
   ## fix the sf to crs.target
   crs.string=CRS(paste0("+init=epsg:", crs.target))
   bbs_sf <- st_transform(bbs_sf, crs = crs.string)
+
+  # bbs_sf
 
   return(bbs_sf)
 

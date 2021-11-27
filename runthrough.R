@@ -16,7 +16,7 @@ library(spData) # world map
 library(rnaturalearth) # state and prov data?
 library(rnaturalearthhires) # ne_states needs this idfk why
 library(sp) ## goign to stick with sp and rgdal for now unless it gives me reason not to...
-# library(sf)
+library(sf)
 library(maps)
 library(ggplot2)
 library(mapproj)
@@ -76,7 +76,7 @@ devtools::load_all()
   crs.target <- 5070 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
   countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps and spatial grid system.
-  diam.km=1.61*(50+10) #km conversion of (50 mile routes + 10miles buffer)*X to ensure route always falls within a single cell
+  diam.km=1.61*(24.5+10) #km conversion of (~24,5 mile routes + 10miles buffer)*X to ensure route always falls within a single cell
   region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut") #
   states <-
     c(
@@ -93,10 +93,14 @@ devtools::load_all()
     )
 
   # Munge BBS data ----------------------------------------------------------
-  if(!exists("bbs.orig")) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
-  if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
+  # if(!exists("bbs.orig")) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
+  # if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
   # filter by species of interest, zero-fill
-  bbs <- filter_bbs_by_species(list = bbs.orig, search = interest.species,
+  # saveRDS(bbs.orig,"data-local/bbs.orig.rds")
+  ## Having perforamnce issues wiht filter_bbs_by_species
+    ## for now go ahead and read it in... ugh
+  bbs <- readRDS("data-local/bbs.orig.rds")
+  if(!exists("bbs")) bbs <- filter_bbs_by_species(list = bbs.orig, search = interest.species,
                                zero.fill=TRUE, active.only=TRUE)
   bbs$weather <- make.rteno(bbs$weather) # create var called RTENO (need to fix this in bbsassistant)
   bbs$vehicle_data <- make.rteno(bbs$vehicle_data) # create var called RTENO (need to fix this in bbsassistant)
@@ -104,7 +108,7 @@ devtools::load_all()
     filter(QualityCurrentID==1)
   bbs$observers <- bbs$weather %>%
     mutate(Date= as.Date(paste(Day, Month, Year, sep="/"), format="%d/%m/%Y")) %>%
-    dplyr::select(ObsN, RTENO, Date, TotalSpp, Month, Day) %>%
+    dplyr::select(ObsN, RTENO, Date, TotalSpp, Month, Day, Year) %>%
   ##create binary for if observer's first year on the BBS and on the route
   group_by(ObsN) %>% #observation identifier (number)
     mutate(ObsFirstYearOnBBS = ifelse(Date==min(Date), 1, 0)) %>%
@@ -147,8 +151,8 @@ devtools::load_all()
       usgs.routes.dir = usgs.routes.dir,
       crs.target =
         crs.target
-    ) %>%
-  ## remove the routes not in the observations dataset
+    )%>%
+    ## remove the routes not in the observations dataset
     filter(RTENO %in% bbs$observations$RTENO)
   # which routes are missing from the spatial shapefile layer
 
@@ -162,37 +166,63 @@ devtools::load_all()
   #         unique(bbs_routes_sldf@data$RTENO)) %>%  ## which of A are not in B
   #   write.csv('data-local/missingroutes.csv')
 
+#calculate line length
+  # bbs_routes$route_seg_length
+
 # Create a spatial grid ------------------------------------------------------------
-grid.size = c(diam.km*1000,diam.km*1000)/2 ## convert km to m // but tits too large....weird...
+# grid.size = c(diam.km*1000,diam.km*1000)/2 ## convert km to m // but tits too large....weird...
+grid.size = c(diam.km*1000, diam.km*1000) ## convert km to m //
 study.area <- ne_states(country = countries, returnclass = "sf") %>%
   # remove region(s)
   filter(tolower(name) %in% tolower(states)) %>%
   filter(!tolower(name) %in% tolower(region.remove)) %>%
   st_transform(study.area, crs=crs.target)
 # unique(study.area$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
-# throw a grid over the layer
-  grid <- study.area %>%
-    st_make_grid(cellsize = grid.size, square = FALSE) %>%
-    st_intersection(study.area) %>%
-    st_cast("MULTIPOLYGON") %>%
-    st_sf() %>%
-    mutate(id = row_number()) %>%
-    st_transform(crs=crs.target)
+# throw a grid over the study area layer
+grid <- study.area %>%
+  st_make_grid(cellsize = grid.size, square = FALSE, flat_topped = TRUE) %>%
+  st_intersection(study.area) %>%
+  st_cast("MULTIPOLYGON") %>%
+  st_sf() %>%
+  mutate(id = row_number()) %>%
+  st_transform(crs=crs.target)
 
-# Visualize to check
-plot(st_geometry(grid), axes=TRUE)
-plot(st_filter(bbs_routes, grid), add=T)
-mapview::mapview(st_filter(bbs_routes, grid)) # interactive, openstreetmap
+# # Visualize to check
+# plot(st_geometry(grid), axes=TRUE)
+# plot(st_filter(bbs_routes, grid), add=T)
+# mapview::mapview(st_filter(bbs_routes, grid)) # interactive, openstreetmap
 
 
-## Join BBS routes to grid.
-bbs_routes_grid <- grid %>%
-  st_join(bbs_routes)
+## Join BBS routes to grid. Left_join preserves the empty grid cells.
+bbs_spatial <- grid %>%
+  st_join(bbs_routes) %>%
+  left_join(bbs$observations, by="RTENO") %>%
+  left_join(bbs$observers)
+# mapview::mapview(st_filter(bbs_spatial, grid)) # interactive, openstreetmap
 
-test=merge(bbs_routes_grid, bbs$observations)
-plot(test) # will plot RTENO, id, RouteName
+# exploratory plots (should move elsewhere.....)
+# plot(bbs_spatial[c("",)])# select a specific variable(S) to plot
+# plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
+# plot(bbs_spatial %>% group_by(id) %>% summarise(n_obs_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
+# plot(bbs_spatial %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO)) %>% dplyr::select(n_routes_cell))
+plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
+plot()
 
-test2=merge(test, bbs$routes)
+t=bbs_spatial %>% dplyr::select(ObsN, RTENO, id)
+t2=t %>%
+  group_by(RTENO, id) %>%
+  summarise(nhumans=n_distinct(ObsN)) %>% distinct(RTENO, nhumans, .keep_all=T) %>%
+  ungroup()
+t3= t2 %>%
+  group_by(id) %>%
+  summarize(med_nhuman_cell=median(nhumans))
+plot(t3[,"med_nhuman_cell"]) # median number of observers per route within the cell
+
+t=bbs_spatial %>% dplyr::select(ObsN, RTENO, Year, id)
+t2<- t %>%
+  group_by(RTENO) %>%
+  summarise(nrtes_per_human = n_distinct(RTENO)) %>% ungroup()
+t2
 
 
 # Munge eBird data --------------------------------------------------------
@@ -200,7 +230,7 @@ test2=merge(test, bbs$routes)
 (fn_zf <- list.files(dir.ebird.out, "rds"))
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 if(!exists("ebd_zf")) ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
-## remove Alaska and Hawaii
+## remove Alaska and Hawaii just to wittle down the data a little
 ebd_zf <- ebd_zf %>% filter(!state %in% c("hawaii", "alaska"))
 
 # Create eBird spatial -----------------------------------------------------
