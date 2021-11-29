@@ -96,10 +96,10 @@ devtools::load_all()
   # if(!exists("bbs.orig")) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
   # if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
   # filter by species of interest, zero-fill
-  # saveRDS(bbs.orig,"data-local/bbs.orig.rds")
+  # saveRDS(bbs.orig,"data-local//bbs/bbs-orig.rds")
   ## Having perforamnce issues wiht filter_bbs_by_species
     ## for now go ahead and read it in... ugh
-  bbs <- readRDS("data-local/bbs.orig.rds")
+  bbs <- readRDS("data-local/bbs/bbs-orig.rds")
   if(!exists("bbs")) bbs <- filter_bbs_by_species(list = bbs.orig, search = interest.species,
                                zero.fill=TRUE, active.only=TRUE)
   bbs$weather <- make.rteno(bbs$weather) # create var called RTENO (need to fix this in bbsassistant)
@@ -198,36 +198,32 @@ bbs_spatial <- grid %>%
   st_join(bbs_routes) %>%
   left_join(bbs$observations, by="RTENO") %>%
   left_join(bbs$observers)
+
 # mapview::mapview(st_filter(bbs_spatial, grid)) # interactive, openstreetmap
 
 # exploratory plots (should move elsewhere.....)
 # plot(bbs_spatial[c("",)])# select a specific variable(S) to plot
 # plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
 # plot(bbs_spatial %>% group_by(id) %>% summarise(n_obs_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
-# plot(bbs_spatial %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO)) %>% dplyr::select(n_routes_cell))
-plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
-plot()
+t=bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE))
+plot(t[,"n_routes_cell"],)
 
-t=bbs_spatial %>% dplyr::select(ObsN, RTENO, id)
-t2=t %>%
-  group_by(RTENO, id) %>%
-  summarise(nhumans=n_distinct(ObsN)) %>% distinct(RTENO, nhumans, .keep_all=T) %>%
-  ungroup()
-t3= t2 %>%
-  group_by(id) %>%
-  summarize(med_nhuman_cell=median(nhumans))
-plot(t3[,"med_nhuman_cell"]) # median number of observers per route within the cell
-
-t=bbs_spatial %>% dplyr::select(ObsN, RTENO, Year, id)
-t2<- t %>%
-  group_by(RTENO) %>%
-  summarise(nrtes_per_human = n_distinct(RTENO)) %>% ungroup()
-t2
+# plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
+# t=bbs_spatial %>% dplyr::select(ObsN, RTENO, id)
+# t2=t %>%
+#   group_by(RTENO, id) %>%
+#   summarise(nhumans=n_distinct(ObsN)) %>% distinct(RTENO, nhumans, .keep_all=T) %>%
+#   ungroup()
+# t3= t2 %>%
+#   group_by(id) %>%
+#   summarize(med_nhuman_cell=median(nhumans))
+# plot(t3[,"med_nhuman_cell"]) # median number of observers per route within the cell
 
 
 # Munge eBird data --------------------------------------------------------
+### CURRENTLY, THIS REQUIRES A SIGNIFICANT AMT OF RAM FOR EVEN A SINGLE SPECIES. >>40GB
 # Get the list of potential files for import. This will be used in get_ebird()
-(fn_zf <- list.files(dir.ebird.out, "rds"))
+fn_zf <- list.files(dir.ebird.out, "rds")
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 if(!exists("ebd_zf")) ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
 ## remove Alaska and Hawaii just to wittle down the data a little
@@ -239,7 +235,9 @@ coordinates(ebd_zf) <- ~longitude + latitude # 1-2 minutes for all of N.Amer.
 # define projection for lat long (ebird documentation states CRS is 4326)
 proj4string(ebd_zf) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 # match proj of BBS
-ebd_zf <- spTransform(ebd_zf, proj4string(bbs_routes_sldf))
-
+ebd_zf <- spTransform(ebd_zf, proj4string(bbs_spatial))
+# merge ebird with the spatial grid
+ebird_spatial <- grid %>%
+  st_join(ebd_zf)
 
 
