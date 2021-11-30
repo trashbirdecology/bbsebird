@@ -12,13 +12,13 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir
                                  # usgs.layer="bbsrte_2012_alb", # this one is from Sauer
                                  usgs.layer="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020", # this was gift by Dave and Danny-DO NT SHARE
-                                 crs.target=5070
+                                 crs.target=4326
 ){
   # Warning for proceeding when SLDFs already exist in the workspace
   if(exists("bbs_routes")|"SpatialLinesDataFrame" %in% sapply(ls(), function(x){class(get(x))})){
     ind=menu(title = "bbs_routes may already exist. This function may take 1-2 minutes.Are you sure you want to proceed?",
              choices = c("Yes!", "No."))
-    if(ind==2) stop("Function cancelled.")
+    if(ind==2) message("Function cancelled.")
   }
 
   # LOAD DATA
@@ -59,25 +59,20 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   cws_routes@data$Route= substr(cws_routes@data$ProvRoute, 3,5)
   cws_routes@data$RouteName = str_replace_all(cws_routes@data$Nbr_FullNa, "[:digit:]|-", "")#remove route no and prov no
   cws_routes@data$RouteName = trimws(cws_routes@data$RouteName, "left")#whitespace
-  cws_routes@data = cws_routes@data %>%
-    rename(RouteLength=Shape_Length)
-
   # create var RTENO for quick indexing.
   cws_routes@data<-make.rteno(cws_routes@data)
 
-
   # Join the two SpatialLinesDataFrames for CWS and USGS route spatial layers
-  # first, keep only the variables that have been mapped back to the BBS observations dataset.
+  # first, keep only the variables that have been mapped back to the BBS observations dataset
+  # usgs_routes$RouteLength <- NA # yes this is inelegant
   colnames <- intersect(names(usgs_routes), names(cws_routes))
   usgs_routes.subset <- usgs_routes[, colnames]
   cws_routes.subset <- cws_routes[, colnames]
-
 
   # Checks
   if(suppressWarnings(!proj4string(cws_routes)==proj4string(usgs_routes)))stop("CRS for CWS and USGS route SLDFs do not match. Something is terribly wrong in munge_bbs_shapefiles().")
   if(!length(cws_routes.subset@lines)==length(cws_routes@lines)|
      !length(usgs_routes.subset@lines)==length(usgs_routes@lines)) warning("Some lines went missing when removing columns in USGS and/or CWS routes layers.")
-
 
   # join the two SLDFs
   bbs_routes <- rbind(usgs_routes.subset, cws_routes.subset)
@@ -92,7 +87,10 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   crs.string=CRS(paste0("+init=epsg:", crs.target))
   bbs_sf <- st_transform(bbs_sf, crs = crs.string)
 
-  # bbs_sf
+  ### caclulate the lenght of the lines
+  bbs_sf <- bbs_sf %>% mutate(RouteLength=st_length(bbs_sf))
+
+
 
   return(bbs_sf)
 
