@@ -7,6 +7,7 @@ gc()
 devtools::install_github("trashbirdecology/bbsassistant",ref="convert-to-50-stop", force=FALSE)
 devtools::install_github("ropensci/rnaturalearthhires") ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
 library(bbsAssistant)
+library(purrr)
 library(auk)
 library(hms) ## for some reason zerofiltering function in auk cannot find this fun?
 library(dplyr)
@@ -120,17 +121,14 @@ devtools::load_all()
   # mapview::mapview(st_filter(bbs_routes, grid)) # interactive, openstreetmap
 
 
-
 # Munge BBS data ----------------------------------------------------------
   # if(!exists("bbs.orig")) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
   # if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
   # filter by species of interest, zero-fill
   # saveRDS(bbs.orig,"data-local//bbs/bbs-orig.rds")
-  ## Having perforamnce issues wiht filter_bbs_by_species
-    ## for now go ahead and read it in... ugh
   bbs.orig <- readRDS("data-local/bbs/bbs-orig.rds")
   bbs <- filter_bbs_by_species(list = bbs.orig, search = interest.species,
-                               zero.fill=TRUE, active.only=TRUE)
+                               zero.fill=TRUE, active.only=TRUE, keep.stop.level.data=FALSE)
   bbs$weather <- make.rteno(bbs$weather) # create var called RTENO (need to fix this in bbsassistant)
   bbs$vehicle_data <- make.rteno(bbs$vehicle_data) # create var called RTENO (need to fix this in bbsassistant)
   bbs$weather <- bbs$weather %>%
@@ -200,27 +198,32 @@ devtools::load_all()
   #   write.csv('data-local/missingroutes.csv')
 
 ## Join BBS routes to grid. Left_join preserves the empty grid cells.
-bbs_spatial <- grid %>%
-  st_join(bbs_routes) %>%
-  left_join(bbs$observations, by="RTENO") %>%
-  left_join(bbs$observers)
+bbs_intersection <- st_intersection(grid, bbs_routes) %>%
+    mutate(SegmentLength = st_length(.)) %>%
+    st_drop_geometry() # complicates things in joins later on
+bbs_grid <- grid %>%
+  left_join(bbs_intersection, by = "id")
+# add bbs data to grid and lines obj
+bbs_spatial <- bbs_grid %>%
+  left_join(bbs$observations) %>%
+  left_join(bbs$observers) %>%
+# create var with percent route in grid cell
+  mutate(PercSegmentInCell=SegmentLength/RouteLength)
+
 
 # mapview::mapview(st_filter(bbs_spatial, grid)) # interactive, openstreetmap
-
 # exploratory plots (should move elsewhere.....)
 # plot(bbs_spatial[c("",)])# select a specific variable(S) to plot
 # plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
-# plot(bbs_spatial %>% group_by(id) %>% summarise(n_obs_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
-# t=bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE))
-# plot(t[,"n_routes_cell"],)
-
+# plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
+# plot(bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE))ot((bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))[,"n_routes_cell"],)
 # plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
-# t=bbs_spatial %>% dplyr::select(ObsN, RTENO, id)
-# t2=t %>%
+# t=  bbs_spatial %>%
+#     dplyr::select(ObsN, RTENO, id) %>%
 #   group_by(RTENO, id) %>%
-#   summarise(nhumans=n_distinct(ObsN)) %>% distinct(RTENO, nhumans, .keep_all=T) %>%
-#   ungroup()
-# t3= t2 %>%
+#   summarise(nhumans=n_distinct(ObsN)) %>%
+#     distinct(RTENO, nhumans, .keep_all=T) %>%
+#   ungroup() %>%
 #   group_by(id) %>%
 #   summarize(med_nhuman_cell=median(nhumans))
 # plot(t3[,"med_nhuman_cell"]) # median number of observers per route within the cell
@@ -254,16 +257,22 @@ coordinates(ebd_zf) <- ~longitude + latitude # 1-2 minutes for all of N.Amer.
 # define projection for lat long (ebird documentation states CRS is 4326)
 proj4string(ebd_zf) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 # transform spatial object to sf
-ebd_zf <- sf::st_as_sf(ebd_zf)
+ebird_spatial <- sf::st_as_sf(ebd_zf)
 # match proj to target proj
-ebd_zf <- st_transform(ebd_zf, crs = CRS(paste0("+init=epsg:", crs.target)))
+ebird_spatial <- st_transform(ebird_spatial, crs = CRS(paste0("+init=epsg:", crs.target)))
 # merge ebird with the spatial grid
-ebd_zf <- grid %>%
-  st_join(ebd_zf)
-ebird_spatial<-ebd_zf <- ebird_spatial
-rm(ebird_spatial)
+# this will take a minute
+tic()
+ebird_spatial <- grid %>%
+  st_join(ebird_spatial)
+toc()
+tic()
+test=st_intersection(grid, ebird_spatial)
+toc()
+
 
 # Ensure eBird and BBS Overlay as Expected ------------------------------------------------
-
-
+plot(st_geometry(grid))
+plot(st_geometry(ebird_spatial),add=TRUE)
+plot(st_geometry(bbs_spatial),add=TRUE)
 
