@@ -5,7 +5,8 @@
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
 #' @param usgs.layer Name of the layer to import.
 #' @export
-
+### I NEED TO CHANGE NAEM TO LIKE, CREATE BBS SPATIAL
+#### ALso, prob include an optin to define the pre=existuing grid
 munge_bbs_shapefiles <- function(cws.routes.dir,
                                  usgs.routes.dir,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir

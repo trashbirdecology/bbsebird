@@ -11,6 +11,7 @@ library(auk)
 library(hms) ## for some reason zerofiltering function in auk cannot find this fun?
 library(dplyr)
 library(stringr)
+library(lubridate)
 library(rgdal)
 library(spData) # world map
 library(rnaturalearth) # state and prov data?
@@ -73,34 +74,62 @@ devtools::load_all()
   # interest.spatial <- c("United States", "Canada", "CAN", "CA","US", "USA")
   ebird.protocol <- c("Traveling", "Stationary")
   complete.checklists.only <- TRUE
-  crs.target <- 5070 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
+  crs.target <- 4326 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
   include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
   countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps and spatial grid system.
-  diam.km=1.61*(24.5+10) #km conversion of (~24,5 mile routes + 10miles buffer)*X to ensure route always falls within a single cell
-  region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut") #
-  states <-
-    c(
-      'Iowa',
-      'Illinois',
-      'Indiana',
-      'Michigan',
-      'Minnesota',
-      # 'New York',
-      'Ohio',
-      # 'Pennsylvania',
-      'Wisconsin',
-      'Ontario'
-    )
+  diam.deg=69/111.111 # 111.111km in 1 deg lat lon is a good estimate for much of world
+  # diam.deg=6/111.111 # 111.111km in 1 deg lat lon is a good estimate for much of world
+  # diam.km=1.61*(24.5+10) #km conversion of (~24,5 mile routes + 10miles buffer)*X to ensure route always falls within a single cell
+  region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory") #
+  # states <-
+  #   c(
+  #     'Iowa',
+  #     'Illinois',
+  #     'Indiana',
+  #     'Michigan',
+  #     'Minnesota',
+  #     # 'New York',
+  #     'Ohio',
+  #     # 'Pennsylvania',
+  #     'Wisconsin',
+  #     'Ontario'
+    # )
+  states<- c("Ohio")
 
-  # Munge BBS data ----------------------------------------------------------
+# Create a spatial grid ------------------------------------------------------------
+  grid.size = diam.deg
+  # grid.size = c(diam.km*1000, diam.km*1000) ## convert km to m //
+  study.area <- ne_states(country = countries, returnclass = "sf") %>%
+    # remove region(s)
+    filter(tolower(name) %in% tolower(states)) %>%
+    filter(!tolower(name) %in% tolower(region.remove)) %>%
+    st_transform(study.area, crs=crs.target)
+  # unique(study.area$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
+  # throw a grid over the study area layer
+  grid <- study.area %>%
+    st_make_grid(cellsize = grid.size, square = FALSE, flat_topped = TRUE) %>%
+    st_intersection(study.area) %>%
+    # st_cast("MULTIPOLYGON") %>%
+    st_sf() %>%
+    mutate(id = row_number()) %>%
+    st_transform(crs=crs.target)
+
+  # # Visualize to check
+  # plot(st_geometry(grid), axes=TRUE)
+  # plot(st_filter(bbs_routes, grid), add=T)
+  # mapview::mapview(st_filter(bbs_routes, grid)) # interactive, openstreetmap
+
+
+
+# Munge BBS data ----------------------------------------------------------
   # if(!exists("bbs.orig")) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
   # if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
   # filter by species of interest, zero-fill
   # saveRDS(bbs.orig,"data-local//bbs/bbs-orig.rds")
   ## Having perforamnce issues wiht filter_bbs_by_species
     ## for now go ahead and read it in... ugh
-  bbs <- readRDS("data-local/bbs/bbs-orig.rds")
-  if(!exists("bbs")) bbs <- filter_bbs_by_species(list = bbs.orig, search = interest.species,
+  bbs.orig <- readRDS("data-local/bbs/bbs-orig.rds")
+  bbs <- filter_bbs_by_species(list = bbs.orig, search = interest.species,
                                zero.fill=TRUE, active.only=TRUE)
   bbs$weather <- make.rteno(bbs$weather) # create var called RTENO (need to fix this in bbsassistant)
   bbs$vehicle_data <- make.rteno(bbs$vehicle_data) # create var called RTENO (need to fix this in bbsassistant)
@@ -126,8 +155,11 @@ devtools::load_all()
   region_codes.subset <- region_codes %>%
     filter(CountryNum %in% c(124, 840)) # keep US and CAN only
   # have to split up the state num and country num process b/c of Mexico's character issues.
-  statenums.remove <- region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% c("alaska", "hawaii")]
-  region_codes.subset <- region_codes.subset %>%
+  statenums.keep <- region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% tolower(states)]
+  statenums.remove <- region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% tolower(region.remove)]
+  if(!is.null(statenums.keep)) region_codes.subset <- region_codes.subset %>%
+    filter(StateNum %in% statenums.keep) # remove states specified above US and CAN only
+  if(!is.null(statenums.remove)) region_codes.subset <- region_codes.subset %>%
     filter(!StateNum %in% statenums.remove) # remove states specified above US and CAN only
   bbs$observations <- bbs$observations %>%
     filter(!StateNum %in% statenums.remove)
@@ -144,7 +176,8 @@ devtools::load_all()
   if(!all(bbs$observations$RTENO %in% bbs$weather$RTENO)) stop("something is wrong use traceback()")
   if(!all(bbs$observations$RTENO %in% bbs$vehicle_data$RTENO)) warning("Some vehicle data missing. Don't worry about it unless you're using vehicle data in the model.")
 
-  # Munge BBS route shapefiles ----------------------------------------------
+# Munge BBS route shapefiles ----------------------------------------------
+  # munges all routes at first, takes 30sec or so
   bbs_routes <-
     munge_bbs_shapefiles(
       cws.routes.dir = cws.routes.dir,
@@ -166,33 +199,6 @@ devtools::load_all()
   #         unique(bbs_routes_sldf@data$RTENO)) %>%  ## which of A are not in B
   #   write.csv('data-local/missingroutes.csv')
 
-#calculate line length
-  # bbs_routes$route_seg_length
-
-# Create a spatial grid ------------------------------------------------------------
-# grid.size = c(diam.km*1000,diam.km*1000)/2 ## convert km to m // but tits too large....weird...
-grid.size = c(diam.km*1000, diam.km*1000) ## convert km to m //
-study.area <- ne_states(country = countries, returnclass = "sf") %>%
-  # remove region(s)
-  filter(tolower(name) %in% tolower(states)) %>%
-  filter(!tolower(name) %in% tolower(region.remove)) %>%
-  st_transform(study.area, crs=crs.target)
-# unique(study.area$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
-# throw a grid over the study area layer
-grid <- study.area %>%
-  st_make_grid(cellsize = grid.size, square = FALSE, flat_topped = TRUE) %>%
-  st_intersection(study.area) %>%
-  st_cast("MULTIPOLYGON") %>%
-  st_sf() %>%
-  mutate(id = row_number()) %>%
-  st_transform(crs=crs.target)
-
-# # Visualize to check
-# plot(st_geometry(grid), axes=TRUE)
-# plot(st_filter(bbs_routes, grid), add=T)
-# mapview::mapview(st_filter(bbs_routes, grid)) # interactive, openstreetmap
-
-
 ## Join BBS routes to grid. Left_join preserves the empty grid cells.
 bbs_spatial <- grid %>%
   st_join(bbs_routes) %>%
@@ -205,8 +211,8 @@ bbs_spatial <- grid %>%
 # plot(bbs_spatial[c("",)])# select a specific variable(S) to plot
 # plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
 # plot(bbs_spatial %>% group_by(id) %>% summarise(n_obs_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
-t=bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE))
-plot(t[,"n_routes_cell"],)
+# t=bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE))
+# plot(t[,"n_routes_cell"],)
 
 # plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
 # t=bbs_spatial %>% dplyr::select(ObsN, RTENO, id)
@@ -225,19 +231,39 @@ plot(t[,"n_routes_cell"],)
 # Get the list of potential files for import. This will be used in get_ebird()
 fn_zf <- list.files(dir.ebird.out, "rds")
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
-if(!exists("ebd_zf")) ebd_zf <- get_zerofilled_ebird(fns, overwrite=FALSE)
-## remove Alaska and Hawaii just to wittle down the data a little
-ebd_zf <- ebd_zf %>% filter(!state %in% c("hawaii", "alaska"))
+if(!exists("ebd_zf")) {
+  ebd_zf <- get_zerofilled_ebird(fns, overwrite = FALSE)
+  ## keep only modern data...(ebird dataset has dates back to year 1880). should help
+  ebd_zf <- ### these need to go into the get_zerofilled_ebird but thats for a later date.
+    ebd_zf %>% mutate(
+      julian = lubridate::yday(observation_date),
+      year = lubridate::year(observation_date)
+    ) %>%
+    filter(year >= 1966)
+  ## remove Alaska and Hawaii just to wittle down the data a little
+  if(exists("states") & !is.null(states))  ebd_zf <- ebd_zf %>% filter(tolower(state) %in% tolower(states))
+  if(exists("region.remove") & !is.null(region.remove))  ebd_zf <- ebd_zf %>% filter(!tolower(state) %in% tolower(region.remove))
+  # Create some variables for analysis
+  ebd_zf <- ebd_zf %>% mutate(is.stationary=if_else(tolower(protocol_type)=="stationary", 1, 0))
+}
 
 # Create eBird spatial -----------------------------------------------------
+###NEED TO PUSH THIS TO MUNGE_EBIRD_SPATIAL or something like that
 # convert ebd to spatial object
 coordinates(ebd_zf) <- ~longitude + latitude # 1-2 minutes for all of N.Amer.
 # define projection for lat long (ebird documentation states CRS is 4326)
 proj4string(ebd_zf) <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-# match proj of BBS
-ebd_zf <- spTransform(ebd_zf, proj4string(bbs_spatial))
+# transform spatial object to sf
+ebd_zf <- sf::st_as_sf(ebd_zf)
+# match proj to target proj
+ebd_zf <- st_transform(ebd_zf, crs = CRS(paste0("+init=epsg:", crs.target)))
 # merge ebird with the spatial grid
-ebird_spatial <- grid %>%
+ebd_zf <- grid %>%
   st_join(ebd_zf)
+ebird_spatial<-ebd_zf <- ebird_spatial
+rm(ebird_spatial)
+
+# Ensure eBird and BBS Overlay as Expected ------------------------------------------------
+
 
 
