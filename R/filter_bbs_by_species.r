@@ -31,9 +31,9 @@ filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.
     warning(
       "When zero.fill=TRUE, only a single species should be provided in interest.species. Using first species in the list. ")
   }
-# browser()
   if(zero.fill){
-    unused <- setdiff(list$observations, myspp.obs) ## I think
+    # unused <- setdiff(list$observations, myspp.obs) ## setdiff takes twice as long as anti_join
+    unused <- anti_join(list$observations, myspp.obs) ## anti_join twices as fast as setdiff in this situation
     zeroes <- unused %>% distinct(RTENO, Year, .keep_all = TRUE) %>%
       mutate(AOU = unique(myspp.obs$AOU)[1])
     zeroes[grepl("Stop|stop|STOP", names(zeroes))] <- 0 # force all values to zero
