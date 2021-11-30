@@ -9,7 +9,20 @@
 #' @param active.only Logical. If TRUE keep only active routes. Discontinued routes will be discarded.
 #' @export
 
-filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.fill=TRUE, active.only=TRUE){
+filter_bbs_by_species <- function(list=bbs.orig, search="Double-crested Cormorant", zero.fill=TRUE, active.only=TRUE, keep.stop.level.data=FALSE){
+
+  # first, remove stop-level data if not needed  to help with mem issues
+  if(!keep.stop.level.data){
+    # first, ensure the route totals are present in DF (if not, make it)
+    cols <- paste0("Stop", c(1:50))
+    cols <- cols[which(cols %in% names(list$observations))]
+    if(!all(c("TotalSpp", "TotalSp") %in% names(list$observations))){
+      list$observations$TotalSpp <- rowSums(list$observations[,cols])
+    }
+    # remove stop-level data
+    list$observations <- list$observations %>%
+       dplyr::select(-any_of(cols))
+}
   # grab the unique AOU codes
   list$species_list <- list$species_list %>%
     mutate(across(starts_with("English_Common_Name"), tolower)) %>%
@@ -17,7 +30,7 @@ filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.
 
   # remove routedataid
   list$observations <- list$observations%>%
-    dplyr::select(-RouteDataID)
+    dplyr::select(-any_of("RouteDataID"))
 
   # use the aou to filter down the observations
   myspp.obs <- list$observations %>%
@@ -36,12 +49,11 @@ filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.
     unused <- anti_join(list$observations, myspp.obs) ## anti_join twices as fast as setdiff in this situation
     zeroes <- unused %>% distinct(RTENO, Year, .keep_all = TRUE) %>%
       mutate(AOU = unique(myspp.obs$AOU)[1])
-    zeroes[grepl("Stop|stop|STOP", names(zeroes))] <- 0 # force all values to zero
+    zeroes[grepl("Stop|stop|STOP|TotalSp", names(zeroes))] <- 0 # force all values to zero
   }else{zeroes = NULL}
 # if(!zero.fill) zeroes = NULL # i know this doesnt make sense, but for some reason when i put this inside the if statement aobve it performs horrifically outside the function...no clue
   # create final observations df for the list
   list$observations <- bind_rows(myspp.obs, zeroes) %>% distinct(RTENO, AOU, Year, .keep_all = TRUE)
-
   list$observations$RTENO <- as.character(list$observations$RTENO) # just precaution
   list$routes$RTENO <- as.character(list$routes$RTENO) # just precaution
 
@@ -55,7 +67,7 @@ filter_bbs_by_species <- function(list, search="Double-crested Cormorant", zero.
     list$observations <- list$observations %>%
       filter(list$observations$RTENO %in% unique(list$routes$RTENO))
   }
-  toprint=unique(list$species_list$English_Common_Name)
-  print(paste0("The following species are in your BBS data: ", toprint))
+
+  print(paste0("The following species are in your BBS data: ", unique(list$species_list$English_Common_Name)))
   return(list) # return the entire list now as a subset of the original list
 }
