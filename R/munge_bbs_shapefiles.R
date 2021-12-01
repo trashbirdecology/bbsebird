@@ -9,6 +9,7 @@
 #### ALso, prob include an optin to define the pre=existuing grid
 munge_bbs_shapefiles <- function(cws.routes.dir,
                                  usgs.routes.dir,
+                                 routes.keep=NULL,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir
                                  # usgs.layer="bbsrte_2012_alb", # this one is from Sauer
                                  usgs.layer="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020", # this was gift by Dave and Danny-DO NT SHARE
@@ -30,19 +31,19 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   ## Indexing by state-route combination
   ### Ex:  state 46 and route 029, RTENO==46029
   usgs_routes <- readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
+    # Match the projections just to merge them
+    usgs_routes <- spTransform(usgs_routes, proj4string(cws_routes))
 
-  # Match the projections just to merge them
-  usgs_routes <- spTransform(usgs_routes, proj4string(cws_routes))
 
   # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
   # These fields are applicable only to the Sauer shapefile.
   if(usgs.layer=="bbsrte_2012_alb"){
-  usgs_routes@data$CountryNum=840
-  usgs_routes@data$StateNum= substr(usgs_routes@data$rteno, 1, 2)
-  usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
-  usgs_routes@data$RouteName = usgs_routes@data$RTENAME
-  usgs_routes@data$RouteLength = usgs_routes@data$rte_length
-  usgs_routes@data <- make.rteno(usgs_routes@data)
+    usgs_routes@data$CountryNum=840
+    usgs_routes@data$StateNum= substr(usgs_routes@data$rteno, 1, 2)
+    usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
+    usgs_routes@data$RouteName = usgs_routes@data$RTENAME
+    usgs_routes@data$RouteLength = usgs_routes@data$rte_length
+    usgs_routes@data <- make.rteno(usgs_routes@data)
   }
   # this is for the layer shared by Dave Z. and Danny L.
   if(usgs.layer=="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020"){
@@ -61,6 +62,14 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   cws_routes@data$RouteName = trimws(cws_routes@data$RouteName, "left")#whitespace
   # create var RTENO for quick indexing.
   cws_routes@data<-make.rteno(cws_routes@data)
+
+  ## Remove states if provided to save time on the intersection.
+  if(!is.null(routes.keep)){
+   if(!class(cws_routes@data$RTENO)==class(routes.keep)){stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")}
+    cws_routes@data <- cws_routes@data %>% filter(RTENO %in% routes.keep)
+    if(!class(usgs_routes@data$RTENO)==class(routes.keep)){stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")}
+    usgs_routes@data <- usgs_routes@data %>% filter(RTENO %in% routes.keep)
+  }
 
   # Join the two SpatialLinesDataFrames for CWS and USGS route spatial layers
   # first, keep only the variables that have been mapped back to the BBS observations dataset
@@ -98,7 +107,7 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
 
 
 ## side note for jlb: check out this example on identifying distance between points and nearest line
-                      # https://gis.stackexchange.com/questions/269746/find-nearest-line-segment-to-each-point-in-r
+# https://gis.stackexchange.com/questions/269746/find-nearest-line-segment-to-each-point-in-r
 
 
 

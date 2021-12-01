@@ -1,12 +1,40 @@
+# create var RTENO --------------------------------------------------------
+make.integer <- function(x, var=c("AOU", "aou")){
+for(i in seq_along(var)){
+  ind=var[i]
+    if(ind %in% names(x)){
+      x=as.data.frame(x)
+      x[,paste(ind)] = as.integer(dplyr::pull(x, ind))
+    }else{return(x)}
+  }
+}
 
-# create var RTENO for quick indexing.
+
+
+# create date and julian date ---------------------------------------------
+make.dates <- function(x){
+  if(all(c("day","month","year") %in% tolower(names(x)))){
+    x= x %>%
+      mutate(Date = as.Date(paste(Day, Month, Year, sep = "/"), format = "%d/%m/%Y"))
+    x= x %>%
+    mutate(julian=julian(Date, origin=min(x$Date)))
+
+    }else(return(x))
+}
+# create var RTENO --------------------------------------------------------
 make.rteno <- function(x){
+  # browser()
+  if(all(c("CountryNum","StateNum","Route") %in% names(x))){
   RTENO=paste0(
     str_pad(x$CountryNum, width=3, side="left", pad="0"),
     str_pad(x$StateNum, width=2, side="left", pad="0"),
     str_pad(x$Route, width=3, side="left", pad="0"))
-  x = x %>% mutate(RTENO=RTENO)
+  x = x %>% mutate(RTENO=RTENO) %>%
+    dplyr::select(-CountryNum, -StateNum, -Route) # delete for mem and b/c this info is already captured in RTENO
+
+  }else(return(x))
 }
+
 
 # mode --------------------------------------------------------------------
 get_mode <- function(x) {
