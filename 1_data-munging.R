@@ -46,48 +46,31 @@ bbs <-
 # munges all routes at first, so could take 30sec or more
 bbs_routes <-
   munge_bbs_shapefiles(
-    cws.routes.dir = cws.routes.dir,
-    usgs.routes.dir = usgs.routes.dir,
-    crs.target =
-      crs.target,
-    routes.keep=unique(bbs$RTENO)
+    cws.routes.dir = cws.routes.dir, #location of the CWS BBS routes shapefiles
+    usgs.routes.dir = usgs.routes.dir, #location of the USGS BBS routes shapefiles
+    crs.target = crs.target,
+    routes.keep=unique(bbs$RTENO),
+    grid=grid,
+    overwrite=TRUE # wanna overwrite existing bbs_routes in workspace?
   )
+# if grid was provided in munge_bbs_shapefiles, this is unnecessary so don't do it
+if(!"id" %in% tolower(names(bbs_routes))){bbs_routes <- st_intersection(grid, bbs_routes)}
 
-# %>%
-#   ## remove the routes not in the observations dataset
-#   filter(RTENO %in% bbs$observations$RTENO)
-# which routes are missing from the spatial shapefile layer
-###Tests  -----------------------------
-# #### PROBLEMS TO SOLVE: MISSING ROUTES ### RUN AFTER IMPORTING BBS OBS DATA
-# bbs$routes[which(!bbs$routes$RTENO %in% bbs_routes_sldf$RTENO),] %>%
-#   distinct(RTENO, .keep_all = TRUE) %>%
-#   group_by(CountryNum, StateNum) %>%
-#   summarise(n()) %>% left_join(region_codes) %>%
-#   write.csv('data-local/missingroutesbyregion.csv')
-# setdiff(unique(bbs$observations$RTENO),
-#         unique(bbs_routes_sldf@data$RTENO)) %>%  ## which of A are not in B
-#   write.csv('data-local/missingroutes.csv')
+## check out the data
+plot(bbs_routes)
 
-### Combine grid and BBS data -----------------------------
-## Join BBS routes to grid. Left_join preserves the empty grid cells.
-bbs_intersection <- st_intersection(grid, bbs_routes) %>%
-  mutate(SegmentLength = st_length(.)) %>%
-  st_drop_geometry() # complicates things in joins later on
-bbs_grid <- grid %>%
-  left_join(bbs_intersection, by = "id")
 # add bbs data to grid and lines obj
-bbs_spatial <- bbs_grid %>%
-  left_join(bbs$observations) %>%
-  left_join(bbs$observers) %>%
+bbs_spatial <- inner_join(bbs, bbs_routes) %>%
   # create var with percent route in grid cell
   mutate(PercSegmentInCell = SegmentLength / RouteLength)
+
 
 ### Some exploratory plots (optional) -----------------------------
 # mapview::mapview(st_filter(bbs_spatial, grid)) # interactive, openstreetmap
 # exploratory plots (should move elsewhere.....)
 # plot(bbs_spatial[c("",)])# select a specific variable(S) to plot
 # plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
-# plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
+plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
 # plot(bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE))ot((bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))[,"n_routes_cell"],)
 # plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
 # t=  bbs_spatial %>%

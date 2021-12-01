@@ -13,92 +13,118 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir
                                  # usgs.layer="bbsrte_2012_alb", # this one is from Sauer
                                  usgs.layer="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020", # this was gift by Dave and Danny-DO NT SHARE
-                                 crs.target=4326
+                                 crs.target=4326,
+                                 grid=NULL,
+                                 overwrite=TRUE
 ){
-  # Warning for proceeding when SLDFs already exist in the workspace
-  if(exists("bbs_routes")|"SpatialLinesDataFrame" %in% sapply(ls(), function(x){class(get(x))})){
-    ind=menu(title = "bbs_routes may already exist. This function may take 1-2 minutes.Are you sure you want to proceed?",
+  # Warning for proceeding when objects already exist in the workspace
+  if(exists("bbs_routes") & overwrite==FALSE){
+    ind=menu(title = "bbs_routes may already exist and `overwrite=FALSE`.\n This function may take 1-2 minutes.Are you sure you want to proceed?",
              choices = c("Yes!", "No."))
     if(ind==2) message("Function cancelled.")
   }
 
+  # create as string for the crs.target
+  crs.string=CRS(paste0("+init=epsg:", crs.target))
+
   # LOAD DATA
   ## CWS route shapefiles
   cws.gdb <- list.files(cws.routes.dir, pattern=".gdb",full.names=TRUE) %>% str_remove(".zip") %>% unique()
-  cws_routes <- readOGR(dsn=cws.gdb,layer=cws.layer)
+    # cws_routes <- readOGR(dsn=cws.gdb,layer=cws.layer)
+    cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
   ## USGS route shapefiles (circa. 2012)
   ## USGS BBS routes layer obtained from John Sauer.
   ## Indexing by state-route combination
   ### Ex:  state 46 and route 029, RTENO==46029
-  usgs_routes <- readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
-    # Match the projections just to merge them
-    usgs_routes <- spTransform(usgs_routes, proj4string(cws_routes))
+  # usgs_routes <- readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
+  usgs_routes <- st_read(dsn=usgs.routes.dir, layer=usgs.layer)
+  usgs_routes <- st_transform(usgs_routes, crs=crs.string)
 
 
   # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
   # These fields are applicable only to the Sauer shapefile.
-  if(usgs.layer=="bbsrte_2012_alb"){
-    usgs_routes@data$CountryNum=840
-    usgs_routes@data$StateNum= substr(usgs_routes@data$rteno, 1, 2)
-    usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
-    usgs_routes@data$RouteName = usgs_routes@data$RTENAME
-    usgs_routes@data$RouteLength = usgs_routes@data$rte_length
-    usgs_routes@data <- make.rteno(usgs_routes@data)
+  if (usgs.layer == "bbsrte_2012_alb") {
+    usgs_routes <- usgs_routes %>%
+      mutate(
+        CountryNum = 840,
+        StateNum = str_sub(rteno, start = 1, end = 2),
+        Route = str_sub(rteno, start = 3, end = 5)
+      ) %>%
+      rename(RTENO = rteno,
+             RouteName = RTENAME,)
+    # usgs_routes@data$CountryNum=840
+    # usgs_routes@data$StateNum= substr(usgs_routes@data$rteno, 1, 2)
+    # usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
+    # usgs_routes@data$RouteName = usgs_routes@data$RTENAME
+    # usgs_routes@data$RouteLength = usgs_routes@data$rte_length
+    # usgs_routes@data <- make.rteno(usgs_routes@data)
   }
   # this is for the layer shared by Dave Z. and Danny L.
   if(usgs.layer=="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020"){
-    usgs_routes@data <- tidyr::separate(
-      usgs_routes@data,
-      RouteName,
+  # extract RTENO and RouteName
+  usgs_routes <- usgs_routes %>%
+    separate(RouteName,
       into = c("RTENO", "RouteName"),
       sep = "_",
-      remove = TRUE
-    )}
-  # Deal with Canadian shapefile (shared by V. Aponte)
-  cws_routes@data$CountryNum=124
-  cws_routes@data$StateNum= substr(cws_routes@data$ProvRoute, 1, 2)
-  cws_routes@data$Route= substr(cws_routes@data$ProvRoute, 3,5)
-  cws_routes@data$RouteName = str_replace_all(cws_routes@data$Nbr_FullNa, "[:digit:]|-", "")#remove route no and prov no
-  cws_routes@data$RouteName = trimws(cws_routes@data$RouteName, "left")#whitespace
-  # create var RTENO for quick indexing.
-  cws_routes@data<-make.rteno(cws_routes@data)
+      remove = TRUE) %>%
+    dplyr::select(-FID_1)
+    }
 
-  ## Remove states if provided to save time on the intersection.
+
+  # Deal with Canadian shapefile (shared by V. Aponte)
+  cws_routes <- cws_routes %>%
+    mutate(CountryNum=124,
+           StateNum=str_sub(ProvRoute, start = 1, end = 2),
+           Route=str_sub(ProvRoute, start = 3, end = 5),
+           RouteName=trimws(str_replace_all(Nbr_FullNa, "[:digit:]|-", ""), "left")) %>%
+    rename(geometry=Shape)
+  cws_routes <- make.rteno(cws_routes)
+
+  ## Keep routes if provided to save time on the intersection.
   if(!is.null(routes.keep)){
-   if(!class(cws_routes@data$RTENO)==class(routes.keep)){stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")}
-    cws_routes@data <- cws_routes@data %>% filter(RTENO %in% routes.keep)
-    if(!class(usgs_routes@data$RTENO)==class(routes.keep)){stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")}
-    usgs_routes@data <- usgs_routes@data %>% filter(RTENO %in% routes.keep)
+   if(!class(cws_routes$RTENO)==class(routes.keep)){stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")}
+    cws_routes <- cws_routes %>% filter(RTENO %in% routes.keep)
+    if(!class(usgs_routes$RTENO)==class(routes.keep)){stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")}
+    usgs_routes <- usgs_routes %>% filter(RTENO %in% routes.keep)
   }
 
-  # Join the two SpatialLinesDataFrames for CWS and USGS route spatial layers
-  # first, keep only the variables that have been mapped back to the BBS observations dataset
-  # usgs_routes$RouteLength <- NA # yes this is inelegant
-  colnames <- intersect(names(usgs_routes), names(cws_routes))
-  usgs_routes.subset <- usgs_routes[, colnames]
-  cws_routes.subset <- cws_routes[, colnames]
+  ## Reproject data
+  cws_routes <- st_transform(cws_routes, crs = crs.string)
+  usgs_routes <- st_transform(usgs_routes, crs = crs.string)
 
-  # Checks
-  if(suppressWarnings(!proj4string(cws_routes)==proj4string(usgs_routes)))stop("CRS for CWS and USGS route SLDFs do not match. Something is terribly wrong in munge_bbs_shapefiles().")
-  if(!length(cws_routes.subset@lines)==length(cws_routes@lines)|
-     !length(usgs_routes.subset@lines)==length(usgs_routes@lines)) warning("Some lines went missing when removing columns in USGS and/or CWS routes layers.")
+  # merge the CA and USA data
+  ## keep just a few of same cols-we can delete this but theyre not too useful.
+  keep=intersect(names(usgs_routes), names(cws_routes))
+  cws_routes <- cws_routes[,(names(cws_routes) %in% keep)]
+  usgs_routes <- usgs_routes[,(names(usgs_routes) %in% keep)]
 
-  # join the two SLDFs
-  bbs_routes <- rbind(usgs_routes.subset, cws_routes.subset)
+  bbs_sf <- bind_rows(usgs_routes, cws_routes)
 
-  ## convert sldf to sf object
-  ### I use readOGR to pull in the shaepfiles because the CWS routes was created with an old GDAL version, adn the workarounds are really cumbersome to get them to match.
-  ### see issue https://gis.stackexchange.com/questions/30785/how-to-stop-writeogr-from-abbreviating-field-names-when-using-esri-shapefile-d, and
-  ###  https://github.com/r-spatial/sf/issues/427
-  bbs_sf <- sf::st_as_sf(bbs_routes)
+  # stop here if no grid was provided...
+  if(is.null(grid)){return(bbs_sf)}
 
-  ## fix the sf to crs.target
-  crs.string=CRS(paste0("+init=epsg:", crs.target))
-  bbs_sf <- st_transform(bbs_sf, crs = crs.string)
 
-  ### caclulate the lenght of the lines
-  bbs_sf <- bbs_sf %>% mutate(RouteLength=st_length(bbs_sf))
+    grid <- st_transform(grid, crs = crs.string)
+    ## clip bbs_sf to grid extent
+    message("Clipping BBS routes to grid extent and calculating Route and Segment lenghts. May take a minute or three.")
 
+    ## calculate the lengths of Routes and Route Segments within grid cells/ids
+    lengths <- st_intersection(grid, bbs_sf) %>%
+      mutate(SegmentLength = st_length(.)) %>%
+      group_by(RTENO) %>%
+      mutate(RouteLength=sum(SegmentLength)) %>%
+      ungroup() %>%
+      st_drop_geometry() # complicates things in joins later on
+    ## calculate grid cell areas
+    areas <- grid %>%
+      mutate(CellArea=st_area(.)) %>%
+      st_drop_geometry() # complicates things in joins later on
+    ## combine bbs routes + area + lengthss
+    bbs_sf <- grid %>%
+      left_join(lengths, by = "id") %>%
+      left_join(areas, by = "id")
+
+    # plot(plot(bbs_sf[length(bbs_sf)-1]))
 
 
   return(bbs_sf)
