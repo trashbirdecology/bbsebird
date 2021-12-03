@@ -12,6 +12,8 @@ rm(list=ls())
 
 # Libraries ---------------------------------------------------------------
 ## Installs ----------------------------------------------------------------
+# install.packages ("stringi", type = "win.binary")
+# install.packages ("readr", type = "win.binary")
 devtools::install_github("trashbirdecology/bbsassistant",
                          ref="major-update-50stop",
                          force=FALSE)
