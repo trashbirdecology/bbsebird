@@ -1,38 +1,27 @@
-# Create a spatial grid -----------------------------------------------------------
-grid.size = diam.deg
-# grid.size = c(diam.km*1000, diam.km*1000) ## convert km to m //
-study.area <-
-  ne_states(country = countries, returnclass = "sf") %>%
-  # remove region(s)
-  filter(tolower(name) %in% tolower(states)) %>%
-  filter(!tolower(name) %in% tolower(region.remove)) %>%
-  st_transform(study.area, crs = crs.target)
-# unique(study.area$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
-# throw a grid over the study area layer
-grid <- study.area %>%
-  st_make_grid(cellsize = grid.size,
-               square = FALSE,
-               flat_topped = TRUE) %>%
-  st_intersection(study.area) %>%
-  # st_cast("MULTIPOLYGON") %>%
-  st_sf() %>%
-  mutate(id = row_number()) %>%
-  st_transform(crs = crs.target)
+if(exists("args.save")){rm(list=setdiff(ls(), args.save))}else(rm(list=ls()))
+devtools::load_all()
+source("1_make_spatial_grid.R")
 
-# # Visualize to check
-# plot(st_geometry(grid), axes=TRUE)
-# plot(st_filter(bbs_routes, grid), add=T)
-# mapview::mapview(st_filter(bbs_routes, grid)) # interactive, openstreetmap
+
+# Check for existing ebird files -----------------------------------------------
+
+
+# Warning -----------------------------------------------------------------
+gc(full = TRUE)
+if(detectCores() <=4 | memory.limit() < 25000) warning("You don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes.")
+message("Tossing out the garbage (`gc`) and about to deal with this eBird data. Buckle up, buttercup.")
+
+
 
 
 # Munge BBS data ----------------------------------------------------------
-## Import BBS Observations and Metadata -----------------------------
-# if(!exists("bbs.orig")) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out) # defaults to most recent release of the BBS dataset available on USGS ScienceBase
-# if(exists("sb_items"))rm(sb_items) # i need to add an arg to bbsassistant:grab_bbs_data that prevents output of sb_items...
-# filter by species of interest, zero-fill
-# saveRDS(bbs.orig,"data-local//bbs/bbs-orig.rds")
-bbs.orig <- readRDS("data-local/bbs/bbs-orig.rds")
-bbs <-
+## Import and/or Download BBS Observations and Metadata -----------------------------
+if(!exists("bbs.orig")){
+  if("bbs-orig.rds" %in% dir.bbs.out) bbs.orig <- readRDS(paste0(dir.bbs.out, "/bbs-orig.rds"))
+  if(!"bbs-orig.rds" %in% dir.bbs.out) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out)
+  }
+
+bbs_obs <-
   munge_bbs(
     list = bbs.orig,
     spp = interest.species,
@@ -40,6 +29,7 @@ bbs <-
     active.only = TRUE,
     keep.stop.level.data = FALSE
   )
+
 
 ## Make BBS Spatial Layers ----------------------------------------------
 ### Create BBS routes spatial layer ----------------------------------------------------------------------
@@ -53,24 +43,28 @@ bbs_routes <-
     grid=grid,
     overwrite=TRUE # wanna overwrite existing bbs_routes in workspace?
   )
+
+## to this point from 0_setup.r takes about 82 seconds for FL, GA, and SC
 # if grid was provided in munge_bbs_shapefiles, this is unnecessary so don't do it
 if(!"id" %in% tolower(names(bbs_routes))){bbs_routes <- st_intersection(grid, bbs_routes)}
 
-## check out the data
-plot(bbs_routes)
 
-# add bbs data to grid and lines obj
-bbs_spatial <- inner_join(bbs, bbs_routes) %>%
+### Add BBS obsv data to spatial-------------------------------------------------------------------------
+if("routename" %in% tolower(names(bbs_obs))){bbs_obs <-  bbs_obs %>%
+  dplyr::select(-RouteName)}
+
+bbs_spatial <-
+  merge(bbs_routes, bbs_obs, by="RTENO") %>%
   # create var with percent route in grid cell
   mutate(PercSegmentInCell = SegmentLength / RouteLength)
 
 
 ### Some exploratory plots (optional) -----------------------------
-# mapview::mapview(st_filter(bbs_spatial, grid)) # interactive, openstreetmap
+mapview::mapview(st_filter(bbs_spatial, grid)) # interactive, openstreetmap
 # exploratory plots (should move elsewhere.....)
 # plot(bbs_spatial[c("",)])# select a specific variable(S) to plot
 # plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
-plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
+# plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
 # plot(bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE))ot((bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))[,"n_routes_cell"],)
 # plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
 # t=  bbs_spatial %>%
@@ -81,7 +75,18 @@ plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(
 #   ungroup() %>%
 #   group_by(id) %>%
 #   summarize(med_nhuman_cell=median(nhumans))
-# plot(t3[,"med_nhuman_cell"]) # median number of observers per route within the cell
+# plot(t[,"med_nhuman_cell"]) # median number of observers per route within the cell
+
+as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern=TRUE))
+
+
+gc(full = TRUE)
+if(detectCores() <=4 | memory.limit() < 25000) warning("You don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes.")
+message("Tossing out the garbage (`gc`) and about to deal with this eBird data. Buckle up, buttercup.")
+
+
+# Export Data -------------------------------------------------------------
+saveRDS(bbs_spatial, file = paste0(dir.munged, "/", "bbs_spatial.rds"))
 
 
 # Munge eBird data --------------------------------------------------------
@@ -90,7 +95,9 @@ plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(
 ## Import Original Data and Create Zero-filled eBird data -----------------------------
 fn_zf <- list.files(dir.ebird.out, "rds")
 fns <- id_ebird_files(dir.ebird.in = dir.ebird.in)
+message("This process of initial eBird munging takes ~ 3min for 3 U.S. states worth of data. FYI...")
 if (!exists("ebd_zf")) {
+  tic()
   ebd_zf <- get_zerofilled_ebird(fns, overwrite = FALSE)
   ## keep only modern data...(ebird dataset has dates back to year 1880). should help
   ebd_zf <-
@@ -117,6 +124,7 @@ if (!exists("ebd_zf")) {
   # Create some variables for use later...
   ebd_zf <-
     ebd_zf %>% mutate(is.stationary = if_else(tolower(protocol_type) == "stationary", 1, 0))
+  toc()
 }
 
 ## eBird to Spatial Layers -----------------------------------------------------
@@ -135,10 +143,12 @@ ebd_zf <-
 
 ## Combine grid and eBird -----------------------------
 # this will take a minute
-ebird_spatial <- grid %>% #  37sec for Ohio
+tic()
+ebird_spatial <- grid %>% #  37sec for Ohio//2min for FL,GA,SC
   st_join(ebd_zf)
+toc()
+
 
 # Export Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.munged, "/", "ebird_spatial.rds"))
-saveRDS(bbs_spatial, file = paste0(dir.munged, "/", "bbs_spatial.rds"))
-saveRDS(grid, file = paste0(dir.munged, "/", "grid.rds"))
+
