@@ -50,5 +50,6 @@ routes.csv
 # Ignore everything in the subfolders of /jobs
 /examples/*/*
 # Reinclude config.xml files in the first-level subfolders of /jobs
-!/examples/*/*.R
+!/examples/*/.R
 
+*.Rproj
