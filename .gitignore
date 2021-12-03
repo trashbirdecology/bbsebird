@@ -42,4 +42,13 @@ desktop.ini
 data-local/
 data-in/
 routes.csv
-examples/
+## ignore all examples files except the .R scripts
+/examples/
+# but do not ignore the R files in examples directory (not subdirectories, though...)
+# Reinclude all folders in /jobs
+!/examples/*/
+# Ignore everything in the subfolders of /jobs
+/examples/*/*
+# Reinclude config.xml files in the first-level subfolders of /jobs
+!/examples/*/*.R
+
