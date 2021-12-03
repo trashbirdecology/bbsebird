@@ -7,9 +7,13 @@
 munge_bbs_shapefiles(
   cws.routes.dir,
   usgs.routes.dir,
+  routes.keep = NULL,
   cws.layer = "ALL_ROUTES",
   usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
-  proj.target = "USGS"
+  crs.target = 4326,
+  grid = NULL,
+  overwrite = TRUE,
+  show.plot = FALSE
 )
 }
 \arguments{
@@ -20,8 +24,6 @@ munge_bbs_shapefiles(
 \item{cws.layer}{Name of the layer to import. Defaults to "ALL_ROUTES"}
 
 \item{usgs.layer}{Name of the layer to import.}
-
-\item{proj.target}{One of c("USGS", "CWS"). The remaining datafile will be transformed to match the projection of proj.target.}
 }
 \description{
 This function is meant to intake two shapefiles, one per cws and usgs munges them such that they conform to the USGS data release for BBS observations and route metadata.

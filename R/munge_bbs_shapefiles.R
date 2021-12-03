@@ -15,7 +15,8 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
                                  usgs.layer="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020", # this was gift by Dave and Danny-DO NT SHARE
                                  crs.target=4326,
                                  grid=NULL,
-                                 overwrite=TRUE
+                                 overwrite=TRUE,
+                                 show.plot=FALSE
 ){
   # Warning for proceeding when objects already exist in the workspace
   if(exists("bbs_routes") & overwrite==FALSE){
@@ -25,16 +26,25 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   }
 
   # create as string for the crs.target
+  # crs.string=CRS(paste0("+init=epsg:", crs.target))
   crs.string=CRS(paste0("+init=epsg:", crs.target))
+
+    # because the CWS layer was created using an old geodatabase, we cannot easily use st_transform to re-project the layer.
+
 
   # LOAD DATA
   ## CWS route shapefiles
+  #### Becauset eh shapfile/gdb sent to me is really old, I cant use sf to import and st_ transform. So, I ahve to import usign sp readOGR, spTransform, and then convert to sf before merign wtih bbs.
   cws.gdb <- list.files(cws.routes.dir, pattern=".gdb",full.names=TRUE) %>% str_remove(".zip") %>% unique()
-    # cws_routes <- readOGR(dsn=cws.gdb,layer=cws.layer)
-    cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
+    cws_routes <- readOGR(dsn=cws.gdb,layer=cws.layer)
+    # cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
+    cws_routes <- spTransform(cws_routes, crs.string)
+    #coerce to sf
+    cws_routes <- st_as_sf(cws_routes)
+
   ## USGS route shapefiles (circa. 2012)
-  ## USGS BBS routes layer obtained from John Sauer.
-  ## Indexing by state-route combination
+  ### USGS BBS routes layer obtained from John Sauer.
+  ### Indexing by state-route combination
   ### Ex:  state 46 and route 029, RTENO==46029
   # usgs_routes <- readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
   usgs_routes <- st_read(dsn=usgs.routes.dir, layer=usgs.layer)
@@ -76,8 +86,7 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
     mutate(CountryNum=124,
            StateNum=str_sub(ProvRoute, start = 1, end = 2),
            Route=str_sub(ProvRoute, start = 3, end = 5),
-           RouteName=trimws(str_replace_all(Nbr_FullNa, "[:digit:]|-", ""), "left")) %>%
-    rename(geometry=Shape)
+           RouteName=trimws(str_replace_all(Nbr_FullNa, "[:digit:]|-", ""), "left"))
   cws_routes <- make.rteno(cws_routes)
 
   ## Keep routes if provided to save time on the intersection.
@@ -88,9 +97,6 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
     usgs_routes <- usgs_routes %>% filter(RTENO %in% routes.keep)
   }
 
-  ## Reproject data
-  cws_routes <- st_transform(cws_routes, crs = crs.string)
-  usgs_routes <- st_transform(usgs_routes, crs = crs.string)
 
   # merge the CA and USA data
   ## keep just a few of same cols-we can delete this but theyre not too useful.
@@ -103,8 +109,8 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   # stop here if no grid was provided...
   if(is.null(grid)){return(bbs_sf)}
 
-
-    grid <- st_transform(grid, crs = crs.string)
+  # if grid was provided, overlay and calculate lengths and areas
+  grid <- st_transform(grid, crs = crs.string)
     ## clip bbs_sf to grid extent
     message("Clipping BBS routes to grid extent and calculating Route and Segment lenghts. May take a minute or three.")
 
@@ -124,7 +130,7 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
       left_join(lengths, by = "id") %>%
       left_join(areas, by = "id")
 
-    # plot(plot(bbs_sf[length(bbs_sf)-1]))
+    if(show.plot) plot(bbs_sf[length(bbs_sf)-1])
 
 
   return(bbs_sf)

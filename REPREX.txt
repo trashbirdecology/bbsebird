@@ -1,3 +1,0 @@
-"route" "Active" "Comments" "Province" "ProvRoute" "StartTime" "Nbr_FullNa" "Shape_Leng" "Shape_Length" "RouteName" "RTENO"
-"1" 6 3 "Skipped section" 65 65006 442 "65-006 LOCH LOMOND" 716.787371054 716.787371053814 "LOCH LOMOND" "12465006"
-"2" 29 3 "Skipped sections" 68 68029 522 "68-029 SARNIA" 9423.28751982 9423.28751982353 "SARNIA" "12468029"

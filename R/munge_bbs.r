@@ -36,7 +36,8 @@ munge_bbs <-
     if (!is.null(statenums.remove))
       region_codes.subset <- region_codes.subset %>%
       filter(!StateNum %in% statenums.remove) # remove states specified above US and CAN only
-    list$observations <- list$observations %>%
+
+    list$routes <- list$routes %>%
       filter(!StateNum %in% statenums.remove)
 
     # Remove the citation object in bbs list
@@ -109,7 +110,7 @@ munge_bbs <-
     ## Keep only the data bbs considers usable when ==1
     if (QualityCurrentID == 1){
       list$weather <- list$weather %>%
-      filter(QualityCurrentID == 1)}
+        filter(QualityCurrentID == 1)}
 
 
     ## Remove the citation element
@@ -133,14 +134,14 @@ munge_bbs <-
       ungroup() # to be safe
     # create a data frame from the list if requested.
     if (collapse) {
-     message("`collapse=TRUE`: output provided as a data.frame instead of a list. set to `collapse`=FALSE if list is desired.")
-       list <- list %>% reduce(left_join)
+      message("`collapse=TRUE`: output provided as a data.frame instead of a list. set to `collapse`=FALSE if list is desired.")
+      list <- list %>% reduce(left_join)
     }
 
     message(paste0(
       "The following species are in your BBS data: ",ifelse(collapse, yes=unique(list$English_Common_Name),
-      no=unique(list$species_list$English_Common_Name)
-    )))
+                                                            no=unique(list$species_list$English_Common_Name)
+      )))
     return(list)
 
   }
