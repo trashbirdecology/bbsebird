@@ -40,8 +40,6 @@ desktop.ini
 
 # Ignore entire local data saves
 data-local/
-examples/data/
 data-in/
-missingroutes.csv
-missingroutesbyregion.csv
 routes.csv
+examples/
