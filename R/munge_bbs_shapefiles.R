@@ -16,7 +16,7 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
                                  crs.target=4326,
                                  grid=NULL,
                                  overwrite=TRUE,
-                                 show.plot=FALSE
+                                 show.plot=TRUE
 ){
   # Warning for proceeding when objects already exist in the workspace
   if(exists("bbs_routes") & overwrite==FALSE){
@@ -29,19 +29,18 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   # crs.string=CRS(paste0("+init=epsg:", crs.target))
   crs.string=CRS(paste0("+init=epsg:", crs.target))
 
-    # because the CWS layer was created using an old geodatabase, we cannot easily use st_transform to re-project the layer.
 
 
   # LOAD DATA
   ## CWS route shapefiles
   #### Becauset eh shapfile/gdb sent to me is really old, I cant use sf to import and st_ transform. So, I ahve to import usign sp readOGR, spTransform, and then convert to sf before merign wtih bbs.
+  # because the CWS layer was created using an old geodatabase, we cannot easily use st_transform to re-project the layer.
   cws.gdb <- list.files(cws.routes.dir, pattern=".gdb",full.names=TRUE) %>% str_remove(".zip") %>% unique()
-    cws_routes <- readOGR(dsn=cws.gdb,layer=cws.layer)
+  cws_routes <- readOGR(dsn=cws.gdb,layer=cws.layer)
     # cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
     cws_routes <- spTransform(cws_routes, crs.string)
     #coerce to sf
     cws_routes <- st_as_sf(cws_routes)
-
   ## USGS route shapefiles (circa. 2012)
   ### USGS BBS routes layer obtained from John Sauer.
   ### Indexing by state-route combination
@@ -103,7 +102,7 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   keep=intersect(names(usgs_routes), names(cws_routes))
   cws_routes <- cws_routes[,(names(cws_routes) %in% keep)]
   usgs_routes <- usgs_routes[,(names(usgs_routes) %in% keep)]
-
+  ### merge em
   bbs_sf <- bind_rows(usgs_routes, cws_routes)
 
   # stop here if no grid was provided...
@@ -111,27 +110,46 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
 
   # if grid was provided, overlay and calculate lengths and areas
   grid <- st_transform(grid, crs = crs.string)
-    ## clip bbs_sf to grid extent
-    message("Clipping BBS routes to grid extent and calculating Route and Segment lenghts. May take a minute or three.")
 
+    ## clip bbs_sf to grid extent
+            # and calculating Route and Segment lengths. May take a minute or three.")
     ## calculate the lengths of Routes and Route Segments within grid cells/ids
-    lengths <- st_intersection(grid, bbs_sf) %>%
+    tic()
+    message("Clipping BBS routes to grid extent. Takes some hot minutessss for more than 3 states/provinces.")
+    lengths <- st_intersection(grid, bbs_sf)
+    message("st_intersection of grid and bbs_sf process: ", toc())
+
+    message("Calculating route and segment lengths.")
+    lengths <- lengths %>%
+      ## length of segment within a cell
       mutate(SegmentLength = st_length(.)) %>%
       group_by(RTENO) %>%
+      ## total length of routes
       mutate(RouteLength=sum(SegmentLength)) %>%
+      ungroup() %>%
+      group_by(id, RTENO) %>%
+      ### turn seg length into proportion of the route per cell
+      mutate(PropRouteInCell=SegmentLength/RouteLength) %>%
       ungroup() %>%
       st_drop_geometry() # complicates things in joins later on
     ## calculate grid cell areas
+    message("Calculating grid cell areas.")
     areas <- grid %>%
       mutate(CellArea=st_area(.)) %>%
       st_drop_geometry() # complicates things in joins later on
+
     ## combine bbs routes + area + lengthss
+    message("Polishing the BBS routes and grid layer")
     bbs_sf <- grid %>%
       left_join(lengths, by = "id") %>%
       left_join(areas, by = "id")
 
-    if(show.plot) plot(bbs_sf[length(bbs_sf)-1])
-
+    # plot if wanted
+    if(show.plot){t=bbs_sf %>%
+      group_by(id) %>%
+      summarise(nRoutesPerCell=n_distinct(RTENO))
+      plot(t[2])
+      }
 
   return(bbs_sf)
 

@@ -2,30 +2,47 @@ if(exists("args.save")){rm(list=setdiff(ls(), args.save))}else(rm(list=ls()))
 source("1_spatial-grid.r")
 devtools::load_all()
 
+fns <- list.files(dir.bbs.out)
 
 # Check for existing files ------------------------------------------------
-if("bbs_spatial.rds" %in% dir.bbs.out) bbs_spatial <- readRDS(paste0(dir.spatial.out, "/", "bbs_spatial.rds"))else{
+if("bbs_spatial.rds" %in% tolower(fns)) bbs_spatial <- readRDS(paste0(dir.spatial.out, "/", "bbs_spatial.rds"))else{
 
 # Munge BBS data ----------------------------------------------------------
 ## Import and/or Download BBS Observations and Metadata -----------------------------
-if(!exists("bbs.orig")){
-  if("bbs-orig.rds" %in% dir.bbs.out) bbs.orig <- readRDS(paste0(dir.bbs.out, "/bbs-orig.rds"))
-  if(!"bbs-orig.rds" %in% dir.bbs.out) bbs.orig <- grab_bbs_data(sb_dir=dir.bbs.out)
-  }
+#### Original observations data
+if("bbs_orig.rds" %in% tolower(fns)) bbs_orig <-
+    readRDS(paste0(dir.bbs.out, "/bbs_orig.rds"))
+else{
+  print("grabbing bbs data, this might take 45sec")
+  bbs_orig <- grab_bbs_data(sb_dir = dir.bbs.out)
+  saveRDS(bbs_orig, paste0(dir.bbs.out, "/bbs_orig.rds"))
+}
 
-bbs_obs <-
-  munge_bbs(
-    list = bbs.orig,
-    spp = interest.species,
-    zero.fill = TRUE,
-    active.only = TRUE,
-    keep.stop.level.data = FALSE
-  )
-
+#### Munged observations data
+if (!"bbs_obs.rds" %in% tolower(fns)) {
+  bbs_obs <-
+    munge_bbs(
+      list = bbs_orig,
+      spp = interest.species,
+      zero.fill = TRUE,
+      active.only = TRUE,
+      keep.stop.level.data = FALSE
+    )
+  saveRDS(bbs_obs, paste0(dir.bbs.out, "/bbs_obs.rds"))
+} else{
+  bbs_obs <- readRDS(paste0(dir.bbs.out, "/bbs_obs.rds"))
+}
+rm(bbs_orig)
 
 ## Make BBS Spatial Layers ----------------------------------------------
 ### Create BBS routes spatial layer ----------------------------------------------------------------------
-# munges all routes at first, so could take 30sec or more
+# munges all routes at first then moves to subsetting to the grid, so have patience
+# takes about a minute for 1-3 states
+
+if(!"bbs_routes.rds" %in% tolower(fns)){
+message("Munging the BBS route shapefiles/spatial layer.
+        If `grid` specified, will take a hot minute.
+        WILL SOON PASTE ALGEBRA TO MESSAGE OUT ESTIMATED TIME BASED ON STATES AND GRID CELL SIZE")
 bbs_routes <-
   munge_bbs_shapefiles(
     cws.routes.dir = cws.routes.dir, #location of the CWS BBS routes shapefiles
@@ -35,13 +52,19 @@ bbs_routes <-
     grid=grid,
     overwrite=TRUE # wanna overwrite existing bbs_routes in workspace?
   )
-
-## to this point from 0_setup.r takes about 82 seconds for FL, GA, and SC
-# if grid was provided in munge_bbs_shapefiles, this is unnecessary so don't do it
-if(!"id" %in% tolower(names(bbs_routes))){bbs_routes <- st_intersection(grid, bbs_routes)}
+saveRDS(bbs_routes, paste0(dir.bbs.out, "/bbs_routes.rds"))
+}else{readRDS(paste0(dir.bbs.out, "/bbs_routes.rds"))}
 
 
-### Add BBS obsv data to spatial-------------------------------------------------------------------------
+# if grid was provided in munge_bbs_shapefiles, skip step
+if(!"id" %in% tolower(names(bbs_routes))) {
+  # overlays bbs routes to grid, if not already done.
+  bbs_routes <- st_intersection(grid, bbs_routes)
+}
+
+
+### Add BBS observations data to the routes+grid layer-------------------------------------------------------------------------
+### Minor issue, but Route Names in route shaepfiles do not match the BBS observations data route names.
 if("routename" %in% tolower(names(bbs_obs))){bbs_obs <-  bbs_obs %>%
   dplyr::select(-RouteName)}
 
