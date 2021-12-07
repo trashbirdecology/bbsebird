@@ -22,6 +22,7 @@ Imports:
     ggplot2,
     countrycode,
     magrittr,
-    progress
+    progress,
+    vroom
 Suggests: 
     learnr
