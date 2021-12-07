@@ -14,8 +14,7 @@ rm(list=ls())
 # install.packages ("stringi", type = "win.binary")
 # install.packages ("readr", type = "win.binary")
 devtools::install_github("trashbirdecology/bbsassistant",
-                         ref="major-update-50stop",
-                         force=FALSE)
+                         ref="main",force=FALSE)
 devtools::install_github("ropensci/rnaturalearthhires", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
 
 ## Package loads -----------------------------------------------------------------

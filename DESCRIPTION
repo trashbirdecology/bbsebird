@@ -23,6 +23,7 @@ Imports:
     countrycode,
     magrittr,
     progress,
-    vroom
+    vroom,
+    fs
 Suggests: 
     learnr

@@ -19,9 +19,30 @@ message(
 )
 
 
+# Filenames ---------------------------------------------------------------
+fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
+
+if(!exists("samp")) samp <- data.table::fread(fns.ebird[3])
+
+# Write Sampling File as Parquet ------------------------------------------
+# ## code borrowed from: https://rpubs.com/FelipeMonroy/591813
+# dir.parquet <-
+#   paste0(dir.ebird.out, "/parquet")
+# dir.create(dir.parquet, showWarnings = FALSE)
+# #It checks if there are files in the output directory [output_dir]. If there are not, the code continues.
+# if (length(list.files(dir.ebird.out, full.names = TRUE)) == 0) {
+#   #It creates an object with all the .csv files names in the data/ folder
+#   txts <- fs::dir_ls(dir.ebird.out, glob = "*.txt")
+#
+#   #If there are no .csv files in the data/ folder the code stops
+#   if (length(txts) == 0)
+#     stop("No txt files found in data/")
+#   #For every .csv file, it executes the write_chunk_data
+#   walk(csvs, write_chunk_data, dir.parquet)
+# }
+
 
 # Filter the eBird Data ---------------------------------------------------
-fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 
 ebird_filtered <- filter_ebird_data(fns.ebird = fns.ebird,
                                     overwrite = FALSE,
@@ -30,7 +51,8 @@ ebird_filtered <- filter_ebird_data(fns.ebird = fns.ebird,
                                     states = states,
                                     protocol = c("Traveling","Stationary"),
                                     species = interest.species,
-                                    years=c(1966:year(Sys.Date()))
+                                    years=c(1966:year(Sys.Date())),
+                                    method="data.table"
                                     )
 
 

@@ -14,7 +14,8 @@ filter_ebird_data <-
            species="Double-crested Cormorant",
            overwrite = FALSE,
            remove.bbs.obs=TRUE,
-           years=NULL
+           years=NULL,
+           method="data.table" # how to read in sampling data ... vroom often crashes
            ) {
     f_samp_in  <- fns.ebird[str_detect(fns.ebird, "sampling_rel")]
     f_obs_in <- setdiff(fns.ebird, f_samp_in)
@@ -28,6 +29,30 @@ filter_ebird_data <-
     f_obs_out <- paste0(dir.ebird.out, 'ebird_obs_filtered.rds')
     f_samp_out  <- paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
 
+    #specify teh columns that we will want to keep
+    cols.keep <-
+      c(
+        "all_species reported",
+        "country",
+        "country_code",
+        "county",
+        "county_code",
+        "duration_minutes",
+        "effort_area ha",
+        "effort_distance km",
+        "group_identifier",
+        "latitude",
+        "longitude",
+        "number_observers",
+        "observation_date",
+        "observer_id",
+        "protocol_code",
+        "protocol_type",
+        "sampling_event identifier",
+        "state",
+        "state_code",
+        "time_observations started"
+      )
 
     #specifying the column types helps with vroom::vroom(f_samp_in), which takes a couple of minutes...
     cols_samp <- list(
@@ -64,26 +89,43 @@ filter_ebird_data <-
         )
 
     ## Read in / filter sampling data frame
-      browser()
     if (file.exists(f_samp_out) & !overwrite) {
-      sampling <-
-        vroom::vroom(f_samp_out)
+      sampling <- vroom::vroom(f_samp_out)
     } else{
       if (!exists("sampling"))
       cat("Importing the eBird sampling events data.
             This may take a minute.")
-      # sampling <- data.table::fread(f_samp_in)
-      sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
-      gc()
+      if(method=="vroom"){ sampling <- vroom::vroom(f_samp_in, col_types=cols_samp)}
+      if(method=="data.table"){ sampling <- data.table::fread(f_samp_in) %>% as_tibble()}
+
+      ##force colnames to lower and replace spaces with underscore (_)
+      colnames(sampling) <- str_replace(tolower(colnames(sampling),
+                                                pattern=" ",
+                                                replacement="_"))
+      ## keep only useful columns
+      sampling <- sampling[names(sampling) %in% cols.keep]
       cat("Filtering sampling events. This takes a minute.")
-      sampling <- sampling %>%
-        filter(if(complete.only) `all species reported` %in% c("TRUE","True", 1)) %>%
-        filter(if(!is.null(protocol))`protocol type` %in% protocol)
-      gc()
+      # trying to keep in order of largest cut to smaller to help with memory issues.
       sampling <- sampling %>%  #breaking this up to try to help wtih mem issues
         filter(if(!is.null(countries)) country %in% countries) %>%
-        filter(if(!is.null(states)) STATE %in% region)
+        filter(if(!is.null(states)) state %in% states)
+      sampling <- sampling %>%
+        filter(if(complete.only) `all species reported` %in% c("TRUE","True", 1))
+      sampling <- sampling %>%
+        filter(if(!is.null(protocol))`protocol type` %in% protocol)
       gc()
+
+      # extract events with >1 checklist (i.e. group birding;)
+      ### this doesn't make sense to me, because sampling event
+      # identifiers are all unique and not tied to a group identifier
+      duplicates <- sampling %>%
+        filter(!is.na(`group identifier`),
+               `group identifier` != "") %>%
+        distinct(`group identifier`, `observation date`, `state`, `country`)
+
+
+test=auk_unique(sampling)
+
       # remove BBS observations if specified
       if(remove.bbs.obs){
         sampling <- sampling %>%
@@ -93,6 +135,9 @@ filter_ebird_data <-
 
       ## write the filtered sampling data
       vroom::vroom_write(sampling, f_samp_out)
+
+      ## remove the files that vroom creates in R session's temp directory just in case
+      fs::file_delete(list.files(tempdir(), full.names=TRUE))
       }
 
     ## Read in / filter observations data frame
