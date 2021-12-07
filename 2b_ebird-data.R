@@ -73,6 +73,3 @@ toc()
 # Export Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
-gc()
-
-ebird_spatial %>% head()
