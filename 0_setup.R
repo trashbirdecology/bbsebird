@@ -9,7 +9,6 @@ rm(list=ls())
 # if(.Platform$OS.type=="unix") unix::rlimit_as(1e12) # prob unnecessary but doesn't hurt (probably)
 # if(.Platform$OS.type=="windows") memory.limit(35000)
 
-
 # Libraries ---------------------------------------------------------------
 ## Installs ----------------------------------------------------------------
 # install.packages ("stringi", type = "win.binary")
@@ -22,12 +21,15 @@ devtools::install_github("ropensci/rnaturalearthhires", force=FALSE) ## must ins
 ## Package loads -----------------------------------------------------------------
 ### Common use-------------------
 library(purrr) # for a function in munge shapefiles methinks need to check
-library(dplyr)
+# library(data.table)
+# library(dtplyr)
+library(dplyr, warn.conflicts = FALSE)
 library(stringr)
 library(lubridate)
 library(tidyr)
 library(hms) ## for some reason zerofiltering function in auk cannot find this fun?
 library(lubridate)
+library(vroom)
 ### Plotting and visualization
 library(ggplot2)
 library(leaflet)
@@ -62,20 +64,24 @@ region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut
 # states <- c("Florida")
 states <-
   c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
-    'Iowa','US-IA',
+    # 'Iowa','US-IA',
     'Illinois', 'US-IL',
     'Indiana','US-IN',
     'Michigan','US-MI',
-    'Minnesota','US-MN',
+    # 'Minnesota','US-MN',
     # 'New York','US-NY',
     'Ohio','US-OH',
     # 'Pennsylvania','US-PA',
     'Wisconsin','US-WI',
-    'Ontario', 'CA-ON'
+    # 'Ontario', 'CA-ON',
+    NULL
 )
 
 
 ## BBS and eBird specifications--------------------------------
+
+mmyyyy <- "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
+
 ebird.protocol <- c("Traveling", "Stationary")
 complete.checklists.only <- TRUE
 
@@ -88,23 +94,17 @@ crs.target <- 4326 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
 ### A good estimate for large-scale (>=state) studies in North Am.
 ### is that there are 111.111km in 1 degree latitude or longitude
 #### miles to km: km=1.61*miles
-grid.size=25/111.111 #
+grid.size=55/111.111 #
 
 
 # Specify Directories & File Names -----------------------------------------------------
-dir.proj.out <- "examples/greatlakes-example-25km/"
+dir.proj.out <- paste0("examples/greatlakes-subset-example-", grid.size*111.111, "km/")
 
 ## Original Observations Data (for import and munging BBS, eBird) ----------------------------------
 ## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
 dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird"
-auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
-# Filenames for eBird data
-fn_samp <- paste0(dir.ebird.in, "/ebd_sampling_relSep-2021.txt")
-fns_ebd <- list.files(dir.ebird.in) #no need for fullnames because the auk package doesnt handle it well. needs a filename and a directory.
-# Example using great lakes region. Example uses multple ebd files (because munging the entire EBD is A LOT...)
-fns_ebd <- fns_ebd[grepl("(?=.*doccor)(?=.*Sep)(?=.*txt)", fns_ebd, perl = TRUE)]
-fns_ebd <- fns_ebd[!str_detect(fns_ebd, c("US_|CA_|sampling"))] # remove the national-level data (too cumbersome)
-fns_ebd <- fns_ebd[str_detect(fns_ebd, paste(states, collapse="|"))] # keep only the states we need.
+# auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
+# Sys.setenv("BIRDDB_HOME" = dir.ebird.in)
 
 
 ## BBS Route Shapefiles/GDBs -----------
@@ -113,9 +113,9 @@ usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-da
 
 ## Output Directories (project-specific) -----------------------------------
 ## Intermediary data files--------------------------------------------------
-dir.bbs.out <- paste0(dir.proj.out,"/bbs/")
-dir.ebird.out <- paste0(dir.proj.out,"/ebird/")
-dir.spatial.out <- paste0(dir.proj.out,"/spatial/")
+dir.bbs.out <- paste0(dir.proj.out,"bbs/")
+dir.ebird.out <- paste0(dir.proj.out,"ebird/")
+dir.spatial.out <- paste0(dir.proj.out,"spatial/")
 sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out), FUN=
          function(x) dir.create(x, showWarnings = FALSE))
 
