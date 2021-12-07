@@ -6,9 +6,9 @@
 \usage{
 id_ebird_files(
   dir.ebird.in,
-  mmyyyy = "oct-2021",
-  spatial = NULL,
-  species = NULL,
+  mmyyyy = "sep-2021",
+  regions = NULL,
+  species = "doccor",
   country.code.identifier = "iso2c",
   sampling.events = TRUE
 )
@@ -16,11 +16,13 @@ id_ebird_files(
 \arguments{
 \item{dir.ebird.in}{Directory for where the ebird data are stored.}
 
-\item{spatial}{Character vector comprising state/province or country abbreviations. If not specified, will identify the files associated with the country-level data.}
+\item{regions}{Character vector comprising state/province or country abbreviations. If not specified, will identify the files associated with the country-level data.}
 
 \item{species}{Character vector comprising species identifiers.}
 
 \item{country.code.identifier}{Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c}
+
+\item{sampling.events}{Logical.}
 }
 \description{
 ...

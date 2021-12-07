@@ -13,7 +13,7 @@ munge_bbs_shapefiles(
   crs.target = 4326,
   grid = NULL,
   overwrite = TRUE,
-  show.plot = FALSE
+  show.plot = TRUE
 )
 }
 \arguments{
