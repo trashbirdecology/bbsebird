@@ -29,25 +29,3 @@ ebird_filtered <- filter_ebird_data(fns.ebird = fns.ebird,
 
 
 # ENDRUN ------------------------------------------------------------------
-
-fns <- tolower(list.files(dir.ebird.in, full.names=TRUE))
-
-fns.samp <- fns[str_detect(fns,"samp_out")]
-fns.ebd  <- setdiff(fns,fns.samp)
-
-# ## Read files into R
-# ebd  <- vroom::vroom(fns.ebd)
-# samp <- vroom::vroom(fns.samp)
-#
-#
-# ## Identify potential BBS counts for removal.
-# potential.bbs <- ebd %>% filter(`DURATION MINUTES`==3 & `PROTOCOL TYPE`=="Stationary") %>%
-#   distinct(`OBSERVATION DATE`,`LOCALITY ID`,  `OBSERVER ID`, `SCIENTIFIC NAME`, .keep_all=TRUE)
-#
-# ## Reduce the sampling events data
-# samp.filtered <- samp %>%
-#   filter(country %in% unique(ebd$COUNTRY)) %>%
-#   filter(STATE %in% ebd$STATE)
-#
-# ## Create zero-filled data
-# ebird_zf <- full_join(ebd, samp.filtered)

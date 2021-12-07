@@ -14,7 +14,8 @@ if (detectCores() <= 4 |
     "You don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes."
   )
 message(
-  "Tossing out the garbage (`gc`) and about to deal with this eBird data. Buckle up, buttercup."
+  "Tossing out the garbage (`gc`) and about to deal with this eBird data.
+  Buckle up, buttercup."
 )
 
 
@@ -40,6 +41,10 @@ ebird_zf <- zerofill_ebird(ebird_filtered, save=TRUE)
 ebird_zf <- ebird_zf %>%
     filter(year >= 1966)
 
+# Make sure we dont have multiple checklists for same group birding event
+t=ebird_zf %>%
+  filter(!is.na(`group identifier`))
+x=t %>% summarise(n_distinct(`observation date`, `group identifier`))
 
 gc()
 
@@ -66,6 +71,8 @@ toc()
 
 
 # Export Data -------------------------------------------------------------
-saveRDS(ebird_spatial, file = paste0(dir.proj.out, "/", "ebird_spatial.rds"))
+saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
+gc()
 
+ebird_spatial %>% head()
