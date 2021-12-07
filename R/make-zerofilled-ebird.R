@@ -5,7 +5,7 @@
 #' @param myList A list containing two named data frames, c("observations", "sampling"). This object is the result of \code{filter_ebird_data()}.
 #' @param keep.orig Logical. If FALSE will delete the original object, myList, from memory.
 #' @param cols.remove A vector of column names to be excluded from the output file.
-#' @param cols.to.lowercase Logical. If TRUE will export a data frame where all colnames are in lowercase.
+#' @param cols.to.lowercase Logical. If TRUE will export a data frame where all colnames are in lowercase. Capitalization does not matter.
 #' @export zerofill_ebird
 zerofill_ebird <-
   function(myList,
@@ -20,7 +20,8 @@ zerofill_ebird <-
              "SPECIES COMMENTS",
              "...48",
              "HAS MEDIA",
-             "REASON"
+             "REASON",
+             "TRIP COMMENTS"
            )) {
     # Force columns to lowercase
       colnames(myList$sampling) <- tolower(colnames(myList$sampling))
@@ -51,7 +52,6 @@ zerofill_ebird <-
         julian = lubridate::yday(`observation date`),
         year = lubridate::year(`observation date`)
       )
-
 
 
     # Remove original data object
