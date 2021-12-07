@@ -5,7 +5,6 @@
 #' #' @param dir.out Directory for where to store the subsets of the sampling events data. If not specified will default to data-local/ebird.
 #' #' @param n.amer Logical. If working with North American countries, significantly reduces the file sizes of the sampling events data.
 #' #' @param overwrite Logical. If .RDS file, "sampling_events.rds" exists in dir or dir.out, will NOT overwrite when FALSE.
-#' #' @export get_ebird_sampling_events
 #' #'
 #'
 #' get_ebird_sampling_events <-

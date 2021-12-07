@@ -50,11 +50,11 @@ filter_ebird_data <-
         `OBSERVATION DATE` = col_date(),
         `TIME OBSERVATIONS STARTED` = col_time(),
         `OBSERVER ID` = col_character(),
-        `SAMPLING EVENT IDENTIFIER` = col_character(),
-        `PROTOCOL TYPE` = col_character(),
+        `sampling event identifier` = col_character(),
+        `protocol type` = col_character(),
         `PROTOCOL CODE` = col_character(),
         `PROJECT CODE` = col_character(),
-        `DURATION MINUTES` = col_double(),
+        `duration minutes` = col_double(),
         `EFFORT DISTANCE KM` = col_double(),
         `EFFORT AREA HA` = col_double(),
         `NUMBER OBSERVERS` = col_double(),
@@ -68,6 +68,7 @@ filter_ebird_data <-
       sampling <-
         vroom::vroom(f_samp_out)
     } else{
+      browser()
       if (!exists("sampling"))
       cat("Importing the eBird sampling events data.
             This may take a minute.")
@@ -76,8 +77,8 @@ filter_ebird_data <-
       gc()
       cat("Filtering sampling events. This takes a minute.")
       sampling <- sampling %>%
-        filter(if(complete.only) `ALL SPECIES REPORTED` %in% c("TRUE","True", 1)) %>%
-        filter(if(!is.null(protocol))`PROTOCOL TYPE` %in% protocol)
+        filter(if(complete.only) `all species reported` %in% c("TRUE","True", 1)) %>%
+        filter(if(!is.null(protocol))`protocol type` %in% protocol)
       gc()
       sampling <- sampling %>%  #breaking this up to try to help wtih mem issues
         filter(if(!is.null(countries)) country %in% countries) %>%
@@ -86,8 +87,8 @@ filter_ebird_data <-
       # remove BBS observations if specified
       if(remove.bbs.obs){
         sampling <- sampling %>%
-        filter(`PROTOCOL TYPE` != "Stationary" &
-               `DURATION MINUTES` != 3)
+        filter(`protocol type` != "Stationary" &
+               `duration minutes` != 3)
         }
 
       ## write the filtered sampling data
@@ -100,18 +101,17 @@ filter_ebird_data <-
     } else{
       observations <- vroom::vroom(f_obs_in)
       observations <- observations %>%
-        filter(if(!is.null(species))`COMMON NAME` %in% species) %>%
-        filter(if(!is.null(countries)) COUNTRY %in% countries) %>%
-        filter(if(!is.null(states))STATE %in% region) %>%
-        filter(if(!is.null(protocol))`PROTOCOL TYPE` %in% protocol)
+        filter(if(!is.null(species))`common name` %in% species) %>%
+        filter(if(!is.null(countries)) country %in% countries) %>%
+        filter(if(!is.null(states))state %in% region) %>%
+        filter(if(!is.null(protocol))`protocol type` %in% protocol)
       observations <- observations %>%
-        filter(if(complete.only) `SAMPLING EVENT IDENTIFIER` %in% sampling$`SAMPLING EVENT IDENTIFIER`) #keep only the complete cases
+        filter(if(complete.only) `sampling event identifier` %in% sampling$`sampling event identifier`) #keep only the complete cases
       saveRDS(observations, f_obs_out)
     }
-  gc()
 
-  ebird_filtered <- list("observations"=observations,
-                         "sampling"=sampling)
+  ebird_filtered <- list("observations" = observations,
+                         "sampling" = sampling)
 
   rm(observations, sampling)
 
