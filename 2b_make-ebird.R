@@ -60,10 +60,12 @@ ebird_zf <-
 ## Combine grid and eBird -----------------------------
 # this will take a minute
 tic()
-ebird_spatial <- grid %>% #  37sec for Ohio//2min for FL,GA,SC
+ebird_spatial <- grid %>% #  37sec for Ohio//2min for FL,GA,SC//2 min for Great Lakes
   st_join(ebird_zf)
 toc()
 
 
 # Export Data -------------------------------------------------------------
-saveRDS(ebird_spatial, file = paste0(dir.munged, "/", "ebird_spatial.rds"))
+saveRDS(ebird_spatial, file = paste0(dir.proj.out, "/", "ebird_spatial.rds"))
+
+
