@@ -13,9 +13,9 @@ filter_ebird_data <-
            protocol=c("Traveling", "Stationary"),
            species="Double-crested Cormorant",
            overwrite = FALSE,
-           remove.bbs.obs=TRUE
+           remove.bbs.obs=TRUE,
+           years=NULL
            ) {
-
     f_samp_in  <- fns.ebird[str_detect(fns.ebird, "sampling_rel")]
     f_obs_in <- setdiff(fns.ebird, f_samp_in)
     if (!length(f_obs_in) > 0)
@@ -64,11 +64,11 @@ filter_ebird_data <-
         )
 
     ## Read in / filter sampling data frame
+      browser()
     if (file.exists(f_samp_out) & !overwrite) {
       sampling <-
         vroom::vroom(f_samp_out)
     } else{
-      browser()
       if (!exists("sampling"))
       cat("Importing the eBird sampling events data.
             This may take a minute.")

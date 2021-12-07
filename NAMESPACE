@@ -2,5 +2,4 @@
 
 export(munge_bbs)
 export(munge_bbs_shapefiles)
-export(munge_ebird)
 export(zerofill_ebird)

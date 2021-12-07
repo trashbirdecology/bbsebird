@@ -49,7 +49,6 @@ zerofill_ebird <-
     # Create date and julian day variables
     ebird_zf <-
       ebird_zf %>% mutate(
-        julian = lubridate::yday(`observation date`),
         year = lubridate::year(`observation date`)
       )
 

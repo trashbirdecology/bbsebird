@@ -27,8 +27,10 @@ ebird_filtered <- filter_ebird_data(fns.ebird = fns.ebird,
                                     overwrite = FALSE,
                                     dir.ebird.out = dir.ebird.out,
                                     countries = countries,
-                                    states = states, protocol = c("Traveling","Stationary"),
-                                    species = interest.species
+                                    states = states,
+                                    protocol = c("Traveling","Stationary"),
+                                    species = interest.species,
+                                    years=c(1966:year(Sys.Date()))
                                     )
 
 
