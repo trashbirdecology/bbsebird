@@ -81,10 +81,12 @@ munge_bbs <-
     }
     if (zero.fill) {
       # unused <- setdiff(list$observations, myspp.obs) ## setdiff takes twice as long as anti_join
-      unused <-
-        anti_join(list$observations, myspp.obs) ## anti_join twices as fast as setdiff in this situation
-      zeroes <- unused %>% distinct(RouteDataID, .keep_all = TRUE) %>%
-        mutate(AOU = unique(myspp.obs$AOU)[1])
+      ## create a data frame comprising the route obs for NON TARGET SPECIES (i.e. the zeroes)
+      zeroes <-
+        anti_join(list$observations, myspp.obs) %>% ## anti_join twices as fast as setdiff in this situation
+        distinct(RouteDataID, Year, RTENO) %>%
+        mutate(AOU = unique(myspp.obs$AOU)[1]) #apply target species to create zeroes
+
       zeroes[grepl("Stop|stop|STOP|RouteTotal", names(zeroes))] <-
         0 # force all values to zero regardless of whether its stop or route-level data (or both)
     } else{
@@ -95,7 +97,6 @@ munge_bbs <-
     # append zero-filled data and target species observations
     list$observations <-
       bind_rows(myspp.obs, zeroes) %>% distinct(RTENO, AOU, Year, .keep_all = TRUE)
-
 
     # remove discontinued routes if specified
     if (active.only) {

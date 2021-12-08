@@ -29,3 +29,53 @@ clean_zf <- function(ebd_zf){
 
 
 }
+
+
+
+# CONVERT COLUMNS  --------------------------------------------------------
+
+convert_cols <- function(x){
+
+  ## numeric
+  num <- c("duration_minutes",
+           "effort_area_ha",
+           "effort_distance_km",
+           "latitude",
+           "longitude")
+  ## integer
+  ints <- c("all_species_reported",
+            "number_observers",
+            "observation_count")
+  ## date/time
+  dates <- c("observation_date")
+  # times <- c("time_observations_started")
+  ## characters
+  chrs <- c("country",
+            "common_name",
+            "country_code",
+            "county",
+            "county_code",
+            "group_identifier",
+            "observer_id",
+            "protocol_code",
+            "protocol_type",
+            "sampling_event_identifier",
+            "scientific_name",
+            "state",
+            "state_code",
+            "time_observations_started"
+  )
+
+
+
+  x <- x %>%
+    mutate(across(any_of(c(chrs, num)), as.character)) %>%
+    mutate(across(any_of(num), as.numeric)) %>%
+    mutate(across(any_of(dates), lubridate::as_date)) %>%
+    # mutate(across(any_of(times), hms::as_hms)) %>%
+    mutate(across(any_of(ints), as.integer))
+
+return(x)
+
+
+}

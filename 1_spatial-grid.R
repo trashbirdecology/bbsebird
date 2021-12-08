@@ -8,8 +8,6 @@ devtools::load_all()
 ## load in that rds.
 
 if("grid.rds" %in% list.files(dir.spatial.out)) grid <- readRDS(paste0(dir.spatial.out, "/", "grid.rds"))else{
-
-
 # Create a spatial grid -----------------------------------------------------------
 # grid.size = c(diam.km*1000, diam.km*1000) ## convert km to m //
 study.area <-

@@ -26,4 +26,5 @@ Imports:
     vroom,
     fs
 Suggests: 
+    assertthat,
     learnr
