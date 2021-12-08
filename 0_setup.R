@@ -78,12 +78,19 @@ states <- c("Florida")
 
 ## BBS and eBird specifications--------------------------------
 
-mmyyyy <- "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
 
+### ebird specs
 ebird.protocol <- c("Traveling", "Stationary")
 complete.checklists.only <- TRUE
+max.effort.mins <-  3*60 ## arbitrary
+max.effort.km   <-  5 #This is coarse also, typically 5km or less
+mmyyyy <- "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
 
+### bbs specs
 include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
+
+
+
 
 ## Geospatial specifications --------------------------------
 crs.target <- 4326 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
