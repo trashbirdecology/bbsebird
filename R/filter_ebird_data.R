@@ -136,13 +136,14 @@ filter_ebird_data <-
       sampling <- auk_unique(sampling, checklists_only = TRUE)
 
 
-
-      # remove BBS observations if specified
+      # attempt to remove BBS observations if specified
       ### THIS IS A BIG ASSUMPTION SO WILL NEED TO REVISIT EVENTUALLY!!!
       if (remove.bbs.obs) {
         sampling <- sampling %>%
           filter(protocol_type != "Stationary" &
                    duration_minutes != 3)
+      ## perhaps also remove the longer (3+hours and >Xkm) observations...
+        # sampling <-
       }
 
       # ensure consistency in col types
@@ -158,6 +159,7 @@ filter_ebird_data <-
       ## remove the files that vroom creates in R session's temp directory just in case
       try(fs::file_delete(list.files(tempdir(), full.names = TRUE)), silent =
             TRUE)
+      gc()
 
     }
 
@@ -186,8 +188,17 @@ filter_ebird_data <-
         filter(if (!is.null(years))
           year %in% years)
 
+      if (remove.bbs.obs) {
+        observations <- observations %>%
+          filter(protocol_type != "Stationary" &
+                   duration_minutes != 3)
+      }
 
+
+      # trying to keep in order of largest cut to smaller to help with memory issues.
       observations <- observations %>%
+        filter(if (complete.only)
+          all_species_reported %in% c("TRUE", "True", 1)) %>%
         filter(if (!is.null(species))
           common_name %in% species) %>%
         filter(if (!is.null(countries))
@@ -211,8 +222,7 @@ filter_ebird_data <-
         data.table::fwrite(observations, f_obs_out)
     }
 
-
-
+    # create output file as a list
     ebird_filtered <- list("observations" = as_tibble(observations),
                            "sampling" = as_tibble(sampling))
 

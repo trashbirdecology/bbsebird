@@ -36,16 +36,19 @@ zerofill_ebird <-
 
     # Create observation count and species column names to add the zeroes to sampling data
     myList$sampling$common_name = unique(myList$observations$common_name)
-    myList$sampling$observation_count = 0
-    myList$observations$observation_count = as.integer(myList$observations$observation_count)
+    # myList$sampling$observation_count = 0
 
-    # Just going to force to lubridate::date() to be able to perform a full join
-    myList$observations$observation_date <- lubridate::as_date(myList$observations$observation_date)
-    myList$sampling$observation_date <- lubridate::as_date(myList$sampling$observation_date)
+    # # Just going to force to lubridate::date() to be able to perform a full join
+    # myList$observations$observation_date <- lubridate::as_date(myList$observations$observation_date)
+    # myList$sampling$observation_date <- lubridate::as_date(myList$sampling$observation_date)
+
+
+    myList$sampling <- convert_cols(myList$sampling)
+    myList$observations <- convert_cols(myList$observations)
 
     # Full join the filtered sampling events to species observations
     ebird_zf <-
-      full_join(myList$observations, myList$sampling)%>%
+      full_join(myList$observations, myList$sampling) %>%
       mutate(observation_count = replace_na(observation_count, 0))
     #### full join needs to be double-checked... havent tested to ensure its not missing or falsely capturing non-detection and detection events.
     ### this check should include a review of filter_ebird_data and zerofill-ebird.

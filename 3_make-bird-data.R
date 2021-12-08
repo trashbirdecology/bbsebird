@@ -21,7 +21,6 @@ if(all(fns.spatial %in% list.files(dir.spatial.out))){
   source("2b_ebird-data.R")
 }
 
-
 # Some Tests -------------------------------------------------------------------------
 ##For good measure, ensure all the spatial files are in same proj
 if(!(st_crs(grid)==st_crs(bbs_spatial) & st_crs(ebird_spatial)==st_crs(grid)))stop("Warning. The ebird, bbs, and grid spatial layers are not in same projection and/or CRS.")

@@ -18,6 +18,7 @@ message(
   Buckle up, buttercup."
 )
 
+# if ebird spatial is already in memory run nothing here.
 
 # Filenames ---------------------------------------------------------------
 fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
@@ -45,12 +46,11 @@ fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 #                               sampling_events = fns[fns %>% str_detect("samp")])
 
 
-ebird_zf <- zerofill_ebird(ebird_filtered)
+ebird_zf <- zerofill_ebird(myList=ebird_filtered)
 gc()
 
 # Create the eBird Spatial Layer  -----------------------------------------------------
-
-ebird_spatial <- make_ebird_spatial(ebird_zf)
+ebird_spatial <- make_ebird_spatial(ebird_zf, crs.target = crs.target)
 
 # Export Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
