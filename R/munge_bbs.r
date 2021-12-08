@@ -7,38 +7,28 @@
 #' @param spp A vector of one or more species (using English Common Name) to subset the data by. Capitalization ignored.
 #' @param zero.fill If TRUE and a single species is provided in 'spp', this function will output list$observations with zero-filled data.
 #' @param active.only Logical. If TRUE keep only active routes. Discontinued routes will be discarded.
-#' @export
+#' @export munge_bbs
 
 munge_bbs <-
-  function(list = bbs.orig,
+  function(list,
+           states.keep = NULL,
            spp = "Double-crested Cormorant",
            zero.fill = TRUE,
            active.only = TRUE,
            keep.stop.level.data = FALSE,
            QualityCurrentID = 1,
-           collapse = TRUE,
-           countrynums.keep=c(124, 840),
-           countrynums.remove=NULL,
-           statenums.keep=NULL,
-           statenums.remove=NULL) {
+           countrynums.keep=c(124, 840)) {
  # First, subset by political/geo
     # data(region_codes) # region codes from bbsAssistant package.
     region_codes.subset <- region_codes %>%
       filter(CountryNum %in% countrynums.keep)
     # have to split up the state num and country num process b/c of Mexico's character issues.
+    if(is.null(states.keep))states.keep <- tolower(region_codes.subset$State)
     statenums.keep <-
-      region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% tolower(states)]
-    statenums.remove <-
-      region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% tolower(region.remove)]
-    if (!is.null(statenums.keep))
-      region_codes.subset <- region_codes.subset %>%
-      filter(StateNum %in% statenums.keep) # remove states specified above US and CAN only
-    if (!is.null(statenums.remove))
-      region_codes.subset <- region_codes.subset %>%
-      filter(!StateNum %in% statenums.remove) # remove states specified above US and CAN only
+      region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% tolower(states.keep)]
 
     list$routes <- list$routes %>%
-      filter(!StateNum %in% statenums.remove)
+      filter(StateNum %in% statenums.keep)
 
     # Remove the citation object in bbs list
     if ("citation" %in% names(list))
@@ -67,10 +57,12 @@ munge_bbs <-
       mutate(across(starts_with("English_Common_Name"), tolower)) %>%
       filter(across(any_of("English_Common_Name"), ~ .x %in% tolower(spp)))
 
-    # use the aou to filter down the observations and create zero-filled data set
+    # use the aou for target species to zero-fill the data
     myspp.obs <- list$observations %>%
       filter(as.double(AOU) %in% as.double(unique(list$species_list$AOU))) # ensure the variables are of same type
-    # zeroes
+
+
+    # Zero-fill data
     ## ensure only a single species is provided when zero.fill=TRUE
     spp <- spp[tolower(spp) %in% list$species_list]
     if (zero.fill &
@@ -84,9 +76,9 @@ munge_bbs <-
       ## create a data frame comprising the route obs for NON TARGET SPECIES (i.e. the zeroes)
       zeroes <-
         anti_join(list$observations, myspp.obs) %>% ## anti_join twices as fast as setdiff in this situation
-        distinct(RouteDataID, Year, RTENO) %>%
-        mutate(AOU = unique(myspp.obs$AOU)[1]) #apply target species to create zeroes
-
+        distinct(RouteDataID, Year, RTENO, .keep_all = TRUE) %>%
+        mutate(AOU = unique(myspp.obs$AOU)[1]) %>%  #apply target species to create zeroes
+        dplyr::select(-RouteDataID) # for good measuure to ensure no joins/bind rows pick this up..
       zeroes[grepl("Stop|stop|STOP|RouteTotal", names(zeroes))] <-
         0 # force all values to zero regardless of whether its stop or route-level data (or both)
     } else{
@@ -111,8 +103,8 @@ munge_bbs <-
     ## Keep only the data bbs considers usable when ==1
     if (QualityCurrentID == 1){
       list$weather <- list$weather %>%
-        filter(QualityCurrentID == 1)}
-
+        filter(QualityCurrentID == 1)
+      }
 
     ## Remove the citation element
     list[which(tolower(names(list)) == "citation")] <- NULL
@@ -121,9 +113,9 @@ munge_bbs <-
     # some more munging that needs to ber moved into bbsasst ideally..
     list <- lapply(list, function(x) { x <- make.rteno(x) })
     list <- lapply(list, function(x) { x <- make.dates(x) })
-    list <- lapply(list, function(x) x <- x[!(names(x) %in% c("RouteDataID", "RouteDataId"))])
+    list <- lapply(list, function(x) x <- x[!(tolower(names(x)) %in% "routedataid")])
     list <- lapply(list, function(x) { x <- make.integer(x) })
-    glimpse(list[1])
+    # glimpse(list[1])
 
     # Create a metadata list element called, observers
     list$metadata <- list$weather %>%
@@ -133,16 +125,30 @@ munge_bbs <-
       group_by(ObsN, RTENO, Year) %>%
       mutate(ObsFirstYearRoute = ifelse(Date == min(Date), 1, 0)) %>%
       ungroup() # to be safe
-    # create a data frame from the list if requested.
-    if (collapse) {
-      message("`collapse=TRUE`: output provided as a data.frame instead of a list. set to `collapse`=FALSE if list is desired.")
-      list <- list %>% reduce(left_join)
-    }
 
-    message(paste0(
-      "The following species are in your BBS data: ",ifelse(collapse, yes=unique(list$English_Common_Name),
-                                                            no=unique(list$species_list$English_Common_Name)
-      )))
-    return(list)
+    gc()
+
+    # create a data frame from the list if requested.
+    ###
+    ### some data missing from various components of BBS data (retrieved using bbsassistant)
+    # cat("Number unique RTENO:\n (routes, observations, vehicle_data, weather)\n", c(bbs_orig$routes$RTENO %>% n_distinct(),
+    #                               bbs_orig$observations$RTENO %>% n_distinct(),
+    #                               bbs_orig$vehicle_data$RTENO %>% n_distinct(),
+    #                               bbs_orig$weather$RTENO %>% n_distinct()))
+    # cat("Number unique RouteDataID:\n (observations, vehicle_data, weather)\n", c(
+    #                               bbs_orig$observations$RouteDataID %>% n_distinct(),
+    #                               bbs_orig$vehicle_data$RouteDataID %>% n_distinct(),
+    #                               bbs_orig$weather$RouteDataID %>% n_distinct()))
+
+   # first, join the vehicle_data to the observations
+    df <- inner_join(list$observations, list$vehicle_data)
+    df <- inner_join(df, list$routes)
+    df <- inner_join(df, list$metadata)
+    df <- inner_join(df, list$weather)
+
+
+   cat("The following species are in your BBS data: ", unique(spp), sep = "\n")
+
+  return(df)
 
   }

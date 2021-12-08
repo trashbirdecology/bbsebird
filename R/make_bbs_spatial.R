@@ -7,7 +7,7 @@
 #' @export
 ### I NEED TO CHANGE NAEM TO LIKE, CREATE BBS SPATIAL
 #### ALso, prob include an optin to define the pre=existuing grid
-munge_bbs_shapefiles <- function(cws.routes.dir,
+make_bbs_spatial <- function(cws.routes.dir,
                                  usgs.routes.dir,
                                  routes.keep=NULL,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir
@@ -22,7 +22,7 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
   if(exists("bbs_routes") & overwrite==FALSE){
     ind=menu(title = "bbs_routes may already exist and `overwrite=FALSE`.\n This function may take 1-2 minutes.Are you sure you want to proceed?",
              choices = c("Yes!", "No."))
-    if(ind==2) message("Function cancelled.")
+    if(ind==2) cat("Function cancelled.")
   }
 
   # create as string for the crs.target
@@ -99,14 +99,20 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
 
   # merge the CA and USA data
   ## keep just a few of same cols-we can delete this but theyre not too useful.
-  keep=intersect(names(usgs_routes), names(cws_routes))
-  cws_routes <- cws_routes[,(names(cws_routes) %in% keep)]
-  usgs_routes <- usgs_routes[,(names(usgs_routes) %in% keep)]
-  ### merge em
+  keep <- intersect(tolower(names(usgs_routes)), tolower(names(cws_routes)))
+  cws_routes <- cws_routes[,tolower(names(cws_routes)) %in% keep]
+  usgs_routes <- usgs_routes[,tolower(names(usgs_routes)) %in% keep]
+
+  ### join CWS and USGS routes
   bbs_sf <- bind_rows(usgs_routes, cws_routes)
+  message(paste0("Number of unique routes in the CWS and USGS merged routes spatial layer: ",
+                 length(unique(bbs_sf$RTENO))
+                 ))
 
   # stop here if no grid was provided...
   if(is.null(grid)){return(bbs_sf)}
+
+
 
   # if grid was provided, overlay and calculate lengths and areas
   grid <- st_transform(grid, crs = crs.string)
@@ -114,12 +120,10 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
     ## clip bbs_sf to grid extent
             # and calculating Route and Segment lengths. May take a minute or three.")
     ## calculate the lengths of Routes and Route Segments within grid cells/ids
-    tic()
-    message("Clipping BBS routes to grid extent. Takes some hot minutessss for more than 3 states/provinces.")
+    cat("Clipping BBS routes to grid extent. Takes some hot minutessss for more than 3 states/provinces.")
     lengths <- st_intersection(grid, bbs_sf)
-    message("st_intersection of grid and bbs_sf process: ", toc())
 
-    message("Calculating route and segment lengths.")
+    cat("Calculating route and segment lengths.")
     lengths <- lengths %>%
       ## length of segment within a cell
       mutate(SegmentLength = st_length(.)) %>%
@@ -133,13 +137,13 @@ munge_bbs_shapefiles <- function(cws.routes.dir,
       ungroup() %>%
       st_drop_geometry() # complicates things in joins later on
     ## calculate grid cell areas
-    message("Calculating grid cell areas.")
+    cat("Calculating grid cell areas.")
     areas <- grid %>%
       mutate(CellArea=st_area(.)) %>%
       st_drop_geometry() # complicates things in joins later on
 
     ## combine bbs routes + area + lengthss
-    message("Polishing the BBS routes and grid layer")
+    cat("Polishing the BBS routes and grid layer")
     bbs_sf <- grid %>%
       left_join(lengths, by = "id") %>%
       left_join(areas, by = "id")

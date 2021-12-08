@@ -24,22 +24,23 @@ fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 
 
 # Filter the eBird Data ---------------------------------------------------
-if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(fns.ebird = fns.ebird,
+if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(
+                                    fns.ebird = fns.ebird,
                                     overwrite = FALSE,
                                     dir.ebird.out = dir.ebird.out,
                                     countries = countries,
                                     states = states,
                                     protocol = c("Traveling","Stationary"),
                                     species = interest.species,
-                                    years=c(1966:year(Sys.Date())),
-                                    method="data.table"
+                                    years=c(1966:year(Sys.Date()))
                                     )
 
 
 # Zero-fill the eBird Data -------------------------------------------------
 fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 
-# would lke to get thsi functional
+# would lke to get thsi functional but auk_zerofill currently requires
+## VERY specific coltypes and names. not flexible in coltypes...
 # ebird_zf <- auk::auk_zerofill(x=fns[fns %>% str_detect("obs")],
 #                               sampling_events = fns[fns %>% str_detect("samp")])
 

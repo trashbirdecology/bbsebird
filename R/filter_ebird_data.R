@@ -162,7 +162,7 @@ filter_ebird_data <-
     }
 
     ## Read in / filter observations data frame
-    if (file.exists(f_obs_out) | !overwrite) {
+    if (file.exists(f_obs_out) & !overwrite) {
       if (method == "vroom")
         observations <- vroom::vroom(f_obs_out, col_types = col_types)
       if (method == "data.table")
@@ -213,8 +213,8 @@ filter_ebird_data <-
 
 
 
-    ebird_filtered <- list("observations" = observations,
-                           "sampling" = sampling)
+    ebird_filtered <- list("observations" = as_tibble(observations),
+                           "sampling" = as_tibble(sampling))
 
     # rm(observations, sampling)
 

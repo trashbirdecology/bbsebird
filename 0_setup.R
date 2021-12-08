@@ -54,27 +54,26 @@ library(rgeos)
 ### Potential uses--------
 # library(tmap)
 
-
 # Data Munging -----------------------------------------------------
 ## Subsetting by species and region --------------------------------
 interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") # to protect against changes in case, hyphenation
 countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps
 region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory")
-# states <- c("Florida")
-states <-
-  c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
-    # 'Iowa','US-IA',
-    'Illinois', 'US-IL',
-    'Indiana','US-IN',
-    'Michigan','US-MI',
-    # 'Minnesota','US-MN',
-    # 'New York','US-NY',
-    'Ohio','US-OH',
-    # 'Pennsylvania','US-PA',
-    'Wisconsin','US-WI',
-    # 'Ontario', 'CA-ON',
-    NULL
-)
+states <- c("Florida")
+# states <-
+#   c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
+#     # 'Iowa','US-IA',
+#     'Illinois', 'US-IL',
+#     'Indiana','US-IN',
+#     'Michigan','US-MI',
+#     # 'Minnesota','US-MN',
+#     # 'New York','US-NY',
+#     'Ohio','US-OH',
+#     # 'Pennsylvania','US-PA',
+#     'Wisconsin','US-WI',
+#     # 'Ontario', 'CA-ON',
+#     NULL
+# )
 
 
 ## BBS and eBird specifications--------------------------------
@@ -93,11 +92,12 @@ crs.target <- 4326 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
 ### A good estimate for large-scale (>=state) studies in North Am.
 ### is that there are 111.111km in 1 degree latitude or longitude
 #### miles to km: km=1.61*miles
-grid.size=55/111.111 #
+grid.size=111.111/111.111 #
 
 
 # Specify Directories & File Names -----------------------------------------------------
-dir.proj.out <- paste0("examples/greatlakes-subset-example-", grid.size*111.111, "km/")
+# dir.proj.out <- paste0("examples/greatlakes-subset-example-", grid.size*111.111, "km/")
+dir.proj.out <- paste0("examples/florida-example-", round(grid.size*111.111), "km/")
 
 ## Original Observations Data (for import and munging BBS, eBird) ----------------------------------
 ## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
