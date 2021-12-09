@@ -32,7 +32,6 @@ if (!"bbs_obs.rds" %in% tolower(fns)) {
   bbs_obs <- readRDS(paste0(dir.bbs.out, "/bbs_obs.rds"))
 }
 
-# rm(bbs_orig)
 
 ## Make BBS Spatial Layers ----------------------------------------------
 ### Create BBS routes spatial layer ----------------------------------------------------------------------
@@ -69,24 +68,13 @@ bbs_spatial <-
 ### looks liek some bBs routes are missing...
 mapview(bbs_spatial)
 # exploratory plots (should move elsewhere.....)
-plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(TotalSpp)) %>% dplyr::select(maxC_bbs))
-plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
-plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
-# plot(bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))
-plot((bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))[,"n_routes_cell"],)
-plot((bbs_spatial  %>% group_by(id) %>% summarise(n_spp=max(TotalSpp, na.rm=TRUE)))[,"n_spp"],)
-plot((bbs_spatial  %>% group_by(id) %>% summarise(mean_n_spp=mean(TotalSpp, na.rm=TRUE)))[,"mean_n_spp"],)
-# t=  bbs_spatial %>%
-#     dplyr::select(ObsN, RTENO, id) %>%
-#   group_by(RTENO, id) %>%
-#   summarise(nhumans=n_distinct(ObsN)) %>%
-#     distinct(RTENO, nhumans, .keep_all=T) %>%
-#   ungroup() %>%
-#   group_by(id) %>%
-#   summarize(med_nhuman_cell=median(nhumans))
-# plot(t[,"med_nhuman_cell"]) # median number of observers per route within the cell
-
-# as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern=TRUE))
+# plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(RouteTotal)) %>% dplyr::select(maxC_bbs))
+# plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
+# plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
+# # plot(bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))
+# plot((bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))[,"n_routes_cell"],)
+# plot((bbs_spatial  %>% group_by(id) %>% summarise(n_spp=max(TotalSpp, na.rm=TRUE)))[,"n_spp"],)
+# plot((bbs_spatial  %>% group_by(id) %>% summarise(mean_n_spp=mean(TotalSpp, na.rm=TRUE)))[,"mean_n_spp"],)
 
 
 # Export Data -------------------------------------------------------------
@@ -95,6 +83,7 @@ saveRDS(bbs_spatial, file = paste0(dir.spatial.out, "/", "bbs_spatial.rds"))
 
 }
 # Clear mem ---------------------------------------------------------------------
-args.save <- c(args.save, "bbs_spatial")
+if(exists("args.save")){
+  args.save <- c(args.save, "bbs_spatial")
 rm(list=setdiff(ls(), args.save))
-
+}

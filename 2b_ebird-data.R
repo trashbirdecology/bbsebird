@@ -54,4 +54,7 @@ ebird_spatial <- make_ebird_spatial(x=ebird_zf, crs.target = crs.target)
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
 # Clear mem ---------------------------------------------------------------------
+if(exists("args.save")){
 args.save <- c(args.save, "ebird_spatial")
+  rm(list=setdiff(ls(), args.save))
+}

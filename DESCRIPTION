@@ -26,5 +26,6 @@ Imports:
     vroom,
     fs
 Suggests: 
+    suncalc,
     assertthat,
     learnr

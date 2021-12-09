@@ -60,6 +60,7 @@ interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormor
 countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps
 region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory")
 states <- c("Florida")
+proj.shorthand="florida"
 # states <-
 #   c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
 #     # 'Iowa','US-IA',
@@ -107,14 +108,15 @@ grid.size=111.111/111.111 #
 
 # Specify Directories & File Names -----------------------------------------------------
 # dir.proj.out <- paste0("examples/greatlakes-subset-example-", grid.size*111.111, "km/")
-dir.proj.out <- paste0("examples/florida-example-", round(grid.size*111.111), "km/")
-
+dir.proj.out <- paste0("examples/", proj.shorthand,"-example-", round(grid.size*111.111), "km/")
 ## Original Observations Data (for import and munging BBS, eBird) ----------------------------------
 ## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
 dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird"
 # auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
 # Sys.setenv("BIRDDB_HOME" = dir.ebird.in)
 
+# JAGs Formatted Data -----------------------------------------------------
+dir.jags <- paste0(dir.proj.out, "jags/")
 
 ## BBS Route Shapefiles/GDBs -----------
 cws.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
@@ -125,7 +127,7 @@ usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-da
 dir.bbs.out <- paste0(dir.proj.out,"bbs/")
 dir.ebird.out <- paste0(dir.proj.out,"ebird/")
 dir.spatial.out <- paste0(dir.proj.out,"spatial/")
-sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out), FUN=
+sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags), FUN=
          function(x) dir.create(x, showWarnings = FALSE))
 
 

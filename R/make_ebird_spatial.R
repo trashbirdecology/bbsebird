@@ -14,8 +14,14 @@ make_ebird_spatial <- function(x, crs.target, grid = NULL) {
 
   # convert ebird data frame to spatial object
   cat("assigning coordinates to `x`. takes a  minute for a few states' worth of ebird data.\n")
+
+  # add attribute comprising the ebird coordinates. when i assign lat and lon as coordinates to the sf object, i lose them as attributes and
+  ### theyre hard to recover when it becomes an SFC object... annnoying? yes.
+  x$lon=x$longitude
+  x$lat=x$latitude
   coordinates(x) <-
     ~ longitude + latitude # 1-2 minutes for all of N.Amer.
+
 
   # define projection for lat long (ebird documentation states CRS is 4326)
   proj4string(x) <-
@@ -37,11 +43,13 @@ make_ebird_spatial <- function(x, crs.target, grid = NULL) {
   cat(
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
-  tic()
-  ebird_spatial <-
-    grid %>%
-    st_join(x)
-  toc()
+  # tic()
+  # ebird_spatial <- st_join(x, grid)
+  #   grid %>%
+  #   st_join(x)
+  # # toc()
+  ebird_spatial <- st_join(grid, x) # should produce empty cells where no counts exist for that cell
+
 
   return(ebird_spatial)
 

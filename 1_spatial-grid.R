@@ -33,9 +33,17 @@ grid <- study.area %>%
 # tmap::qtm(grid)
 # mapview::mapview(grid) # interactive, openstreetmap
 
+
+# Add centroid lat lon to grid --------------------------------------------
+centroid.coords <- st_coordinates(st_geometry(st_centroid(grid)))
+grid$cell.lon.centroid <- centroid.coords[,1]
+grid$cell.lat.centroid <- centroid.coords[,2]
+
+
 # Clear junk ----------------------------------------------------------
 rm(study.area)
 gc()
+
 
 # Export Data -------------------------------------------------------------
 saveRDS(grid, file = paste0(dir.spatial.out, "/", "grid.rds"))

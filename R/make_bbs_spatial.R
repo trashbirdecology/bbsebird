@@ -11,7 +11,7 @@ make_bbs_spatial <- function(cws.routes.dir,
                                  usgs.routes.dir,
                                  routes.keep=NULL,
                                  cws.layer="ALL_ROUTES", #name of cws layer in cws.routes.dir
-                                 # usgs.layer="bbsrte_2012_alb", # this one is from Sauer
+                                 # usgs.layer="bbsrte_2012_alb", # this one is from Sauer//outdated, not tested well yet
                                  usgs.layer="US_BBS_Route-Paths-Snapshot_Taken-Feb-2020", # this was gift by Dave and Danny-DO NT SHARE
                                  crs.target=4326,
                                  grid=NULL,
@@ -28,7 +28,6 @@ make_bbs_spatial <- function(cws.routes.dir,
   # create as string for the crs.target
   # crs.string=CRS(paste0("+init=epsg:", crs.target))
   crs.string=CRS(paste0("+init=epsg:", crs.target))
-
 
 
   # LOAD DATA

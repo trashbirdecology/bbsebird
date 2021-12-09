@@ -11,10 +11,10 @@
 
 munge_bbs <-
   function(list,
-           states.keep = NULL,
+           states = NULL,
            spp = "Double-crested Cormorant",
            zero.fill = TRUE,
-           active.only = TRUE,
+           active.only = FALSE,
            keep.stop.level.data = FALSE,
            QualityCurrentID = 1,
            countrynums.keep=c(124, 840)) {
@@ -23,10 +23,7 @@ munge_bbs <-
     region_codes.subset <- region_codes %>%
       filter(CountryNum %in% countrynums.keep)
     # have to split up the state num and country num process b/c of Mexico's character issues.
-    if(!is.null(states.keep))states.keep <- tolower(region_codes.subset$State)
-    statenums.keep <-
-      region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% tolower(states.keep)]
-
+    if(!is.null(states)) region_codes.subset <-region_codes.subset %>% filter(tolower(State) %in% tolower(states))
     # Remove the citation object in bbs list
     if ("citation" %in% names(list))
       list$citation <- NULL
@@ -50,6 +47,16 @@ munge_bbs <-
       }
     }
 
+
+    ## filter out by ctry and state!
+    list$observations <- list$observations %>%
+      filter(CountryNum %in% region_codes.subset$CountryNum &
+               StateNum %in% region_codes.subset$StateNum
+      )
+    list$routes <- list$routes %>%
+      filter(CountryNum %in% region_codes.subset$CountryNum &
+               StateNum %in% region_codes.subset$StateNum
+      )
 
     # grab the unique AOU codes associated with species in "spp"
     list$species_list <- list$species_list %>%
@@ -94,10 +101,13 @@ munge_bbs <-
       # keep active in routes
       list$routes <- list$routes %>%
         filter(Active == 1)
-      # remove the removed routes from observations
-      list$observations <- list$observations %>%
-        filter(list$observations$RTENO %in% unique(list$routes$RTENO))
     }
+
+    # remove the removed routes from observations
+    list$observations <- list$observations %>%
+        filter(RTENO %in% unique(list$routes$RTENO))
+    list$routes <- list$routes %>% # for good measure why not
+      filter(RTENO %in% unique(list$observations$RTENO))
 
     ## Keep only the data bbs considers usable when ==1
     if (QualityCurrentID == 1){
@@ -105,9 +115,14 @@ munge_bbs <-
         filter(QualityCurrentID == 1)
       }
 
+    ## keep only relevant weather, vehicle and observers
+    list$weather <- list$weather %>%
+      filter(RTENO %in% unique(list$routes$RTENO)) %>%
+      filter(RTENO %in% unique(list$observations$RTENO))
+
+
     ## Remove the citation element
     list[which(tolower(names(list)) == "citation")] <- NULL
-
 
     # some more munging that needs to ber moved into bbsasst ideally..
     list <- lapply(list, function(x) { x <- make.rteno(x) })

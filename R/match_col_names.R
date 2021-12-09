@@ -9,8 +9,8 @@ match_col_names <- function(x){
   col_names <- list(date = c("observation_date", "date"),
                     C =    c("observation_count", "count","routetotal"),
                     yday  = c("dayofyear"),
-                    latitude  = c("lat"),
-                    longitude = c("lon","long")
+                    lat  = c("lati", "latitude"),
+                    lon = c("longitude","long")
                     )
 
   for(i in seq_along(col_names)){
