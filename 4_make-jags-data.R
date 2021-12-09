@@ -20,3 +20,12 @@ if(all(fns %in% list.files(dir.jags))){
 jags <- list()
 
 
+## munge bbs for jags ------------------------------------------------------
+names(bbs)
+
+
+
+## munge ebird for jags -----------------------------------------------------
+names(ebird)
+
+

@@ -59,8 +59,8 @@ library(rgeos)
 interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") # to protect against changes in case, hyphenation
 countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps
 region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory")
-states <- c("Florida")
-proj.shorthand="florida"
+states <- c("Florida", "Georgia")
+proj.shorthand="fl-ga"
 # states <-
 #   c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
 #     # 'Iowa','US-IA',
@@ -129,7 +129,8 @@ dir.ebird.out <- paste0(dir.proj.out,"ebird/")
 dir.spatial.out <- paste0(dir.proj.out,"spatial/")
 sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags), FUN=
          function(x) dir.create(x, showWarnings = FALSE))
-
+dir.plots <- paste0(dir.proj.out, "plots")
+dir.exploratory.plots <- paste0(dir.plots, "exploratory")
 
 
 # Arguments to never remove from env --------------------------------------

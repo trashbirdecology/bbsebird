@@ -2,6 +2,8 @@ if(exists("args.save")){rm(list=setdiff(ls(), args.save))}else(rm(list=ls()))
 source("0_setup.R")
 devtools::load_all()
 
+##### THIS WILL BE PUSHED INTO AN EXPORTED FUNCTION EVENTUIALLY !!!!
+
 
 # Check for existing grid -------------------------------------------------
 ## If a grid.rds is saved in project directory, will not run script but will

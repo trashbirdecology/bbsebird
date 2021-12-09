@@ -3,9 +3,9 @@ source("1_spatial-grid.r")
 devtools::load_all()
 
 fns <- list.files(dir.bbs.out)
-
+fns.spatial <- list.files(dir.spatial.out)
 # Check for existing files ------------------------------------------------
-if("bbs_spatial.rds" %in% tolower(fns)) bbs_spatial <- readRDS(paste0(dir.spatial.out, "/", "bbs_spatial.rds"))else{
+if("bbs_spatial.rds" %in% tolower(fns.spatial)) bbs_spatial <- readRDS(paste0(dir.spatial.out, "/", "bbs_spatial.rds"))else{
 
 # Munge BBS data ----------------------------------------------------------
 ## Import and/or Download BBS Observations and Metadata -----------------------------
@@ -37,51 +37,24 @@ if (!"bbs_obs.rds" %in% tolower(fns)) {
 ### Create BBS routes spatial layer ----------------------------------------------------------------------
 # munges all routes at first then moves to subsetting to the grid, so have patience
 # takes about a minute for 1-3 states
-
-if(!"bbs_routes.rds" %in% tolower(fns)){
 cat("Munging the BBS route shapefiles/spatial layer.\nIf `grid` specified, will take a hot minute.\nWILL SOON PASTE ALGEBRA TO MESSAGE OUT ESTIMATED TIME BASED ON STATES AND GRID CELL SIZE")
-bbs_routes <-
+bbs_spatial <-
   make_bbs_spatial(
+    bbs.obs = bbs_obs,
     cws.routes.dir = cws.routes.dir, #location of the CWS BBS routes shapefiles
     usgs.routes.dir = usgs.routes.dir, #location of the USGS BBS routes shapefiles
     crs.target = crs.target,
     routes.keep=unique(bbs_obs$RTENO),
     grid=grid,
+    keep.empty.cells =TRUE,
+    plot.dir=dir.exploratory.plots,
     overwrite=TRUE # wanna overwrite existing bbs_routes in workspace? if
   )
-saveRDS(bbs_routes, paste0(dir.bbs.out, "/bbs_routes.rds"))
-}else{bbs_routes <- readRDS(paste0(dir.bbs.out, "/bbs_routes.rds"))}
 
-
-### Add BBS observations data to the routes+grid layer-------------------------------------------------------------------------
-### Minor issue, but Route Names in route shaepfiles do not match the BBS observations data route names.
-if("routename" %in% tolower(names(bbs_obs))){bbs_obs <-  bbs_obs %>%
-  dplyr::select(-RouteName)}
-
-bbs_spatial <-
-  merge(bbs_routes, bbs_obs, by="RTENO") %>%
-  # create var with percent route in grid cell
-  mutate(PercSegmentInCell = SegmentLength / RouteLength)
-
-
-### Some exploratory plots (optional) -----------------------------
-### looks liek some bBs routes are missing...
-mapview(bbs_spatial)
-# exploratory plots (should move elsewhere.....)
-# plot(bbs_spatial %>% group_by(id) %>% summarise(maxC_bbs=max(RouteTotal)) %>% dplyr::select(maxC_bbs))
-# plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>% dplyr::select(n_years))
-# plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
-# # plot(bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))
-# plot((bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))[,"n_routes_cell"],)
-# plot((bbs_spatial  %>% group_by(id) %>% summarise(n_spp=max(TotalSpp, na.rm=TRUE)))[,"n_spp"],)
-# plot((bbs_spatial  %>% group_by(id) %>% summarise(mean_n_spp=mean(TotalSpp, na.rm=TRUE)))[,"mean_n_spp"],)
-
-
-# Export Data -------------------------------------------------------------
-saveRDS(bbs_spatial, file = paste0(dir.spatial.out, "/", "bbs_spatial.rds"))
-
-
+saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 }
+
+
 # Clear mem ---------------------------------------------------------------------
 if(exists("args.save")){
   args.save <- c(args.save, "bbs_spatial")
