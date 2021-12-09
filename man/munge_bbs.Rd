@@ -6,10 +6,10 @@
 \usage{
 munge_bbs(
   list,
-  states.keep = NULL,
+  states = NULL,
   spp = "Double-crested Cormorant",
   zero.fill = TRUE,
-  active.only = TRUE,
+  active.only = FALSE,
   keep.stop.level.data = FALSE,
   QualityCurrentID = 1,
   countrynums.keep = c(124, 840)
