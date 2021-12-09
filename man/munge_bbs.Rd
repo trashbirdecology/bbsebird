@@ -5,17 +5,14 @@
 \title{Subset BBS observations data by one or more species of interest.}
 \usage{
 munge_bbs(
-  list = bbs.orig,
+  list,
+  states.keep = NULL,
   spp = "Double-crested Cormorant",
   zero.fill = TRUE,
   active.only = TRUE,
   keep.stop.level.data = FALSE,
   QualityCurrentID = 1,
-  collapse = TRUE,
-  countrynums.keep = c(124, 840),
-  countrynums.remove = NULL,
-  statenums.keep = NULL,
-  statenums.remove = NULL
+  countrynums.keep = c(124, 840)
 )
 }
 \arguments{

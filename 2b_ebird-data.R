@@ -23,7 +23,6 @@ message(
 # Filenames ---------------------------------------------------------------
 fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 
-
 # Filter the eBird Data ---------------------------------------------------
 if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(
                                     fns.ebird = fns.ebird,
@@ -33,28 +32,26 @@ if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(
                                     states = states,
                                     protocol = c("Traveling","Stationary"),
                                     species = interest.species,
-                                    years=c(1966:year(Sys.Date()))
+                                    years=years
                                     )
 
 
 # Zero-fill the eBird Data -------------------------------------------------
 fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 
-# would lke to get thsi functional but auk_zerofill currently requires
+# would like to get this functional but auk_zerofill currently requires
 ## VERY specific coltypes and names. not flexible in coltypes...
 # ebird_zf <- auk::auk_zerofill(x=fns[fns %>% str_detect("obs")],
 #                               sampling_events = fns[fns %>% str_detect("samp")])
 
-
-ebird_zf <- zerofill_ebird(myList=ebird_filtered)
+ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.spatial.out)
 gc()
 
 # Create the eBird Spatial Layer  -----------------------------------------------------
-ebird_spatial <- make_ebird_spatial(ebird_zf, crs.target = crs.target)
+ebird_spatial <- make_ebird_spatial(x=ebird_zf, crs.target = crs.target)
 
 # Export Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
 # Clear mem ---------------------------------------------------------------------
 args.save <- c(args.save, "ebird_spatial")
-rm(list=setdiff(ls(), args.save))

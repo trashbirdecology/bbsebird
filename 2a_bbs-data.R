@@ -51,7 +51,7 @@ bbs_routes <-
     overwrite=TRUE # wanna overwrite existing bbs_routes in workspace? if
   )
 saveRDS(bbs_routes, paste0(dir.bbs.out, "/bbs_routes.rds"))
-}else{readRDS(paste0(dir.bbs.out, "/bbs_routes.rds"))}
+}else{bbs_routes <- readRDS(paste0(dir.bbs.out, "/bbs_routes.rds"))}
 
 
 ### Add BBS observations data to the routes+grid layer-------------------------------------------------------------------------
@@ -74,6 +74,8 @@ plot(bbs_spatial %>% group_by(RTENO) %>% summarise(n_years=n_distinct(Year)) %>%
 plot(bbs_spatial %>% group_by(id) %>% summarise(n_observers_per_cell=n_distinct(ObsN)) %>% dplyr::select(n_obs_per_cell))
 # plot(bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))
 plot((bbs_spatial  %>% group_by(id) %>% summarise(n_routes_cell=n_distinct(RTENO, na.rm=TRUE)))[,"n_routes_cell"],)
+plot((bbs_spatial  %>% group_by(id) %>% summarise(n_spp=max(TotalSpp, na.rm=TRUE)))[,"n_spp"],)
+plot((bbs_spatial  %>% group_by(id) %>% summarise(mean_n_spp=mean(TotalSpp, na.rm=TRUE)))[,"mean_n_spp"],)
 # t=  bbs_spatial %>%
 #     dplyr::select(ObsN, RTENO, id) %>%
 #   group_by(RTENO, id) %>%

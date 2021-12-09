@@ -23,12 +23,9 @@ munge_bbs <-
     region_codes.subset <- region_codes %>%
       filter(CountryNum %in% countrynums.keep)
     # have to split up the state num and country num process b/c of Mexico's character issues.
-    if(is.null(states.keep))states.keep <- tolower(region_codes.subset$State)
+    if(!is.null(states.keep))states.keep <- tolower(region_codes.subset$State)
     statenums.keep <-
       region_codes.subset$StateNum[tolower(region_codes.subset$State) %in% tolower(states.keep)]
-
-    list$routes <- list$routes %>%
-      filter(StateNum %in% statenums.keep)
 
     # Remove the citation object in bbs list
     if ("citation" %in% names(list))
@@ -46,6 +43,8 @@ munge_bbs <-
         list$observations$RouteTotal <-
           rowSums(list$observations[, cols.stop])
       }
+
+
       for (i in seq_along(list)) {
         list[[i]] <- list[[i]][,!(names(list[[i]]) %in% cols)]
       }

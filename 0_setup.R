@@ -78,6 +78,10 @@ states <- c("Florida")
 
 ## BBS and eBird specifications--------------------------------
 
+years <- c(2003:year(Sys.Date()))
+min.yday <- 91 # breeding season day start (day of year)
+max.yday <- 245 # breeding season day end (day of year)
+
 
 ### ebird specs
 ebird.protocol <- c("Traveling", "Stationary")
@@ -88,7 +92,6 @@ mmyyyy <- "Oct-2021" # month and year of most recent ebird EBD/samp download in 
 
 ### bbs specs
 include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
-
 
 
 

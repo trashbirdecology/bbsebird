@@ -46,8 +46,10 @@ convert_cols <- function(x){
   ints <- c("all_species_reported",
             "number_observers",
             "observation_count")
+
   ## date/time
-  dates <- c("observation_date")
+  dates <- c("observation_date",
+             "date")
   # times <- c("time_observations_started")
   ## characters
   chrs <- c("country",
@@ -67,13 +69,11 @@ convert_cols <- function(x){
   )
 
 
-
   x <- x %>%
-    mutate(across(any_of(c(chrs, num)), as.character)) %>%
+    mutate(across(any_of(c(chrs, num, ints)), as.character)) %>%
     mutate(across(any_of(num), as.numeric)) %>%
-    mutate(across(any_of(dates), lubridate::as_date)) %>%
-    # mutate(across(any_of(times), hms::as_hms)) %>%
-    mutate(across(any_of(ints), as.integer))
+    mutate(across(any_of(ints), as.integer)) %>%
+    mutate(across(any_of(dates), as.Date))
 
 return(x)
 
