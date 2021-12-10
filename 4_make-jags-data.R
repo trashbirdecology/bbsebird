@@ -1,4 +1,5 @@
 if(exists("args.save")){rm(list=setdiff(ls(), args.save))}else(rm(list=ls()))
+source("0_setup.r")
 devtools::load_all()
 
 # Create or Load in Post-spatial Munging BBS and eBird Data ----------------------------
@@ -16,39 +17,44 @@ if(all(fns %in% list.files(dir.jags))){
 }
 
 
-# Example from AHMBOOK ----------------------------------------------------
-
-AHMbook::simNmixSpatial()
-
 # Create JAGS data ------------------------------------------------
-jags <- list()
 ## for my sanity just going to list things out to populate them later
 jags <- list(
-  XY = data.frame(x=NULL, y=NULL, layer=NULL, covar1=NULL),
-  nSites = col_integer(),
-  covar1 = NULL,
   BBSr = matrix(NA),  # matrix
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL,
-   = NULL
-
-
+  Brsite = NULL,
+  Brgrid = NULL,
+  covar1 = NULL,
+  day = NULL,
+  E = NULL,
+  distance = NULL,
+  groupsize = NULL,
+  hours = NULL,
+  nChecklist = NULL,
+  nGridwithRoutes = NULL,
+  nov = NULL,
+  nRoutes = col_integer(),
+  nYearsB = col_integer(),
+  nSites = col_integer(), # number of grid cells in study area
+  nSitesSurveyed = NULL,
+  offroad = NULL,
+  propStops = NULL,
+  time = NULL,
+  traveling = NULL, # binary/logical (0=stationary protocol, 1=traveling/moving protocol)
+  Xp = matrix(NA),
+  XY = data.frame(x=NULL, y=NULL, layer=NULL, covar1=NULL)
 )
-
 
 
 ## munge bbs for jags ------------------------------------------------------
 names(bbs)
+
+BBSr <- acast(bbs, Year~ID, value.var="C",
+            # Because a route could be split into multiple grid cells. BUT the
+            # total count is applicable at the route level, not the route
+            # segment level.
+            fun.aggregate=Mode,
+            drop=FALSE) # Keep year / route combinations that didn't occur
+
 
 
 
