@@ -5,6 +5,7 @@
 \title{Manipulate the BBS route shapefiles}
 \usage{
 make_bbs_spatial(
+  bbs.obs,
   cws.routes.dir,
   usgs.routes.dir,
   routes.keep = NULL,
@@ -13,7 +14,9 @@ make_bbs_spatial(
   crs.target = 4326,
   grid = NULL,
   overwrite = TRUE,
-  show.plot = TRUE
+  print.plots = TRUE,
+  keep.empty.cells = TRUE,
+  plot.dir = NULL
 )
 }
 \arguments{
