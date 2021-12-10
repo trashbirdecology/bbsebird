@@ -48,7 +48,7 @@ bbs_spatial <-
     grid=grid,
     keep.empty.cells =TRUE,
     plot.dir=dir.exploratory.plots,
-    overwrite=TRUE # wanna overwrite existing bbs_routes in workspace? if
+    overwrite=TRUE
   )
 
 saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))

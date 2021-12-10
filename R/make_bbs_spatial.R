@@ -159,12 +159,15 @@ make_bbs_spatial <- function(bbs.obs,
     ### turn seg length into proportion of the route per cell
     mutate(PropRouteInCell = SegmentLength / RouteLength) %>%
     ungroup() %>%
-    st_drop_geometry() # complicates things in joins later on
+    st_drop_geometry() %>%
+    dplyr::select(-cell.lon.centroid, -cell.lat.centroid)
+
   ## calculate grid cell areas
   cat("Calculating grid cell areas..\n\n")
   areas <- grid %>%
     mutate(CellArea = st_area(.)) %>%
-    st_drop_geometry() # complicates things in joins later on
+    st_drop_geometry() %>%
+    dplyr::select(-cell.lon.centroid, -cell.lat.centroid)
 
   ## combine bbs routes + area + lengthss
   cat("Polishing the BBS routes and grid layer.\n\n")

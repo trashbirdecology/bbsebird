@@ -15,7 +15,7 @@ munge_bbs <-
            spp = "Double-crested Cormorant",
            zero.fill = TRUE,
            active.only = FALSE,
-           keep.stop.level.data = FALSE,
+           keep.stop.level.data = TRUE,
            QualityCurrentID = 1,
            countrynums.keep=c(124, 840)) {
  # First, subset by political/geo
@@ -29,26 +29,29 @@ munge_bbs <-
       list$citation <- NULL
 
     # first, remove stop - level data if not needed  to help with mem issues
-    if (!keep.stop.level.data) {
       # create a column index for all data not needed at stop-level
-      cols <- c(paste0("Stop", c(1:50)), # stop-level counts
-                paste0("Noise", c(1:50)), # stop-level noise information
-                paste0("Car", c(1:50))) # stop-level car counts)
-      # Before dropping stop data, create a column containing total count of species per route/yr
-      if (!all(c("RouteTotal") %in% names(list$observations))) {
-        cols.stop <- cols[str_detect(cols,"Stop")]
-        list$observations$RouteTotal <-
-          rowSums(list$observations[, cols.stop])
-      }
 
-
+      cols.stop <- c(paste0("Stop", c(1:50))) # stop-level counts
+      cols.noise <- c(paste0("Noise", c(1:50))) # stop-level noise covar
+      cols.car <- c(paste0("Car", c(1:50))) # stop-level car covar
+      # Before dropping stop data, create a column containing total and the average
+      ## of detection covariates per route/yr
+      list$observations <-
+        list$observations %>%
+        mutate(RouteTotal=rowSums(across(cols.stop)))
+      list$vehicle_data <- list$vehicle_data %>%
+        mutate(CarMean= round(rowSums(across(all_of(cols.car)))/50)) # rounded
+      list$vehicle_data <- list$vehicle_data %>%
+        mutate(NoiseMean= round(rowSums(across(all_of(cols.noise)))/50)) # rounded
+    cols=c(cols.stop, cols.noise, cols.car)
+    if (!keep.stop.level.data) {
       for (i in seq_along(list)) {
         list[[i]] <- list[[i]][,!(names(list[[i]]) %in% cols)]
       }
     }
 
 
-    ## filter out by ctry and state!
+    ## filter out by country and state!
     list$observations <- list$observations %>%
       filter(CountryNum %in% region_codes.subset$CountryNum &
                StateNum %in% region_codes.subset$StateNum

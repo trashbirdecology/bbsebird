@@ -61,10 +61,14 @@ ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$tim
 ## utils.R function `match_col_names()`
 cat("calculating astronomical stats...yes, the astronomy definition")
 sunlight.keep <- c("dawn", "solarNoon", "sunrise","sunriseEnd")
-bbs.sunlight <- suncalc::getSunlightTimes(data=bbs_spatial, keep = sunlight.keep)
-ebird.sunlight <- suncalc::getSunlightTimes(data=ebird_spatial, keep = sunlight.keep)
+## for suncalc below, its slightly quicker to run sunlight times and then get distinct lat lon.
+bbs.sunlight <- suncalc::getSunlightTimes(data=bbs_spatial, keep = sunlight.keep) %>% distinct(lat, lon, .keep_all=TRUE)
+ebird.sunlight <- suncalc::getSunlightTimes(data=ebird_spatial, keep = sunlight.keep)  %>% distinct(lat, lon, .keep_all=TRUE)
 
 ### turn vars in sunlight.keep into time only (otherwise they are in YYYY-MM-DD HH-MM-SS; we need only HH-MM)
+# ### cant get lapply to work need to toy around later
+# lapply(c(bbs.sunlight, ebird.sunlight), FUN=
+#          function(x) x <- x %>% mutate(across(sunlight.keep, hms::as_hms)))
 bbs.sunlight <- bbs.sunlight %>%
   mutate(across(sunlight.keep, hms::as_hms))
 ebird.sunlight <- ebird.sunlight %>%
@@ -73,6 +77,14 @@ ebird.sunlight <- ebird.sunlight %>%
 ### add sunlight information to spatial data
 bbs <- left_join(bbs_spatial, bbs.sunlight)
 ebird <- left_join(ebird_spatial, ebird.sunlight)
+
+## BBS detectability covariates
+bbs <- bbs %>%
+  group_by(rteno, year) %>%
+  mutate(avgwind = abs(startwind-endwind)/2)
+
+
+
 
 # Some exploratory plots to ensure data is sensical.  ---------------------
 ggplot(ebird)+geom_histogram(aes(log(C)))+ggtitle("ebird")

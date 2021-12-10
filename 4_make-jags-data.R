@@ -17,6 +17,14 @@ if(all(fns %in% list.files(dir.jags))){
 }
 
 
+# Munge BBS for jags ---------------------------------------------------------
+## first, create and scale as necessary.
+
+
+
+
+# Munge eBird for jags ---------------------------------------------------------
+
 
 # Create JAGS data ------------------------------------------------
 ## for my sanity just going to list things out to populate them later
