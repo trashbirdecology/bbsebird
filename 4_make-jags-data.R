@@ -17,6 +17,7 @@ if(all(fns %in% list.files(dir.jags))){
 }
 
 
+
 # Create JAGS data ------------------------------------------------
 ## for my sanity just going to list things out to populate them later
 jags <- list(
