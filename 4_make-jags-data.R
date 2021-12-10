@@ -16,8 +16,35 @@ if(all(fns %in% list.files(dir.jags))){
 }
 
 
+# Example from AHMBOOK ----------------------------------------------------
+
+AHMbook::simNmixSpatial()
+
 # Create JAGS data ------------------------------------------------
 jags <- list()
+## for my sanity just going to list things out to populate them later
+jags <- list(
+  XY = data.frame(x=NULL, y=NULL, layer=NULL, covar1=NULL),
+  nSites = col_integer(),
+  covar1 = NULL,
+  BBSr = matrix(NA),  # matrix
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL,
+   = NULL
+
+
+)
+
 
 
 ## munge bbs for jags ------------------------------------------------------
