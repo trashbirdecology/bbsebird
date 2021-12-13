@@ -17,10 +17,12 @@ if(all(fns %in% list.files(dir.jags))){
 }
 
 
+# JAGS output structure-------------------------------------------------------------
+## for my sanity just going to list things out to populate them later
+jags.data <- list()
+
 # Grid/study area ---------------------------------------------------------
-# XY: centroid coords for grid cells in study area
 XY <- cbind(grid$cell.lon.centroid, grid$cell.lat.centroid)
-# nSites: num. grid cells in study area
 nSites <- nrow(XY)
 
 
@@ -30,40 +32,64 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
   as.data.frame() %>%
   na.omit(rteno, year) %>%
   distinct(rteno, year, id,.keep_all=TRUE)
-
-## create and scale covariates
-  ### z-scale wind
+## scale covariates
+### z-scale wind
 bbs.df$avgwind.z <- (bbs.df$avgwind-mean(bbs$avgwind, na.rm=TRUE))/sd(bbs.df$avgwind, na.rm=TRUE)
-#### paige uses Xp and wind.z so just keeping this for now will clean up later.
-Xp <- wind.z <- pivot_wider(bbs.df %>% distinct(year, rteno, avgwind.z),
-                      id_cols = year, names_from = rteno,
-                      values_from = "avgwind.z")
-
-#### cols in paige's bbs.jags.NY
-# [1] "BBSr"              "bbs_counts_annual" "propStops"         "wind.z"            "bbs_wind_annual"
-# [6] "nov"               "Brsite"            "nRoutes"           "Brgrid"            "nGridswithRoutes"
-# BBSr: count data matrix (year by rteno)
-BBSr <- bbs.df %>%
-  distinct(year, rteno, C) %>%
-  pivot_wider(id_cols = year,
-              names_from = rteno,
-              values_from = "C")
+### z-scale number vehicles observed
+bbs.df$avgcar.z <- (bbs.df$carmean-mean(bbs$carmean, na.rm=TRUE))/sd(bbs.df$carmean, na.rm=TRUE)
+### z-scale number vehicles observed
+bbs.df$noise.z <- (bbs.df$noisemean-mean(bbs$noisemean, na.rm=TRUE))/sd(bbs.df$noisemean, na.rm=TRUE)
 
 
-# eBird for jags ---------------------------------------------------------
-##coerce the ebird data to a data frame.
+
+# eBird data ---------------------------------------------------------
+##coerce the bbs data to a data frame.
 ebird.df <- ebird %>% st_drop_geometry() %>%
   as.data.frame() %>%
   distinct(checklist_id, year, id,.keep_all=TRUE)
 
-# E: array (grid cell id by year, slice=checklist_id); counts (C) from eBird
-E <- ebird.df %>%
-  acast(id~year~checklist_id,
-        value.var="C")
-gc()
+head(ebird.df)
 
-# nSitesSurveyed: vector (length: num years) number of grid cells containing eBird checklists per year
-ebird.df %>% distinct()
+
+
+
+
+
+
+
+
+
+# trying to fit to paige's strucutres  ------------------------------------------------------------------
+# #### paige uses Xp and wind.z so just keeping this for now will clean up later.
+# wind.z <- wind.z <- pivot_wider(bbs.df %>% distinct(year, rteno, avgwind.z),
+#                       id_cols = year, names_from = rteno,
+#                       values_from = "avgwind.z")
+#
+# #### cols in paige's bbs.jags.NY
+# # [1] "BBSr"              "bbs_counts_annual" "propStops"         "wind.z"            "bbs_wind_annual"
+# # [6] "nov"               "Brsite"            "nRoutes"           "Brgrid"            "nGridswithRoutes"
+# # BBSr: count data matrix (year by rteno)
+# BBSr <- bbs.df %>%
+#   distinct(year, rteno, C) %>%
+#   pivot_wider(id_cols = year,
+#               names_from = rteno,
+#               values_from = "C")
+#
+#
+# # eBird for jags ---------------------------------------------------------
+# ##coerce the ebird data to a data frame.
+# ebird.df <- ebird %>% st_drop_geometry() %>%
+#   as.data.frame() %>%
+#   distinct(checklist_id, year, id,.keep_all=TRUE)
+#
+# # E: array (grid cell id by year, slice=checklist_id); counts (C) from eBird
+# E <- ebird.df %>%
+#   acast(id~year~checklist_id,
+#         value.var="C")
+# gc()
+#
+# # nSitesSurveyed: vector (length: num years) number of grid cells containing eBird checklists per year
+# ebird.df %>% distinct()
 # nSitesSurveyed = ebird.jags.NY$nSitesSurveyed, # Vector (nyears). Number of
 # # gridcells with eBird checklists each year
 # nChecklist = ebird.jags.NY$nChecklist,         # Matrix (nyears x max number

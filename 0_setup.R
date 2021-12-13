@@ -18,6 +18,7 @@ devtools::install_github("trashbirdecology/bbsassistant",
 devtools::install_github("ropensci/rnaturalearthhires", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
 
 ## Package loads -----------------------------------------------------------------
+
 ### Common use-------------------
 library(purrr) # for a function in munge shapefiles methinks need to check
 # library(data.table)
@@ -29,6 +30,7 @@ library(tidyr)
 library(hms) ## for some reason zerofiltering function in auk cannot find this fun?
 library(lubridate)
 library(vroom)
+library(reshape2) # arrays
 ### Plotting and visualization
 library(ggplot2)
 library(leaflet)
@@ -59,8 +61,8 @@ library(rgeos)
 interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") # to protect against changes in case, hyphenation
 countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps
 region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory")
-states <- c("Florida", "Georgia")
-proj.shorthand="fl-ga"
+if(!exists("states")) states <- c("Florida", "Georgia")
+if(!exists("proj.shorthand")) proj.shorthand="fl-ga"
 # states <-
 #   c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
 #     # 'Iowa','US-IA',
@@ -79,7 +81,7 @@ proj.shorthand="fl-ga"
 
 ## BBS and eBird specifications--------------------------------
 
-years <- c(2003:year(Sys.Date()))
+if(!exists("years")) years <- c(2003:year(Sys.Date()))
 min.yday <- 91 # breeding season day start (day of year)
 max.yday <- 245 # breeding season day end (day of year)
 
@@ -111,7 +113,7 @@ grid.size=111.111/111.111 #
 dir.proj.out <- paste0("examples/", proj.shorthand,"-example-", round(grid.size*111.111), "km/")
 ## Original Observations Data (for import and munging BBS, eBird) ----------------------------------
 ## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
-dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird"
+if(!exists("dir.ebird.in")) dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird"
 # auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
 # Sys.setenv("BIRDDB_HOME" = dir.ebird.in)
 
@@ -119,8 +121,8 @@ dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-da
 dir.jags <- paste0(dir.proj.out, "jags/")
 
 ## BBS Route Shapefiles/GDBs -----------
-cws.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
-usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/usgs"
+if(!exists("cws.routes.dir")) cws.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
+if(!exists("usgs.routes.dir")) usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/usgs"
 
 ## Output Directories (project-specific) -----------------------------------
 ## Intermediary data files--------------------------------------------------
@@ -129,8 +131,8 @@ dir.ebird.out <- paste0(dir.proj.out,"ebird/")
 dir.spatial.out <- paste0(dir.proj.out,"spatial/")
 sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags), FUN=
          function(x) dir.create(x, showWarnings = FALSE))
-dir.plots <- paste0(dir.proj.out, "plots")
-dir.exploratory.plots <- paste0(dir.plots, "exploratory")
+dir.plots <- paste0(dir.proj.out, "plots/")
+# dir.exploratory.plots <- paste0(dir.plots, "exploratory/")
 
 
 # Arguments to never remove from env --------------------------------------
