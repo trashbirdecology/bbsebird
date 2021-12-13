@@ -29,7 +29,7 @@ nSites <- nrow(XY)
 bbs.df <- bbs %>% st_drop_geometry() %>%
   as.data.frame() %>%
   na.omit(rteno, year) %>%
-  distinct(rteno, year, rteno, id,.keep_all=TRUE)
+  distinct(rteno, year, id,.keep_all=TRUE)
 
 ## create and scale covariates
   ### z-scale wind
@@ -51,36 +51,85 @@ BBSr <- bbs.df %>%
 
 
 # eBird for jags ---------------------------------------------------------
+##coerce the ebird data to a data frame.
+ebird.df <- ebird %>% st_drop_geometry() %>%
+  as.data.frame() %>%
+  distinct(checklist_id, year, id,.keep_all=TRUE)
+
+# E: array (grid cell id by year, slice=checklist_id); counts (C) from eBird
+E <- ebird.df %>%
+  acast(id~year~checklist_id,
+        value.var="C")
+gc()
+
+# nSitesSurveyed: vector (length: num years) number of grid cells containing eBird checklists per year
+ebird.df %>% distinct()
+# nSitesSurveyed = ebird.jags.NY$nSitesSurveyed, # Vector (nyears). Number of
+# # gridcells with eBird checklists each year
+# nChecklist = ebird.jags.NY$nChecklist,         # Matrix (nyears x max number
+# # of grid cells surveyed each year). Number of checklists within each grid
+# # cell, each year
+# Esite = ebird.jags.NY$Esite,  # Matrix (nyears x max number of grid cells
+# # surveyed each year). Identity of checklists within each grid cell, each year
+# nYears = ncol(ebird.jags.NY$ebird_counts), # Scalar indicating number of years
+# # with BBS route level data
+#
+# # Ebird checklist covariates. All numeric variables are scaled to mean 0, unit
+# # variance.
+# # All arrays with dim = ngridcells x nyears x nchecklists
+# traveling = ebird.jags.NY$traveling, # Protocol type. stationary = 0,
+# # traveling = 1.
+# hours = ebird.jags.NY$hours,           # Duration of survey (hrs)
+# distance = ebird.jags.NY$distance,     # Distance traveled (km)
+# groupsize = ebird.jags.NY$group,       # Group size
+# day = ebird.jags.NY$day,               # Day of year
+# time = ebird.jags.NY$time,             # Time of day
+# score = ebird.jags.NY$score,           # Observer CCI
+# offroad = ebird.jags.NY$offroad        # Roadside = 0, off-road survey = 1
+# )
+
+
+# TO FIGURE OUT -----------------------------------------------------------
+
+# Brsite: matrix (year by rteno) value= ?????
+# Brsite <- reshape2::acast(bbs.df,
+# year ~ rteno,
+# value.var = "WHAT?!"
+# )
+
+# Brsite = bbs.jags.NY$Brsite,      # Matrix (nyears x nroutes) indicating
+# # routes run in a given year
+# Brgrid = bbs.jags.NY$Brgrid,      # Array (nroutes x ngridcells x nyears)
+# # Indicates the identity of grid cells that a route crosses each year
 
 
 
-
-# JAGS Data ------------------------------------------------
+# Final JAGS Data ------------------------------------------------
 ## for my sanity just going to list things out to populate them later
-jags <- list(
-  BBSr = matrix(NA),  # matrix
-  Brsite = NULL,
-  Brgrid = NULL,
-  covar1 = NULL,
-  day = NULL,
-  E = NULL,
-  distance = NULL,
-  groupsize = NULL,
-  hours = NULL,
-  nChecklist = NULL,
-  nGridwithRoutes = NULL,
-  nov = NULL,
-  nRoutes = col_integer(),
-  nYearsB = col_integer(),
-  nSites = col_integer(), # number of grid cells in study area
-  nSitesSurveyed = NULL,
-  offroad = NULL,
-  propStops = NULL,
-  time = NULL,
-  traveling = NULL, # binary/logical (0=stationary protocol, 1=traveling/moving protocol)
-  Xp = matrix(NA),
-  XY = data.frame(x=NULL, y=NULL, layer=NULL, covar1=NULL)
-)
+# jags <- list(
+#   BBSr = matrix(NA),  # matrix
+#   Brsite = NULL,
+#   Brgrid = NULL,
+#   covar1 = NULL,
+#   day = NULL,
+#   E = NULL,
+#   distance = NULL,
+#   groupsize = NULL,
+#   hours = NULL,
+#   nChecklist = NULL,
+#   nGridwithRoutes = NULL,
+#   nov = NULL,
+#   nRoutes = col_integer(),
+#   nYearsB = col_integer(),
+#   nSites = col_integer(), # number of grid cells in study area
+#   nSitesSurveyed = NULL,
+#   offroad = NULL,
+#   propStops = NULL,
+#   time = NULL,
+#   traveling = NULL, # binary/logical (0=stationary protocol, 1=traveling/moving protocol)
+#   Xp = matrix(NA),
+#   XY = data.frame(x=NULL, y=NULL, layer=NULL, covar1=NULL)
+# )
 # PAIGE'S JDAT
 #   nSites = nrow(XY), # Number of grid cells in study area
 #
@@ -175,14 +224,19 @@ assertthat::are_equal(nRoutes %>% length(), nrow(BBSr))##test
 # nYearsB: scalar for n years of BBS data
 nYearsB <- nrow(BBSr)
 
-# Brsite: matrix (year by rteno) value= ?????
-Brsite <- reshape2::acast(bbs.df,
-                          year ~ rteno,
-                          # value.var = "WHAT?!"
-                          )
-# Brsite = bbs.jags.NY$Brsite,      # Matrix (nyears x nroutes) indicating
-# # routes run in a given year
-# Brgrid = bbs.jags.NY$Brgrid,      # Array (nroutes x ngridcells x nyears)
-# # Indicates the identity of grid cells that a route crosses each year
-# nGridswithRoutes = bbs.jags.NY$nGridswithRoutes, # Matrix (nroutes x nyears)
-# # Indicates maximum number of grid cells that a route crosses each year
+
+# nGridswithRoutes: matrix (rteno by year) number of grid cells each rteno passes through per year
+nGridswithRoutes <- bbs.df %>%
+  distinct(year, rteno, id) %>%
+  group_by(year, rteno) %>%
+  summarise(ncellscrossedperyear = n_distinct(id)) %>%
+  ungroup() %>%
+  pivot_wider(
+    id_cols = rteno,
+    names_from = year,
+    values_from=ncellscrossedperyear,
+    values_fill = 0
+    ) %>%
+  select(-rteno)
+
+
