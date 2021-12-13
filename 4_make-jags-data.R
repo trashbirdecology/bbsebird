@@ -17,16 +17,45 @@ if(all(fns %in% list.files(dir.jags))){
 }
 
 
-# Munge BBS for jags ---------------------------------------------------------
-## first, create and scale as necessary.
+# Grid/study area ---------------------------------------------------------
+# XY: centroid coords for grid cells in study area
+XY <- cbind(grid$cell.lon.centroid, grid$cell.lat.centroid)
+# nSites: num. grid cells in study area
+nSites <- nrow(XY)
+
+
+# BBS data ---------------------------------------------------------
+##coerce the bbs data to a data frame.
+bbs.df <- bbs %>% st_drop_geometry() %>%
+  as.data.frame() %>%
+  na.omit(rteno, year) %>%
+  distinct(rteno, year, rteno, id,.keep_all=TRUE)
+
+## create and scale covariates
+  ### z-scale wind
+bbs.df$avgwind.z <- (bbs.df$avgwind-mean(bbs$avgwind, na.rm=TRUE))/sd(bbs.df$avgwind, na.rm=TRUE)
+#### paige uses Xp and wind.z so just keeping this for now will clean up later.
+Xp <- wind.z <- pivot_wider(bbs.df %>% distinct(year, rteno, avgwind.z),
+                      id_cols = year, names_from = rteno,
+                      values_from = "avgwind.z")
+
+#### cols in paige's bbs.jags.NY
+# [1] "BBSr"              "bbs_counts_annual" "propStops"         "wind.z"            "bbs_wind_annual"
+# [6] "nov"               "Brsite"            "nRoutes"           "Brgrid"            "nGridswithRoutes"
+# BBSr: count data matrix (year by rteno)
+BBSr <- bbs.df %>%
+  distinct(year, rteno, C) %>%
+  pivot_wider(id_cols = year,
+              names_from = rteno,
+              values_from = "C")
+
+
+# eBird for jags ---------------------------------------------------------
 
 
 
 
-# Munge eBird for jags ---------------------------------------------------------
-
-
-# Create JAGS data ------------------------------------------------
+# JAGS Data ------------------------------------------------
 ## for my sanity just going to list things out to populate them later
 jags <- list(
   BBSr = matrix(NA),  # matrix
@@ -113,24 +142,47 @@ jags <- list(
 #   offroad = ebird.jags.NY$offroad        # Roadside = 0, off-road survey = 1
 # )
 #
+#
+## this is wrong need to check obsfirstyearroute vals
+# nov = reshape2::acast(bbs.df,
+#                       year ~ rteno,
+#                       fun.aggregate = get_mode,
+#                       value.var="obsfirstyearroute") # matrix (year by rteno) indicating if observer's first year on route OR bbs (tbd)
 
+# nov: matrix (year by rteno) indicating if observer's first year on route OR bbs (tbd)
+nov <- bbs.df %>%
+  distinct(year, rteno, obsfirstyearbbs) %>%
+  pivot_wider(id_cols = year,
+              names_from = rteno,
+              values_from = obsfirstyearbbs) %>%
+  select(-year)
 
+# propStops: array (year by rteno, slice = grid cell)
+# propStops: proportion of each route that falls inside a grid cell
+### paige's propstops is also filled with NAs, but I am confident this is not what is meant to be here.
+### need to check up later
+propStops <- bbs.df %>%
+  reshape2::acast(year~rteno~id,
+                  value.var="proprouteincell"
+                  )
 
+# nRoutes = vector (number of unique rteno run per year)
+nRoutes <- (bbs.df %>%
+              group_by(year) %>%
+              summarise(nRoutes=n_distinct(rteno)))$nRoutes
+assertthat::are_equal(nRoutes %>% length(), nrow(BBSr))##test
 
-## munge bbs for jags ------------------------------------------------------
-names(bbs)
+# nYearsB: scalar for n years of BBS data
+nYearsB <- nrow(BBSr)
 
-BBSr <- acast(bbs, Year~ID, value.var="C",
-            # Because a route could be split into multiple grid cells. BUT the
-            # total count is applicable at the route level, not the route
-            # segment level.
-            fun.aggregate=Mode,
-            drop=FALSE) # Keep year / route combinations that didn't occur
-
-
-
-
-## munge ebird for jags -----------------------------------------------------
-names(ebird)
-
-
+# Brsite: matrix (year by rteno) value= ?????
+Brsite <- reshape2::acast(bbs.df,
+                          year ~ rteno,
+                          # value.var = "WHAT?!"
+                          )
+# Brsite = bbs.jags.NY$Brsite,      # Matrix (nyears x nroutes) indicating
+# # routes run in a given year
+# Brgrid = bbs.jags.NY$Brgrid,      # Array (nroutes x ngridcells x nyears)
+# # Indicates the identity of grid cells that a route crosses each year
+# nGridswithRoutes = bbs.jags.NY$nGridswithRoutes, # Matrix (nroutes x nyears)
+# # Indicates maximum number of grid cells that a route crosses each year
