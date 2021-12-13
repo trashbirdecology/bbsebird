@@ -48,7 +48,7 @@ ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.s
 gc()
 
 # Create the eBird Spatial Layer  -----------------------------------------------------
-ebird_spatial <- make_ebird_spatial(x=ebird_zf, crs.target = crs.target)
+ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
 
 # Export Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
@@ -58,3 +58,8 @@ if(exists("args.save")){
 args.save <- c(args.save, "ebird_spatial")
   rm(list=setdiff(ls(), args.save))
 }
+
+
+# END RUN -----------------------------------------------------------------
+
+
