@@ -18,11 +18,11 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
   # add attribute comprising the ebird coordinates. when i assign lat and lon as coordinates to the sf object, i lose them as attributes and
   ### theyre hard to recover when it becomes an SFC object... annnoying? yes.
   df <- df %>%
-    rename(lon=longitude,
-           lat=latitude)
+    mutate(lon=longitude,
+           lat=latitude) ## we want to duplicate because its easier to keep lat and lon in the df also
 
   coordinates(df) <-
-    ~ lon + lat # 1-2 minutes for all of N.Amer.
+    ~ longitude + latitude # 1-2 minutes for all of N.Amer.
 
 
   # define projection for lat long (ebird documentation states CRS is 4326)
