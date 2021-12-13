@@ -24,7 +24,8 @@ Imports:
     magrittr,
     progress,
     vroom,
-    fs
+    fs,
+    reshape2
 Suggests: 
     suncalc,
     assertthat,

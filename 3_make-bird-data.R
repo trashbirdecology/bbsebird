@@ -59,14 +59,13 @@ bbs_spatial$endtime=hms::as_hms(as.POSIXct(bbs_spatial$endtime, format="%H%M"))
 ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$time_observations_started, format="%H:%M:%S"))
 
 
-
 # Sunlight/daylight/moonlight ---------------------------------------------
 ## here, data must have columns lat and lon. I took care of this in
 ## utils.R function `match_col_names()`
 cat("calculating astronomical stats...yes, the astronomy definition.\n")
 sunlight.keep <- c("dawn", "solarNoon", "sunrise","sunriseEnd")
 
-bbs.sunlight <- suncalc::getSunlightTimes(data=bbs.sunlight %>% distinct(date, lon, lat),
+bbs.sunlight <- suncalc::getSunlightTimes(data=bbs_spatial %>% distinct(date, lon, lat),
                                             keep = sunlight.keep)
 
 
@@ -85,6 +84,7 @@ for(i in seq_along(chunks)){
                             keep = sunlight.keep)
 
   ebird.sunlight <- dplyr::bind_rows(ebird.sunlight,dat)
+  rm(dat, chunk.end, chunk.start, rows)
 }
 
 ### turn vars in sunlight.keep into time only (otherwise they are in YYYY-MM-DD HH-MM-SS; we need only HH-MM)
@@ -104,7 +104,14 @@ gc()
 ## BBS detection covariates
 bbs <- bbs %>%
   group_by(rteno, year) %>%
-  mutate(avgwind = abs(startwind-endwind)/2)
+  mutate(avgwind = abs(startwind-endwind)/2) %>%
+  ungroup()
+
+
+# Export Data -------------------------------------------------------------
+saveRDS(bbs, file=paste0(dir.jags, "bbs.rds"))
+saveRDS(ebird, file=paste0(dir.jags, "ebird.rds"))
+saveRDS(grid, file=paste0(dir.jags, "grid.rds"))
 
 
 # Plots-exploratory---------------------
@@ -114,11 +121,6 @@ ggplot(bbs)+geom_histogram(aes(log(C)))+ggtitle("bbs")
 ggplot(bbs)+geom_histogram(aes(sunrise))+ggtitle("bbs")
 ggplot(ebird)+geom_histogram(aes(sunrise))+ggtitle("ebird")
 
-
-# Export Data -------------------------------------------------------------
-saveRDS(bbs, file=paste0(dir.jags, "bbs.rds"))
-saveRDS(ebird, file=paste0(dir.jags, "ebird.rds"))
-saveRDS(grid, file=paste0(dir.jags, "grid.rds"))
 
 # Clear mem ---------------------------------------------------------------------
 if(exists("args.save")){
