@@ -38,11 +38,12 @@ ebird_spatial <- match_col_names(ebird_spatial)
 # Handle Dates and Times --------------------------------------------------
 cat("managing dates and times of spatial objects")
 # dates
-## base date for julian date
-base.date <- min(bbs_spatial$date)
 ## make julian dates
 bbs_spatial$date <- lubridate::as_date(bbs_spatial$date)
 ebird_spatial$date <- lubridate::as_date(ebird_spatial$date)
+## base date for julian date
+#### eventually will need to save this or export it somewhere, maybe add it to jags list idk
+base.date <- min(c(bbs_spatial$date, ebird_spatial$date), na.rm=TRUE)
 ## make julian dates
 bbs_spatial$julian <- julian(bbs_spatial$date, origin = base.date)
 ebird_spatial$julian <- julian(as.Date(ebird_spatial$date), origin = base.date)
@@ -57,34 +58,56 @@ bbs_spatial$starttime=hms::as_hms(as.POSIXct(bbs_spatial$starttime, format="%H%M
 bbs_spatial$endtime=hms::as_hms(as.POSIXct(bbs_spatial$endtime, format="%H%M"))
 ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$time_observations_started, format="%H:%M:%S"))
 
-## here, data must hvave columns lat and lon. I took care of this in
+
+
+# Sunlight/daylight/moonlight ---------------------------------------------
+## here, data must have columns lat and lon. I took care of this in
 ## utils.R function `match_col_names()`
-cat("calculating astronomical stats...yes, the astronomy definition")
+cat("calculating astronomical stats...yes, the astronomy definition.\n")
 sunlight.keep <- c("dawn", "solarNoon", "sunrise","sunriseEnd")
-## for suncalc below, its slightly quicker to run sunlight times and then get distinct lat lon.
-bbs.sunlight   <- suncalc::getSunlightTimes(data=bbs_spatial, keep = sunlight.keep) %>% distinct(lat, lon, .keep_all=TRUE)
-ebird.sunlight <- suncalc::getSunlightTimes(data=ebird_spatial, keep = sunlight.keep)  %>% distinct(lat, lon, .keep_all=TRUE)
+
+bbs.sunlight <- suncalc::getSunlightTimes(data=bbs.sunlight %>% distinct(date, lon, lat),
+                                            keep = sunlight.keep)
+
+
+## ebird is so large that I need to split up b/c takes forever.
+## i'd like to use kit::funique, but cannot figure out how to do that with >1 columns.
+### so, am resorting to this method.
+x <- ebird_spatial %>% dplyr::select(date, lat, lon)
+chunks <- parallel::splitIndices(nrow(x), 100)
+for(i in seq_along(chunks)){
+  if(i==1) ebird.sunlight <- NULL
+  rows = as.data.frame(chunks[i])
+  chunk.start = min(rows[1])
+  chunk.end   = max(rows[1])
+  dat = x[chunk.start:chunk.end, ]
+  dat = suncalc::getSunlightTimes(data=dat,
+                            keep = sunlight.keep)
+
+  ebird.sunlight <- dplyr::bind_rows(ebird.sunlight,dat)
+}
 
 ### turn vars in sunlight.keep into time only (otherwise they are in YYYY-MM-DD HH-MM-SS; we need only HH-MM)
-# ### cant get lapply to work need to toy around later
-# lapply(c(bbs.sunlight, ebird.sunlight), FUN=
-#          function(x) x <- x %>% mutate(across(sunlight.keep, hms::as_hms)))
-bbs.sunlight <- bbs.sunlight %>%
+ebird.sunlight <- ebird.sunlight  %>%
   mutate(across(sunlight.keep, hms::as_hms))
-ebird.sunlight <- ebird.sunlight %>%
+bbs.sunlight <- bbs.sunlight %>%
   mutate(across(sunlight.keep, hms::as_hms))
 
 ### add sunlight information to spatial data
 bbs <- left_join(bbs_spatial, bbs.sunlight)
 ebird <- left_join(ebird_spatial, ebird.sunlight)
 
-## BBS detectability covariates
+rm(ebird_spatial, bbs_spatial, ebird.sunlight, bbs.sunlight)
+gc()
+
+# Munge covariates --------------------------------------------------------
+## BBS detection covariates
 bbs <- bbs %>%
   group_by(rteno, year) %>%
   mutate(avgwind = abs(startwind-endwind)/2)
 
 
-# Some exploratory plots to ensure data is sensical.  ---------------------
+# Plots-exploratory---------------------
 ggplot(ebird)+geom_histogram(aes(log(C)))+ggtitle("ebird")
 ggplot(bbs)+geom_histogram(aes(log(C)))+ggtitle("bbs")
 
