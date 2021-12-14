@@ -116,7 +116,7 @@ if(!exists("dir.ebird.in")) dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/re
 # auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
 # Sys.setenv("BIRDDB_HOME" = dir.ebird.in)
 
-# JAGs Formatted Data -----------------------------------------------------
+## JAGS data in and out -----------------------------------------------------
 dir.jags <- paste0(dir.proj.out, "jags/")
 
 ## BBS Route Shapefiles/GDBs -----------

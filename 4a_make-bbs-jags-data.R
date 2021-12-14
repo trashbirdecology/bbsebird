@@ -40,7 +40,6 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
     car.z = (carmean - mean(carmean, na.rm=TRUE))/sd(carmean, na.rm=TRUE),
   )
 
-
 ## Create arrays for counts [ rteno ~ year ~ id(grid cell) ]
 bbs.temp <- split(bbs.df %>% select(id, year, C, rteno), f = bbs.df$id)
 ### create list of data frames comprising count data
@@ -63,56 +62,20 @@ names(C) <- names(bbs.temp)
 rm(bbs.temp)
 
 
-## mean observed counts within each grid cell
-C.mean <- lapply(1:length(C), function(x)(round(colMeans(C[[x]], na.rm=TRUE))))
-N_i <- bind_rows(C.mean) %>% as.data.frame() # keep split into two parts, otherwise weird shit happens
-rownames(N_i) <- names(C)
 
-## Create initial values for N for BBS
-N_i[is.na(N_i)] <- 0 ### shoudl I be doing this when there is no data?!
-for (i in 1:nrow(N_i)) {
-  for (t in 1:ncol(N_i)) {
-    if (N_i[i, t] > 0)
-      N_i[i, t] <- round(N_i[i, t] + (N_i[i, t] * 0.8)) ## why 0.8?
-  }
-}
-
-
-# JAGAM -------------------------------------------------------------------
-# Generate the appropriate prior distributions for a poisson gam
-jagam.data <-
-  data.frame(
-    N = rep(N = N_i[, 1], length(XY[, 1])),
-    x = XY.scaled[,1],
-    y = XY.scaled[,2]
-  )
-
-jagam.mod <- mgcv::jagam(
-  N ~ s(
-    x,
-    y,
-    k = 20,
-    # number of basis functions (controls upper level of 'smoothness')
-    bs = 'ds',
-    # duchon spline
-    m = c(1, 0.5)
-  ),
-  # duchon spline w/ 1st deriv penalty (penalizes wiggliness)
-  sp.prior = "log.uniform",
-  # use gamma (default) or log.uniform priors on the lambda penalty term
-  diagonalize = TRUE,
-  # Should smooths be re-parameterized to have i.i.d. Gaussian priors (where possible)?
-  data = jagam.data,
-  family = "poisson",
-  file = system.file(dir.jags, "jagam-bbs.jags")
-)
-
-## Add GAM components to model
-jags.bbs$XY = XY.scaled # Transformed XY coords
-jdat$nknots = ncol(jdat$Z)     # Number of knots
-jdat$nYears = 1   # Number of years
-jdat$nYearsB = 1  # Number of years with BBS data
-
+# ## mean observed counts within each grid cell
+# C.mean <- lapply(1:length(C), function(x)(round(colMeans(C[[x]], na.rm=TRUE))))
+# N_i <- bind_rows(C.mean) %>% as.data.frame() # keep split into two parts, otherwise weird shit happens
+# rownames(N_i) <- names(C)
+#
+# ## Create initial values for N for BBS
+# N_i[is.na(N_i)] <- 0 ### shoudl I be doing this when there is no data?!
+# for (i in 1:nrow(N_i)) {
+#   for (t in 1:ncol(N_i)) {
+#     if (N_i[i, t] > 0)
+#       N_i[i, t] <- round(N_i[i, t] + (N_i[i, t] * 0.8)) ## why 0.8?
+#   }
+# }
 
 
 # "Effort" ------------------------------------------------------------------
@@ -144,3 +107,41 @@ rm(bbs.temp)
 
 
 
+
+# # JAGAM -------------------------------------------------------------------
+# # Generate the appropriate prior distributions for a poisson gam
+# jagam.data <-
+#   data.frame(
+#     N = rep(N = N_i[, 1], length(XY[, 1])),
+#     x = XY.scaled[,1],
+#     y = XY.scaled[,2]
+#   )
+#
+# jagam.mod <- mgcv::jagam(
+#   N ~ s(
+#     x,
+#     y,
+#     k = 20,
+#     # number of basis functions (controls upper level of 'smoothness')
+#     bs = 'ds',
+#     # duchon spline
+#     m = c(1, 0.5)
+#   ),
+#   # duchon spline w/ 1st deriv penalty (penalizes wiggliness)
+#   sp.prior = "log.uniform",
+#   # use gamma (default) or log.uniform priors on the lambda penalty term
+#   diagonalize = TRUE,
+#   # Should smooths be re-parameterized to have i.i.d. Gaussian priors (where possible)?
+#   data = jagam.data,
+#   family = "poisson",
+#   file = system.file(dir.jags, "jagam-bbs.jags")
+# )
+#
+# ## Add GAM components to model
+# jags.bbs$XY = XY.scaled # Transformed XY coords
+# jdat$nknots = ncol(jdat$Z)     # Number of knots
+# jdat$nYears = 1   # Number of years
+# jdat$nYearsB = 1  # Number of years with BBS data
+#
+#
+#
