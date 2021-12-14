@@ -51,6 +51,13 @@ ebird_spatial$julian <- julian(as.Date(ebird_spatial$date), origin = base.date)
 ebird_spatial$yday <- lubridate::yday(ebird_spatial$date)
 bbs_spatial$yday <- lubridate::yday(bbs_spatial$date)
 
+## Filter days of the year if specified
+if(exists("yday")) ebird_spatial <- ebird_spatial %>%
+  filter(yday >= min.yday & yday <= max.yday)
+if(exists("yday")) ebird_spatial <- ebird_spatial %>%
+  filter(yday >= min.yday & yday <= max.yday)
+
+
 # times
 ### this is an ugly workaround and can be improved, including putting it into
 ### the BBS and eBird munging functions but this is it for now.
@@ -106,6 +113,7 @@ bbs <- bbs %>%
   group_by(rteno, year) %>%
   mutate(avgwind = abs(startwind-endwind)/2) %>%
   ungroup()
+
 
 
 # Export Data -------------------------------------------------------------

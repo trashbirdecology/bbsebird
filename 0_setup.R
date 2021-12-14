@@ -80,7 +80,6 @@ if(!exists("proj.shorthand")) proj.shorthand="fl-ga"
 
 
 ## BBS and eBird specifications--------------------------------
-
 if(!exists("years")) years <- c(2003:year(Sys.Date()))
 min.yday <- 91 # breeding season day start (day of year)
 max.yday <- 245 # breeding season day end (day of year)
