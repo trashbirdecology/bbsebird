@@ -155,7 +155,7 @@ make_bbs_spatial <- function(bbs.obs,
     ## total length of routes
     mutate(RouteLength = sum(SegmentLength)) %>%
     ungroup() %>%
-    group_by(id, RTENO) %>%
+    group_by(gridcellid, RTENO) %>%
     ### turn seg length into proportion of the route per cell
     mutate(PropRouteInCell = SegmentLength / RouteLength) %>%
     ungroup() %>%
@@ -172,8 +172,8 @@ make_bbs_spatial <- function(bbs.obs,
   ## combine bbs routes + area + lengthss
   cat("Polishing the BBS routes and grid layer.\n\n")
   bbs_sf <- grid %>%
-    left_join(lengths, by = "id") %>%
-    left_join(areas, by = "id")
+    left_join(lengths, by = "gridcellid") %>%
+    left_join(areas, by = "gridcellid")
 
 
   ### Minor issue, but Route Names in route shaepfiles do not match the BBS observations data route names.
@@ -209,7 +209,7 @@ make_bbs_spatial <- function(bbs.obs,
 
     # exploratory plots (should move elsewhere.....)
     plot(
-      bbs_spatial %>% group_by(id) %>% summarise(`max num counted` = max(RouteTotal)) %>%
+      bbs_spatial %>% group_by(gridcellid) %>% summarise(`max num counted` = max(RouteTotal)) %>%
         dplyr::select(`max num counted`)
     )
     plot(
@@ -218,23 +218,23 @@ make_bbs_spatial <- function(bbs.obs,
         dplyr::select(`num years bbs data in grid cell`)
     )
     plot(
-      bbs_spatial %>% group_by(id) %>% summarise(`total # observers in cell` =
+      bbs_spatial %>% group_by(gridcellid) %>% summarise(`total # observers in cell` =
                                                    n_distinct(ObsN)) %>%
         dplyr::select(`total # observers in cell`)
     )
     plot(
-      bbs_spatial  %>% group_by(id) %>%  summarise(`num routes in cell` = n_distinct(RTENO, na.rm =
+      bbs_spatial  %>% group_by(gridcellid) %>%  summarise(`num routes in cell` = n_distinct(RTENO, na.rm =
                                                                                        TRUE)) %>%
         dplyr::select(`num routes in cell`)
     )
     plot(
-      bbs_spatial  %>% group_by(id) %>% summarise(`max # species detected in single route` =
+      bbs_spatial  %>% group_by(gridcellid) %>% summarise(`max # species detected in single route` =
                                                     max(TotalSpp)) %>%
         dplyr::select(`max # species detected in single route`)
     )
-    plot(bbs_spatial %>% group_by(id) %>% summarise(nRoutesPerCell = n_distinct(RTENO)))
+    plot(bbs_spatial %>% group_by(gridcellid) %>% summarise(nRoutesPerCell = n_distinct(RTENO)))
     plot(
-      bbs_spatial %>% group_by(id) %>%
+      bbs_spatial %>% group_by(gridcellid) %>%
         mutate(num_obs = n()) %>%
         summarise(`% obs == 0` = sum(RouteTotal == 0) / n()) %>% dplyr::select(`% obs == 0`)
     )
