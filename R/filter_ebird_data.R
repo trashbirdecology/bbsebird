@@ -17,6 +17,7 @@ filter_ebird_data <-
            years = NULL,
            max.effort.km = NULL,
            max.effort.mins = NULL,
+           max.num.observers = 10,
            method = "data.table",
            # how to read in sampling data ... vroom often crashes
            cols.keep =
@@ -48,7 +49,6 @@ filter_ebird_data <-
            f_obs_out = paste0(dir.ebird.out, 'ebird_obs_filtered.txt'),
            f_samp_out  = paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
            ) {
-
 
     f_samp_in  <- fns.ebird[str_detect(fns.ebird, "sampling_rel")]
     f_obs_in <- setdiff(fns.ebird, f_samp_in)
@@ -117,7 +117,7 @@ filter_ebird_data <-
 
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
-      cat("Filtering sampling events. This takes a minute.")
+      cat("Filtering sampling events. This takes a minute.\n")
       sampling <- sampling[names(sampling) %in% cols.keep]#keep only useful columns
       if(complete.only) sampling <- sampling %>%
         filter(all_species_reported %in% c("TRUE", "True", 1))
@@ -127,6 +127,8 @@ filter_ebird_data <-
         filter(state %in% states)
       if(!is.null(protocol)) sampling <- sampling %>%
         filter(protocol_type %in% protocol)
+      if(!is.null(max.num.observers)) sampling <- sampling %>%
+        filter(num_observers<=max.num.observers)
       if(!is.null(max.effort.km)) sampling <- sampling %>%
         filter(effort_distance_km<=max.effort.km)
       if(!is.null(max.effort.mins)) sampling <- sampling %>%
@@ -150,9 +152,9 @@ filter_ebird_data <-
 
       # remove duplicate checklists for same birding party.
       # for good measure..
-      cat("Taking out the garbage")
+      cat("Taking out the garbage...\n")
       gc()
-      cat("Running auk_unique() on checklists")
+      cat("Running auk_unique() on checklists\n")
       sampling <- auk_unique(sampling, checklists_only = TRUE)
 
       # ensure consistency in col types
@@ -202,13 +204,15 @@ filter_ebird_data <-
         filter(all_species_reported %in% c("TRUE", "True", 1))
       if(!is.null(species)) observations <- observations %>%
         filter(common_name %in% species)
-      # create and then filter by year
+      # create and then filter by year/date
       observations <- observations %>%
         mutate(year = lubridate::year(observation_date))
       if(!is.null(years)) observations <- observations %>%
         filter(year %in% years)
       if(!is.null(protocol)) observations <- observations %>%
         filter(protocol_type %in% protocol)
+      if(!is.null(max.num.observers)) observations <- observations %>%
+        filter(num_observers<=max.num.observers)
       if(!is.null(max.effort.km)) observations <- observations %>%
         filter(effort_distance_km<=max.effort.km)
       if(!is.null(max.effort.mins)) observations <- observations %>%
