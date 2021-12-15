@@ -31,7 +31,7 @@ filter_ebird_data <-
                "duration_minutes",
                "effort_area_ha",
                "effort_distance_km",
-               "group_identifier",
+               # "group_identifier",
                "latitude",
                "longitude",
                "number_observers",
@@ -115,7 +115,6 @@ filter_ebird_data <-
                         replacement = "_")
 
 
-
       # trying to keep in order of largest cut to smaller to help with memory issues.
       cat("Filtering sampling events. This takes a minute.\n")
       sampling <- sampling[names(sampling) %in% cols.keep]#keep only useful columns
@@ -128,7 +127,7 @@ filter_ebird_data <-
       if(!is.null(protocol)) sampling <- sampling %>%
         filter(protocol_type %in% protocol)
       if(!is.null(max.num.observers)) sampling <- sampling %>%
-        filter(num_observers<=max.num.observers)
+        filter(number_observers<=max.num.observers)
       if(!is.null(max.effort.km)) sampling <- sampling %>%
         filter(effort_distance_km<=max.effort.km)
       if(!is.null(max.effort.mins)) sampling <- sampling %>%
@@ -190,12 +189,11 @@ filter_ebird_data <-
                         pattern = " ",
                         replacement = "_")
 
-
-
       # trying to keep in order of largest cut to smaller to help with memory issues.
       ## keep only useful columns
       observations <-
         observations[names(observations) %in% cols.keep]
+      ## begin the filtering by params
       if(!is.null(countries)) observations <- observations %>%
         filter(country %in% countries)
       if(!is.null(states)) observations <- observations %>%
@@ -212,7 +210,7 @@ filter_ebird_data <-
       if(!is.null(protocol)) observations <- observations %>%
         filter(protocol_type %in% protocol)
       if(!is.null(max.num.observers)) observations <- observations %>%
-        filter(num_observers<=max.num.observers)
+        filter(number_observers<=max.num.observers)
       if(!is.null(max.effort.km)) observations <- observations %>%
         filter(effort_distance_km<=max.effort.km)
       if(!is.null(max.effort.mins)) observations <- observations %>%
@@ -222,6 +220,10 @@ filter_ebird_data <-
           filter(protocol_type != "Stationary" &
                    duration_minutes != 3)
       }
+      ## since we dropped group id, there may be duplicates to remove
+      observations <-
+        observations %>% distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
+
 
       cat("throwing out the trash --- one sec..")
       gc()
@@ -243,7 +245,6 @@ filter_ebird_data <-
 
       observations <- convert_cols(observations)
 
-
       # save to file
       ## write the filtered sampling data
       if (method == "vroom")
@@ -255,7 +256,7 @@ filter_ebird_data <-
     # create output file as a list
     ebird_filtered <- list("observations" = as_tibble(observations),
                            "sampling" = as_tibble(sampling))
-
+    cat("Output of `filter_ebird_data()` may contain duplicate observations where multiple observers exist.")
     # rm(observations, sampling)
 
     return(ebird_filtered)
