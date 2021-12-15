@@ -61,8 +61,8 @@ library(rgeos)
 interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") # to protect against changes in case, hyphenation
 countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps
 region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory")
-if(!exists("states")) states <- c("Florida", "Georgia")
-if(!exists("proj.shorthand")) proj.shorthand="fl-ga"
+if(!exists("states")) states <- c("New York")
+if(!exists("proj.shorthand")) proj.shorthand="ny"
 # states <-
 #   c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
 #     # 'Iowa','US-IA',
@@ -80,7 +80,7 @@ if(!exists("proj.shorthand")) proj.shorthand="fl-ga"
 
 
 ## BBS and eBird specifications--------------------------------
-if(!exists("years")) years <- c(2003:year(Sys.Date()))
+if(!exists("year.range")) year.range <- c(2008:year(Sys.Date()))
 min.yday <- 91 # breeding season day start (day of year)
 max.yday <- 245 # breeding season day end (day of year)
 
@@ -90,6 +90,8 @@ ebird.protocol <- c("Traveling", "Stationary")
 complete.checklists.only <- TRUE
 max.effort.mins <-  3*60 ## arbitrary
 max.effort.km   <-  5 #This is coarse also, typically 5km or less
+max.num.observers <- 10
+# max.effort.ha   <-  XX
 mmyyyy <- "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
 
 ### bbs specs
@@ -100,12 +102,12 @@ include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid specie
 ## Geospatial specifications --------------------------------
 crs.target <- 4326 # 5070 =usgs//usa/alberts equal area; 4326=unprojected;
 
-## Provide the value of the grid size in decimal degrees
+## Provide the value of the grid size IN DECIMAL DEGREES
 ### A good estimate for large-scale (>=state) studies in North Am.
 ### is that there are 111.111km in 1 degree latitude or longitude
 #### miles to km: km=1.61*miles
-grid.size=111.111/111.111 #
-
+# grid.size=111.111/111.111 # == 111.111 km grid size (or 1 degree lat/lon)
+grid.size=.25 #1/4 deg
 
 # Specify Directories & File Names -----------------------------------------------------
 # dir.proj.out <- paste0("examples/greatlakes-subset-example-", grid.size*111.111, "km/")
@@ -128,9 +130,9 @@ if(!exists("usgs.routes.dir")) usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI
 dir.bbs.out <- paste0(dir.proj.out,"bbs/")
 dir.ebird.out <- paste0(dir.proj.out,"ebird/")
 dir.spatial.out <- paste0(dir.proj.out,"spatial/")
-sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags), FUN=
-         function(x) dir.create(x, showWarnings = FALSE))
 dir.plots <- paste0(dir.proj.out, "plots/")
+sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, dir.plots), FUN=
+         function(x) dir.create(x, showWarnings = FALSE))
 # dir.exploratory.plots <- paste0(dir.plots, "exploratory/")
 
 
