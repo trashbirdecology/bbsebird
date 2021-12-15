@@ -26,7 +26,7 @@ if(all(fns.spatial %in% list.files(dir.spatial.out))){
 ##For good measure, ensure all the spatial files are in same proj
 if(!(st_crs(grid)==st_crs(bbs_spatial) & st_crs(ebird_spatial)==st_crs(grid)))stop("Warning. The ebird, bbs, and grid spatial layers are not in same projection and/or CRS.")
 
-if(!all(grid$id %in% unique(c(ebird_spatial$id, bbs_spatial$id))))
+if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$gridcellid))))
   warning("Empty grid cells (no ebird or bbs data) are not represented in the bird data.\nShould make sure empty cells are added to bird data.")
 
 # Map relevant column names for eBird and BBS -----------------------------
