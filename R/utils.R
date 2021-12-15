@@ -79,3 +79,9 @@ return(x)
 
 
 }
+
+
+# split a dataframe or tibble into a list ---------------------------------
+
+split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
+
