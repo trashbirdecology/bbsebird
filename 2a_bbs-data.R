@@ -47,7 +47,7 @@ bbs_spatial <-
     routes.keep=unique(bbs_obs$RTENO),
     grid=grid,
     keep.empty.cells =TRUE,
-    plot.dir=dir.exploratory.plots,
+    plot.dir=dir.plots,
     overwrite=TRUE
   )
 

@@ -32,7 +32,8 @@ if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(
                                     states = states,
                                     protocol = c("Traveling","Stationary"),
                                     species = interest.species,
-                                    years=years
+                                    max.num.observers=max.num.observers,
+                                    years=year.range
                                     )
 
 
@@ -58,7 +59,6 @@ if(exists("args.save")){
 args.save <- c(args.save, "ebird_spatial")
   rm(list=setdiff(ls(), args.save))
 }
-
 
 # END RUN -----------------------------------------------------------------
 
