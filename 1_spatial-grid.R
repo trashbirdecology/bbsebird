@@ -28,7 +28,7 @@ grid <- study.area %>%
   st_intersection(study.area) %>%
   # st_cast("MULTIPOLYGON") %>%
   st_sf() %>%
-  mutate(id = row_number()) %>%
+  mutate(gridcellid = row_number()) %>%
   st_transform(crs = crs.target)
 
 # # Visualize to check
@@ -51,6 +51,8 @@ gc()
 saveRDS(grid, file = paste0(dir.spatial.out, "/", "grid.rds"))
 
 }
+
+plot(grid["gridcellid"])
 
 # Clear mem ---------------------------------------------------------------------
 args.save <- c(args.save, "grid")
