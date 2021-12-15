@@ -20,7 +20,7 @@ if(all(fns %in% list.files(dir.jags))){
 ## Grid/study area ---------------------------------------------------------
 XY <- cbind(grid$cell.lon.centroid, grid$cell.lat.centroid)
 XY.scaled <- scale(XY)
-nGridCells <- nrow(XY)
+(nGridCells <- nrow(XY))
 
 
 ## BBS data ---------------------------------------------------------
@@ -57,11 +57,6 @@ ebird.df <- ebird %>%
 # hist(ebird.df$number_observers.z)
 # range(ebird.df$number_observers, na.rm=TRUE)
 # range(ebird.df$number_observers.z, na.rm=TRUE)
-#
-
-
-
-
 
 # END RUN -----------------------------------------------------------------
 

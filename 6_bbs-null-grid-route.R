@@ -6,31 +6,32 @@ source("4a_prep-jags-data.r")
 # Data Munge ----------------------------------------------------------
 ## BBS-------------
 ### count data
-C <-  acast(bbs.df, id~year~rteno, value.var="C") # C: <array> id by year sliced by rteno, value = C (BBS count)
+bbs.jags <- bbs.df %>% na.omit(gridcellid, rteno)
+C <-  acast(bbs.jags, gridcellid~year~rteno, value.var="C") # C: <array> gridcellid by year sliced by rteno, value = C (BBS count)
+# dim(C) # dims:  num. grid cells with BBS data by num. yrs by num. BBS routes
 
 ### detection covariates
-coverage <- acast(bbs.df, id~year~rteno, value.var="proprouteincell") #coverage: <array> id by year sliced by rteno, value = % of BBS route in the grid cell; proportion of the route within a grid cell (id)
-car <- acast(bbs.df, id~year~rteno, value.var="car.z") #wind: <array> id by year sliced by rteno, value = scaled average number of cars detected during the route run each year; covariate on detection for bbs (cars; scaled)
-noise <- acast(bbs.df, id~year~rteno, value.var="noise.z") #noise: <array> id by year sliced by rteno, value = scaled average  noise level during the route run each year (noise; scaled)
-wind <- acast(bbs.df, id~year~rteno, value.var="wind.z") #wind: <array> id by year sliced by rteno, value = scaled average wind level during the route run each year (wind; scaled)
+coverage <- acast(bbs.jags, gridcellid~year~rteno, value.var="proprouteincell") #coverage: <array> gridcellid by year sliced by rteno, value = % of BBS route in the grid cell; proportion of the route within a grid cell (id)
+car <- acast(bbs.jags, gridcellid~year~rteno, value.var="car.z") #wind: <array> gridcellid by year sliced by rteno, value = scaled average number of cars detected during the route run each year; covariate on detection for bbs (cars; scaled)
+noise <- acast(bbs.jags, gridcellid~year~rteno, value.var="noise.z") #noise: <array> gridcellid by year sliced by rteno, value = scaled average  noise level during the route run each year (noise; scaled)
+wind <- acast(bbs.jags, gridcellid~year~rteno, value.var="wind.z") #wind: <array> gridcellid by year sliced by rteno, value = scaled average wind level during the route run each year (wind; scaled)
 ## need to update upstream workflow to create scaled covars for: sky, temp....assistant (need to change NULL-->NA)
 
 ### trend effects
-ydays <- acast(bbs.df, id~year~rteno, value.var="yday") #ydays: <array> id by year by rteno sliced    indicator for day of year BBS conducted
+ydays <- acast(bbs.jags, gridcellid~year~rteno, value.var="yday") #ydays: <array> gridcellid by year by rteno sliced    indicator for day of year BBS conducted
 
 ### habitat covariates
 
-
 ### indexes
-G.ids <- sort(unique(grid$id)) # grid cell identities (study area grid cells)
-M.ids <- sort(unique(bbs.df$rteno)) # unique BBS route identifiers (rteno; comprises unique ctry-state-route id)
-T.ids <- sort(unique(bbs.df$year)) # years of BBS data
+G.ids <- sort(unique(bbs.jags$gridcellid, na.rm=TRUE)) # grid cell identities (study area grid cells)
+M.ids <- sort(unique(bbs.jags$rteno, na.rm=TRUE)) # unique BBS route identifiers (rteno; comprises unique ctry-state-route id)
+T.ids <- sort(unique(bbs.jags$year, na.rm=TRUE)) # years of BBS data
 G     <- length(G.ids) # number of grid cells (with BBS data)
 M     <- length(M.ids) # number of unique BBS routes (rteno)
 T     <- length(T.ids) # number of years with BBS data
 
-
-
+### a test
+dim(C) == c(G, T, M)
 
 # Notes -------------------------------------------------------------------
 ## Important 1: access arrays C, coverage, car, noise, wind, ydays, by
@@ -92,12 +93,12 @@ for(t in 1:T){
 }"
 
 ## save model to file
-fn.mod1 <- paste0(dir.jags,"/route-level-pois-glm.txt")
-cat(file=fn.mod1, mod)
+fn.mod <- paste0(dir.jags,"/route-level-pois-glm.txt")
+cat(file=fn.mod, mod)
 
 # Call JAGS ---------------------------------------------------------------
 # library(jagsUI)
-out.mod1 <- jagsUI::jags(data = jdat.bbs, inits = inits,
+mod.out <- jagsUI::jags(data = jdat.bbs, inits = inits,
                          parameters.to.save = params,
                          n.adapt = na,
                          n.burnin = nb,
@@ -112,7 +113,7 @@ out.mod1 <- jagsUI::jags(data = jdat.bbs, inits = inits,
 
 # Output ------------------------------------------------------------------
 par(mfrow=c(3,3))
-traceplot(out.mod1)
+traceplot(mod.out)
 
 jags.View(out.mod1)
 print(out.mod1, 2)
