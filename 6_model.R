@@ -21,41 +21,63 @@ T = dim(jdat$C.bbs.df)[2] # <time> number of years of data
 jags.data <- list(G=G, # number of grid cells with BBS data
                   R=R, # number of unique routes sampled across all BBS data
                   T=T, # number of years of BBS data
-                  C.bbs.df = jdat$C.by.grid, # <matrix> indexing== matrix[R, T] (route, year)
+                  C.bbs.df = jdat$C.bbs.df, # <matrix> indexing== matrix[R, T] (route, year)
                   C.bbs.array = jdat$C.bbs.array, # <array> # <array> bbs count data (grid cell by year sliced by RTENO); indexing== array[M, T, R] (site, year, route)
                   nRoutesPerYear=jdat$n.routesPerYear ,  # <vector> number of BBS routes sampled each year
                   w=jdat$w, # <array> dims grid by route
-                  bbs.observer.experience = jdat$bbs.observer.experience, # <matrix> route by year; 0==not first year, 1==first year
+                  cov_2 = jdat$bbs.observer.experience, # <matrix> route by year; 0==not first year, 1==first year
                   cov_1 = rnorm(n = G, 0, 10) # random covariate for now
                   )
 
-
+jags.data$C.bbs.df %>% dim()
+jags.data$T
+jags.data$R
+jags.data$G
+cov_2
 
 # Model -------------------------------------------------------------------
 # mod <- "model{
 ## Likelihood
-for (t in 1:T) {
 
-  for (r in 1:R) {
+  ### BBS Data
+  for (t in 1:T) {
 
-      y[r,t] ~ dpois(mu[j,t])
+    for (r in 1:R) {
 
-      mu[r,t] <-  sum(w[,r] * lambda.grid) #
+        C.bbs.df[r,t] ~ dpois(mu[r,t]) # BBS realized abundance (counts)
+      # y[r,t] ~ dpois(mu[j,t])
+        mu[r,t]      <- sum(w[r,] * lambda.grid) # weighted expected abundance (wt by proportion of route in grid cell)
+        # mu[r,t] <-  sum(w[,r] * lambda.grid) #
 
 
-    } # end R loop (routes)
+    for(g in 1:G){
+
+    # lambda.grid dim = grid id
+          ## expected abundance on route r equals the...
+            ## ... sum of counts within each grid cell ...
+            ## ... weighted by the number of stops in each grid cell (effort)
+
+      #lambda.route[t,r] <- sum(EN[i,t]*propStops[t,Brsite[t,r],Brgrid[r,i,t]])
+      # Here we have to trick Jags and index lambda.route by the grid cell
+      # EN x propStops = Weighting the EN by the proportion of the grid cell area sampled by a route
+      # lambda.grid = Stores EN x propStops for each grid cell that a route falls in, each year
+
+      lambda.grid[t, Brsite[t, j], Brgrid[Brsite[t, j], i, t]] <-
+
+        EN[Brsite[t, i], t] * propStops[t, Brsite[t, j], Brgrid[Brsite[t, j], i, t]]
+
+      log(lambda.grid[g]) <-  beta_0 +
+                              beta_1*cov_1[g] +  ## habitat dummy covar that doesn't change over time
+                              beta_2*cov_2[r,t]  ## observation covar for demonstration
+
+           } # end G loop (grid cells)
+
+        } # end R loop (routes)
+
+    } # end T loop (years)
 
 
-  for(g in 1:G){
-    for(r in 1:R){
 
-  # lambda.grid dim = grid id
-          log(lambda.grid[g]) <-  beta_0 + beta_1*cov_1[g] + beta_2*cov.bbs.obs.fyer[r,t]
-
-        } # end R loop #2
-    } # end G loop
-
-} # end T loop
 
 ## Priors ##
 beta_0 ~ dnorm(0,0.001) # intercept

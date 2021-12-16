@@ -64,16 +64,16 @@ region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut
 if(!exists("states")) states <- c("New York")
 if(!exists("proj.shorthand")) proj.shorthand="ny"
 # states <-
-#   c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
-#     # 'Iowa','US-IA',
-#     'Illinois', 'US-IL',
-#     'Indiana','US-IN',
-#     'Michigan','US-MI',
-#     # 'Minnesota','US-MN',
+  # c( # full names for BBS data, ctry-state abbrev for ebird files.annoying?yes.
+    # 'Iowa','US-IA',
+    # 'Illinois', 'US-IL',
+    # 'Indiana','US-IN',
+    # 'Michigan','US-MI',
+    # 'Minnesota','US-MN',
 #     # 'New York','US-NY',
 #     'Ohio','US-OH',
 #     # 'Pennsylvania','US-PA',
-#     'Wisconsin','US-WI',
+    # 'Wisconsin','US-WI'
 #     # 'Ontario', 'CA-ON',
 #     NULL
 # )

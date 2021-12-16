@@ -85,12 +85,15 @@ pcov.bbs.obsfyer <-  pivot_wider(data = bbs.df,
   as.matrix()# average across rteno (b/c some rtenos are split b/w many gridcellid, and here we are ignoring grid cell id)
 
 ## "effort" (proportion of a route within each grid cell)
-# propRoutePerGridCell: <matrix> grid cell by rteno; % of rteno that falls within the grid cell
-propRoutePerGridCell <- acast(bbs.df %>% distinct(rteno, gridcellid, proprouteincell),
+# propRoutePerGridCell: <array> rteno by grid cell  sliced by time; % of rteno that falls within the grid cell
+# propRoutePerGridCell cont.: note: proportion doesn't change over time because we only have one year of stop-level route location data...just keeping for posterity.
+propRoutePerGridCell <- acast(bbs.df %>% distinct(rteno, gridcellid, proprouteincell, year),
                               fill = 0,
-                              gridcellid ~ rteno, value.var =
+                              rteno~gridcellid~year, value.var =
                               "proprouteincell",
 )
+
+# w[,,1]
 
 
 ### trend effects
@@ -126,7 +129,7 @@ jdat.bbs <- list(
   n.routesPerYear = n.RoutesPerYear$n, #
   n.years.bbs = n.years.bbs, # number of of years w/bbs data
   ## covars
-  w = propRoutePerGridCell, # % of each length of rteno in a grid cell
+  w = propRoutePerGridCell, #  array % of each length of rteno in a grid cell
   bbs.observer.experience = pcov.bbs.obsfyer, # logical-whether it's observer's first year on BBS
   cars = pcov.bbs.cars,
   noise = pcov.bbs.noise,
