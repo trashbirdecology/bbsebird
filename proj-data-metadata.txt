@@ -1,0 +1,31 @@
+---
+title: "Contents of object jdat <a list>"
+subtitle: (subject to frequent change)
+output:
+  pdf_document:
+    keep_tex: false
+---
+
+where 
+	rteno == unique BBS route number (state, ctry, route)
+	gridcellid/grid == unique grid cell identifier in study area
+
+
+element name | class|  dimension contents [row,col,slice] | description
+------|-----------|-------|-------- 
+
+G | scalar | -  | number of grid cells in study with BBS data
+R | scalar | -  | number of BBS routes sampled over entire time period
+T | scalar | -  | number of years of count data
+w | matrix | [G,R] | % of route R that falls within grid cell G
+C.bbs.df | matrix    | [R,T] | BBS count data summed at the route-level (no grids)
+C.bbs.array | array  | [G ,T, R] | BBS count data for each grid-route
+bbs.observer.experience| matrix | [R,T] | binary indicator for whether that year/route is observer's first (0=false, 1=true)
+cov_1 | matrix | [R,T] |  dummy covar for now (rnorm(n = G, mean=0, sd=10))
+nRoutesPerYear | vector | [1,T] |  number of unique routes (rteno) with data by year
+
+
+
+
+ | |  | 
+ | |  | 

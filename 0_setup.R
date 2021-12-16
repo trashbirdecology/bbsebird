@@ -112,18 +112,17 @@ grid.size=.25 #1/4 deg
 # Specify Directories & File Names -----------------------------------------------------
 # dir.proj.out <- paste0("examples/greatlakes-subset-example-", grid.size*111.111, "km/")
 dir.proj.out <- paste0("examples/", proj.shorthand,"-example-", round(grid.size*111.111), "km/")
-## Original Observations Data (for import and munging BBS, eBird) ----------------------------------
-## specify dir.ebird.in as the location where you have saved the EBD (eBird reference database)
+
+## eBird Data Directory (MUST BE SPECIFIED) ----------------------------------
+## where the eBird data is stored (locally)
 if(!exists("dir.ebird.in")) dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird"
-# auk_set_ebd_path(dir.ebird.in, overwrite = TRUE)
-# Sys.setenv("BIRDDB_HOME" = dir.ebird.in)
+
+## BBS Route Shapefiles/GDBs -----------
+if(!exists("cws.routes.dir")) cws.routes.dir <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
+if(!exists("usgs.routes.dir")) usgs.routes.dir <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/usgs"
 
 ## JAGS data in and out -----------------------------------------------------
 dir.jags <- paste0(dir.proj.out, "jags/")
-
-## BBS Route Shapefiles/GDBs -----------
-if(!exists("cws.routes.dir")) cws.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
-if(!exists("usgs.routes.dir")) usgs.routes.dir="C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/usgs"
 
 ## Output Directories (project-specific) -----------------------------------
 ## Intermediary data files--------------------------------------------------
