@@ -85,3 +85,20 @@ return(x)
 
 split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
 
+
+
+# SE ----------------------------------------------------------------------
+##' Standard Error
+#'
+#' Computes standard error of a vector
+#' @param x Numeric vector
+#' @keywords standard error
+#' @export
+#' @examples
+#' x <- rnorm(100)
+#' se(x)
+
+se <- function(x){
+  sd(x)/sqrt(length(x))
+}
+

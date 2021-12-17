@@ -29,115 +29,77 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
     wind.z = (avgwind - mean(avgwind, na.rm=TRUE))/sd(avgwind, na.rm=TRUE),
     noise.z = (noisemean - mean(noisemean, na.rm=TRUE))/sd(noisemean, na.rm=TRUE),
     car.z = (carmean - mean(carmean, na.rm=TRUE))/sd(carmean, na.rm=TRUE)
-  )
-
-n.years.bbs <- length(unique(bbs.df$year))
-
-## create array of BBS count data sliced by RTENO
-# C.bbs.array: array <cell id by year sliced by BBS route num>
-# C.bbs.array cont.: C for BBS comprises count data at the route-level (sum of 50-stops)
-# C.bbs.array cont.: has rows for all grid cells that have at least some BBS data, but not necesssarily any counts for that RTENO.
-C.bbs.array <- acast(bbs.df, gridcellid~as.integer(year)~rteno, value.var="C")
-ind <- assertthat::are_equal(dim(C.bbs.array)[3],
-                      length(unique(bbs.df$rteno)))
-if(ind) bbs.rtenos <- sort(unique(bbs.df$rteno)); rm(ind)
-## create single data frame of BBS count data per RTENO and year
-# C.bbs.df: array <cell id by year sliced by BBS route num>
-# C.bbs.df cont.: C for BBS comprises count data at the route-level (sum of 50-stops)
-# C.bbs.df cont.: has rows for all grid cells that have at least some BBS data, but not necesssarily any counts for that RTENO.
-C.bbs.df <- pivot_wider(data = bbs.df,
-                        id_cols=rteno, names_from=year,
-                        values_from = "C",
-                          values_fill=NA,
-                        values_fn=sum # C should be the sum across rteno (b/c some rtenos are split b/w many gridcellid, and here we are ignoring grid cell id)
-                        ) %>%
-          tibble::column_to_rownames("rteno") %>%
-  as.matrix()
-
-### observation process covariates
-pcov.bbs.wind <-  pivot_wider(data = bbs.df,
-                              id_cols=rteno, names_from=year,
-                              values_from = "wind.z", ## mean and scaled wind across all of the route
-                              values_fill=NA,
-                              values_fn=mean)%>%
-  tibble::column_to_rownames("rteno") %>%
-  as.matrix() # sum across rteno (b/c some rtenos are split b/w many gridcellid, and here we are ignoring grid cell id)
-pcov.bbs.cars <-  pivot_wider(data = bbs.df,
-                              id_cols=rteno, names_from=year,
-                              values_from = "car.z", ## mean and scaled number of cars across all of the route
-                              values_fill=NA,
-                              values_fn=mean)%>%
-  tibble::column_to_rownames("rteno") %>%
-  as.matrix() # average across rteno (b/c some rtenos are split b/w many gridcellid, and here we are ignoring grid cell id)
-pcov.bbs.noise <-  pivot_wider(data = bbs.df,
-                              id_cols=rteno, names_from=year,
-                              values_from = "noise.z", ## mean and scaled noise across all of the route
-                              values_fill=NA,
-                              values_fn=mean) %>%
-  tibble::column_to_rownames("rteno") %>%
-  as.matrix()# average across rteno (b/c some rtenos are split b/w many gridcellid, and here we are ignoring grid cell id)
-pcov.bbs.obsfyer <-  pivot_wider(data = bbs.df,
-                              id_cols=rteno, names_from=year,
-                              values_from = "obsfirstyearbbs", ## observer's first year on bbs
-                              values_fill=NA,
-                              values_fn=get_mode) %>%
-  tibble::column_to_rownames("rteno") %>%
-  as.matrix()# average across rteno (b/c some rtenos are split b/w many gridcellid, and here we are ignoring grid cell id)
-
-## "effort" (proportion of a route within each grid cell)
-# propRoutePerGridCell: <array> rteno by grid cell  sliced by time; % of rteno that falls within the grid cell
-# propRoutePerGridCell cont.: note: proportion doesn't change over time because we only have one year of stop-level route location data...just keeping for posterity.
-propRoutePerGridCell <- acast(bbs.df %>% distinct(rteno, gridcellid, proprouteincell, year),
-                              fill = 0,
-                              rteno~gridcellid~year, value.var =
-                              "proprouteincell",
-)
-
-# w[,,1]
+  ) %>%
+  ### weighted counts by prop route in cell and cell area
+  mutate(C.weighted.area = as.numeric(C*proprouteincell/cellarea)) # weighted C per grid area (# per m^2)
 
 
-### trend effects
-ydays <- acast(bbs.df, gridcellid~year~rteno, value.var="yday") #ydays: <array> gridcellid by year by rteno sliced    indicator for day of year BBS conducted
+## Count data---arrays for BBS count data (dims: rteno by year by grid cell)
+### C: array <rteno by year by cell id>
+C            <-   acast(bbs.df, rteno~year~gridcellid, value.var="C")
+### C.route: C at the route level
+C.route      <-   acast(bbs.df %>% distinct(rteno, year, C), rteno~year, value.var="C")
 
 
-## initial values ----------------------------------------------------------
-## Create initial values for C
-# Cmax.bbs: maximum count of species within a grid cell per year. NA values (cells with no BBS data) assigned zero as max count.
-# Cmax.bbs: <matrix> gridcellid by year, values = max C (with NA==0)
-Cmax.bbs <- bbs.df %>%
-  group_by(gridcellid, year) %>%
-  summarise(Cmax = max(C, na.rm=TRUE)) %>%
-  pivot_wider(names_from=year,
-              id_cols=gridcellid,
-              values_fill = 0,
-              values_from = "Cmax") %>%
-  tibble::column_to_rownames("gridcellid") %>%
-  as.matrix()
+## Adjusted count data---arrays for "effort" adjusted BBS count data
+### C.adj: weighted count (birds per m^2);  == C*proprouteincell/cellarea
+C.adj        <- acast(bbs.df, rteno~year~gridcellid, value.var="C.weighted.area")
+### C.adj.route: C.adj at the route-level (i.e. just dropping the grid)
+C.adj.route  <- acast(bbs.df %>% distinct(rteno, year, C.weighted.area), rteno~year, value.var="C.weighted.area")
 
-n.RoutesPerYear <- bbs.df %>% group_by(year) %>%
+
+## Weights---arrays containing weights for count data (dims: rteno by year by grid cell)
+w.prop <- acast(bbs.df, rteno~year~gridcellid, value.var="proprouteincell") # % of rteno in a cell
+w.area <- acast(bbs.df, rteno~year~gridcellid, value.var="cellarea") # area (units in original df) of gri cell.
+
+### Observation covariates (p.XXXX)---observation process covariates (dims: rteno by year)
+p.cars <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year)
+p.noise <-  acast(bbs.df %>% distinct(rteno, year, noise.z), rteno~year)
+p.obsfyrbbs <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearbbs), rteno~year)
+p.obsfyrrteno <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearroute), rteno~year)
+p.wind <-  acast(bbs.df %>% distinct(rteno, year, wind.z), rteno~year)
+
+## Trend effects
+doy <-  acast(bbs.df %>% distinct(rteno, year, yday), rteno~year)
+
+## Indexing
+### unique rtenos sampled
+id.routessampled <- unique(bbs.df$rteno)
+n.routessampled  <- length(id.routessampled)
+### number of RTENO sampled each year
+n.routesperyear <- bbs.df %>% group_by(year) %>%
   summarise(n=n_distinct(rteno)) %>% arrange(year) %>% ungroup()
+### number of years with bbs data
+n.bbsyears <- length(unique(bbs.df$year))
+
+### for loops
+R = dim(C)[1] # <route> number of unique BBS routes with data
+T = dim(C)[2] # <time> number of years of data
+G = dim(C)[3] # <site/grid cell> number of unique grid cells sampled by BBS data
+
 
 ## jdat.bbs -------------------------------------------------------------------------
-jdat.bbs <- list(
-  ## count data
-  C.bbs.df = C.bbs.df, # bbs count data aggreagtedf to the grid-level;matrix/df
-  C.bbs.array = C.bbs.array, # bbs count data as an array; sliced by RTENO
-  N_i_bbs = Cmax.bbs, # matrix
-  ## indices/scalars
-  id.routesSampled = bbs.rtenos, # vector; identities of bbs routes with data in study area
-  n.routesSampled  = length(bbs.rtenos), # integer; # routes with data in study area
-  n.routesPerYear = n.RoutesPerYear$n, #
-  n.years.bbs = n.years.bbs, # number of of years w/bbs data
-  ## covars
-  w = propRoutePerGridCell, #  array % of each length of rteno in a grid cell
-  bbs.observer.experience = pcov.bbs.obsfyer, # logical-whether it's observer's first year on BBS
-  cars = pcov.bbs.cars,
-  noise = pcov.bbs.noise,
-  wind = pcov.bbs.wind
+names.bbs <- c("R", "T", "G", "C", "C.adj", "C.route", "id.routessampled",
+                   "n.routessampled", "n.routesperyear", "n.bbsyears", "w.area",
+                   "w.prop", "p.obsfyrbbs", "p.obsfyrrteno", "p.cars", "p.noise",
+                   "p.wind", "doy")
+## Pack up the BBS data for use in JAGS
+for(i in seq_along(names.bbs)){
+  jdat.bbs[[i]] <- eval(parse(text=paste(names.bbs[i])))
+  names(jdat.bbs)[[i]] <- names.bbs[i] # doing this inside loop to prevent issues where data DNE
+}
 
-)
-#
-str(jdat.bbs$w)
+# # check dimensions on objects
+# lapply(jdat.bbs, ncol) %>% unlist()
+# lapply(jdat.bbs, nrow) %>% unlist()
+# test <- list()
+# for(i in seq_along(jdat.bbs)){
+#   temp=dim(jdat.bbs[[i]])
+#   if(length(temp)>1){test[[i]] = temp
+#   }else{test[[i]]= NA}
+# }
+# test
+
 
 # eBird data --------------------------------------------------------------
 ebird.df <- ebird %>%
@@ -152,21 +114,10 @@ ebird.df <- ebird %>%
     effort_distance_km.z = (effort_distance_km - mean(effort_distance_km, na.rm=TRUE))/sd(effort_distance_km, na.rm=TRUE),
     number_observers.z = (number_observers - mean(number_observers, na.rm=TRUE))/sd(number_observers, na.rm=TRUE)
   )
-# par(mfrow=c(2,1))
-# hist(ebird.df$effort_area.z)
-# hist(ebird.df$effort_area_ha)
-# hist(ebird.df$effort_distance_km)
-# hist(ebird.df$effort_distance_km.z)
-# hist(ebird.df$number_observers)
-# hist(ebird.df$number_observers.z)
-# range(ebird.df$number_observers, na.rm=TRUE)
-# range(ebird.df$number_observers.z, na.rm=TRUE)
 
 
 ## jdat.ebird -------------------------------------------------------------------------
 jdat.ebird <- list() ## keep empty if nothing yet
-
-
 
 
 
@@ -177,9 +128,9 @@ grid.temp <- grid %>%
   st_drop_geometry()
 
 ### create an index for the grid cells with count data
-grid.cells.w.ebird <- unique(ebird.df$gridcellid) %>% sort()
-grid.cells.w.bbs <- unique(bbs.df$gridcellid) %>% sort()
-grid.cells.w.data <- unique(c(grid.cells.w.bbs, grid.cells.w.ebird))
+gridcellswbbs <- unique(bbs.df$gridcellid) %>% sort()
+gridcellswebird <- unique(ebird.df$gridcellid) %>% sort()
+gridcellswdata <- unique(c(gridcellswbbs, gridcellswebird))
 
 
 ## grid cell coordinates
@@ -189,21 +140,19 @@ XY <- grid.temp %>% # centroid coordinates of the grid cells
 ## jdat.grid --------------------
 ### create a list of elements relevant to the study area/grid cells
 jdat.grid <- list(
-  coords.GridCells = XY,
-  n.GridCells = nrow(XY), # integer, number of cells in study area (with or without data)
-  id.GridCells = grid.temp$gridcellid, # identifier for grid cells
-  n.GridCellswData = length(grid.cells.w.data), # number of grid cells with any count data (ebird or bbs)
-  id.GridCellswData = grid.cells.w.data,  # vector of grid cell ids with any count data
-  n.GridCellswBBS = length(grid.cells.w.bbs), # number of grid cells with any count data (ebird or bbs)
-  id.GridCellswBBS = grid.cells.w.bbs,  # vector of grid cell ids with any count data
-  n.GridCellswebird = length(grid.cells.w.ebird), # number of grid cells with any count data (ebird or bbs)
-  id.GridCellswebird = grid.cells.w.ebird  # vector of grid cell ids with any count data
+  coords.gridcells = XY,
+  n.gridcells = nrow(XY), # integer, number of cells in study area (with or without data)
+  id.gridcells = grid.temp$gridcellid, # identifier for grid cells
+  n.gridcellswdata = length(gridcellswdata), # number of grid cells with any count data (ebird or bbs)
+  id.gridcellswdata = gridcellswdata,  # vector of grid cell ids with any count data
+  n.gridcellswbbs = length(gridcellswbbs), # number of grid cells with any count data (ebird or bbs)
+  id.gridcellswbbs = gridcellswbbs,  # vector of grid cell ids with any count data
+  n.gridcellswebird = length(gridcellswebird), # number of grid cells with any count data (ebird or bbs)
+  id.gridcellswebird = gridcellswebird  # vector of grid cell ids with any count data
   )
 
 
-
-# Other Indexes -----------------------------------------------------------------
-
+# Other Indexing -----------------------------------------------------------------
 
 # The Integrated JAGS Data ---------------------------------------------------------------------
 jdat <- c(jdat.bbs, jdat.ebird, jdat.grid)
@@ -228,6 +177,6 @@ plot(temp["max_C_ebird_yr2019"])
 
 
 # Clear mem ---------------------------------------------------------------------
-args.save <- c(args.save, "jdat")
-rm(list=setdiff(ls(), args.save))
-
+# args.save <- c(args.save, "jdat")
+# rm(list=setdiff(ls(), args.save))
+#
