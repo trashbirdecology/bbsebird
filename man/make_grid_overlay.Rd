@@ -14,3 +14,4 @@ make_grid_overlay(extent = NULL, grid.type = "hexagonal", dir.grid.out = NULL)
 \description{
 Create a spatial grid overlay for assigning observation and covariate data to spatial point processes.
 }
+\keyword{internal}

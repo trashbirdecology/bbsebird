@@ -10,7 +10,7 @@ munge_bbs(
   spp = "Double-crested Cormorant",
   zero.fill = TRUE,
   active.only = FALSE,
-  keep.stop.level.data = FALSE,
+  keep.stop.level.data = TRUE,
   QualityCurrentID = 1,
   countrynums.keep = c(124, 840)
 )

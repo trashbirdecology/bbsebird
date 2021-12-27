@@ -4,10 +4,10 @@
 \alias{make_ebird_spatial}
 \title{Create an SF object for eBird Observations}
 \usage{
-make_ebird_spatial(x, crs.target, grid = NULL)
+make_ebird_spatial(df, crs.target, grid = NULL)
 }
 \arguments{
-\item{x}{A data frame with columns c(latitude, longitude) and optional attributes (columns).}
+\item{df}{A data frame with columns c(latitude, longitude) and optional attributes (columns).}
 
 \item{crs.target}{the integer representing the target CRS.}
 
