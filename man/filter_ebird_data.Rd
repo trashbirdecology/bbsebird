@@ -21,9 +21,10 @@ filter_ebird_data(
   method = "data.table",
   cols.keep = c("all_species_reported", "country", "common_name", "country_code",
     "county", "county_code", "duration_minutes", "effort_area_ha", "effort_distance_km",
-    "latitude", "longitude", "number_observers", "observation_date", "observation_count",
-    "observer_id", "protocol_code", "protocol_type", "sampling_event_identifier",
-    "state", "scientific_name", "state_code", "time_observations_started"),
+    "group_identifier", "latitude", "longitude", "number_observers", "observation_date",
+    "observation_count", "observer_id", "protocol_code", "protocol_type",
+    "sampling_event_identifier", "state", "scientific_name", "state_code",
+    "time_observations_started"),
   f_obs_out = paste0(dir.ebird.out, "ebird_obs_filtered.txt"),
   f_samp_out = paste0(dir.ebird.out, "ebird_samp_filtered.txt")
 )
@@ -31,9 +32,13 @@ filter_ebird_data(
 \arguments{
 \item{fns.ebird}{File paths for the EBD and SamplingEvents data to import. Character vector of filenames for original files.}
 
-\item{dir.ebird.out}{Location of where to save and find the filtered/subsetted data.}
+\item{dir.ebird.out}{Location of where to save and/or find the filtered/subsetted eBird data.}
 
-\item{overwrite}{Logical. If true will overwrite existing filtered data objects in project directory.}
+\item{overwrite}{Logical. If true will overwrite existing filtered data objects in directory \code{dir.ebird.out}}
+
+\item{f_obs_out}{Filename for saving the filtered eBird observations data}
+
+\item{f_samp_out}{Filename for saving the filtered eBird sampling data}
 }
 \description{
 Filter the eBird data and sampling events using R package AUK.
