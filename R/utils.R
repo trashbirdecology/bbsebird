@@ -2,6 +2,7 @@
 #' Convert the ebird zero-filled date to decimal times
 
 #' @param x the data to to convert to H:M:S
+#' @keywords internal
 #' @noRd
 time_to_decimal <- function(x) {
   x <- lubridate::hms(ebd_zf$time_observations_started)
@@ -14,7 +15,7 @@ time_to_decimal <- function(x) {
 #' Clean up variables for the zer-filled ebird data
 #'
 #' @param ebd_zf The zero-filled ebird data object (flat)
-
+#' @keywords internal
 #' @noRd
 clean_zf <- function(ebd_zf){
   clean_zf <- ebd_zf %>%
@@ -111,12 +112,11 @@ split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
 #'
 #' Computes standard error of a vector
 #' @param x Numeric vector
-
-#' @noRd
 #' @examples
 #' x <- rnorm(100)
 #' se(x)
-
+#' @keywords internal
+#' @noRd
 se <- function(x){
   sd(x)/sqrt(length(x))
 }

@@ -1,9 +1,9 @@
 #' Ensure Consistency Among eBird and BBS Datasets
 #'
-#' ..
 #' @param x a data frame
 #' @keywords internal
 #' e.g., x =
+#' @noRd
 match_col_names <- function(x){
 
   col_names <- list(date = c("observation_date", "date"),

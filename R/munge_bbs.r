@@ -7,8 +7,7 @@
 #' @param spp A vector of one or more species (using English Common Name) to subset the data by. Capitalization ignored.
 #' @param zero.fill If TRUE and a single species is provided in 'spp', this function will output list$observations with zero-filled data.
 #' @param active.only Logical. If TRUE keep only active routes. Discontinued routes will be discarded.
-#' @export munge_bbs
-
+#' @export
 munge_bbs <-
   function(list,
            states = NULL,

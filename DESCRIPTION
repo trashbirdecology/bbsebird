@@ -28,7 +28,8 @@ Imports:
     reshape2,
     stringr,
     suncalc,
-    readr
+    readr,
+    lubridate
 Suggests: 
     assertthat,
     learnr,

@@ -5,8 +5,7 @@
 #' @param species Character vector comprising species identifiers.
 #' @param country.code.identifier Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c
 #' @param sampling.events Logical.
-#' @export id_ebird_files
-
+#' @export
 id_ebird_files <-function(dir.ebird.in, mmyyyy="sep-2021", regions=NULL,
                           species="doccor", country.code.identifier="iso2c",
                           sampling.events=TRUE){

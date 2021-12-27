@@ -4,8 +4,7 @@
 #' @param cws.layer Name of the layer to import. Defaults to "ALL_ROUTES"
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
 #' @param usgs.layer Name of the layer to import.
-#' @export make_bbs_spatial
-#### include an optin to define the pre=existuing grid
+#' @export
 make_bbs_spatial <- function(bbs.obs,
                              ## observations data frame. must contain at least var RTENO
                              cws.routes.dir,

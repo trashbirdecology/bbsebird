@@ -15,6 +15,11 @@ for(i in seq_along(var)){
 
 
 # garbage collection and clear junk -----------------------------------------------------------
+#' Keep Only Wanted Objects in Memory
+#'
+#' Removes all except arguments specified
+#' @param args.save A list of new or previously specified arguments.
+#' @param new.args.save Optional. One or more new object names to save (in addition to args.save)
 #' @keywords internal
 #' @export
 .junk_it <- function(args.save, new.args.save=NULL){

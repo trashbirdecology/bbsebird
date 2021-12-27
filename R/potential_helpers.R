@@ -1,6 +1,8 @@
 
 # FOR MUNGING EBIRD DATA --------------------------------------------------
 ## convert time observation to HOURS SINCE MIDNIGHT
+#' @keywords internal
+#' @noRd
 time_to_decimal <- function(x) {
   x <- hms(x, quiet = TRUE)
   hour(x) + minute(x) / 60 + second(x) / 3600
@@ -13,6 +15,8 @@ time_to_decimal <- function(x) {
 #' @param dir Directory where the packed ebird data files are stored and into which files will unpack.
 #' @param overwrite Logical. Default=FALSE will not overwrite existing files in dir.
 #' @param spp.ind A species indicator (using eBird terminology), used to identify which .zip files should be unpacked. Defaults to 'doccor' (Double-crested Cormorant).
+#' @keywords internal
+#' @noRd
 unpack_ebird <- function(dir="data-raw/ebird-data",
                          overwrite=FALSE,
                          spp.ind="doccor" ## defaults to double-crested cormorant
@@ -30,7 +34,5 @@ unpack_ebird <- function(dir="data-raw/ebird-data",
   }
   }
 }
-
-# END HELPER FUNS -----------------------------------------------------------------
 
 

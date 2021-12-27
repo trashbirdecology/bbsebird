@@ -6,7 +6,6 @@
 #' @param f_obs_out Filename for saving the filtered eBird observations data
 #' @param f_samp_out Filename for saving the filtered eBird sampling data
 #' @export
-#' If not specified will default to subdir in project directory.
 filter_ebird_data <-
   function(fns.ebird,
            dir.ebird.out,
@@ -118,38 +117,38 @@ filter_ebird_data <-
       cat("Filtering sampling events. This takes a minute.\n\n")
       ## force column names to lower and replace spaces with underscore (_) for my sanity
       colnames(sampling) <-
-        str_replace_all(tolower(colnames(sampling)),
+        stringr::str_replace_all(tolower(colnames(sampling)),
                         pattern = " ",
                         replacement = "_")
       ## remove useless (to us) columns to help with memory issues.
       sampling <- sampling[names(sampling) %in% cols.keep]#keep only useful columns
       if(complete.only) sampling <- sampling %>%
-        filter(all_species_reported %in% c("TRUE", "True", 1))
+        dplyr::filter(all_species_reported %in% c("TRUE", "True", 1))
       if(!is.null(countries)) sampling <- sampling %>%
-        filter(country %in% countries)
+        dplyr::filter(country %in% countries)
       if(!is.null(states)) sampling <- sampling %>%
-        filter(state %in% states)
+        dplyr::filter(state %in% states)
       if(!is.null(protocol)) sampling <- sampling %>%
-        filter(protocol_type %in% protocol)
+        dplyr::filter(protocol_type %in% protocol)
       if(!is.null(max.num.observers)) sampling <- sampling %>%
-        filter(number_observers<=max.num.observers)
+        dplyr::filter(number_observers<=max.num.observers)
       if(!is.null(max.effort.km)) sampling <- sampling %>%
-        filter(effort_distance_km<=max.effort.km)
+        dplyr::filter(effort_distance_km<=max.effort.km)
       if(!is.null(max.effort.mins)) sampling <- sampling %>%
-        filter(duration_minutes<=max.effort.mins)
+        dplyr::filter(duration_minutes<=max.effort.mins)
 
       # create year and then filter by year
       sampling <- sampling %>%
-        mutate(year = lubridate::year(observation_date))
+        dplyr::mutate(year = lubridate::year(observation_date))
       if(!is.null(years)) sampling <- sampling %>%
-        filter(year %in% years)
+        dplyr::filter(year %in% years)
 
       # ~attempt to~ remove BBS observations if specified
       ### THIS IS A BIG ASSUMPTION SO WILL NEED TO REVISIT EVENTUALLY!!!
       ### in fact, i've got some checklists i need to cross-check against the BBS obserfvations data to see if this correctly removes them all.....
       if (remove.bbs.obs)
         sampling <- sampling %>%
-        filter(protocol_type != "Stationary" &
+        dplyr::filter(protocol_type != "Stationary" &
                  duration_minutes != 3)
 
       # for good measure..
@@ -158,7 +157,7 @@ filter_ebird_data <-
 
       # remove duplicate checklists for same birding party.
       cat("Running `auk::auk_unique()` on checklists\n\n")
-      sampling <- auk_unique(sampling, checklists_only = TRUE)
+      sampling <- auk::auk_unique(sampling, checklists_only = TRUE)
       # names(sampling)
 
       # ensure consistency in col types
@@ -199,34 +198,34 @@ filter_ebird_data <-
         observations[names(observations) %in% cols.keep]
       ## begin the filtering by params
       if(!is.null(countries)) observations <- observations %>%
-        filter(country %in% countries)
+        dplyr::filter(country %in% countries)
       if(!is.null(states)) observations <- observations %>%
-        filter(state %in% states)
+        dplyr::filter(state %in% states)
       if(complete.only) observations <- observations %>%
-        filter(all_species_reported %in% c("TRUE", "True", 1))
+        dplyr::filter(all_species_reported %in% c("TRUE", "True", 1))
       if(!is.null(species)) observations <- observations %>%
-        filter(common_name %in% species)
+        dplyr::filter(common_name %in% species)
       # create and then filter by year/date
       observations <- observations %>%
-        mutate(year = lubridate::year(observation_date))
+        dplyr::mutate(year = lubridate::year(observation_date))
       if(!is.null(years)) observations <- observations %>%
-        filter(year %in% years)
+        dplyr::filter(year %in% years)
       if(!is.null(protocol)) observations <- observations %>%
-        filter(protocol_type %in% protocol)
+        dplyr::filter(protocol_type %in% protocol)
       if(!is.null(max.num.observers)) observations <- observations %>%
-        filter(number_observers<=max.num.observers)
+        dplyr::filter(number_observers<=max.num.observers)
       if(!is.null(max.effort.km)) observations <- observations %>%
-        filter(effort_distance_km<=max.effort.km)
+        dplyr::filter(effort_distance_km<=max.effort.km)
       if(!is.null(max.effort.mins)) observations <- observations %>%
-        filter(duration_minutes<=max.effort.mins)
+        dplyr::filter(duration_minutes<=max.effort.mins)
       if (remove.bbs.obs) {
         observations <- observations %>%
-          filter(protocol_type != "Stationary" &
+          dplyr::filter(protocol_type != "Stationary" &
                    duration_minutes != 3)
       }
       ## since we dropped group id, there may be duplicates to remove
       observations <-
-        observations %>% distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
+        observations %>% dplyr::distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
 
       # collapse duplicate checklists into one, taking the max number identified by the group during an event
       ### This takes FOREVER....not sure why. going to do this manually...
@@ -235,12 +234,12 @@ filter_ebird_data <-
       ## this function will add variable "checklist_id"
 
     #####NEED TO CHEcK ABOUT X....does this mean they didn't count the number, or does it mean NO DATA?!!?!?
-      observations <- observations %>% mutate(
+      observations <- observations %>% dplyr::mutate(
         # convert X to NA
-        observation_count = if_else(observation_count == "X",
+        observation_count = dplyr::if_else(observation_count == "X",
                                     NA_character_, observation_count), # must use NA_character_ instead of NA!
         # effort_distance_km to 0 for non-travelling counts
-        effort_distance_km = if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
+        effort_distance_km = dplyr::if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
                                      0, effort_distance_km)
       )
 
@@ -256,8 +255,8 @@ filter_ebird_data <-
     }
 
     # create output file as a list
-    ebird_filtered <- list("observations" = as_tibble(observations),
-                           "sampling" = as_tibble(sampling))
+    ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
+                           "sampling" = dplyr::as_tibble(sampling))
     cat("Output of `filter_ebird_data()` may contain duplicate observations where multiple observers exist.")
     # rm(observations, sampling)
 

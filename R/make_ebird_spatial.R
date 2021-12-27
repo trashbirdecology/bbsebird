@@ -4,7 +4,7 @@
 #' @param df A data frame with columns c(latitude, longitude) and optional attributes (columns).
 #' @param crs.target the integer representing the target CRS.
 #' @param grid  a spatial grid over which the eBird data will be overlaid.
-#' @export make_ebird_spatial
+#' @export
 make_ebird_spatial <- function(df, crs.target, grid = NULL) {
   ## need to add messages for when following assers fail
   assertthat::assert_that(is.numeric(crs.target)) ||

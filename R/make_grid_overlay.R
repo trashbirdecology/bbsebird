@@ -3,6 +3,7 @@
 #' @param extent OBJ TYPE The extent of the spatial grid.
 #' @param grid.type One of c("hexagonal", "square").
 #' @keywords internal
+#' @noRd
 make_grid_overlay <- function(extent=NULL, grid.type="hexagonal", dir.grid.out=NULL){
 
   if(is.null(extent))
