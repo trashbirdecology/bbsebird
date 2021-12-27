@@ -1,0 +1,67 @@
+---
+output: github_document
+always_allow_html: true
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# dubcorms
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+In development package for integrating eBird and BBS data. 
+
+## Installation
+
+You can install the development version of dubcorms from [GitHub](https://github.com/) with:
+
+```{r install}
+# install.packages("devtools")
+devtools::install_github("trashbirdecology/dubcorms")
+```
+
+```{r imp-data-metadata}
+require('here')
+require('kableExtra')
+library(kableExtra)
+library(tidyverse)
+library(jagsUI)
+jdat<-readRDS(file=paste0(here::here("inst/jdat-jar.rds")))
+
+meta <- read.csv("inst/data-meta-table.csv")
+names(meta)[1] <-"dat"
+```
+
+
+# About Data Object `jdat`
+The data object **jdat** is currently a list comprising the BBS and eBird data for use in JAGS (SUBJECT TO CHANGE) 
+
+Important:: the BBS data in this list DO NOT include grid cells where no BBS data exists. I.e., `r jdat$G.bbs` is the # grid cells with BBS data, but total number of grid cells in our study area is actually `r jdat$G.grid`.
+
+##  Naming conventions:1. "C.xxx":BBS counts
+1. "p.xxx":detection / observation process covariates
+1. "n.xxx":scalars indicating number of xxx
+1. "id.xxx":unique identifiers for xxx
+1. others:others named to strive for recognizability (e.g., doy = day of year, julian = julian date with some origin)
+
+## jdat contents
+Here are the contents of jdat (for now, for bbs...)
+```{r jdat-metadata, echo=TRUE}
+# kableExtra::kable(names(jdat))
+temp=meta %>% arrange(dat, name)
+kable(temp) %>% 
+  kableExtra::kable_minimal()
+```
+
+
+
