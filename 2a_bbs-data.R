@@ -2,9 +2,9 @@ if(exists("args.save")){rm(list=setdiff(ls(), args.save))}else(rm(list=ls()))
 source("1_spatial-grid.r")
 devtools::load_all()
 
+# Check for existing files ------------------------------------------------
 fns <- list.files(dir.bbs.out)
 fns.spatial <- list.files(dir.spatial.out)
-# Check for existing files ------------------------------------------------
 if("bbs_spatial.rds" %in% tolower(fns.spatial)) bbs_spatial <- readRDS(paste0(dir.spatial.out, "/", "bbs_spatial.rds"))else{
 
 # Munge BBS data ----------------------------------------------------------
@@ -55,8 +55,4 @@ saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 }
 
 
-# Clear mem ---------------------------------------------------------------------
-if(exists("args.save")){
-  args.save <- c(args.save, "bbs_spatial")
-rm(list=setdiff(ls(), args.save))
-}
+junk_it(args.save, "bbs_spatial")
