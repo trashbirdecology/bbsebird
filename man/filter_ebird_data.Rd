@@ -43,14 +43,3 @@ filter_ebird_data(
 \description{
 Filter the eBird data and sampling events using R package AUK.
 }
-\keyword{If}
-\keyword{default}
-\keyword{directory.}
-\keyword{in}
-\keyword{internal}
-\keyword{not}
-\keyword{project}
-\keyword{specified}
-\keyword{subdir}
-\keyword{to}
-\keyword{will}
