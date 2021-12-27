@@ -97,8 +97,8 @@ filter_ebird_data <-
     if (file.exists(f_samp_out) & !overwrite) {
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
-      if (!exists("sampling"))
-        cat("Importing the eBird sampling events data.\nThis may take a minute.")
+      if (!exists("sampling")) # this check is used for development purposes. should be removed prior to publish
+        cat("Importing the eBird sampling events data.\nThis may take a minute...\n")
       if (method == "vroom") {
         sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
       }
@@ -141,8 +141,9 @@ filter_ebird_data <-
       if(!is.null(years)) sampling <- sampling %>%
         filter(year %in% years)
 
-      # attempt to remove BBS observations if specified
+      # ~attempt to~ remove BBS observations if specified
       ### THIS IS A BIG ASSUMPTION SO WILL NEED TO REVISIT EVENTUALLY!!!
+      ### in fact, i've got some checklists i need to cross-check against the BBS obserfvations data to see if this correctly removes them all.....
       if (remove.bbs.obs)
         sampling <- sampling %>%
         filter(protocol_type != "Stationary" &
@@ -226,7 +227,7 @@ filter_ebird_data <-
         observations %>% distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
 
 
-      cat("throwing out the trash --- one sec..")
+      cat("throwing out the trash --- one sec.....\n")
       gc()
       # collapse duplicate checklists into one, taking the max number identified by the group during an event
       ### This takes FOREVER....not sure why. going to do this manually...
