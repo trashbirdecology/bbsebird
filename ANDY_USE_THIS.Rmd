@@ -1,0 +1,36 @@
+---
+title: "for-andy"
+output: html_document
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = FALSE)
+require('here')
+require('kableExtra')
+library(kableExtra)
+library(tidyverse)
+library(jagsUI)
+jdat<-readRDS(file=paste0(here::here("jdat-jar.rds")))
+
+meta <- read.csv("temp-meta-table.csv")
+names(meta)[1] <-"dat"
+```
+## data object 
+The data object **jdat** is a list, currently, of the BBS data alone. 
+
+Important:: the BBS data in this list DO NOT include grid cells where no BBS data exists. I.e., `r jdat$G.bbs` is the # grid cells with BBS data, but total number of grid cells in our study area is actually `r jdat$G.grid`.
+
+##  Naming conventions:1. "C.xxx":BBS counts
+1. "p.xxx":detection / observation process covariates
+1. "n.xxx":scalars indicating number of xxx
+1. "id.xxx":unique identifiers for xxx
+1. others:others named to strive for recognizability (e.g., doy = day of year, julian = julian date with some origin)
+
+## jdat contents
+Here are the contents of jdat (for now, for bbs...)
+```{r jdat-metadata, echo=TRUE}
+# kableExtra::kable(names(jdat))
+temp=meta %>% arrange(dat, name)
+kable(temp) %>% 
+  kableExtra::kable_minimal()
+```

@@ -13,7 +13,7 @@ id_ebird_files <-function(dir.ebird.in, mmyyyy="sep-2021", regions=NULL,
 # mmyyyy.collapse <- paste(mmyyyy, str_remove(mmyyyy, "-"), sep="|")
 mmyyyy <- tolower(mmyyyy)
 
-## Get filename for the samplign events in directory
+## Get filename for the sampling events in directory
 fn_samp <- tolower(list.files(dir.ebird.in, full.names=TRUE))#no need for fullnames because the auk package doesnt handle it well. needs a filename and a directory.
 fn_samp <- fn_samp[str_detect(fn_samp,"sampling")]  ## get sampling files
 fn_samp <- fn_samp[str_detect(fn_samp,".tar|.gz|.zip")==FALSE]  ## remove compressed files.

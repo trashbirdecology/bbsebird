@@ -1,6 +1,6 @@
-# if(!exists("jdat")){
-#   rm(list=ls())
-#   source("4a_prep-jags-data.r")}
+if(!exists("jdat")){
+  rm(list=ls())
+  source("4a_prep-jags-data.r")}
 
 # MCMC specs --------------------------------------------------------------
 na <- 1000 # number of adaptation iterations
@@ -12,54 +12,47 @@ nt <- 100 # thinning rate
 
 
 # Model -------------------------------------------------------------------
-# mod <- "model{
-## Likelihood
+attach(jdat)
+jags.data <- list(
+  T=T, R=R, G=G,
+  y=C.route,  # dims: [r,t]
+  w=w.prop, # dims: [r,g]
+  area=w.area, # dims: [g]
+  cov1=rnorm(jdat$n.gridcellswbbs, 0,10)# dims: [g]
+)
+mod <- "
+model{
+### BBS Data
+for (t in 1:T) {#years
+  for (r in 1:R) {#routes
+      y[r] ~ dpois(lambda.route[r])
+      lambda.route[r] <- sum(w.prop[r,t,g]*lambda.grid[g])
 
-  ### BBS Data
-  for (t in 1:T) {
-    for (r in 1:R) {
-
-        C[r,t] ~ dpois(mu[r,t])
-        mu[r,t]      <- sum(w.prop[r,t]/w.area[r,t]*lambda) # weighted expected abundance (wt by proportion of route in grid cell)
-        # mu[r,t] <-  sum(w[,r] * lambda) #
-
-    for(g in 1:G){
-          ## expected abundance on grid g equals the...
-            ## ... sum of (counts within each grid cell ...
-            ## ... weighted by the number of stops in each grid cell)
-          log(lambda[g]) <-  beta_0 +
-                                  beta_1*cov_1[g]  ## habitat dummy covar that doesn't change over time
-                                  beta_2*cov_2[r,t]  ## observation covar for demonstration (this is a detect. covar.)
-
-           } # end G loop (grid cells)
-
-        } # end R loop (routes)
-
-    } # end T loop (years)
-
-
-
+    for(g in 1:G){#grids
+        log(lambda.grid[g]) <-  log(w.area[g] + beta_0 + beta_1*cov1[g])
+    }#g
+  }#r
+}#t
 
 ## Priors ##
 beta_0 ~ dnorm(0,0.001) # intercept
 beta_1 ~ dnorm(0,0.001) # dummy covar 1
-beta_2 ~ dnorm(0,0.001) # bbs covar: first-year observer effect
+# beta_2 ~ dnorm(0,0.001) # bbs covar: first-year observer effect
 
+}#model
 
-# }"
+"
 
 ## save model to file
 fn.mod <- paste0(dir.jags,"/mod.txt")
 cat(file=fn.mod, mod)
 
-
-
 # Initial Values ----------------------------------------------------------
-inits <- function() list(year = c(NA, rnorm(ncol(C)-1)))
+inits <- function() list(year = c(NA, rnorm(ncol(jags.data$y)-1)))
 
 
 # Parameters monitored ----------------------------------------------------
-params <- c("route", "year", "popindex", "grid")
+params <- c("lambda.route", "lambda.grid", "beta_1")
 
 
 
