@@ -10,6 +10,15 @@ for(i in seq_along(var)){
 
 
 
+# garbage collection and clear junk -----------------------------------------------------------
+junk_it <- function(args.save, new.args.save=NULL){
+  args.save <- c(args.save, new.args.save)
+  rm(list=setdiff(ls(), args.save))
+  # return(args.save)
+
+}
+
+
 
 # mode --------------------------------------------------------------------
 get_mode <- function(x) {
