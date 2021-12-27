@@ -17,10 +17,10 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
   # add attribute comprising the ebird coordinates. when i assign lat and lon as coordinates to the sf object, i lose them as attributes and
   ### theyre hard to recover when it becomes an SFC object... annnoying? yes.
   df <- df %>%
-    mutate(lon=longitude,
+    dplyr::mutate(lon=longitude,
            lat=latitude) ## we want to duplicate because its easier to keep lat and lon in the df also
 
-  coordinates(df) <-
+  sp::coordinates(df) <-
     ~ longitude + latitude # 1-2 minutes for all of N.Amer.
 
 
@@ -35,7 +35,7 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
   # match proj to target proj
   cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute.\n")
   df <-
-    st_transform(df, crs = CRS(paste0("+init=epsg:", crs.target)))
+    sf::st_transform(df, crs = CRS(paste0("+init=epsg:", crs.target)))
 
   ## Exit function if no grid is provided
   if (is.null(grid)){return(df)}
@@ -44,11 +44,11 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
   # tic()
-  # ebird_spatial <- st_join(df, grid)
+  # ebird_spatial <- sf::st_join(df, grid)
   #   grid %>%
-  #   st_join(df)
+  #   sf::st_join(df)
   # # toc()
-  ebird_spatial <- st_join(grid, df) # should produce empty cells where no counts exist for that cell
+  ebird_spatial <- sf::st_join(grid, df) # should produce empty cells where no counts exist for that cell
 
 
   return(ebird_spatial)

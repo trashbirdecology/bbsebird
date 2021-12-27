@@ -61,3 +61,4 @@ inst/doc
 
 ## Remove specific examples
 /vignettes/ny-example-28km/
+vignettes/ny-example-28km/plots/bbs_spatial_exploratory.pdf

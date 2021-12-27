@@ -29,11 +29,11 @@ Imports:
     stringr,
     suncalc,
     readr,
-    lubridate
+    lubridate, 
+    parallel
 Suggests: 
     assertthat,
     learnr,
     knitr,
-    rmarkdown,
-    parallel
+    rmarkdown
 VignetteBuilder: knitr

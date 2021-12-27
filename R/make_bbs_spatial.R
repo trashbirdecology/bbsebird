@@ -31,40 +31,40 @@ make_bbs_spatial <- function(bbs.obs,
   }
 
   # create as string for the crs.target
-  # crs.string=CRS(paste0("+init=epsg:", crs.target))
-  crs.string = CRS(paste0("+init=epsg:", crs.target))
+  # crs.string=sp::CRS(paste0("+init=epsg:", crs.target))
+  crs.string = sp::CRS(paste0("+init=epsg:", crs.target))
 
 
   # LOAD DATA
   ## CWS route shapefiles
-  #### Becauset eh shapfile/gdb sent to me is really old, I cant use sf to import and st_ transform. So, I ahve to import usign sp readOGR, spTransform, and then convert to sf before merign wtih bbs.
+  #### Becauset eh shapfile/gdb sent to me is really old, I cant use sf to import and st_ transform. So, I have to import usign sp readOGR, sp::spTransform, and then convert to sf before merign wtih bbs.
   # because the CWS layer was created using an old geodatabase, we cannot easily use st_transform to re-project the layer.
   cws.gdb <-
-    list.files(cws.routes.dir, pattern = ".gdb", full.names = TRUE) %>% str_remove(".zip") %>% unique()
-  cws_routes <- readOGR(dsn = cws.gdb, layer = cws.layer)
+    list.files(cws.routes.dir, pattern = ".gdb", full.names = TRUE) %>% stringr::str_remove(".zip") %>% unique()
+  cws_routes <- rgdal::readOGR(dsn = cws.gdb, layer = cws.layer)
   # cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
-  cws_routes <- spTransform(cws_routes, crs.string)
+  cws_routes <- sp::spTransform(cws_routes, crs.string)
   #coerce to sf
-  cws_routes <- st_as_sf(cws_routes)
+  cws_routes <- sf::st_as_sf(cws_routes)
   ## USGS route shapefiles (circa. 2012)
   ### USGS BBS routes layer obtained from John Sauer.
   ### Indexing by state-route combination
   ### Ex:  state 46 and route 029, RTENO==46029
-  # usgs_routes <- readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
-  usgs_routes <- st_read(dsn = usgs.routes.dir, layer = usgs.layer)
-  usgs_routes <- st_transform(usgs_routes, crs = crs.string)
+  # usgs_routes <- rgdal::readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
+  usgs_routes <- sf::st_read(dsn = usgs.routes.dir, layer = usgs.layer)
+  usgs_routes <- sf::st_transform(usgs_routes, crs = crs.string)
 
 
   # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
   # These fields are applicable only to the Sauer shapefile.
   if (usgs.layer == "bbsrte_2012_alb") {
     usgs_routes <- usgs_routes %>%
-      mutate(
+      dplyr::mutate(
         CountryNum = 840,
-        StateNum = str_sub(rteno, start = 1, end = 2),
-        Route = str_sub(rteno, start = 3, end = 5)
+        StateNum = stringr::str_sub(rteno, start = 1, end = 2),
+        Route = stringr::str_sub(rteno, start = 3, end = 5)
       ) %>%
-      rename(RTENO = rteno,
+      dplyr::rename(RTENO = rteno,
              RouteName = RTENAME,)
     # usgs_routes@data$CountryNum=840
     # usgs_routes@data$StateNum= substr(usgs_routes@data$rteno, 1, 2)
@@ -77,7 +77,7 @@ make_bbs_spatial <- function(bbs.obs,
   if (usgs.layer == "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020") {
     # extract RTENO and RouteName
     usgs_routes <- usgs_routes %>%
-      separate(
+      tidyr::separate(
         RouteName,
         into = c("RTENO", "RouteName"),
         sep = "_",
@@ -91,22 +91,22 @@ make_bbs_spatial <- function(bbs.obs,
   cws_routes <- cws_routes %>%
     mutate(
       CountryNum = 124,
-      StateNum = str_sub(ProvRoute, start = 1, end = 2),
-      Route = str_sub(ProvRoute, start = 3, end = 5),
-      RouteName = trimws(str_replace_all(Nbr_FullNa, "[:digit:]|-", ""), "left")
+      StateNum = stringr::str_sub(ProvRoute, start = 1, end = 2),
+      Route = stringr::str_sub(ProvRoute, start = 3, end = 5),
+      RouteName = trimws(stringr::str_replace_all(Nbr_FullNa, "[:digit:]|-", ""), "left")
     )
-  cws_routes <- make.rteno(cws_routes)
+  cws_routes <- bbsAssistant::make.rteno(cws_routes)
 
   ## Keep routes if provided to save time on the intersection.
   if (!is.null(routes.keep)) {
     if (!class(cws_routes$RTENO) == class(routes.keep)) {
       stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")
     }
-    cws_routes <- cws_routes %>% filter(RTENO %in% routes.keep)
+    cws_routes <- cws_routes %>% dplyr::filter(RTENO %in% routes.keep)
     if (!class(usgs_routes$RTENO) == class(routes.keep)) {
       stop("Classes of cws routes RTENO don't match. Fix in munge_bbs_shapefiles.R pls")
     }
-    usgs_routes <- usgs_routes %>% filter(RTENO %in% routes.keep)
+    usgs_routes <- usgs_routes %>% dplyr::filter(RTENO %in% routes.keep)
   }
 
 
@@ -135,7 +135,7 @@ make_bbs_spatial <- function(bbs.obs,
 
 
   # if grid was provided, overlay and calculate lengths and areas
-  grid <- st_transform(grid, crs = crs.string)
+  grid <- sf::st_transform(grid, crs = crs.string)
 
   ## clip bbs_sf to grid extent
   # and calculating Route and Segment lengths. May take a minute or three.")
@@ -143,35 +143,35 @@ make_bbs_spatial <- function(bbs.obs,
   cat(
     "Clipping BBS routes to grid extent. Takes some hot minutessss for more than 3 states/provinces.\n\n"
   )
-  lengths <- st_intersection(grid, bbs_sf)
+  lengths <- sf::st_intersection(grid, bbs_sf)
 
   cat("Calculating route and segment lengths..\n\n")
   lengths <- lengths %>%
     ## length of segment within a cell
-    mutate(SegmentLength = st_length(.)) %>%
-    group_by(RTENO) %>%
+    dplyr::mutate(SegmentLength = sf::st_length(.)) %>%
+    dplyr::group_by(RTENO) %>%
     ## total length of routes
-    mutate(RouteLength = sum(SegmentLength)) %>%
-    ungroup() %>%
-    group_by(gridcellid, RTENO) %>%
+    dplyr::mutate(RouteLength = sum(SegmentLength)) %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(gridcellid, RTENO) %>%
     ### turn seg length into proportion of the route per cell
-    mutate(PropRouteInCell = SegmentLength / RouteLength) %>%
-    ungroup() %>%
-    st_drop_geometry() %>%
+    dplyr::mutate(PropRouteInCell = SegmentLength / RouteLength) %>%
+    dplyr::ungroup() %>%
+    sf::st_drop_geometry() %>%
     dplyr::select(-cell.lon.centroid, -cell.lat.centroid)
 
   ## calculate grid cell areas
   cat("Calculating grid cell areas..\n\n")
   areas <- grid %>%
-    mutate(CellArea = st_area(.)) %>%
-    st_drop_geometry() %>%
+    dplyr::mutate(CellArea = sf::st_area(.)) %>%
+    sf::st_drop_geometry() %>%
     dplyr::select(-cell.lon.centroid, -cell.lat.centroid)
 
   ## combine bbs routes + area + lengthss
   cat("Polishing the BBS routes and grid layer.\n\n")
   bbs_sf <- grid %>%
-    left_join(lengths, by = "gridcellid") %>%
-    left_join(areas, by = "gridcellid")
+    dplyr::left_join(lengths, by = "gridcellid") %>%
+    dplyr::left_join(areas, by = "gridcellid")
 
 
   ### Minor issue, but Route Names in route shaepfiles do not match the BBS observations data route names.
@@ -184,15 +184,15 @@ make_bbs_spatial <- function(bbs.obs,
   # append the empty cells if keep.empty.cells is TRUE, or use merge to leave them out.
   if (keep.empty.cells) {
     bbs_spatial <-
-      left_join(bbs_sf, bbs_obs, by = "RTENO") %>%
+      dplyr::left_join(bbs_sf, bbs_obs, by = "RTENO") %>%
       # create var with percent route in grid cell
-      mutate(PercSegmentInCell = SegmentLength / RouteLength)
+      dplyr::mutate(PercSegmentInCell = SegmentLength / RouteLength)
 
   } else{
     bbs_spatial <-
       merge(bbs_sf, bbs_obs, by = "RTENO") %>%
       # create var with percent route in grid cell
-      mutate(PercSegmentInCell = SegmentLength / RouteLength)
+      dplyr::mutate(PercSegmentInCell = SegmentLength / RouteLength)
 
   }
 
@@ -207,39 +207,40 @@ make_bbs_spatial <- function(bbs.obs,
 
     # exploratory plots (should move elsewhere.....)
     plot(
-      bbs_spatial %>% group_by(gridcellid) %>% summarise(`max num counted` = max(RouteTotal)) %>%
+      bbs_spatial %>%
+        dplyr::group_by(gridcellid) %>% dplyr::summarise(`max num counted` = max(RouteTotal)) %>%
         dplyr::select(`max num counted`)
     )
     plot(
-      bbs_spatial %>% group_by(RTENO) %>% summarise(`num years bbs data in grid cell` =
-                                                      n_distinct(Year)) %>%
+      bbs_spatial %>% dplyr::group_by(RTENO) %>% dplyr::summarise(`num years bbs data in grid cell` =
+                                                                    dplyr::n_distinct(Year)) %>%
         dplyr::select(`num years bbs data in grid cell`)
     )
     plot(
-      bbs_spatial %>% group_by(gridcellid) %>% summarise(`total # observers in cell` =
-                                                   n_distinct(ObsN)) %>%
+      bbs_spatial %>% dplyr::group_by(gridcellid) %>% dplyr::summarise(`total # observers in cell` =
+                                                                  dplyr::n_distinct(ObsN)) %>%
         dplyr::select(`total # observers in cell`)
     )
     plot(
-      bbs_spatial  %>% group_by(gridcellid) %>%  summarise(`num routes in cell` = n_distinct(RTENO, na.rm =
+      bbs_spatial  %>% group_by(gridcellid) %>%  dplyr::summarise(`num routes in cell` = dplyr::n_distinct(RTENO, na.rm =
                                                                                        TRUE)) %>%
         dplyr::select(`num routes in cell`)
     )
     plot(
-      bbs_spatial  %>% group_by(gridcellid) %>% summarise(`max # species detected in single route` =
+      bbs_spatial  %>% dplyr::group_by(gridcellid) %>% dplyr::summarise(`max # species detected in single route` =
                                                     max(TotalSpp)) %>%
         dplyr::select(`max # species detected in single route`)
     )
-    plot(bbs_spatial %>% group_by(gridcellid) %>% summarise(nRoutesPerCell = n_distinct(RTENO)))
+    plot(bbs_spatial %>% dplyr::group_by(gridcellid) %>% dplyr::summarise(nRoutesPerCell = dplyr::n_distinct(RTENO)))
     plot(
-      bbs_spatial %>% group_by(gridcellid) %>%
-        mutate(num_obs = n()) %>%
-        summarise(`% obs == 0` = sum(RouteTotal == 0) / n()) %>% dplyr::select(`% obs == 0`)
+      bbs_spatial %>% dplyr::group_by(gridcellid) %>%
+        dplyr::mutate(num_obs = n()) %>%
+        dplyr::summarise(`% obs == 0` = sum(RouteTotal == 0) / n()) %>% dplyr::select(`% obs == 0`)
     )
 
     if (!is.null(plot.dir)) {
       dev.off()
-    } # finish writing to pdf if print.plots specified
+    } # end writing to pdf if print.plots specified
   }
 
 

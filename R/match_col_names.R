@@ -2,8 +2,7 @@
 #'
 #' @param x a data frame
 #' @keywords internal
-#' e.g., x =
-#' @noRd
+#' @export
 match_col_names <- function(x){
 
   col_names <- list(date = c("observation_date", "date"),
