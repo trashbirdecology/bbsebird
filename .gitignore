@@ -53,7 +53,7 @@ routes.csv
 !/examples/*/.R
 
 *.Rproj
-ANDY-USE-THIS.R
+ANDY_USE_THIS.RMD
 proj-data-metadata.pdf
 jdat-jar.R
 5b_nmix.R
