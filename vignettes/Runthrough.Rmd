@@ -212,7 +212,6 @@ junk_it(args.save, "bbs_spatial")
 # Step 4: eBird Data Munging 
 Due to the size of the eBird data, this may take  MANY MANY minutes 
 ```{r ebird-warnings}
-gc(full = TRUE) # clear garbage just to be safe since eBird data is so massive...
 if (parallel::detectCores() <= 4 |
     memory.limit() < 25000)
   warning(
@@ -239,7 +238,6 @@ if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(
                                     years=year.range
                                     )
 
-
 # Zero-fill the eBird Data -------------------------------------------------
 fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 
@@ -257,5 +255,7 @@ ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
 # Export Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
+#
+junk_it(args.save, "ebird_spatial")
 
 ```
