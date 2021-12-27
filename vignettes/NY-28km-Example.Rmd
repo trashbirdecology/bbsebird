@@ -17,7 +17,6 @@ knitr::opts_chunk$set(
 ```{r load-pkg}
 devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 library(dubcorms)
-
 ```
 # Step 1: Setup and Specifications
 ## Specs for data subsetting
@@ -149,10 +148,26 @@ plot(grid["gridcellid"])
 ```
 
 
-# Step 3: BBS Data Munging
+# Step 3: Load or Create BBS and eBird Data
+## Step 3a: Check to see if the munged spatial data files already exist.
+If these files already exist, this will load in those files and skip steps 3b and 3c.
+```{r spatial-files-load}
+## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
+fns.spatial <- c("bbs_spatial.rds", "ebird_spatial.rds", "grid.rds")
+if(all(fns.spatial %in% list.files(dir.spatial.out))){
+  cat("importing bbs, ebird and grid sf objects.")
+  fns.spatial <-list.files(dir.spatial.out, full.names = TRUE)
+  bbs_spatial <- readRDS(fns.spatial[str_detect(fns.spatial, "bbs_spat")])
+  grid <- readRDS(fns.spatial[str_detect(fns.spatial, "grid")])
+  ebird_spatial <- readRDS(fns.spatial[str_detect(fns.spatial, "ebird_spat")])
+}
+```
+
+## Step 3b: BBS Data Munging
 Depending on the size of the study area, resolution of the grid cells, and whether you've already downloaded the BBS data, this may take a few minutes.
 ```{r bbs-munge}
-
+# Do not run if bbs_spatial already exists
+if(!exists("bbs_spatial")){
 # Check for existing files ------------------------------------------------
 fns <- list.files(dir.bbs.out)
 fns.spatial <- list.files(dir.spatial.out)
@@ -206,10 +221,10 @@ saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 browseURL(list.files(dir.plots, "bbs_spatial_exploratory", full.names = TRUE))
 }
 
-junk_it(args.save, "bbs_spatial")
+junk_it(args.save, "bbs_spatial")}
 ```
 
-# Step 4: eBird Data Munging 
+## Step 3c: eBird Data Munging 
 Due to the size of the eBird data, this may take  MANY MANY minutes 
 ```{r ebird-warnings}
 if (parallel::detectCores() <= 4 |
@@ -222,9 +237,12 @@ cat(
 )
 ```
 
-
 ```{r ebird-data}
+# Do not run if bbs_spatial already exists
+if(!exists("ebird_spatial")){
+
 fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
+
 # Filter the eBird Data ---------------------------------------------------
 ebird_filtered <- filter_ebird_data(
                                     fns.ebird = fns.ebird,
@@ -247,15 +265,103 @@ fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 #                               sampling_events = fns[fns %>% str_detect("samp")])
 
 ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.spatial.out)
-gc()
 
 ## Create the eBird Spatial Layer  -----------------------------------------------------
+### need to add argument in make_ebird_spatial function to load in file if it exists...
+### maybr also save to file inside that funciton 
 ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
 
-## Export Data -------------------------------------------------------------
+## Export eBird Spatial Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
 # remove junk ----------------------------------------------------------------------------
 junk_it(args.save, "ebird_spatial")
 
+}
+# visualize the ebird data in spatial grid
+# plot(ebird_spatial[1])
+```
+
+## Step 3d: Basic Tests
+Just double-check the CRS on the spatial files. They all should be the same before we integrate. 
+```{r test-crs}
+if(!(st_crs(grid)==st_crs(bbs_spatial) & st_crs(ebird_spatial)==st_crs(grid)))stop("Warning. The ebird, bbs, and grid spatial layers are not in same projection and/or CRS.")
+
+if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$gridcellid))))
+  warning("Empty grid cells (no ebird or bbs data) are not represented in the bird data.\nShould make sure empty cells are added to bird data.")
+```
+
+# Step 4: Integrate the BBS and eBird Spatial Data
+To ensure proper integration we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to eachtoher, where appropriate (e.g., bird count, dates).
+```{r match-colnames}
+## Force BBS colnames to lowercase.
+names(bbs_spatial) <- tolower(names(bbs_spatial))
+bbs_spatial <- match_col_names(bbs_spatial)
+ebird_spatial <- match_col_names(ebird_spatial)
+```
+
+Next, munge the dates, times, julian dates, and days of year for each dataset such that we can properly align on the temporal dimension.
+```{r munge-dates-times}
+# Handle Dates and Times --------------------------------------------------
+cat("managing dates and times of spatial objects")
+# Dates ---------------------------------------------
+## make julian dates
+bbs_spatial$date <- lubridate::as_date(bbs_spatial$date)
+ebird_spatial$date <- lubridate::as_date(ebird_spatial$date)
+## base date for julian date
+#### eventually will need to save this or export it somewhere, maybe add it to jags list idk
+base.date <- min(c(bbs_spatial$date, ebird_spatial$date), na.rm=TRUE)
+## make julian dates
+bbs_spatial$julian <- julian(bbs_spatial$date, origin = base.date)
+ebird_spatial$julian <- julian(as.Date(ebird_spatial$date), origin = base.date)
+## make day of year
+ebird_spatial$yday <- lubridate::yday(ebird_spatial$date)
+bbs_spatial$yday <- lubridate::yday(bbs_spatial$date)
+
+## Filter days of the year if specified
+if(exists("yday")) ebird_spatial <- ebird_spatial %>%
+  filter(yday >= min.yday & yday <= max.yday)
+if(exists("yday")) ebird_spatial <- ebird_spatial %>%
+  filter(yday >= min.yday & yday <= max.yday)
+
+# Times ---------------------------------------------
+### this is an ugly workaround and can be improved, including putting it into
+### the BBS and eBird munging functions but this is it for now.
+bbs_spatial$starttime=hms::as_hms(as.POSIXct(bbs_spatial$starttime, format="%H%M"))
+bbs_spatial$endtime=hms::as_hms(as.POSIXct(bbs_spatial$endtime, format="%H%M"))
+ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$time_observations_started, format="%H:%M:%S"))
+
+# Sunlight/daylight/moonlight ---------------------------------------------
+## here, data must have columns lat and lon. I took care of this in
+## utils.R function `match_col_names()`
+cat("calculating astronomical stats...yes, the astronomy definition.\n")
+sunlight.keep <- c("dawn", "solarNoon", "sunrise","sunriseEnd")
+
+bbs.sunlight <- suncalc::getSunlightTimes(data=bbs_spatial %>% distinct(date, lon, lat),
+                                            keep = sunlight.keep)
+
+
+## ebird is so large that I need to split up b/c takes forever.
+## i'd like to use kit::funique, but cannot figure out how to do that with >1 columns.
+### so, am resorting to this method.
+x <- ebird_spatial %>% dplyr::select(date, lat, lon)
+chunks <- parallel::splitIndices(nrow(x), 100)
+for(i in seq_along(chunks)){
+  if(i==1) ebird.sunlight <- NULL
+  rows = as.data.frame(chunks[i])
+  chunk.start = min(rows[1])
+  chunk.end   = max(rows[1])
+  dat = x[chunk.start:chunk.end, ]
+  dat = suncalc::getSunlightTimes(data=dat,
+                            keep = sunlight.keep)
+
+  ebird.sunlight <- dplyr::bind_rows(ebird.sunlight,dat)
+  rm(dat, chunk.end, chunk.start, rows)
+}
+
+### turn vars in sunlight.keep into time only (otherwise they are in YYYY-MM-DD HH-MM-SS; we need only HH-MM)
+ebird.sunlight <- ebird.sunlight  %>%
+  mutate(across(sunlight.keep, hms::as_hms))
+bbs.sunlight <- bbs.sunlight %>%
+  mutate(across(sunlight.keep, hms::as_hms))
 ```
