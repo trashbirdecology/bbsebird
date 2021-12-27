@@ -55,5 +55,6 @@ routes.csv
 *.Rproj
 ANDY-USE-THIS.R
 proj-data-metadata.pdf
+jdat-jar.R
 5b_nmix.R
 5c_nmix_grid_bbs.R
