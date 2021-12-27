@@ -101,7 +101,7 @@ filter_ebird_data <-
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
       if (!exists("sampling")) # this check is used for development purposes. should be removed prior to publish
-        cat("Importing the eBird sampling events data.\nThis may take 3-5 minutes...\n")
+        cat("Importing the eBird sampling events data.\nThis may take 3-5 minutes...\n\n")
       if (method == "vroom") {
         sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
       }
@@ -115,7 +115,7 @@ filter_ebird_data <-
 
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
-      cat("Filtering sampling events. This takes a minute.\n")
+      cat("Filtering sampling events. This takes a minute.\n\n")
       ## force column names to lower and replace spaces with underscore (_) for my sanity
       colnames(sampling) <-
         str_replace_all(tolower(colnames(sampling)),
@@ -153,11 +153,11 @@ filter_ebird_data <-
                  duration_minutes != 3)
 
       # for good measure..
-      cat("Taking out the garbage because this data is massive.....\n")
+      cat("Taking out the garbage because this data is massive.....\n\n")
       gc()
 
       # remove duplicate checklists for same birding party.
-      cat("Running `auk::auk_unique()` on checklists\n")
+      cat("Running `auk::auk_unique()` on checklists\n\n")
       sampling <- auk_unique(sampling, checklists_only = TRUE)
       # names(sampling)
 
@@ -165,7 +165,7 @@ filter_ebird_data <-
       sampling <- convert_cols(sampling)
 
       ## save the filtered sampling data
-      cat("Writing the filtered sampling data to file at location:", f_samp_out,"...\n")
+      cat("Writing the filtered sampling data to file at location:", f_samp_out,"...\n\n")
       if (method == "vroom")
         vroom::vroom_write(sampling, f_samp_out)
       if (method == "data.table")
@@ -177,7 +177,7 @@ filter_ebird_data <-
   }
 
     ## Read in / filter observations data frame
-    cat("Filtering the eBird observations.\n")
+    cat("Filtering the eBird observations.\n\n")
     if (file.exists(f_obs_out) & !overwrite) {
       if (method == "vroom")
         observations <- vroom::vroom(f_obs_out, col_types = col_types)
@@ -248,7 +248,7 @@ filter_ebird_data <-
 
       # save to file
       ## write the filtered sampling data
-      cat("Writing the filtered observations data to file at location:", f_obs_out,"...\n")
+      cat("Writing the filtered observations data to file at location:", f_obs_out,"...\n\n")
       if (method == "vroom")
         vroom::vroom_write(observations, f_obs_out)
       if (method == "data.table")
