@@ -228,7 +228,7 @@ fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 # Filter the eBird Data ---------------------------------------------------
 ebird_filtered <- filter_ebird_data(
                                     fns.ebird = fns.ebird,
-                                    overwrite = FALSE,
+                                    overwrite = TRUE,
                                     dir.ebird.out = dir.ebird.out,
                                     countries = countries,
                                     states = states,
