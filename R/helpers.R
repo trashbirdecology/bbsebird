@@ -16,7 +16,7 @@ for(i in seq_along(var)){
 
 # garbage collection and clear junk -----------------------------------------------------------
 #' @keywords internal
-#' @noRd
+#' @export
 .junk_it <- function(args.save, new.args.save=NULL){
   args.save <- c(args.save, new.args.save)
   rm(list=setdiff(ls(envir = .GlobalEnv), args.save), envir = .GlobalEnv)
