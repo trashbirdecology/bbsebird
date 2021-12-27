@@ -58,3 +58,6 @@ jdat-jar.R
 5b_nmix.R
 5c_nmix_grid_bbs.R
 inst/doc
+
+## Remove specific examples
+/vignettes/ny-example-28km/
