@@ -90,7 +90,7 @@ usgs.routes.dir <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm
 
 ```{r specs-dir-donottouch}
 ## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name. 
-dir.proj.out <- paste0(proj.shorthand,"-example-", round(grid.size*111.111), "km/")
+dir.proj.out <- paste0("vignettes/",proj.shorthand,"-example-", round(grid.size*111.111), "km/")
 ## where to store the JAGS objects
 dir.jags <- paste0(dir.proj.out, "jags/")
 dir.bbs.out <- paste0(dir.proj.out,"bbs/")
@@ -226,7 +226,7 @@ cat(
 ```{r ebird-data}
 fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 # Filter the eBird Data ---------------------------------------------------
-if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(
+ebird_filtered <- filter_ebird_data(
                                     fns.ebird = fns.ebird,
                                     overwrite = FALSE,
                                     dir.ebird.out = dir.ebird.out,
@@ -238,7 +238,7 @@ if(!exists("ebird_filtered")) ebird_filtered <- filter_ebird_data(
                                     years=year.range
                                     )
 
-# Zero-fill the eBird Data -------------------------------------------------
+## Zero-fill the eBird Data -------------------------------------------------
 fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 
 # would like to get this functional but auk_zerofill currently requires
@@ -249,13 +249,13 @@ fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.spatial.out)
 gc()
 
-# Create the eBird Spatial Layer  -----------------------------------------------------
+## Create the eBird Spatial Layer  -----------------------------------------------------
 ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
 
-# Export Data -------------------------------------------------------------
+## Export Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
-#
+# remove junk ----------------------------------------------------------------------------
 junk_it(args.save, "ebird_spatial")
 
 ```

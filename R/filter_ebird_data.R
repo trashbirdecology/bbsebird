@@ -1,8 +1,10 @@
 #' @title Create and Write or Load In the Filtered eBird Data
 #' @description Filter the eBird data and sampling events using R package AUK.
 #' @param fns.ebird File paths for the EBD and SamplingEvents data to import. Character vector of filenames for original files.
-#' @param overwrite Logical. If true will overwrite existing filtered data objects in project directory.
-#' @param dir.ebird.out Location of where to save and find the filtered/subsetted data.
+#' @param overwrite Logical. If true will overwrite existing filtered data objects in directory `dir.ebird.out`
+#' @param dir.ebird.out Location of where to save and/or find the filtered/subsetted eBird data.
+#' @param f_obs_out Filename for saving the filtered eBird observations data
+#' @param f_samp_out Filename for saving the filtered eBird sampling data
 #' @keywords internal
 #' If not specified will default to subdir in project directory.
 filter_ebird_data <-
@@ -32,7 +34,7 @@ filter_ebird_data <-
                "duration_minutes",
                "effort_area_ha",
                "effort_distance_km",
-               # "group_identifier",
+               "group_identifier",
                "latitude",
                "longitude",
                "number_observers",
@@ -95,10 +97,11 @@ filter_ebird_data <-
 
     ## Read in / filter sampling data frame
     if (file.exists(f_samp_out) & !overwrite) {
+      cat("Importing the filtered eBird data. This takes 1-3 minutes, depending on size of object.")
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
       if (!exists("sampling")) # this check is used for development purposes. should be removed prior to publish
-        cat("Importing the eBird sampling events data.\nThis may take a minute...\n")
+        cat("Importing the eBird sampling events data.\nThis may take 3-5 minutes...\n")
       if (method == "vroom") {
         sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
       }
@@ -109,15 +112,16 @@ filter_ebird_data <-
     ### will remove the most data to the least.
     ### Try to keep the filtering/subsetting in that order.
 
-      ##force colnames to lower and replace spaces with underscore (_)
-      colnames(sampling) <-
-        str_replace_all(tolower(colnames(sampling)),
-                        pattern = " ",
-                        replacement = "_")
 
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
       cat("Filtering sampling events. This takes a minute.\n")
+      ## force column names to lower and replace spaces with underscore (_) for my sanity
+      colnames(sampling) <-
+        str_replace_all(tolower(colnames(sampling)),
+                        pattern = " ",
+                        replacement = "_")
+      ## remove useless (to us) columns to help with memory issues.
       sampling <- sampling[names(sampling) %in% cols.keep]#keep only useful columns
       if(complete.only) sampling <- sampling %>%
         filter(all_species_reported %in% c("TRUE", "True", 1))
@@ -134,7 +138,6 @@ filter_ebird_data <-
       if(!is.null(max.effort.mins)) sampling <- sampling %>%
         filter(duration_minutes<=max.effort.mins)
 
-
       # create year and then filter by year
       sampling <- sampling %>%
         mutate(year = lubridate::year(observation_date))
@@ -149,20 +152,20 @@ filter_ebird_data <-
         filter(protocol_type != "Stationary" &
                  duration_minutes != 3)
 
-
+      # for good measure..
+      cat("Taking out the garbage because this data is massive.....\n")
+      gc()
 
       # remove duplicate checklists for same birding party.
-      # for good measure..
-      cat("Taking out the garbage...\n")
-      gc()
-      cat("Running auk_unique() on checklists\n")
+      cat("Running `auk::auk_unique()` on checklists\n")
       sampling <- auk_unique(sampling, checklists_only = TRUE)
+      # names(sampling)
 
       # ensure consistency in col types
       sampling <- convert_cols(sampling)
 
-
-      ## read the filtered sampling data
+      ## save the filtered sampling data
+      cat("Writing the filtered sampling data to file at location:", f_samp_out,"...\n")
       if (method == "vroom")
         vroom::vroom_write(sampling, f_samp_out)
       if (method == "data.table")
@@ -171,11 +174,10 @@ filter_ebird_data <-
       ## remove the files that vroom creates in R session's temp directory just in case
       try(fs::file_delete(list.files(tempdir(), full.names = TRUE)), silent =
             TRUE)
-      gc()
-
-    }
+  }
 
     ## Read in / filter observations data frame
+    cat("Filtering the eBird observations.\n")
     if (file.exists(f_obs_out) & !overwrite) {
       if (method == "vroom")
         observations <- vroom::vroom(f_obs_out, col_types = col_types)
@@ -226,9 +228,6 @@ filter_ebird_data <-
       observations <-
         observations %>% distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
 
-
-      cat("throwing out the trash --- one sec.....\n")
-      gc()
       # collapse duplicate checklists into one, taking the max number identified by the group during an event
       ### This takes FOREVER....not sure why. going to do this manually...
       # cat("Running auk::auk_unique(). This takes a few minutes for some reason")
@@ -249,6 +248,7 @@ filter_ebird_data <-
 
       # save to file
       ## write the filtered sampling data
+      cat("Writing the filtered observations data to file at location:", f_obs_out,"...\n")
       if (method == "vroom")
         vroom::vroom_write(observations, f_obs_out)
       if (method == "data.table")
