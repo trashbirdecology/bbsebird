@@ -3,6 +3,7 @@
 #' @param fns.ebird File paths for the EBD and SamplingEvents data to import. Character vector of filenames for original files.
 #' @param overwrite Logical. If true will overwrite existing filtered data objects in project directory.
 #' @param dir.ebird.out Location of where to save and find the filtered/subsetted data.
+#' @keywords internal
 #' If not specified will default to subdir in project directory.
 filter_ebird_data <-
   function(fns.ebird,

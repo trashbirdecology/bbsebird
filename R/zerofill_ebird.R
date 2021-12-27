@@ -7,6 +7,7 @@
 #' @param cols.remove A vector of column names to be excluded from the output file.
 #' @param cols.to.lowercase Logical. If TRUE will export a data frame where all colnames are in lowercase. Capitalization does not matter.
 #' @export zerofill_ebird
+#' 
 zerofill_ebird <-
   function(myList,
              dir.out, # where to save ebird_Zf to save time
