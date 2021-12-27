@@ -29,4 +29,8 @@ Imports:
 Suggests: 
     suncalc,
     assertthat,
-    learnr
+    learnr,
+    knitr,
+    rmarkdown,
+    parallel
+VignetteBuilder: knitr
