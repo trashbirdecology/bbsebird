@@ -1,10 +1,21 @@
+# time_to_decimal ---------------------------------------------------------
+#' Convert the ebird zero-filled date to decimal times
+
+#' @param x the data to to convert to H:M:S
+#' @noRd
 time_to_decimal <- function(x) {
   x <- lubridate::hms(ebd_zf$time_observations_started)
   # x <- lubridate::hms(x)
-  hour(x) + minute(x) / 60 + second(x) / 3600
+  # hour(x) + minute(x) / 60 + second(x) / 3600
 }
 
-# clean up variables
+
+# clean_zf ----------------------------------------------------------------
+#' Clean up variables for the zer-filled ebird data
+#'
+#' @param ebd_zf The zero-filled ebird data object (flat)
+
+#' @noRd
 clean_zf <- function(ebd_zf){
   clean_zf <- ebd_zf %>%
     mutate(
@@ -31,8 +42,13 @@ clean_zf <- function(ebd_zf){
 
 
 
-# CONVERT COLUMNS  --------------------------------------------------------
-
+# convert_cols  --------------------------------------------------------
+#' Convert columns
+#'
+#' Converts columns classes based on names for the bbs and ebird data
+#' @param x The data frame with one or more columns.
+#' @keywords internal
+#' @noRd
 convert_cols <- function(x){
 
   ## numeric
@@ -80,10 +96,14 @@ return(x)
 }
 
 
-# split a dataframe or tibble into a list ---------------------------------
-
+# split_table ---------------------------------
+#' Split a dataframe or tibble into a list
+#'
+#' This is essentially a splice but list elements remain tibble or data.frame, instead of matrices or arrays.
+#' @param tibble the flat data object
+#' @param col the name(s) of the column(s) used to splice the table into a list
+#' @noRd
 split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
-
 
 
 # SE ----------------------------------------------------------------------
@@ -91,8 +111,8 @@ split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
 #'
 #' Computes standard error of a vector
 #' @param x Numeric vector
-#' @keywords standard error
-#' @export
+
+#' @noRd
 #' @examples
 #' x <- rnorm(100)
 #' se(x)

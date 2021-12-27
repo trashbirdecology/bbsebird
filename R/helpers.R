@@ -1,3 +1,7 @@
+
+# .make.integer -----------------------------------------------------------
+#' @keywords internal
+#' @noRd
 make.integer <- function(x, var=c("AOU", "aou")){
 for(i in seq_along(var)){
   ind=var[i]
@@ -11,6 +15,8 @@ for(i in seq_along(var)){
 
 
 # garbage collection and clear junk -----------------------------------------------------------
+#' @keywords internal
+#' @noRd
 .junk_it <- function(args.save, new.args.save=NULL){
   args.save <- c(args.save, new.args.save)
   rm(list=setdiff(ls(envir = .GlobalEnv), args.save), envir = .GlobalEnv)
@@ -20,12 +26,16 @@ for(i in seq_along(var)){
 
 
 # mode --------------------------------------------------------------------
+#' @keywords internal
+#' @noRd
 .get_mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
 
 # function to convert time observation to hours since midnight ------------------------------------------------------------------
+#' @keywords internal
+#' @noRd
 .time_to_decimal <- function(x) {
   x <- hms(x)
   hour(x) + minute(x) / 60 + second(x) / 3600
@@ -33,6 +43,8 @@ for(i in seq_along(var)){
 
 
 # a song to tell me something has stopped ------------------------------------------------------------------
+#' @keywords internal
+#' @noRd
 .song <- function() {
   for(i in 1:2) {
     for(i in 1:4) {
@@ -52,6 +64,8 @@ for(i in seq_along(var)){
 
 
 # windows alert -----------------------------------------------------------
+#' @keywords internal
+#' @noRd
 .windows_alert <- function(message=rep("The really long process you started has completed. Hopefully you got it right the first time and don't have to redo it....that took a while.....BEEEEEEEEEEEEEEEP", 3)){
   if(.Platform$OS.type == "windows"){return()} # only run for windows OS
   system2(command = "PowerShell",
