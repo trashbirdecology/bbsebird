@@ -5,7 +5,7 @@
 #' @param dir.ebird.out Location of where to save and/or find the filtered/subsetted eBird data.
 #' @param f_obs_out Filename for saving the filtered eBird observations data
 #' @param f_samp_out Filename for saving the filtered eBird sampling data
-#' @keywords internal
+#' @export
 #' If not specified will default to subdir in project directory.
 filter_ebird_data <-
   function(fns.ebird,
@@ -53,7 +53,7 @@ filter_ebird_data <-
            f_samp_out  = paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
            ) {
 
-    f_samp_in  <- fns.ebird[str_detect(fns.ebird, "sampling_rel")]
+    f_samp_in  <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
     f_obs_in <- setdiff(fns.ebird, f_samp_in)
     if (!length(f_obs_in) > 0)
       stop(paste0("No ebd file identified. "))
@@ -63,36 +63,36 @@ filter_ebird_data <-
 
     #specifying the column types helps with vroom::vroom(f_samp_in), which takes a couple of minutes...
     cols_samp <- list(
-      `LAST EDITED DATE` = col_datetime(),
-      country = col_character(),
-      `COUNTRY CODE` = col_character(),
-      STATE = col_character(),
-      `STATE CODE` = col_character(),
-      COUNTY = col_character(),
-      `COUNTY CODE` = col_character(),
-      `IBA CODE` = col_character(),
-      `BCR CODE` = col_double(),
-      `USFWS CODE` = col_character(),
-      `ATLAS BLOCK` = col_character(),
-      LOCALITY = col_character(),
-      `LOCALITY ID` = col_character(),
-      `LOCALITY TYPE` = col_character(),
-      LATITUDE = col_double(),
-      LONGITUDE = col_double(),
-      `OBSERVATION DATE` = col_date(),
-      `TIME OBSERVATIONS STARTED` = col_time(),
-      `OBSERVER ID` = col_character(),
-      `sampling event identifier` = col_character(),
-      `protocol type` = col_character(),
-      `PROTOCOL CODE` = col_character(),
-      `PROJECT CODE` = col_character(),
-      `duration minutes` = col_double(),
-      `EFFORT DISTANCE KM` = col_double(),
-      `EFFORT AREA HA` = col_double(),
-      `NUMBER OBSERVERS` = col_double(),
-      `ALL SPECIES REPORTED` = col_double(),
-      `GROUP IDENTIFIER` = col_character(),
-      `TRIP COMMENTS` = col_character()
+      `LAST EDITED DATE` = readr::col_datetime(),
+      country = readr::col_character(),
+      `COUNTRY CODE` = readr::col_character(),
+      STATE = readr::col_character(),
+      `STATE CODE` = readr::col_character(),
+      COUNTY = readr::col_character(),
+      `COUNTY CODE` = readr::col_character(),
+      `IBA CODE` = readr::col_character(),
+      `BCR CODE` = readr::col_double(),
+      `USFWS CODE` = readr::col_character(),
+      `ATLAS BLOCK` = readr::col_character(),
+      LOCALITY = readr::col_character(),
+      `LOCALITY ID` = readr::col_character(),
+      `LOCALITY TYPE` = readr::col_character(),
+      LATITUDE = readr::col_double(),
+      LONGITUDE = readr::col_double(),
+      `OBSERVATION DATE` = readr::col_date(),
+      `TIME OBSERVATIONS STARTED` = readr::col_time(),
+      `OBSERVER ID` = readr::col_character(),
+      `sampling event identifier` = readr::col_character(),
+      `protocol type` = readr::col_character(),
+      `PROTOCOL CODE` = readr::col_character(),
+      `PROJECT CODE` = readr::col_character(),
+      `duration minutes` = readr::col_double(),
+      `EFFORT DISTANCE KM` = readr::col_double(),
+      `EFFORT AREA HA` = readr::col_double(),
+      `NUMBER OBSERVERS` = readr::col_double(),
+      `ALL SPECIES REPORTED` = readr::col_double(),
+      `GROUP IDENTIFIER` = readr::col_character(),
+      `TRIP COMMENTS` = readr::col_character()
     )
 
     ## Read in / filter sampling data frame

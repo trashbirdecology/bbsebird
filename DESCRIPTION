@@ -25,9 +25,10 @@ Imports:
     progress,
     vroom,
     fs,
-    reshape2, 
-    stringr, 
-    suncalc
+    reshape2,
+    stringr,
+    suncalc,
+    readr
 Suggests: 
     assertthat,
     learnr,
