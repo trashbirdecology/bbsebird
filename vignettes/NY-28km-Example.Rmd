@@ -44,7 +44,7 @@ max.yday <- 245 # approximate breeding season day end (day of year)
 
 ```{r specs-directories}
 ## Create a shorthand name for the project
-proj.shorthand="ny" # used to 
+proj.shorthand="ny"
 ```
 
 ## BBS Data Specifications
@@ -52,7 +52,6 @@ The following specifications are for munging BBS data
 ```{r specs-bbs}
 include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
 ```
-
 
 ## eBird Data Specifications
 The following specifications are for munging eBird data
@@ -89,7 +88,7 @@ usgs.routes.dir <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm
 
 ```{r specs-dir-donottouch}
 ## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name. 
-dir.proj.out <- paste0("vignettes/",proj.shorthand,"-example-", round(grid.size*111.111), "km/")
+dir.proj.out <- paste0(proj.shorthand,"-example-", round(grid.size*111.111), "km/")
 ## where to store the JAGS objects
 dir.jags <- paste0(dir.proj.out, "jags/")
 dir.bbs.out <- paste0(dir.proj.out,"bbs/")
@@ -139,14 +138,8 @@ grid$cell.lat.centroid <- centroid.coords[,2]
 saveRDS(grid, file = paste0(dir.spatial.out, "/", "grid.rds"))
 }
 # Clear junk
-junk_it(args.save, "grid")
+.junk_it(args.save, "grid")
 ```
-
-View the spatial grid if you want...
-```{r grid-view, eval=FALSE}
-plot(grid["gridcellid"])
-```
-
 
 # Step 3: Load or Create BBS and eBird Data
 ## Step 3a: Check to see if the munged spatial data files already exist.
@@ -221,7 +214,7 @@ saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 browseURL(list.files(dir.plots, "bbs_spatial_exploratory", full.names = TRUE))
 }
 
-junk_it(args.save, "bbs_spatial")}
+.junk_it(args.save, "bbs_spatial")}
 ```
 
 ## Step 3c: eBird Data Munging 
@@ -275,7 +268,7 @@ ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
 # remove junk ----------------------------------------------------------------------------
-junk_it(args.save, "ebird_spatial")
+.junk_it(args.save, "ebird_spatial")
 
 }
 # visualize the ebird data in spatial grid
