@@ -13,3 +13,5 @@ Makefile
 ^README\.md$
 ^codecov\.yml$
 ^NEWS\.md$
+^README\.Rmd$
+^README\.md$
