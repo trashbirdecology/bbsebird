@@ -1,4 +1,3 @@
-# function to convert time observation to hours since midnight
 time_to_decimal <- function(x) {
   x <- lubridate::hms(ebd_zf$time_observations_started)
   # x <- lubridate::hms(x)

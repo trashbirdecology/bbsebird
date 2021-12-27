@@ -11,7 +11,7 @@ for(i in seq_along(var)){
 
 
 # garbage collection and clear junk -----------------------------------------------------------
-junk_it <- function(args.save, new.args.save=NULL){
+.junk_it <- function(args.save, new.args.save=NULL){
   args.save <- c(args.save, new.args.save)
   rm(list=setdiff(ls(envir = .GlobalEnv), args.save), envir = .GlobalEnv)
   # return(args.save)
@@ -20,21 +20,20 @@ junk_it <- function(args.save, new.args.save=NULL){
 
 
 # mode --------------------------------------------------------------------
-get_mode <- function(x) {
+.get_mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
 
 # function to convert time observation to hours since midnight ------------------------------------------------------------------
-
-time_to_decimal <- function(x) {
+.time_to_decimal <- function(x) {
   x <- hms(x)
   hour(x) + minute(x) / 60 + second(x) / 3600
 }
 
 
 # a song to tell me something has stopped ------------------------------------------------------------------
-song <- function() {
+.song <- function() {
   for(i in 1:2) {
     for(i in 1:4) {
       for(i in 1:4) {
@@ -53,7 +52,7 @@ song <- function() {
 
 
 # windows alert -----------------------------------------------------------
-windows_alert <- function(message=rep("The really long process you started has completed. Hopefully you got it right the first time and don't have to redo it....that took a while.....BEEEEEEEEEEEEEEEP", 3)){
+.windows_alert <- function(message=rep("The really long process you started has completed. Hopefully you got it right the first time and don't have to redo it....that took a while.....BEEEEEEEEEEEEEEEP", 3)){
   if(.Platform$OS.type == "windows"){return()} # only run for windows OS
   system2(command = "PowerShell",
           args = c("-Command",
