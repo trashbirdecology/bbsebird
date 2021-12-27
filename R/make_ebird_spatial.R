@@ -38,8 +38,7 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
     st_transform(df, crs = CRS(paste0("+init=epsg:", crs.target)))
 
   ## Exit function if no grid is provided
-  if (is.null(grid))
-    return(df)
+  if (is.null(grid)){return(df)}
 
   cat(
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
@@ -50,6 +49,7 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
   #   st_join(df)
   # # toc()
   ebird_spatial <- st_join(grid, df) # should produce empty cells where no counts exist for that cell
+
 
   return(ebird_spatial)
 
