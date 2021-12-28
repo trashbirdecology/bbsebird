@@ -39,6 +39,5 @@ If necessary, go ahead and explore the data.
 ```
 
 
-
 # Step 2: Write JAGS Models
 
