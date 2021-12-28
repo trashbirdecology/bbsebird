@@ -147,9 +147,9 @@ make.integer <- function(x, var=c("AOU", "aou")){
 #' @keywords internal
 #' @export
 junk_it <- function(args.save, new.args.save=NULL){
-  args.save <- c(args.save, new.args.save)
+  args.save <- c(args.save, new.args.save, "args.save") %>% unique()
   rm(list=setdiff(ls(envir = .GlobalEnv), args.save), envir = .GlobalEnv)
-  # return(args.save)
+  return(args.save)
 }
 
 
