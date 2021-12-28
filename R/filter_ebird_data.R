@@ -174,14 +174,15 @@ filter_ebird_data <-
   }
 
     ## Read in / filter observations data frame
-    cat("Loading the eBird observations.\n\n")
     if (file.exists(f_obs_out) & !overwrite) {
+    cat("Loading the filtered eBird observations.\n\n")
       if (method == "vroom")
         observations <- vroom::vroom(f_obs_out, col_types = col_types)
       if (method == "data.table")
         observations <- data.table::fread(f_obs_out)
     } else{
-      # only use vroom to make it easier to read many files at once...
+      cat("Loading the original eBird observations.\n\n")
+          # only use vroom to make it easier to read many files at once...
       ### i can't figure out how to silence vroom import warning re: parsing colnames
       #### (which is a result of not all names in cols_samp are in this file)
       ### consequently, I would like to remove the nusance names frm cols_samp here..

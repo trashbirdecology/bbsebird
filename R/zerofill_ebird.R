@@ -29,8 +29,8 @@ zerofill_ebird <-
 
     # first check to see if already on file
     if ("ebird_zf.txt" %in% list.files(dir.spatial.out) & !overwrite){
-      cat("ebird_zf.txt exists in ", dir.spatial.out,".\nImporting file.\nIf you wish to process ebird_zf again,\n either delete",
-        paste0(dir.spatial.out,"/ebird_zf.txt")," or specify `overwrite=TRUE`.")
+      cat("ebird_zf.txt exists in ", dir.spatial.out,".\nImporting file.If you wish to process ebird_zf again, either delete",
+        paste0(dir.spatial.out,"/ebird_zf.txt")," or specify `overwrite=TRUE`.\n\n")
 
       ebird_zf <- data.table::fread(paste0(dir.spatial.out, "ebird_zf.txt"))
       return(ebird_zf)}
