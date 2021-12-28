@@ -108,11 +108,7 @@ rm(ebird_spatial, bbs_spatial, ebird.sunlight, bbs.sunlight)
 gc()
 
 # Munge covariates --------------------------------------------------------
-## BBS detection covariates
-bbs <- bbs %>%
-  group_by(rteno, year) %>%
-  mutate(avgwind = abs(startwind-endwind)/2) %>%
-  ungroup()
+
 
 
 
