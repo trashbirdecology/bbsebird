@@ -60,6 +60,7 @@ jdat-jar.R
 inst/doc
 
 ## Remove specific examples
+/vignettes/fl-example-111km/
 /vignettes/ny-example-28km/
 vignettes/ny-example-28km/plots/bbs_spatial_exploratory.pdf
 vignettes/ny-example-28km/plots/bbs_spatial_exploratory.pdf
