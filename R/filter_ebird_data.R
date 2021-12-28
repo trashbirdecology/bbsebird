@@ -188,7 +188,7 @@ filter_ebird_data <-
 
       ##force colnames to lower and replace spaces with underscore (_)
       colnames(observations) <-
-        str_replace_all(tolower(colnames(observations)),
+        stringr::str_replace_all(tolower(colnames(observations)),
                         pattern = " ",
                         replacement = "_")
 
