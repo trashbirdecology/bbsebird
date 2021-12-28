@@ -242,7 +242,6 @@ filter_ebird_data <-
         effort_distance_km = dplyr::if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
                                      0, effort_distance_km)
       )
-browser()
       observations <- convert_cols(observations)
 
       # save to file

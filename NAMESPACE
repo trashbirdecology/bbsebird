@@ -3,6 +3,7 @@
 export("%>%")
 export(filter_ebird_data)
 export(id_ebird_files)
+export(junk_it)
 export(make_bbs_spatial)
 export(make_ebird_spatial)
 export(match_col_names)

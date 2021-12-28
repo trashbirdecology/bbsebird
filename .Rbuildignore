@@ -15,3 +15,4 @@ Makefile
 ^NEWS\.md$
 ^README\.Rmd$
 ^README\.md$
+^/vignettes$
