@@ -141,7 +141,7 @@ make.integer <- function(x, var=c("AOU", "aou")){
 # garbage collection and clear junk -----------------------------------------------------------
 #' Keep Only Wanted Objects in Memory
 #'
-#' Removes all except arguments specified
+#' Removes all items except those specified. Returns a new list of the arguments you want to always retain in memory while removing duplicates.
 #' @param args.save A list of new or previously specified arguments.
 #' @param new.args.save Optional. One or more new object names to save (in addition to args.save)
 #' @keywords internal
