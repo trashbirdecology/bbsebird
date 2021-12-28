@@ -114,7 +114,7 @@ filter_ebird_data <-
 
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
-      cat("Filtering sampling events. This takes a minute.\n\n")
+      cat("Now filtering the sampling events. This takes a minute or two. \n\n")
       ## force column names to lower and replace spaces with underscore (_) for my sanity
       colnames(sampling) <-
         stringr::str_replace_all(tolower(colnames(sampling)),
@@ -242,7 +242,7 @@ filter_ebird_data <-
         effort_distance_km = dplyr::if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
                                      0, effort_distance_km)
       )
-
+browser()
       observations <- convert_cols(observations)
 
       # save to file
