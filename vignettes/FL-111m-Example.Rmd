@@ -15,6 +15,7 @@ knitr::opts_chunk$set(
   echo=FALSE, 
   warning=FALSE
 )
+rm(list=ls())
 ```
 
 ```{r load-pkg}
@@ -105,7 +106,7 @@ dir.spatial.out <- paste0(dir.proj.out,"spatial/")
 dir.plots <- paste0(dir.proj.out, "plots/")
 sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, dir.plots), FUN=
          function(x) dir.create(x, showWarnings = FALSE))
-args.save <- ls() # saves a list of elements we always want to keep in memory
+args.save <- c("args.save", ls()) # saves a list of elements we always want to keep in memory
 ```
 
 # Step 2: Make a Spatial Grid
@@ -229,25 +230,22 @@ junk_it(args.save, "bbs_spatial")
 ```
 
 ## Step 3c: eBird Data Munging 
-Due to the size of the eBird data, this may take  MANY MANY minutes 
-```{r ebird-warnings}
-if (parallel::detectCores() <= 4 |
-    memory.limit() < 25000)
-  warning(
-    "You don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes."
-  )
-```
-
+Due to the size of the eBird data, it may take many many minutes to munge the data. 
 ```{r ebird-data}
 # Do not run if bbs_spatial already exists
 if(!exists("ebird_spatial")){
+if (parallel::detectCores() <= 4 |
+    memory.limit() < 25000)
+  warning(
+    "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. If `filter_ebird_data` takes longer than 20 minutes, something is probably wrong.\n\n"
+  )
 
 fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 
 # Filter the eBird Data ---------------------------------------------------
 ebird_filtered <- filter_ebird_data(
                                     fns.ebird = fns.ebird,
-                                    overwrite = TRUE,
+                                    overwrite = FALSE,
                                     dir.ebird.out = dir.ebird.out,
                                     countries = countries,
                                     states = states,
@@ -265,16 +263,16 @@ fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 # ebird_zf <- auk::auk_zerofill(x=fns[fns %>% stringr::str_detect("obs")],
 #                               sampling_events = fns[fns %>% stringr::str_detect("samp")])
 
-ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.spatial.out)
+ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.ebird.out)
 
 ## Create the eBird Spatial Layer  -----------------------------------------------------
 ### need to add argument in make_ebird_spatial function to load in file if it exists...
-### maybr also save to file inside that funciton 
+### maybe also save to file inside that funciton 
 ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
 
 ## Export eBird Spatial Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
-
+# list.files(dir.spatial.out, "spatial.rds")
 # remove junk ----------------------------------------------------------------------------
 junk_it(args.save, "ebird_spatial")
 
@@ -291,7 +289,7 @@ if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$grid
 ```
 
 # Step 4: Integrate the BBS and eBird Spatial Data
-To ensure proper integration we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to eachtoher, where appropriate (e.g., bird count, dates).
+To ensure proper integration (or rather, use of all data in JAGS) we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to eachtoher, where appropriate (e.g., bird count, dates).
 ```{r match-colnames}
 ## Force BBS colnames to lowercase.
 names(bbs_spatial) <- tolower(names(bbs_spatial))
@@ -329,7 +327,10 @@ if(exists("yday")) ebird_spatial <- ebird_spatial %>%
 bbs_spatial$starttime=hms::as_hms(as.POSIXct(bbs_spatial$starttime, format="%H%M"))
 bbs_spatial$endtime=hms::as_hms(as.POSIXct(bbs_spatial$endtime, format="%H%M"))
 ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$time_observations_started, format="%H:%M:%S"))
+```
 
+If you don't need local sunlight/rise/set times, specify `eval=FALSE` in this chunk. This process takes a while and sometimes crashes when computing on the ebird data. 
+```{r munge-sunlight}
 # Sunlight/daylight/moonlight ---------------------------------------------
 ## here, data must have columns lat and lon. I took care of this in
 ## utils.R function `match_col_names()`
@@ -364,3 +365,6 @@ ebird.sunlight <- ebird.sunlight  %>%
 bbs.sunlight <- bbs.sunlight %>%
   dplyr::mutate(across(sunlight.keep, hms::as_hms))
 ```
+
+# Step 5: Create Data for Use in JAGS
+
