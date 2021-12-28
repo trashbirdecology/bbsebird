@@ -145,7 +145,7 @@ make.integer <- function(x, var=c("AOU", "aou")){
 #' @param args.save A list of new or previously specified arguments.
 #' @param new.args.save Optional. One or more new object names to save (in addition to args.save)
 #' @keywords internal
-#' @export
+#' @noRd
 .junk_it <- function(args.save, new.args.save=NULL){
   args.save <- c(args.save, new.args.save)
   rm(list=setdiff(ls(envir = .GlobalEnv), args.save), envir = .GlobalEnv)
