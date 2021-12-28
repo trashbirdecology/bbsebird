@@ -84,7 +84,6 @@ G.bbs = dim(C)[3] # <site/grid cell> number of unique grid cells sampled by BBS 
 
 
 ## jdat.bbs -------------------------------------------------------------------------
-T = length(min(c(ebird.df$year, bbs.df$year)):max(c(bbs.df$year, ebird.df$year))) # <years> total number of years
 names.bbs <-
   c(
     "R",
@@ -176,8 +175,6 @@ jdat.grid <- list(
   )
 
 
-# Other Indexing -----------------------------------------------------------------
-
 # The Integrated JAGS Data ---------------------------------------------------------------------
 jdat <- c(jdat.bbs, jdat.ebird, jdat.grid)
 ## save the data for andy to use/check
@@ -190,6 +187,7 @@ plot(temp["max_C_bbs"])
 ebird %>% filter(year==2019) %>% group_by(gridcellid) %>% summarise(max_C_ebird_yr2019= max(C)) -> temp
 plot(temp["max_C_ebird_yr2019"])
 
+T = length(min(c(ebird.df$year, bbs.df$year)):max(c(bbs.df$year, ebird.df$year))) # <years> total number of years
 
 # Notes -------------------------------------------------------------------
 ## Important 1: access arrays C, coverage, car, noise, wind, ydays, by
