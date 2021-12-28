@@ -39,7 +39,7 @@ zerofill_ebird <-
     # Force columns to lowercase
     colnames(myList$sampling) <- tolower(colnames(myList$sampling))
     colnames(myList$observations) <- tolower(colnames(myList$observations))
-    cols.remove <- str_replace_all(tolower(cols.remove), " ","_")
+    cols.remove <- stringr::str_replace_all(tolower(cols.remove), " ","_")
 
     # First remove the unwanted columns
     myList$observations <-
@@ -58,10 +58,10 @@ zerofill_ebird <-
     events.zeroes.to.add <- setdiff(events.samp, events.obs)#which evenest are in sampling but NOT in obs
     ## filter those events out of sampling df prior to joining
     myList$sampling <- myList$sampling %>%
-      filter(sampling_event_identifier %in% events.zeroes.to.add)
+      dplyr::filter(sampling_event_identifier %in% events.zeroes.to.add)
 ## This should already be done in filter_ebird_data()--fpr some reason time wasn't working but needs to be double checked
 myList$observations <- convert_cols(myList$observations)
-myList$sampling <- convert_cols(myList$sampling)
+myList$sampling     <- convert_cols(myList$sampling)
 gc()
 # Full join the filtered sampling events to species observations
     cat("joining observations and sampling data frames. takes a few minutes...\nyes, le sigh..........")
