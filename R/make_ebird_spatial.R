@@ -25,31 +25,31 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
 
 
   # define projection for lat long (ebird documentation states CRS is 4326)
-  proj4string(df) <-
-    CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+  sp::proj4string(df) <-
+    sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
   # transform spatial object to sf
-  cat("coercing eBird data to sf object. \n may take between 2 and 20 minutes (rofl u like that estimate?!).\n")
+  cat("coercing eBird data to sf object. \n may take between 1 and 20 minutes......lol sry...\n\n")
   df <- sf::st_as_sf(df)
 
   # match proj to target proj
-  cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute.\n")
+  cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute.\n\n")
   df <-
-    sf::st_transform(df, crs = CRS(paste0("+init=epsg:", crs.target)))
+    sf::st_transform(df, crs = sp::CRS(paste0("+init=epsg:", crs.target)))
 
   ## Exit function if no grid is provided
-  if (is.null(grid)){return(df)}
+  if (is.null(grid)){
+    cat("No `grid` provided. Returning ebird spatial data without grid.\n")
+    return(df)}
 
   cat(
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
-  # tic()
-  # ebird_spatial <- sf::st_join(df, grid)
-  #   grid %>%
-  #   sf::st_join(df)
-  # # toc()
-  ebird_spatial <- sf::st_join(grid, df) # should produce empty cells where no counts exist for that cell
-
+  ## must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
+  ## st_join(df, grid) but oh well
+  ebird_spatial <-
+    grid %>%
+    sf::st_join(df)
 
   return(ebird_spatial)
 
