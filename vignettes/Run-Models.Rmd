@@ -1,0 +1,44 @@
+---
+title: "JAGS Models"
+output: html_document
+params:
+  dir.proj:  "fl-example-111km"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      warning=FALSE,
+                      fig.show = TRUE,
+                      tidy = TRUE)
+```
+# Step 0: Setup
+The parameter `dir.proj` __must__ be specified in the YAML header. 
+
+```{r set-directories, echo=FALSE}
+dir.jags <- paste0(params$dir.proj, "/jags/")
+dir.plots <- paste0(params$dir.proj, "/plots/")
+dir.models <- paste0(dir.jags, "/models/")
+sapply(c(dir.jags, dir.plots), FUN=
+         function(x) dir.create(x, showWarnings = FALSE))
+fns <- list.files(dir.jags, full.names = TRUE)
+```
+
+# Step 1: Data
+If data already exists, we can just import it from file. Otherwise, you will need to run through "Make-JAGS-Data.Rmd", which will take a hot minute.
+```{r import-jdat, echo=TRUE}
+jdat <- readRDS(fns[stringr::str_detect(fns, "jdat.rds")])
+cat("jdat is of class, ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
+names(jdat)
+```
+
+
+If necessary, go ahead and explore the data. 
+```{r data-metadata-tables}
+### placeholder for creating some tables describing the data. 
+```
+
+
+
+# Step 2: Write JAGS Models
+
