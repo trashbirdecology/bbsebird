@@ -49,7 +49,7 @@ clean_zf <- function(ebd_zf){
 #' Converts columns classes based on names for the bbs and ebird data
 #' @param x The data frame with one or more columns.
 #' @keywords internal
-#' @noRd
+#' @export
 convert_cols <- function(x){
 
   ## numeric

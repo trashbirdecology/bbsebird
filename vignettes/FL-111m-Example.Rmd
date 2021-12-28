@@ -82,7 +82,7 @@ crs.target <- 4326 # 4326 == unprojected; 5070=Alberts equal area (used by USGS)
 ### A good estimate for large-scale (>=state) studies in North Am.
 #### is that there are 111.111km in 1 degree latitude or longitude
 #### miles to km: km=1.61*miles
-grid.size=1.00 #== 1/4 deg
+grid.size=1.00 #== 1 dec deg
 ```
 
 ## Directory specifications and naming
