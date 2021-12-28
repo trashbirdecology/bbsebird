@@ -10,13 +10,21 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>", 
+  message = TRUE, 
+  echo=FALSE, 
+  warning=FALSE
 )
 ```
 
 ```{r load-pkg}
+## Users may run into issues when installing the following packages
+devtools::install_github("ropensci/rnaturalearth", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
+
+unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
 devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 library(dubcorms)
+library(dplyr) # we use a LOT of functions from here and often so just load the entire thing
 ```
 # Step 1: Setup and Specifications
 ## Specs for data subsetting
@@ -32,11 +40,11 @@ countries <- c("Canada","USA", "United States", "United States of America") # us
 region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory") 
 
 ## Specify the states/provinces of interest.
-states <- c("NY", "US-NY", "New York")
+states <- c("FL", "US-FL", "Florida")
 
 ## Time frames
 ### range of years for subsetting observations
-year.range <- c(2008:year(Sys.Date()))
+year.range <- c(2008:lubridate::year(Sys.Date()))
 ### range of days of the year for subsetting ebird and bbs data 
 min.yday <- 91  # approximate breeding season day start (day of year)
 max.yday <- 245 # approximate breeding season day end (day of year)
@@ -44,7 +52,7 @@ max.yday <- 245 # approximate breeding season day end (day of year)
 
 ```{r specs-directories}
 ## Create a shorthand name for the project
-proj.shorthand="ny"
+proj.shorthand="fl"
 ```
 
 ## BBS Data Specifications
@@ -74,7 +82,7 @@ crs.target <- 4326 # 4326 == unprojected; 5070=Alberts equal area (used by USGS)
 ### A good estimate for large-scale (>=state) studies in North Am.
 #### is that there are 111.111km in 1 degree latitude or longitude
 #### miles to km: km=1.61*miles
-grid.size=.25 #== 1/4 deg
+grid.size=1.00 #== 1/4 deg
 ```
 
 ## Directory specifications and naming
@@ -102,35 +110,35 @@ args.save <- ls() # saves a list of elements we always want to keep in memory
 
 # Step 2: Make a Spatial Grid
 If the spatial grid R object, `grid.rds`, already exists in `r dir.proj.out`, load it into file. If not, will create a new spatial grid and save to file. 
-```{r}
+```{r make-grid}
 ## If a grid.rds is saved in project directory, will not run script and instead will load that file into memory
 ## load in that rds.
 if("grid.rds" %in% list.files(dir.spatial.out)) grid <- readRDS(paste0(dir.spatial.out, "/", "grid.rds"))else{
 study.area <-
-  ne_states(country = countries, returnclass = "sf") %>%
+  rnaturalearth::ne_states(country = countries, returnclass = "sf") %>%
   # remove region(s)
   filter(tolower(name) %in% tolower(states)) %>%
   filter(!tolower(name) %in% tolower(region.remove)) %>%
-  st_transform(study.area, crs = crs.target)
+  sf::st_transform(study.area, crs = crs.target)
 # unique(study.area$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
 
 # throw a grid over the study area layer
 grid <- study.area %>%
-  st_make_grid(cellsize = grid.size,
+  sf::st_make_grid(cellsize = grid.size,
                square = FALSE,
                flat_topped = TRUE) %>%
-  st_intersection(study.area) %>%
+  sf::st_intersection(study.area) %>%
   # st_cast("MULTIPOLYGON") %>%
-  st_sf() %>%
+  sf::st_sf() %>%
   mutate(gridcellid = row_number()) %>%
-  st_transform(crs = crs.target)
+  sf::st_transform(crs = crs.target)
 
 # # Visualize to check
 # tmap::qtm(grid)
 # mapview::mapview(grid) # interactive, openstreetmap
 
 # Add centroid lat lon to grid 
-centroid.coords <- st_coordinates(st_geometry(st_centroid(grid)))
+centroid.coords <- sf::st_coordinates(sf::st_geometry(sf::st_centroid(grid)))
 grid$cell.lon.centroid <- centroid.coords[,1]
 grid$cell.lat.centroid <- centroid.coords[,2]
 
@@ -138,22 +146,24 @@ grid$cell.lat.centroid <- centroid.coords[,2]
 saveRDS(grid, file = paste0(dir.spatial.out, "/", "grid.rds"))
 }
 # Clear junk
-.junk_it(args.save, "grid")
+junk_it(args.save, "grid")
 ```
 
 # Step 3: Load or Create BBS and eBird Data
 ## Step 3a: Check to see if the munged spatial data files already exist.
 If these files already exist, this will load in those files and skip steps 3b and 3c.
-```{r spatial-files-load}
+```{r spatial-files-load, include=FALSE}
 ## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
 fns.spatial <- c("bbs_spatial.rds", "ebird_spatial.rds", "grid.rds")
 if(all(fns.spatial %in% list.files(dir.spatial.out))){
   cat("importing bbs, ebird and grid sf objects.")
   fns.spatial <-list.files(dir.spatial.out, full.names = TRUE)
-  bbs_spatial <- readRDS(fns.spatial[str_detect(fns.spatial, "bbs_spat")])
-  grid <- readRDS(fns.spatial[str_detect(fns.spatial, "grid")])
-  ebird_spatial <- readRDS(fns.spatial[str_detect(fns.spatial, "ebird_spat")])
-}
+  bbs_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "bbs_spat")])
+  grid <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "grid")])
+  ebird_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "ebird_spat")])
+  ## If you want to check out the spatial grid wtih some basic BBS stats, go for it:
+  browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
+  }
 ```
 
 ## Step 3b: BBS Data Munging
@@ -195,7 +205,7 @@ if (!"bbs_obs.rds" %in% tolower(fns)) {
 ### Create BBS routes spatial layer ----------------------------------------------------------------------
 # munges all routes at first then moves to subsetting to the grid, so have patience
 # takes about a minute for 1-3 states
-cat("Munging the BBS route shapefiles/spatial layer.\nIf `grid` specified, will take a hot minute.\nWILL SOON PASTE ALGEBRA TO MESSAGE OUT ESTIMATED TIME BASED ON STATES AND GRID CELL SIZE")
+cat("Munging the BBS route shapefiles/spatial layer.\nIf `grid` specified, will take a hot minute.\n\n")
 bbs_spatial <-
   make_bbs_spatial(
     bbs.obs = bbs_obs,
@@ -214,7 +224,8 @@ saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 browseURL(list.files(dir.plots, "bbs_spatial_exploratory", full.names = TRUE))
 }
 
-.junk_it(args.save, "bbs_spatial")}
+junk_it(args.save, "bbs_spatial")
+}
 ```
 
 ## Step 3c: eBird Data Munging 
@@ -225,9 +236,6 @@ if (parallel::detectCores() <= 4 |
   warning(
     "You don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes."
   )
-cat(
-  "Tossing out the garbage (`gc`) and about to deal with this eBird data. Buckle up, buttercup."
-)
 ```
 
 ```{r ebird-data}
@@ -254,8 +262,8 @@ fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 
 # would like to get this functional but auk_zerofill currently requires
 ## VERY specific coltypes and names. not flexible in coltypes...
-# ebird_zf <- auk::auk_zerofill(x=fns[fns %>% str_detect("obs")],
-#                               sampling_events = fns[fns %>% str_detect("samp")])
+# ebird_zf <- auk::auk_zerofill(x=fns[fns %>% stringr::str_detect("obs")],
+#                               sampling_events = fns[fns %>% stringr::str_detect("samp")])
 
 ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.spatial.out)
 
@@ -268,17 +276,15 @@ ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 
 # remove junk ----------------------------------------------------------------------------
-.junk_it(args.save, "ebird_spatial")
+junk_it(args.save, "ebird_spatial")
 
 }
-# visualize the ebird data in spatial grid
-# plot(ebird_spatial[1])
 ```
 
 ## Step 3d: Basic Tests
 Just double-check the CRS on the spatial files. They all should be the same before we integrate. 
 ```{r test-crs}
-if(!(st_crs(grid)==st_crs(bbs_spatial) & st_crs(ebird_spatial)==st_crs(grid)))stop("Warning. The ebird, bbs, and grid spatial layers are not in same projection and/or CRS.")
+if(!(sf::st_crs(grid)==sf::st_crs(bbs_spatial) & sf::st_crs(ebird_spatial)==sf::st_crs(grid)))stop("Warning. The ebird, bbs, and grid spatial layers are not in same projection and/or CRS.")
 
 if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$gridcellid))))
   warning("Empty grid cells (no ebird or bbs data) are not represented in the bird data.\nShould make sure empty cells are added to bird data.")
@@ -354,7 +360,7 @@ for(i in seq_along(chunks)){
 
 ### turn vars in sunlight.keep into time only (otherwise they are in YYYY-MM-DD HH-MM-SS; we need only HH-MM)
 ebird.sunlight <- ebird.sunlight  %>%
-  mutate(across(sunlight.keep, hms::as_hms))
+  dplyr::mutate(across(sunlight.keep, hms::as_hms))
 bbs.sunlight <- bbs.sunlight %>%
-  mutate(across(sunlight.keep, hms::as_hms))
+  dplyr::mutate(across(sunlight.keep, hms::as_hms))
 ```
