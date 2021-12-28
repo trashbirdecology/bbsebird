@@ -111,8 +111,6 @@ filter_ebird_data <-
     ### will remove the most data to the least.
     ### Try to keep the filtering/subsetting in that order.
 
-
-
       # trying to keep in order of largest cut to smaller to help with memory issues.
       cat("Now filtering the sampling events. This takes a minute or two. \n\n")
       ## force column names to lower and replace spaces with underscore (_) for my sanity
