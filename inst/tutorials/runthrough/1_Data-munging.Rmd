@@ -1,16 +1,17 @@
 ---
-title: "Runthrough"
+title: "Munge eBird and BBS Data for Integrated Model"
 params: 
- plot: TRUE 
- table: TRUE
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Runthrough}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+  dir.proj: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
+  plot:     TRUE 
+  table:    TRUE
+  devmode:  TRUE 
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
+# if not in development mode (i.e. ur not jessica) this menu will ensure you're in the right working directory!
+if(!params$devmode) if(menu(title = cat("Your current working directory is: \n", getwd(), "\n Is this correct?"), 
+     choices = c("Yes", "No")) == 2)stop("Please change your working directory to desired location before proceeding.\n\n")
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
@@ -18,15 +19,16 @@ knitr::opts_chunk$set(
   echo=FALSE, 
   warning=FALSE
 )
-rm(list=ls())
+
 ```
 
 ```{r libraries, echo=TRUE}
-## Users may run into issues when installing the following packages
+## Users may run into issues when installing the following packages:
 devtools::install_github("ropensci/rnaturalearth", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
-
 unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
 devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
+
+
 library(dubcorms)
 library(bbsAssistant)
 library(ggplot2)
@@ -36,7 +38,7 @@ library(sf) # we use a LOT of functions from here and often so just load the ent
 ```
 # Step 1: Setup and Specifications
 ## Specs for data subsetting
-First, specify the species, regions, and time frames where necessary. 
+First, specify the species, regions, and time frames where necessary. Future development suggests include adding everything in the chunk below into the YAML as params. 
 ```{r specs-subsetting, echo=TRUE}
 ## List out the various uses of the species names and abbreviations, just to be safe. 
 interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") 
@@ -53,9 +55,9 @@ states <- c("FL", "US-FL", "Florida")
 ## Time frames
 ### range of years for subsetting observations
 year.range <- c(2008:lubridate::year(Sys.Date()))
-### range of days of the year for subsetting ebird and bbs data 
+### range of days of the year for subsetting eBird and BBS data 
 min.yday <- 91  # approximate breeding season day start (day of year)
-max.yday <- 245 # approximate breeding season day end (day of year)
+max.yday <- 245 # approximate breeding season day end   (day of year)
 ```
 
 ```{r specs-directories, echo=TRUE}
@@ -96,10 +98,15 @@ grid.size=1.00 #== 1 dec deg
 ## Directory specifications and naming
 ```{r specs-dir-touch}
 ## Where is your original eBird data stored?
-dir.ebird.in <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird"
+dir.ebird.in <- paste0(params$dir.proj, "ebird")
 ## Where are the BBS route shapefiles stored?
-cws.routes.dir <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/cws"
-usgs.routes.dir <- "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/bbs/route_shapefiles/usgs"
+cws.routes.dir <- paste0(params$dir.proj, "/bbs/route_shapefiles/cws")
+usgs.routes.dir <- paste0(params$dir.proj, "/bbs/route_shapefiles/usgs")
+
+if(!any(length(list.files(cws.routes.dir))>0)) stop("No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n")
+
+if(!length(list.files(dir.ebird.in)>0)) stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
+
 ```
 
 ```{r specs-dir-donottouch}
@@ -112,8 +119,7 @@ dir.bbs.out <- paste0(dir.proj.out,"bbs/")
 dir.ebird.out <- paste0(dir.proj.out,"ebird/")
 dir.spatial.out <- paste0(dir.proj.out,"spatial/")
 dir.plots <- paste0(dir.proj.out, "plots/")
-sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, dir.plots), FUN=
-         function(x) dir.create(x, showWarnings = FALSE))
+sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, dir.plots), FUN=function(x) dir.create(x, showWarnings = FALSE))
 ```
 
 ## Set Chunk Evaluation Conditions
@@ -183,11 +189,11 @@ If these files already exist, this will load in those files and skip steps 3b an
 ## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
 fns.spatial <- c("bbs_spatial.rds", "ebird_spatial.rds", "grid.rds")
 if(all(fns.spatial %in% list.files(dir.spatial.out))){
-  cat("importing bbs, ebird and grid sf objects.")
+  cat("importing bbs, ebird and grid sf objects.\n\n")
   fns.spatial   <- list.files(dir.spatial.out, full.names = TRUE)
   bbs_spatial   <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "bbs_spat")])
   grid          <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "grid")])
-  ebird_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "ebird_spat")])
+  ebird_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "ebird_spat")]) # sometimes this fails because ebird data hates me, so re-run plz
   ## If you want to check out the spatial grid wtih some basic BBS stats, go for it:
   browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
   }
@@ -413,7 +419,6 @@ if(!eval_grid)  grid <- readRDS(fns[stringr::str_detect(fns, "grid.rds")])
 if(!eval_ebird) while(!exists("ebird")) ebird <- readRDS(fns[stringr::str_detect(fns, "ebird.rds")])
 args.save <- junk_it(args.save, c("bbs","grid","ebird"))
 ```
-
 Although the data are ready for use and technically integratable, we need to munge the data just a little further.
 
 ## BBS Data
@@ -425,9 +430,6 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
   group_by(rteno, year) %>%
   mutate(avgwind = abs(startwind-endwind)/2) %>%
   ungroup() %>% 
-  ### remove empty grid cells..
-  distinct(rteno, gridcellid, year, C, .keep_all=TRUE) %>%
-  filter(!is.na(rteno)) %>%
   ### scale covariates
   mutate(
     wind.z = (avgwind - mean(avgwind, na.rm=TRUE))/sd(avgwind, na.rm=TRUE),
@@ -437,19 +439,24 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
   ### weighted counts by prop route in cell and cell area
   mutate(C.weighted.area = as.numeric(C*proprouteincell/cellarea)) %>% # weighted C per grid area (# per m^2)
   as.data.frame()
+
+## Next, ensure all grid cells are represented each year even when BBS data does not exist (for JAGS)
+bbs.df <- full_join(bbs.df, as.data.frame(grid) %>% dplyr::select(-geometry)) %>% 
+## ensure all years are represented for new grid cells
+          tidyr::complete(year, gridcellid) ## this isn't really filling in the blanks
+
 ```
 
 Create arrays descriving the covariates influencing detection probabilities.
 ```{r prep-bbs-jags-p-covars}
 ### make route-level observation covariate arrays (dims: rteno by year)
-p.cars <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year)
-p.noise <-  acast(bbs.df %>% distinct(rteno, year, noise.z), rteno~year)
-p.obsfyrbbs <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearbbs), rteno~year)
-p.obsfyrrteno <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearroute), rteno~year)
-p.wind <-  acast(bbs.df %>% distinct(rteno, year, wind.z), rteno~year)
-
+p.cars <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year, value.var = "car.z")
+p.noise <-  acast(bbs.df %>% distinct(rteno, year, noise.z), rteno~year, value.var = "noise.z")
+p.obsfyrbbs <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearbbs), rteno~year, value.var = "obsfirstyearbbs")
+p.obsfyrrteno <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearroute), rteno~year, value.var = "obsfirstyearroute")
+p.wind <-  acast(bbs.df %>% distinct(rteno, year, wind.z), rteno~year, value.var = "wind.z")
 ## arrays for trend effects
-doy.bbs <-  acast(bbs.df %>% distinct(rteno, year, yday), rteno~year)
+doy.bbs <-  acast(bbs.df %>% distinct(rteno, year, yday), rteno~year, value.var = "yday")
 ```
 
 Create some indexing on the BBS data for JAGS
@@ -481,7 +488,8 @@ w.prop <-
     bbs.df %>% units::drop_units() %>% distinct(rteno, gridcellid, proprouteincell),
     rteno ~ gridcellid,
     value.var = "proprouteincell"
-  )   # % of rteno in a cell
+  ) %>%    # % of rteno in a cell
+  tidyr::replace_na(0)
 
 ## w.area: an area offset; vector containing area (m^2) for each grid id (dims: grid cell by 1)
 w.area <- scale(as.vector(
@@ -491,14 +499,12 @@ w.area <- scale(as.vector(
     value.var = "cellarea"
   )
 )) # area (units in original df) of grid cell.
-w.area <- units::drop_units(w.area)
 ```
 
 Create indicators for use in JAGS loops
 ```{r prep-bbs-jags-loop-inds}
 R.bbs = dim(C.route)[1] # <route> number of unique BBS routes with data
 T.bbs = dim(C.route)[2] # <time> number of years of BBS data
-G.bbs = dim(C.route)[3] # <site/grid cell> number of unique grid cells sampled by BBS data
 ```
 
 Specify what to throw into the JAGS list
@@ -506,10 +512,7 @@ Specify what to throw into the JAGS list
 names.bbs <-
   c(
     "R.bbs", # number of unique routes across entire dataset
-    # "G",
-    # "T",
     "T.bbs", # will likely always equal T, but just in case
-    "G.bbs",
     "C.grid",
     "C.route",
     "id.routessampled",
@@ -551,6 +554,12 @@ ebird.df <- ebird %>%
     effort_distance_km.z = (effort_distance_km - mean(effort_distance_km, na.rm=TRUE))/sd(effort_distance_km, na.rm=TRUE),
     number_observers.z = (number_observers - mean(number_observers, na.rm=TRUE))/sd(number_observers, na.rm=TRUE)
   )
+
+## add the empty grid cells to the ebird data frame
+## a join will eat up too much time/comp capacity so we should just impute rows
+# full_join(ebird.df, as.data.frame(grid) %>% dplyr::select(-geometry))
+missing <- setdiff(ebird.df$gridcellid, grid$gridcellid)
+if(length(missing)==0) "NEED TO ADD FUNCTION HERE TO IMPUTE THE MISSING CELLS"
 ```
 
 Create some indexing on the eBird data for JAGS
@@ -593,9 +602,9 @@ grid.df <- grid %>%
   st_drop_geometry()
 
 ### create an index for the grid cells with count data
-gridcellswbbs <- unique(bbs$gridcellid) %>% sort()
-gridcellswebird <- unique(ebird$gridcellid) %>% sort()
-gridcellswdata <- unique(c(gridcellswbbs, gridcellswebird))
+# gridcellswbbs <- unique(bbs$gridcellid) %>% sort()
+# gridcellswebird <- unique(ebird$gridcellid) %>% sort()
+# gridcellswdata <- unique(c(gridcellswbbs, gridcellswebird))
 
 ## grid cell centroid coordinates
 XY <- grid.df %>% # centroid coordinates of the grid cells
@@ -603,9 +612,10 @@ XY <- grid.df %>% # centroid coordinates of the grid cells
 ```
 
 ```{r make-integrated-indexes}
-years <- min(c(ebird$year, bbs$year), na.rm=TRUE):max(c(ebird$year, bbs$year), na.rm=TRUE)
+# years <- min(c(ebird$year, bbs$year), na.rm=TRUE):max(c(ebird$year, bbs$year), na.rm=TRUE)
+years <- min(bbs$year, na.rm=TRUE):max(bbs$year, na.rm=TRUE) # need to fix this!!
 T     <- length(years)
-# G     <- length(unique(grid$gridcellid))
+G     <- length(unique(grid$gridcellid))
 ```
 
 Wrap grid data up into a nice little JAGS list
@@ -617,13 +627,13 @@ jdat.grid <- list(
   T = T, # length of total time period (with or wihtout data)
   coords.gridcells = XY,
   G = nrow(XY), # integer, number of cells in study area (with or without data)
-  id.gridcells = sort(grid.df$gridcellid), # identifier for grid cells
-  n.gridcellswdata = length(gridcellswdata), # number of grid cells with any count data (ebird or bbs)
-  id.gridcellswdata = sort(gridcellswdata),  # vector of grid cell ids with any count data
-  n.gridcellswbbs = length(gridcellswbbs), # number of grid cells with any count data (ebird or bbs)
-  id.gridcellswbbs = sort(gridcellswbbs),  # vector of grid cell ids with any count data
-  n.gridcellswebird = length(gridcellswebird), # number of grid cells with any count data (ebird or bbs)
-  id.gridcellswebird = sort(gridcellswebird)  # vector of grid cell ids with any count data
+  # n.gridcellswdata = length(gridcellswdata), # number of grid cells with any count data (ebird or bbs)
+  # id.gridcellswdata = sort(gridcellswdata),  # vector of grid cell ids with any count data
+  # n.gridcellswbbs = length(gridcellswbbs), # number of grid cells with any count data (ebird or bbs)
+  # id.gridcellswbbs = sort(gridcellswbbs),  # vector of grid cell ids with any count data
+  # n.gridcellswebird = length(gridcellswebird), # number of grid cells with any count data (ebird or bbs)
+  # id.gridcellswebird = sort(gridcellswebird),  # vector of grid cell ids with any count data
+  id.gridcells = sort(grid.df$gridcellid) # identifier for grid cells
   )
 args.save <- junk_it(args.save, "jdat.grid")
 ```
