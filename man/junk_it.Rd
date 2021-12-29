@@ -12,6 +12,6 @@ junk_it(args.save, new.args.save = NULL)
 \item{new.args.save}{Optional. One or more new object names to save (in addition to args.save)}
 }
 \description{
-Removes all except arguments specified
+Removes all items except those specified. Returns a new list of the arguments you want to always retain in memory while removing duplicates.
 }
 \keyword{internal}

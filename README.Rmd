@@ -36,8 +36,6 @@ require('kableExtra')
 library(kableExtra)
 library(tidyverse)
 library(jagsUI)
-jdat<-readRDS(file=paste0(here::here("inst/jdat-jar.rds")))
-
 meta <- read.csv("inst/data-meta-table.csv")
 names(meta)[1] <-"dat"
 ```

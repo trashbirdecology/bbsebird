@@ -31,7 +31,8 @@ Imports:
     readr,
     lubridate,
     parallel,
-    rnaturalearth
+    rnaturalearth,
+    glue
 Suggests: 
     assertthat,
     learnr,
