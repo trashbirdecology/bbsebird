@@ -18,7 +18,7 @@ make_bbs_spatial <- function(bbs.obs,
                              crs.target = 4326,
                              grid = NULL,
                              overwrite = TRUE,
-                             print.plots = TRUE,
+                             print.plots = FALSE,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL) {
   # if plot.dir is NULL and print.plots is TRUE, will just print plots to session and not to file..
@@ -120,12 +120,10 @@ make_bbs_spatial <- function(bbs.obs,
 
   ### join CWS and USGS routes
   bbs_sf <- bind_rows(usgs_routes, cws_routes)
-  message(
-    paste0(
+  cat(
       "Number of unique routes in the CWS and USGS merged routes spatial layer: ",
       length(unique(bbs_sf$RTENO))
     )
-  )
 
   # stop here if no grid was provided...
   if (is.null(grid)) {
@@ -136,6 +134,12 @@ make_bbs_spatial <- function(bbs.obs,
 
   # if grid was provided, overlay and calculate lengths and areas
   grid <- sf::st_transform(grid, crs = crs.string)
+  ## add years to the grid layer
+  grid <- grid %>%
+  tidyr::expand(Year=unique(bbs_obs$Year), gridcellid) %>%
+    full_join(grid) %>%
+    st_as_sf()
+
 
   ## clip bbs_sf to grid extent
   # and calculating Route and Segment lengths. May take a minute or three.")
@@ -143,10 +147,12 @@ make_bbs_spatial <- function(bbs.obs,
   cat(
     "Clipping BBS routes to grid extent. Takes some hot minutessss for more than 3 states/provinces.\n\n"
   )
-  lengths <- sf::st_intersection(grid, bbs_sf)
-
   cat("Calculating route and segment lengths..\n\n")
-  lengths <- lengths %>%
+
+  # calculate route lengths
+  bbs_sf_grid <- sf::st_intersection(grid, bbs_sf)
+
+  lengths <- bbs_sf_grid %>%
     ## length of segment within a cell
     dplyr::mutate(SegmentLength = sf::st_length(.)) %>%
     dplyr::group_by(RTENO) %>%
@@ -158,23 +164,15 @@ make_bbs_spatial <- function(bbs.obs,
     dplyr::mutate(PropRouteInCell = SegmentLength / RouteLength) %>%
     dplyr::ungroup() %>%
     sf::st_drop_geometry() %>%
-    dplyr::select(-cell.lon.centroid, -cell.lat.centroid)
+    dplyr::select(-cell.lon.centroid, -cell.lat.centroid, -area, -RouteName)
 
-  ## calculate grid cell areas
-  cat("Calculating grid cell areas..\n\n")
-  areas <- grid %>%
-    dplyr::mutate(CellArea = sf::st_area(.)) %>%
-    sf::st_drop_geometry() %>%
-    dplyr::select(-cell.lon.centroid, -cell.lat.centroid)
 
   ## combine bbs routes + area + lengthss
-  cat("Polishing the BBS routes and grid layer.\n\n")
+  cat("Joining BBS routes to grid layer..\n\n")
   bbs_sf <- grid %>%
-    dplyr::left_join(lengths, by = "gridcellid") %>%
-    dplyr::left_join(areas, by = "gridcellid")
+    dplyr::left_join(lengths, by = "gridcellid")
 
-
-  ### Minor issue, but Route Names in route shaepfiles do not match the BBS observations data route names.
+  ### Minor issue, but Route Names in route shapefiles do not match the BBS observations data route names.
   if ("routename" %in% tolower(names(bbs_obs))) {
     bbs_obs <-  bbs_obs %>%
       dplyr::select(-RouteName)
@@ -182,20 +180,15 @@ make_bbs_spatial <- function(bbs.obs,
 
   ## Add the observations tot he spatial layer.
   # append the empty cells if keep.empty.cells is TRUE, or use merge to leave them out.
-  if (keep.empty.cells) {
+  # imputes data for each cell where no BBS exists in a year.
     bbs_spatial <-
       dplyr::left_join(bbs_sf, bbs_obs, by = "RTENO") %>%
       # create var with percent route in grid cell
       dplyr::mutate(PercSegmentInCell = SegmentLength / RouteLength)
 
-  } else{
-    bbs_spatial <-
-      merge(bbs_sf, bbs_obs, by = "RTENO") %>%
-      # create var with percent route in grid cell
-      dplyr::mutate(PercSegmentInCell = SegmentLength / RouteLength)
 
-  }
-
+  # if empty cells not desired, will remove them.
+  if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(RTENO))}
 
   # plot if wanted
   if (print.plots) {
@@ -208,7 +201,9 @@ make_bbs_spatial <- function(bbs.obs,
     # exploratory plots (should move elsewhere.....)
     plot(
       bbs_spatial %>%
-        dplyr::group_by(gridcellid) %>% dplyr::summarise(`max num counted` = max(RouteTotal)) %>%
+        dplyr::filter(!is.na(RTENO)) %>%
+        dplyr::group_by(gridcellid) %>%
+        dplyr::summarise(`max num counted` = max(RouteTotal, na.rm = TRUE)) %>%
         dplyr::select(`max num counted`)
     )
     plot(
