@@ -1,8 +1,9 @@
 ---
 title: "JAGS Models"
 output: html_document
+params: 
+  dir.proj: "`r getwd()`"
 ---
-
 ```{r setup, include=FALSE}
 rm(list=ls()) # for use in dev
 knitr::opts_chunk$set(echo = FALSE, 
@@ -21,7 +22,7 @@ The parameter `dir.proj` __must__ be specified in the YAML header.
 
 ```{r set-directories, echo=FALSE}
 ### i;d like to be able to figure out how to evaluate R code from the YAML header but thats for another time. see this SO issue:https://stackoverflow.com/questions/45646135/evaluating-r-code-in-yaml-header
-dir.proj <- paste0(getwd(),"/")
+if(!exists("dir.proj")) dir.proj <- paste0(getwd(),"/")else{dir.proj <- params$dir.proj}
 dir.jags <- paste0(dir.proj, "jags/")
 dir.plots <- paste0(dir.proj, "plots/")
 dir.models <- paste0(dir.jags, "models/")
@@ -29,7 +30,7 @@ sapply(c(dir.plots, dir.models), FUN=
          function(x) dir.create(x, showWarnings = FALSE))
 fns <- list.files(dir.jags, full.names = TRUE)
 ```
-# Step 1: Original Data
+# Step 1: Handle Observations Data
 ## Import data
 If data already exists, we can just import it from file. Otherwise, you will need to run through "1-Data_Munging.Rmd", which will take a hot minute.
 ```{r import-jdat, echo=TRUE}
@@ -41,7 +42,7 @@ names(jdat)
 ## Munging
 Since we don't have route locations over time, let's just create
 
-## Exploreperiod available data
+## Explore available data
 If necessary, go ahead and explore the data. 
 ```{r data-metadata-tables}
 ### placeholder for creating some tables describing the data. 
@@ -52,36 +53,96 @@ jdat$grid$period # years of study
 jdat$grid$T # number of years
 ```
 
+Get the dimensions of the BBS data objects in jdat
+```{r data-structure-bbs}
+### will turn this into a function probably so we can grab dims of all our data.
+for(i in seq_along(jdat$bbs)){
+  if(i == 1 ){
+    bbs.structure = data.frame(matrix(nrow=max(seq_along(jdat$bbs)), ncol=5)) 
+    colnames(bbs.structure) = c("class", "length", "nrow", "ncol", "nslice") 
+              }
+  dat   <-  jdat$bbs[[i]]
+  class <-  class(dat)[1] # for multiple classifications will just take the first
+  nrow   = dim(dat)[1] #num cols
+  ncol   = dim(dat)[2] #num rows
+  nslice = dim(dat)[3] #num slices
+  # if all those are NA, then its a single value.
+  if(all(is.na(c(nrow, ncol, nslice)))){length=length(dat)}else{length=NA}
+  if(is.null(nrow))nrow=NA    
+  if(is.null(ncol))ncol=NA    
+  if(is.null(nslice))nslice=NA    
+  
+  
+  bbs.structure[i,1] <- class
+  bbs.structure[i,2] <- length
+  bbs.structure[i,3] <- nrow
+  bbs.structure[i,4] <- ncol
+  bbs.structure[i,5] <- nslice
+  rownames(bbs.structure)[i] <-  names(jdat$bbs)[i] 
+}
+
+# for reference
+View(bbs.structure)
+# kableExtra::kable(bbs.structure) %>% 
+#   kableExtra::kable_minimal()
+```
+
+
 # Step 2: Write JAGS Models
 From here, you can specify JAGS models inside R by interactively creating text files, or you can point to the file in the JAGS model. 
 
-## BBS-only 
-```{r model-grid-bbs-pois}
+## BBS-only Poisson
+Grab only necessary data
+```{r grab-data-bbs}
+w.prop <- tidyr::replace_na(jdat$bbs$w.prop, 0)
+y      <- jdat$bbs$C.route
+G      <- jdat$grid$G
+G.bbs  <- jdat$bbs$G.bbs
+T      <- jdat$grid$T
+R      <- jdat$bbs$R
+area   <- scale(tidyr::replace_na(units::drop_units(jdat$grid$area), 0), 
+                center = FALSE) # not sure why class is array/matrix, need to fix in munging process.
+grid.cov1   <- sample(area/10) #dummy
+```
+
+Specify JAGS model and etc.
+```{r bbs-only-pois}
+params <- c("lambda.grid", "lambda.route", "beta0", "beta1", "N")
+
+# y[r,t] = observed count on route r at time t 
+# lambda.grid[g,t] = expected count in a grid cell, g at time t
+# lambda.route[r,t] = expected count on a route r at time t
+# w.prop[r,g] = % of route r in grid cell g
+# area[g] = m^2 of grid cell g 
+
 mod <- "model{
+# Likelihood
+
+### will speed things up later by splitting up the for loops to avoid redundant calcs
+for(r in 1:R){
+  for(t in 1:T){  
+
+      y[r,t] ~ dpois(lambda.route[r,t])
+      
+    for(g in 1:G){
+
+        lambda.route[r,t] <- sum(w.prop[r,g] * lambda.grid[g,t])
+  
+        log(lambda.grid[g,t]) <-  log(area[g]) + beta0[g] + beta1*grid.cov1[g]
+      
+    } # end G
+    
+  } # end T
+  
+} # end R
+
+
 # Priors
   beta0 ~ dunif(0,100)
   beta1 ~ dunif(0,100)
 
-# Likelihood
-  # y[r,t] = total count on route r at time t 
-  # lambda[g,t] = expected count in a grid cell, g
-  # lambda[r,t] = expected count on a route r
-
-for(r in 1:R){
-  for(t in 1:T){
-  y[r,t] ~ dpois(lambda[r,t])
-
-    for(g in 1:G){
-      lambda[r,t] <- sum across w.prop[r,g] * lambda[g,t]
-      log(lambda[g,t]) <-  log(w.area)
-
 # Derived Parameters
-  
-  
-    
-      } # end G
-    } # end T
-  } # end R
+# N <- sum(y)
   
 }"
 

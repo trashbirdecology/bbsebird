@@ -54,7 +54,8 @@ states <- c("FL", "US-FL", "Florida")
 
 ## Time frames
 ### range of years for subsetting observations
-year.range <- c(2008:lubridate::year(Sys.Date()))
+year.range <- c(2008:2019) # no bbs data for 2020
+# year.range <- c(2008:lubridate::year(Sys.Date()))
 ### range of days of the year for subsetting eBird and BBS data 
 min.yday <- 91  # approximate breeding season day start (day of year)
 max.yday <- 245 # approximate breeding season day end   (day of year)
@@ -62,7 +63,7 @@ max.yday <- 245 # approximate breeding season day end   (day of year)
 
 ```{r specs-directories, echo=TRUE}
 ## Create a shorthand name for the project
-proj.shorthand="fl"
+# proj.shorthand="fl-2008-2019"
 ```
 
 ## BBS Data Specifications
@@ -251,7 +252,7 @@ bbs_spatial <-
     plot.dir=dir.plots,
     overwrite=TRUE
   )
-
+names(bbs_spatial) %>% sort()
 saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 ## View the file with basic bbs stats against the spatial grid
 browseURL(list.files(dir.plots, "bbs_spatial_exploratory", full.names = TRUE))
@@ -288,19 +289,18 @@ ebird_filtered <- filter_ebird_data(
                                     )
 
 ## Zero-fill the eBird Data -------------------------------------------------
-fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
+# fns <- list.files(dir.ebird.out, full.names = TRUE, pattern = "filtered.txt")
 
 # would like to get this functional but auk_zerofill currently requires
 ## VERY specific coltypes and names. not flexible in coltypes...
 # ebird_zf <- auk::auk_zerofill(x=fns[fns %>% stringr::str_detect("obs")],
 #                               sampling_events = fns[fns %>% stringr::str_detect("samp")])
-
 ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.ebird.out)
 
 ## Create the eBird Spatial Layer  -----------------------------------------------------
 ### need to add argument in make_ebird_spatial function to load in file if it exists...
 ### maybe also save to file inside that funciton 
-ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target)
+ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target, grid = grid)
 
 ## Export eBird Spatial Data -------------------------------------------------------------
 saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
@@ -354,7 +354,7 @@ if(exists("yday")) ebird_spatial <- ebird_spatial %>%
   filter(yday >= min.yday & yday <= max.yday)
 
 # Times ---------------------------------------------
-### this is an ugly workaround and can be improved, including putting it into
+### this is an ugly workaround and can be improved, including throwing the processes into
 ### the BBS and eBird munging functions but this is it for now.
 bbs_spatial$starttime=hms::as_hms(as.POSIXct(bbs_spatial$starttime, format="%H%M"))
 bbs_spatial$endtime=hms::as_hms(as.POSIXct(bbs_spatial$endtime, format="%H%M"))
@@ -373,7 +373,7 @@ bbs.sunlight <- suncalc::getSunlightTimes(data=bbs_spatial %>% distinct(date, lo
                                             keep = sunlight.keep)
 
 
-## ebird is so large that I need to split up b/c takes forever.
+## ebird is so large that I need to split up b/c calculating astronomical info takes forever.
 ## i'd like to use kit::funique, but cannot figure out how to do that with >1 columns.
 ### so, am resorting to this method.
 x <- ebird_spatial %>% dplyr::select(date, lat, lon)
@@ -397,15 +397,15 @@ ebird.sunlight <- ebird.sunlight  %>%
 bbs.sunlight <- bbs.sunlight %>%
   dplyr::mutate(across(sunlight.keep, hms::as_hms))
 
-### add sunlight information to spatial data
+### add sunlight information to spatial datasets
 bbs <- left_join(bbs_spatial, bbs.sunlight)
 ebird <- left_join(ebird_spatial, ebird.sunlight)
 ```
 Export all these data to a folder for quick use in JAGS data munging activities.
 ```{r export-munged-data, eval=eval_combo}
 saveRDS(bbs, file=paste0(dir.jags, "bbs.rds"))
-saveRDS(ebird, file=paste0(dir.jags, "ebird.rds"))
 saveRDS(grid, file=paste0(dir.jags, "grid.rds"))
+saveRDS(ebird, file=paste0(dir.jags, "ebird.rds"))
 args.save <- junk_it(args.save, c("bbs","grid","ebird"))
 ```
 
@@ -439,12 +439,6 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
   ### weighted counts by prop route in cell and cell area
   mutate(C.weighted.area = as.numeric(C*proprouteincell/cellarea)) %>% # weighted C per grid area (# per m^2)
   as.data.frame()
-
-## Next, ensure all grid cells are represented each year even when BBS data does not exist (for JAGS)
-bbs.df <- full_join(bbs.df, as.data.frame(grid) %>% dplyr::select(-geometry)) %>% 
-## ensure all years are represented for new grid cells
-          tidyr::complete(year, gridcellid) ## this isn't really filling in the blanks
-
 ```
 
 Create arrays descriving the covariates influencing detection probabilities.
@@ -471,12 +465,12 @@ n.routesperyear <- bbs.df %>% group_by(year) %>%
 n.routesperyear <- n.routesperyear$n # tibbles are annoying in this way..
 ```
 
-Create arrays for BBS count data (dims: rteno by year by grid cell)
+Create arrays for BBS count data
 ```{r prep-bbs-jags-count-arrays}
-### C: array <rteno by year by cell id>
-C.grid       <- reshape2::acast(bbs.df, rteno~year~gridcellid, value.var="C")
-### C.route: C at the route level
+### C.route: C at route level; matrix <rteno by year>
 C.route <- reshape2::acast(bbs.df %>% distinct(rteno, year, C), rteno~year, value.var="C")
+### C: count at route level; array <rteno by year by grid cell id>
+C.grid       <- reshape2::acast(bbs.df, rteno~year~gridcellid, value.var="C")
 ```
 
 Create array for area offsets and weights on the count data. 
