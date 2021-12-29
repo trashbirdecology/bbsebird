@@ -60,7 +60,12 @@ jdat-jar.R
 inst/doc
 
 ## Remove specific examples
-/vignettes/fl-example-111km/
-/vignettes/ny-example-28km/
-vignettes/ny-example-28km/plots/bbs_spatial_exploratory.pdf
-vignettes/ny-example-28km/plots/bbs_spatial_exploratory.pdf
+#### remove data created during vignettes one and two directries down
+vignettes/*/bbs/
+vignettes/*/jags/
+vignettes/*/ebird/
+vignettes/*/*.pdf
+vignettes/*/*/*.pdf
+vignettes/*/*.rds
+vignettes/*/*/*.rds
+
