@@ -61,7 +61,7 @@ inst/doc
 
 ## Remove specific examples
 #### remove data created during vignettes one and two directries down
-vignettes/*/bbs/
+inst/*/bbs/
 vignettes/*/jags/
 vignettes/*/ebird/
 vignettes/*/*.pdf
