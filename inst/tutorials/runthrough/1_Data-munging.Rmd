@@ -184,9 +184,9 @@ If these files already exist, this will load in those files and skip steps 3b an
 fns.spatial <- c("bbs_spatial.rds", "ebird_spatial.rds", "grid.rds")
 if(all(fns.spatial %in% list.files(dir.spatial.out))){
   cat("importing bbs, ebird and grid sf objects.")
-  fns.spatial <-list.files(dir.spatial.out, full.names = TRUE)
-  bbs_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "bbs_spat")])
-  grid <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "grid")])
+  fns.spatial   <- list.files(dir.spatial.out, full.names = TRUE)
+  bbs_spatial   <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "bbs_spat")])
+  grid          <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "grid")])
   ebird_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "ebird_spat")])
   ## If you want to check out the spatial grid wtih some basic BBS stats, go for it:
   browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
@@ -467,10 +467,9 @@ n.routesperyear <- n.routesperyear$n # tibbles are annoying in this way..
 Create arrays for BBS count data (dims: rteno by year by grid cell)
 ```{r prep-bbs-jags-count-arrays}
 ### C: array <rteno by year by cell id>
-C       <- reshape2::acast(bbs.df, rteno~year, value.var="C")
+C.grid       <- reshape2::acast(bbs.df, rteno~year~gridcellid, value.var="C")
 ### C.route: C at the route level
 C.route <- reshape2::acast(bbs.df %>% distinct(rteno, year, C), rteno~year, value.var="C")
-
 ```
 
 Create array for area offsets and weights on the count data. 
@@ -492,13 +491,14 @@ w.area <- scale(as.vector(
     value.var = "cellarea"
   )
 )) # area (units in original df) of grid cell.
+w.area <- units::drop_units(w.area)
 ```
 
 Create indicators for use in JAGS loops
 ```{r prep-bbs-jags-loop-inds}
-R.bbs = dim(C)[1] # <route> number of unique BBS routes with data
-T.bbs = dim(C)[2] # <time> number of years of BBS data
-G.bbs = dim(C)[3] # <site/grid cell> number of unique grid cells sampled by BBS data
+R.bbs = dim(C.route)[1] # <route> number of unique BBS routes with data
+T.bbs = dim(C.route)[2] # <time> number of years of BBS data
+G.bbs = dim(C.route)[3] # <site/grid cell> number of unique grid cells sampled by BBS data
 ```
 
 Specify what to throw into the JAGS list
@@ -510,7 +510,7 @@ names.bbs <-
     # "T",
     "T.bbs", # will likely always equal T, but just in case
     "G.bbs",
-    "C",
+    "C.grid",
     "C.route",
     "id.routessampled",
     "n.routessampled",
@@ -578,7 +578,7 @@ Specify what to throw into the JAGS list
 
 Finally, wrap it all up into a nice little JAGS list.
 ```{r make-ebird-jdat}
-jdat.ebird <- list()
+jdat.ebird <- list(ebird)
 
 args.save <- junk_it(args.save, "jdat.ebird")
 ```
@@ -605,6 +605,7 @@ XY <- grid.df %>% # centroid coordinates of the grid cells
 ```{r make-integrated-indexes}
 years <- min(c(ebird$year, bbs$year), na.rm=TRUE):max(c(ebird$year, bbs$year), na.rm=TRUE)
 T     <- length(years)
+# G     <- length(unique(grid$gridcellid))
 ```
 
 Wrap grid data up into a nice little JAGS list
