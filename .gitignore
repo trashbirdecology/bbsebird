@@ -65,13 +65,7 @@ inst/tutorials/*/bbs/
 inst/tutorials/*/ebird/
 inst/tutorials/*/jags/
 inst/tutorials/*/spatial/
-
-inst/*/jags/
-inst/*/ebird/
-inst/*/*.pdf
-inst/*/*/*.pdf
-inst/*/*/*/*.pdf
-inst/*/*.rds
-inst/*/*/*.rds
-inst/*/*/*/*.rds
+inst/tutorials/*.pdf
+inst/tutorials/*/*.pdf
+inst/tutorials/*/*/*.pdf
 
