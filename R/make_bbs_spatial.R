@@ -259,10 +259,10 @@ if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(RTENO))}
 
     plot(
       bbs_spatial %>%
-        dplyr::filter(!is.na(RTENO)) %>%
+        dplyr::filter(!is.na(RTENO) & !is.na(RouteTotal)) %>%
         dplyr::group_by(gridcellid) %>%
         dplyr::mutate(num_obs = n()) %>%
-        dplyr::summarise(`% obs == 0` = sum(RouteTotal == 0) / n()) %>%
+        dplyr::summarise(`% obs == 0` = sum(RouteTotal == 0, na.rm=TRUE) / n()) %>%
         dplyr::select(`% obs == 0`)
     )
 
