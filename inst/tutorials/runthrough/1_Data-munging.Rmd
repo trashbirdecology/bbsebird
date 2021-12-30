@@ -382,7 +382,8 @@ ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$tim
 ```
 
 If you don't need local sunlight/rise/set times, specify `eval=FALSE` in this chunk. This process takes a while and sometimes crashes when computing on the ebird data. 
-```{r munge-sunlight, eval=TRUE}
+```{r munge-sunlight}
+## eventually--need to move this into the munging phases so we dont have to continue to recalculate it...
 # Sunlight/daylight/moonlight ---------------------------------------------
 ## here, data must have columns lat and lon. I took care of this in
 ## utils.R function `match_col_names()`
@@ -416,6 +417,10 @@ ebird.sunlight <- ebird.sunlight  %>%
 bbs.sunlight <- bbs.sunlight %>%
   dplyr::mutate(across(sunlight.keep, hms::as_hms))
 
+# ### dates are a pain in my ass...fix them before attempting a join. will need to address this above somehwere...this is ridiculous
+# str(bbs_spatial$date); str(bbs.sunlight$date)
+# str(ebird_spatial$date); str(ebird.sunlight$date)
+
 ### add sunlight information to spatial datasets
 bbs <- left_join(bbs_spatial, bbs.sunlight)
 ebird <- left_join(ebird_spatial, ebird.sunlight)
@@ -430,7 +435,7 @@ args.save <- junk_it(args.save, c("bbs","grid","ebird"))
 
 # Step 5: Create Data for Use in JAGS
 Import the munged bbs, ebird and grid sf objects
-```{r import-spatial-bird-data, eval=TRUE}
+```{r import-spatial-bird-data}
 # Create or Load in Post-spatial Munging BBS and eBird Data
 fns <- list.files(dir.jags, full.names = TRUE)
 if(!eval_bbs)   bbs <- readRDS(fns[stringr::str_detect(fns, "bbs.rds")])
@@ -486,10 +491,13 @@ n.routesperyear <- n.routesperyear$n # tibbles are annoying in this way..
 
 Create arrays for BBS count data
 ```{r prep-bbs-jags-count-arrays}
-### C.route: C at route level; matrix <rteno by year>
-C.route <- reshape2::acast(bbs.df %>% distinct(rteno, year, C), rteno~year, value.var="C")
 ### C: count at route level; array <rteno by year by grid cell id>
 C.grid  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
+
+## before creating observations at the route level, ensure the empty data (i.e. RTENO is NA) are gnoe
+bbs.df <- bbs.df %>% filter(!is.na(rteno))
+### C.route: C at route level; matrix <rteno by year>
+C.route <- reshape2::acast(bbs.df %>% distinct(rteno, year, C), rteno~year, value.var="C")
 ```
 
 Create array for area offsets and weights on the count data. 
@@ -605,7 +613,6 @@ jdat.ebird <- list(ebird)
 args.save <- junk_it(args.save, "jdat.ebird")
 ```
 
-
 ## Study Area and Time
 Create some indicators describing the grid for use in JAGS.
 ```{r prep-grid-jags}
@@ -657,7 +664,6 @@ args.save <- junk_it(args.save, "jdat.grid")
 ```
 
 ## Integrated Data for JAGS
-
 ```{r write-jdat}
 jdat <- list(jdat.bbs, jdat.ebird, jdat.grid)
 names(jdat) <- c("bbs", "ebird","grid")
