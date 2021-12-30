@@ -202,7 +202,7 @@ plot(bbs.grid[4])
 ## append the route line geometry
 bbs.grid <- left_join(bbs.grid, route.line.geometry)
 ## add the BBS observations to the BBS spatial object
-bbs_spatial <- full_join(bbs.grid, bbs_obs)
+bbs_spatial <- left_join(bbs.grid, bbs_obs)
 
 
 # if empty cells not desired, will remove them.
