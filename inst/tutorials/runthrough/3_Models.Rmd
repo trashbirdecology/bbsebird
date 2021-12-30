@@ -1,11 +1,13 @@
 ---
 title: "JAGS Models"
-output: html_document
-params: 
-  dir.proj: "`r getwd()`"
+output:
+  pdf_document: default
+params:
+  dir.proj: "getwd()"
+  mod.name: "bbs-grid-level-pois.txt"
 ---
 ```{r setup, include=FALSE}
-rm(list=ls()) # for use in dev
+# rm(list=ls()) # for use in dev
 knitr::opts_chunk$set(echo = FALSE, 
                       message=FALSE, 
                       warning=FALSE,
@@ -22,10 +24,11 @@ The parameter `dir.proj` __must__ be specified in the YAML header.
 
 ```{r set-directories, echo=FALSE}
 ### i;d like to be able to figure out how to evaluate R code from the YAML header but thats for another time. see this SO issue:https://stackoverflow.com/questions/45646135/evaluating-r-code-in-yaml-header
-if(!exists("dir.proj")) dir.proj <- paste0(getwd(),"/")else{dir.proj <- params$dir.proj}
-dir.jags <- paste0(dir.proj, "jags/")
-dir.plots <- paste0(dir.proj, "plots/")
-dir.models <- paste0(dir.jags, "models/")
+if(!exists("dir.proj")) dir.proj <- paste0(getwd(),"")else{dir.proj <- eval(parse(text=params$dir.proj))}
+
+dir.jags <- paste0(dir.proj, "/jags/")
+dir.plots <- paste0(dir.proj, "/plots/")
+dir.models <- paste0(dir.jags, "/models/")
 sapply(c(dir.plots, dir.models), FUN=
          function(x) dir.create(x, showWarnings = FALSE))
 fns <- list.files(dir.jags, full.names = TRUE)
@@ -39,12 +42,9 @@ cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", 
 names(jdat)
 ```
 
-## Munging
-Since we don't have route locations over time, let's just create
-
 ## Explore available data
-If necessary, go ahead and explore the data. 
-```{r data-metadata-tables}
+If desired, go ahead and explore the data. 
+```{r data-metadata-explore, eval=FALSE}
 ### placeholder for creating some tables describing the data. 
 jdat$bbs$C.route %>% head(2)
 jdat$bbs$C %>% head(2)
@@ -83,8 +83,8 @@ for(i in seq_along(jdat$bbs)){
 
 # for reference
 View(bbs.structure)
-# kableExtra::kable(bbs.structure) %>% 
-#   kableExtra::kable_minimal()
+kableExtra::kable(bbs.structure) %>%
+  kableExtra::kable_minimal()
 ```
 
 
@@ -97,7 +97,7 @@ Grab only necessary data
 w.prop <- tidyr::replace_na(jdat$bbs$w.prop, 0)
 y      <- jdat$bbs$C.route
 G      <- jdat$grid$G
-G.bbs  <- jdat$bbs$G.bbs
+G.bbs  <- jdat$bbs$
 T      <- jdat$grid$T
 R      <- jdat$bbs$R
 area   <- scale(tidyr::replace_na(units::drop_units(jdat$grid$area), 0), 
@@ -105,17 +105,41 @@ area   <- scale(tidyr::replace_na(units::drop_units(jdat$grid$area), 0),
 grid.cov1   <- sample(area/10) #dummy
 ```
 
-Specify JAGS model and etc.
-```{r bbs-only-pois}
-params <- c("lambda.grid", "lambda.route", "beta0", "beta1", "N")
+## Make Named Data List for JAGS
+```{r make-jags-list}
+names.jags <- c(
+  "w.prop", 
+  "y", 
+  "G", 
+  # "G.bbs", 
+  "T", 
+  "R", 
+  "area", 
+  "grid.cov1"
+)
+if(any(lapply(names.jags, function(x) is.null(eval(parse(text=paste(x)))))))"at least one element is NULL or empty in `names.jags`"
 
+jags.data <- list()
+for(i in seq_along(names.jags)){
+  jags.data[[i]] <- eval(parse(text=paste(names.jags[i])))
+  # doing this inside loop to prevent issues where data DNE
+  names(jags.data)[[i]] <- names.jags[i] 
+}
+names(jags.data) <- names.jags
+```
+
+
+
+Specify JAGS model and etc.
+```{r write-model}
 # y[r,t] = observed count on route r at time t 
 # lambda.grid[g,t] = expected count in a grid cell, g at time t
 # lambda.route[r,t] = expected count on a route r at time t
 # w.prop[r,g] = % of route r in grid cell g
 # area[g] = m^2 of grid cell g 
 
-mod <- "model{
+mod <- "
+model{
 # Likelihood
 
 ### will speed things up later by splitting up the for loops to avoid redundant calcs
@@ -145,15 +169,10 @@ for(r in 1:R){
 # N <- sum(y)
   
 }"
-
-write.table(mod, file=paste0(dir.models, "bbs-grid-level-pois.txt"))
+## export model
+mod.fn <- paste0(dir.models, params$mod.name) # we want to name it now so we can call in jags functions
+write.table(mod, file=mod.fn)
 ```
-
-```{r export-model.jags}
-
-
-```
-
 
 
 
@@ -163,25 +182,29 @@ write.table(mod, file=paste0(dir.models, "bbs-grid-level-pois.txt"))
 na <- 1000 # number of adaptation iterations
 nb <- 5000 # number of iterations for burnin per chain
 nc <- 3 # number of chains (min for now)
-ncores <- detectCores() - 1 # number of cores to use; keep one free just in case, or not
+ncores <- parallel::detectCores() - 1 # number of cores to use; keep one free just in case, or not
 ni <- 10000 # number of iterations per chain
 nt <- 10 # thinning rate
 ```
 
 ## Initial values
 ```{r set-inits} 
-inits <- function() list()
+inits <- function() list(beta0 = rnorm(1,0,10), beta1 = rnorm(1,0,10) ) 
 ```
 
 ## Parameters monitored
 ```{r set-params} 
-params <- c()
+### must not name `params` b/c will conflict with YAML parameters
+params.monitor <- c("lambda.grid", "lambda.route", "beta0", "beta1", "N")
 ```
 
 
 # Step 4: Computation (Run Model(s))
 ```{r}
-
-
+out <- jagsUI::jags(data  = jags.data, 
+                    model.file = mod.fn,
+                    inits = inits, 
+                    parameters.to.save = params.jags, 
+                    n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb) 
 ```
 

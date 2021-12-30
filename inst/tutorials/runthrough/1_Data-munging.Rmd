@@ -3,9 +3,8 @@ title: "Munge eBird and BBS Data for Integrated Model"
 params: 
   dir.proj: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   plot:     TRUE 
-  table:    TRUE
-  overwrite.jdat: TRUE
   devmode:  TRUE 
+  browse.plots: false
 ---
 
 ```{r setup, include = FALSE}
@@ -62,11 +61,6 @@ min.yday <- 91  # approximate breeding season day start (day of year)
 max.yday <- 245 # approximate breeding season day end   (day of year)
 ```
 
-```{r specs-directories, echo=TRUE}
-## Create a shorthand name for the project
-# proj.shorthand="fl-2008-2019"
-```
-
 ## BBS Data Specifications
 The following specifications are for munging BBS data
 ```{r specs-bbs, echo=FALSE}
@@ -98,7 +92,7 @@ grid.size=1.00 #== 1 dec deg
 ```
 
 ## Directory specifications and naming
-```{r specs-dir-touch}
+```{r specs-dirs}
 ## Where is your original eBird data stored?
 dir.ebird.in <- paste0(params$dir.proj, "ebird")
 ## Where are the BBS route shapefiles stored?
@@ -109,9 +103,6 @@ if(!any(length(list.files(cws.routes.dir))>0)) stop("No files exist `cws.routes.
 
 if(!length(list.files(dir.ebird.in)>0)) stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
 
-```
-
-```{r specs-dir-donottouch}
 ## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name. 
 # dir.proj.out <- paste0(proj.shorthand,"-example-", round(grid.size*111.111), "km/")
 dir.proj.out <- paste0(getwd(),"/")
@@ -143,17 +134,7 @@ sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, di
 
 ```
 
-```{r set-eval-conditions}
-if(params$overwrite.jdat){
-## establish conditions for skipping data munging chunks if data already exists for this example!
- eval_bbs <- dplyr::if_else("bbs.rds" %in% list.files(dir.jags), FALSE, TRUE)
- eval_ebird <- dplyr::if_else("ebird.rds" %in% list.files(dir.jags), FALSE, TRUE)
- eval_grid <- dplyr::if_else("grid.rds" %in% list.files(dir.jags), FALSE, TRUE)
- eval_combo <- if_else(!eval_bbs & !eval_ebird & !eval_grid, FALSE, TRUE)
- }else(eval_bbs <- eval_ebird<-eval_grid<-eval_combo<-TRUE)
-```
-
-```{r specify-junk, eval=TRUE}
+```{r specify-junk}
 # save a list of elements we always want to keep in memory
 # we also distinguish between the base argumensts for use later in making metadata tables describing our jags objects. 
 args.save <- args.save.base <- c("args.save.base", ls()) 
@@ -161,7 +142,7 @@ args.save <- args.save.base <- c("args.save.base", ls())
 
 # Step 2: Make a Spatial Grid
 If the spatial grid R object, `grid.rds`, already exists in `r dir.proj.out`, load it into file. If not, will create a new spatial grid and save to file. 
-```{r make-grid, eval=eval_grid}
+```{r make-grid}
 ## If a grid.rds is saved in project directory, will not run script and instead will load that file into memory
 ## load in that rds.
 if("grid.rds" %in% list.files(dir.spatial.out)) grid <- readRDS(paste0(dir.spatial.out, "/", "grid.rds"))else{
@@ -217,7 +198,7 @@ if(all(fns.spatial %in% list.files(dir.spatial.out))){
   grid          <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "grid")])
   ebird_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "ebird_spat")]) # sometimes this fails because ebird data hates me, so re-run plz
   ## If you want to check out the spatial grid wtih some basic BBS stats, go for it:
-  browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
+  if(params$browse.plots) browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
   }
 ```
 
@@ -333,7 +314,7 @@ args.save <- junk_it(args.save, "ebird_spatial")
 
 ## Step 3d: Basic Tests
 Just double-check the CRS on the spatial files. They all should be the same before we integrate. 
-```{r test-crs, eval=eval_grid}
+```{r test-crs}
 if(!(sf::st_crs(grid)==sf::st_crs(bbs_spatial) & sf::st_crs(ebird_spatial)==sf::st_crs(grid)))stop("Warning. The ebird, bbs, and grid spatial layers are not in same projection and/or CRS.")
 
 if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$gridcellid))))
@@ -341,7 +322,7 @@ if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$grid
 ```
 
 # Step 4: Integrate the BBS and eBird Spatial Data
-To ensure proper integration (or rather, use of all data in JAGS) we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to eachtoher, where appropriate (e.g., bird count, dates).
+To ensure proper integration (or rather, use of all data in JAGS) we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to each other, where appropriate (e.g., bird count, dates).
 ```{r match-colnames}
 ## Force BBS colnames to lowercase.
 names(bbs_spatial) <- tolower(names(bbs_spatial))
@@ -351,10 +332,9 @@ ebird_spatial <- match_col_names(ebird_spatial)
 
 Next, munge the dates, times, julian dates, and days of year for each dataset such that we can properly align on the temporal dimension.
 ```{r munge-dates-times}
-# Handle Dates and Times --------------------------------------------------
 cat("managing dates and times of spatial objects")
 # Dates ---------------------------------------------
-## make julian dates
+### make julian dates
 bbs_spatial$date <- lubridate::as_date(bbs_spatial$date)
 ebird_spatial$date <- lubridate::as_date(ebird_spatial$date)
 ## base date for julian date
@@ -432,268 +412,4 @@ saveRDS(grid, file=paste0(dir.jags, "grid.rds"))
 saveRDS(ebird, file=paste0(dir.jags, "ebird.rds"))
 args.save <- junk_it(args.save, c("bbs","grid","ebird"))
 ```
-
-# Step 5: Create Data for Use in JAGS
-Import the munged bbs, ebird and grid sf objects
-```{r import-spatial-bird-data}
-# Create or Load in Post-spatial Munging BBS and eBird Data
-fns <- list.files(dir.jags, full.names = TRUE)
-if(!eval_bbs)   bbs <- readRDS(fns[stringr::str_detect(fns, "bbs.rds")])
-if(!eval_grid)  grid <- readRDS(fns[stringr::str_detect(fns, "grid.rds")])
-if(!eval_ebird) while(!exists("ebird")) ebird <- readRDS(fns[stringr::str_detect(fns, "ebird.rds")])
-args.save <- junk_it(args.save, c("bbs","grid","ebird"))
-```
-Although the data are ready for use and technically integrate-able, we need to munge the data just a little further.
-
-## BBS Data
-Calculate the scaled means of stop-level information to serve as route-level covariate values.
-```{r prep-bbs-jags-p-arrays, warning=FALSE,message=FALSE}
-require(reshape2)
-## scale/mean of stop-level detection covariates
-bbs.df <- bbs %>% st_drop_geometry() %>%
-  group_by(rteno, year) %>%
-  mutate(avgwind = abs(startwind-endwind)/2) %>%
-  ungroup() %>% 
-  ### scale covariates
-  mutate(
-    wind.z = (avgwind - mean(avgwind, na.rm=TRUE))/sd(avgwind, na.rm=TRUE),
-    noise.z = (noisemean - mean(noisemean, na.rm=TRUE))/sd(noisemean, na.rm=TRUE),
-    car.z = (carmean - mean(carmean, na.rm=TRUE))/sd(carmean, na.rm=TRUE)
-  ) %>%
-  ### weighted counts by prop route in cell and cell area
-  mutate(C.weighted.area = as.numeric(C*proprouteincell/area)) %>% # weighted C per grid area (# per m^2)
-  as.data.frame()
-```
-
-Create arrays descriving the covariates influencing detection probabilities.
-```{r prep-bbs-jags-p-covars}
-### make route-level observation covariate arrays (dims: rteno by year)
-p.cars <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year, value.var = "car.z")
-p.noise <-  acast(bbs.df %>% distinct(rteno, year, noise.z), rteno~year, value.var = "noise.z")
-p.obsfyrbbs <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearbbs), rteno~year, value.var = "obsfirstyearbbs")
-p.obsfyrrteno <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearroute), rteno~year, value.var = "obsfirstyearroute")
-p.wind <-  acast(bbs.df %>% distinct(rteno, year, wind.z), rteno~year, value.var = "wind.z")
-## arrays for trend effects
-doy.bbs <-  acast(bbs.df %>% distinct(rteno, year, yday), rteno~year, value.var = "yday")
-```
-
-Create some indexing on the BBS data for JAGS
-```{r prep-bbs-jags-indexing}
-### unique rtenos sampled
-id.routessampled <- unique(bbs.df$rteno) %>% sort()
-### number of unique routes sampled across the entire dataset
-n.routessampled  <- length(id.routessampled)
-### number of RTENO sampled each year
-n.routesperyear <- bbs.df %>% group_by(year) %>%
-  summarise(n = n_distinct(rteno)) %>% arrange(year) %>% ungroup() 
-n.routesperyear <- n.routesperyear$n # tibbles are annoying in this way..
-```
-
-Create arrays for BBS count data
-```{r prep-bbs-jags-count-arrays}
-### C: count at route level; array <rteno by year by grid cell id>
-C.grid  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
-
-## before creating observations at the route level, ensure the empty data (i.e. RTENO is NA) are gnoe
-bbs.df <- bbs.df %>% filter(!is.na(rteno))
-### C.route: C at route level; matrix <rteno by year>
-C.route <- reshape2::acast(bbs.df %>% distinct(rteno, year, C), rteno~year, value.var="C")
-```
-
-Create array for area offsets and weights on the count data. 
-```{r prep-bbs-jags-area-offsets}
-### w.prop: matrix containing weights for count data (dims: rteno by grid cell)
-### we don't slice by year because we don't have route locations within grids across time.
-w.prop <-
-  acast(
-    bbs.df %>% units::drop_units() %>% distinct(rteno, gridcellid, proprouteincell),
-    rteno ~ gridcellid,
-    value.var = "proprouteincell"
-  ) %>%    # % of rteno in a cell
-  tidyr::replace_na(0)
-
-## w.area: an area offset; vector containing area (m^2) for each grid id (dims: grid cell by 1)
-w.area <- scale(as.vector(
-  reshape2::acast(
-    bbs.df %>% distinct(gridcellid, area),
-    gridcellid ~ .,
-    value.var = "area"
-  )
-)) # area (units in original df) of grid cell.
-```
-
-Create indicators for use in JAGS loops
-```{r prep-bbs-jags-loop-inds}
-R.bbs = dim(C.route)[1] # <route> number of unique BBS routes with data
-T.bbs = dim(C.route)[2] # <time> number of years of BBS data
-```
-
-Specify what to throw into the JAGS list
-```{r specify-vars-bbs-jdat}
-names.bbs <-
-  c(
-    "R.bbs", # number of unique routes across entire dataset
-    "T.bbs", # will likely always equal T, but just in case
-    "C.grid",
-    "C.route",
-    "id.routessampled",
-    "n.routessampled",
-    "n.routesperyear",
-    "w.area",
-    "w.prop",
-    "p.obsfyrbbs",
-    "p.obsfyrrteno",
-    "p.cars",
-    "p.noise",
-    "p.wind",
-    "doy.bbs"
-  )
-```
-
-Finally, wrap it all up into a nice little JAGS list.
-```{r make-bbs-jdat}
-jdat.bbs <- list()
-for(i in seq_along(names.bbs)){
-  jdat.bbs[[i]] <- eval(parse(text=paste(names.bbs[i])))
-  names(jdat.bbs)[[i]] <- names.bbs[i] # doing this inside loop to prevent issues where data DNE
-}
-args.save <- junk_it(args.save, "jdat.bbs")
-```
-
-## eBird Data
-Calculate scaled means of event-level information to serve as covariate values.
-```{r prep-ebird-jags-p-arrays, warning=FALSE,message=FALSE}
-ebird.df <- ebird %>%
-  st_drop_geometry() %>%
-  as.data.frame() %>%
-  distinct() %>% ## not sur why there are d to check this upstream later!!!
-  filter(number_observers < 10) %>% ### some strange number of observers exist... going to limit to 10 observers arbitrarily
-  ### scale covariates
-  mutate(
-    duration_minutes.z = (duration_minutes - mean(duration_minutes, na.rm=TRUE))/sd(duration_minutes, na.rm=TRUE),
-    effort_area.z = (effort_area_ha - mean(effort_area_ha, na.rm=TRUE))/sd(effort_area_ha, na.rm=TRUE),
-    effort_distance_km.z = (effort_distance_km - mean(effort_distance_km, na.rm=TRUE))/sd(effort_distance_km, na.rm=TRUE),
-    number_observers.z = (number_observers - mean(number_observers, na.rm=TRUE))/sd(number_observers, na.rm=TRUE)
-  )
-
-## add the empty grid cells to the ebird data frame
-## a join will eat up too much time/comp capacity so we should just impute rows
-# full_join(ebird.df, as.data.frame(grid) %>% dplyr::select(-geometry))
-missing <- setdiff(ebird.df$gridcellid, grid$gridcellid)
-if(length(missing)!=0) "NEED TO ADD FUNCTION HERE TO IMPUTE THE MISSING CELLS"
-```
-
-Create some indexing on the eBird data for JAGS
-```{r prep-ebird-jags-indexing}
-```
-
-Create arrays for eBird count data (dims: checklist by year by grid cell)
-```{r prep-ebird-jags-count-arrays}
-
-```
-
-Create array for area offsets and weights on the count data. 
-```{r prep-ebird-jags-area-offsets}
-
-```
-
-Create indicators for use in JAGS loops
-```{r prep-ebird-jags-loop-inds}
-
-```
-
-Specify what to throw into the JAGS list
-```{r specify-vars-ebird-jdat}
-```
-
-Finally, wrap it all up into a nice little JAGS list.
-```{r make-ebird-jdat}
-jdat.ebird <- list(ebird)
-
-args.save <- junk_it(args.save, "jdat.ebird")
-```
-
-## Study Area and Time
-Create some indicators describing the grid for use in JAGS.
-```{r prep-grid-jags}
-## create a data frame for indexing off the grid cell
-grid.df <- grid %>%
-  arrange(gridcellid) %>%
-  st_drop_geometry()
-
-### create an index for the grid cells with count data
-gridcellswbbs <- bbs %>% st_drop_geometry() %>% 
-  filter(!is.na(C)) %>% distinct(gridcellid) %>% pull(gridcellid) %>% sort()
-gridcellswebird <- ebird %>% st_drop_geometry() %>% 
-  filter(!is.na(C)) %>% distinct(gridcellid) %>% pull(gridcellid) %>% sort()
-
-gridcellswdata <- unique(c(gridcellswbbs, gridcellswebird))
-
-## grid cell centroid coordinates
-XY <- grid.df %>% # centroid coordinates of the grid cells
-  select(cell.lon.centroid, cell.lat.centroid) %>% as.matrix()
-```
-
-```{r make-integrated-indexes}
-years <- min(c(ebird$year, bbs$year), na.rm=TRUE):max(c(ebird$year, bbs$year), na.rm=TRUE)
-T     <- length(years)
-G     <- length(unique(grid$gridcellid))
-
-## test to see if ebird and bbs have same num years of data. this test needs major improvement.
-if(!length(unique(ebird$year, na.rm=TRUE)!=T))"years of data do not match bbs"
-if(!length(unique(bbs$year, na.rm=TRUE)!=T))"years of data do not match ebird"
-```
-Wrap up relevant data into a nice little JAGS list
-```{r make-grid-jdat}
-### create a list of elements relevant to the study area/grid cells
-jdat.grid <- list(
-  area = grid.df$area,
-  period = years, # min and max years of data in integrated data
-  T = T, # length of total time period (with or wihtout data)
-  coords.gridcells = XY,
-  G = nrow(XY), # integer, number of cells in study area (with or without data)
-  # n.gridcellswdata = length(gridcellswdata), # number of grid cells with any count data (ebird or bbs)
-  # id.gridcellswdata = sort(gridcellswdata),  # vector of grid cell ids with any count data
-  # n.gridcellswbbs = length(gridcellswbbs), # number of grid cells with any count data (ebird or bbs)
-  # id.gridcellswbbs = sort(gridcellswbbs),  # vector of grid cell ids with any count data
-  # n.gridcellswebird = length(gridcellswebird), # number of grid cells with any count data (ebird or bbs)
-  # id.gridcellswebird = sort(gridcellswebird),  # vector of grid cell ids with any count data
-  id.gridcells = sort(grid.df$gridcellid) # identifier for grid cells
-  )
-args.save <- junk_it(args.save, "jdat.grid")
-```
-
-## Integrated Data for JAGS
-```{r write-jdat}
-jdat <- list(jdat.bbs, jdat.ebird, jdat.grid)
-names(jdat) <- c("bbs", "ebird","grid")
-saveRDS(jdat, file=paste0(dir.jags, "jdat.rds"))
-```
-
-
-# Other Shit/Notes
-
-```{r, eval=FALSE}
-plot(grid[2])
-```
-
-```{r max-bbs-obs, eval=FALSE}
-temp <- bbs %>% group_by(gridcellid) %>% summarise(max_C_bbs= max(C, na.rm=TRUE))
-plot(temp["max_C_bbs"], main="Max # birds counted on a single BBS route per grid cell.")
-rm(temp)
-```
-
-```{r max-ebird-obs, eval=FALSE}
-# takes too long
-# temp <- ebird %>% group_by(gridcellid) %>% summarise(max_C_ebird= max(C, na.rm=TRUE))
-# plot(temp["max_C_ebird"], main="Max # birds counted on a single BBS route per grid cell.")
-# rm(temp)
-```
-
-<!-- # Notes -->
-<!-- ## Important 1: access arrays C, coverage, car, noise, wind, ydays, by -->
-<!--   ## Important 1: calling array[nrow, ncol, nslice] -->
-<!--   ## Important 1: e.g., to access the first array element, call `array[,,1]` -->
-<!-- ## Important 2: remember that JAGS uses PRECISION and NOT VARIANCE paramters in distributions -->
-<!--   ## Important 2: e.g., dnorm(0,.001) means precision==0.001 and variance ==1,000!!! -->
 
