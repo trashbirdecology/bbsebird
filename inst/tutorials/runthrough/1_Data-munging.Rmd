@@ -4,6 +4,7 @@ params:
   dir.proj: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   plot:     TRUE 
   table:    TRUE
+  overwrite.jdat: TRUE
   devmode:  TRUE 
 ---
 
@@ -123,13 +124,33 @@ dir.plots <- paste0(dir.proj.out, "plots/")
 sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, dir.plots), FUN=function(x) dir.create(x, showWarnings = FALSE))
 ```
 
-## Set Chunk Evaluation Conditions
-```{r set-eval-conditions, include=FALSE}
+<!-- ## Set Chunk Evaluation Conditions -->
+```{r set-default-eval-conditions}
+# will do this later.
+# if(!exists("params")) params <- list()
+# 
+# names   <- c("overwrite.jdat", 
+#              "eval_bbs",
+#              "eval_ebird",
+#              "eval_grid",
+#              "eval_combo",
+#              ) 
+# logical <- c(TRUE, 
+#              
+#              )
+# 
+# if(is.null(x)) params[[x]] <- TRUE
+
+```
+
+```{r set-eval-conditions}
+if(params$overwrite.jdat){
 ## establish conditions for skipping data munging chunks if data already exists for this example!
  eval_bbs <- dplyr::if_else("bbs.rds" %in% list.files(dir.jags), FALSE, TRUE)
  eval_ebird <- dplyr::if_else("ebird.rds" %in% list.files(dir.jags), FALSE, TRUE)
  eval_grid <- dplyr::if_else("grid.rds" %in% list.files(dir.jags), FALSE, TRUE)
  eval_combo <- if_else(!eval_bbs & !eval_ebird & !eval_grid, FALSE, TRUE)
+ }else(eval_bbs <- eval_ebird<-eval_grid<-eval_combo<-TRUE)
 ```
 
 ```{r specify-junk, eval=TRUE}
@@ -186,7 +207,7 @@ args.save <- junk_it(args.save, "grid")
 # Step 3: Load or Create BBS and eBird Data
 ## Step 3a: Check to see if the munged spatial data files already exist.
 If these files already exist, this will load in those files and skip steps 3b and 3c.
-```{r spatial-files-load, include=FALSE, eval=eval_combo}
+```{r spatial-files-load, include=FALSE}
 ## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
 fns.spatial <- c("bbs_spatial.rds", "ebird_spatial.rds", "grid.rds")
 if(all(fns.spatial %in% list.files(dir.spatial.out))){
@@ -202,7 +223,7 @@ if(all(fns.spatial %in% list.files(dir.spatial.out))){
 
 ## Step 3b: BBS Data Munging
 Depending on the size of the study area, resolution of the grid cells, and whether you've already downloaded the BBS data, this may take a few minutes.
-```{r bbs-munge, eval=eval_bbs}
+```{r bbs-munge}
 # Do not run if bbs_spatial already exists
 if(!exists("bbs_spatial")){
 # Check for existing files ------------------------------------------------
@@ -215,8 +236,9 @@ if("bbs_spatial.rds" %in% tolower(fns.spatial)) bbs_spatial <- readRDS(paste0(di
 #### Original observations data
 if("bbs_orig.rds" %in% tolower(fns)){
   bbs_orig <-
-    readRDS(paste0(dir.bbs.out, "/bbs_orig.rds"))} else{
-      print("grabbing bbs data, this might take 45sec")
+    readRDS(paste0(dir.bbs.out, "/bbs_orig.rds"))
+  } else{
+      print("downloading the bbs data, this might take 45sec")
       bbs_orig <- grab_bbs_data(sb_dir = dir.bbs.out)
       saveRDS(bbs_orig, paste0(dir.bbs.out, "/bbs_orig.rds"))
 }
@@ -234,9 +256,7 @@ if (!"bbs_obs.rds" %in% tolower(fns)) {
 } else{
   bbs_obs <- readRDS(paste0(dir.bbs.out, "/bbs_obs.rds"))
 }
-
-## Make BBS Spatial Layers ----------------------------------------------
-### Create BBS routes spatial layer ----------------------------------------------------------------------
+## Make BBS Spatial Layer ----------------------------------------------
 # munges all routes at first then moves to subsetting to the grid, so have patience
 # takes about a minute for 1-3 states
 cat("Munging the BBS route shapefiles/spatial layer.\nIf `grid` specified, will take a hot minute.\n\n")
@@ -246,13 +266,13 @@ bbs_spatial <-
     cws.routes.dir = cws.routes.dir, #location of the CWS BBS routes shapefiles
     usgs.routes.dir = usgs.routes.dir, #location of the USGS BBS routes shapefiles
     crs.target = crs.target,
-    routes.keep=unique(bbs_obs$RTENO),
+    routes.keep=unique(bbs_obs$RTENO), 
     grid=grid,
     keep.empty.cells =TRUE,
     plot.dir=dir.plots,
     overwrite=TRUE
   )
-names(bbs_spatial) %>% sort()
+
 saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 ## View the file with basic bbs stats against the spatial grid
 browseURL(list.files(dir.plots, "bbs_spatial_exploratory", full.names = TRUE))
@@ -264,7 +284,7 @@ args.save <- junk_it(args.save, "bbs_spatial")
 
 ## Step 3c: eBird Data Munging 
 Due to the size of the eBird data, it may take many many minutes to munge the data. 
-```{r ebird-data, eval=eval_ebird}
+```{r ebird-data}
 # Do not run if bbs_spatial already exists
 if(!exists("ebird_spatial")){
 if (parallel::detectCores() <= 4 |
@@ -322,15 +342,15 @@ if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$grid
 
 # Step 4: Integrate the BBS and eBird Spatial Data
 To ensure proper integration (or rather, use of all data in JAGS) we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to eachtoher, where appropriate (e.g., bird count, dates).
-```{r match-colnames, eval=eval_combo}
+```{r match-colnames}
 ## Force BBS colnames to lowercase.
 names(bbs_spatial) <- tolower(names(bbs_spatial))
-bbs_spatial <- match_col_names(bbs_spatial)
+bbs_spatial   <- match_col_names(bbs_spatial)
 ebird_spatial <- match_col_names(ebird_spatial)
 ```
 
 Next, munge the dates, times, julian dates, and days of year for each dataset such that we can properly align on the temporal dimension.
-```{r munge-dates-times, eval=eval_combo}
+```{r munge-dates-times}
 # Handle Dates and Times --------------------------------------------------
 cat("managing dates and times of spatial objects")
 # Dates ---------------------------------------------
@@ -362,7 +382,7 @@ ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$tim
 ```
 
 If you don't need local sunlight/rise/set times, specify `eval=FALSE` in this chunk. This process takes a while and sometimes crashes when computing on the ebird data. 
-```{r munge-sunlight, eval=eval_combo}
+```{r munge-sunlight, eval=TRUE}
 # Sunlight/daylight/moonlight ---------------------------------------------
 ## here, data must have columns lat and lon. I took care of this in
 ## utils.R function `match_col_names()`
@@ -371,7 +391,6 @@ sunlight.keep <- c("dawn", "solarNoon", "sunrise","sunriseEnd")
 
 bbs.sunlight <- suncalc::getSunlightTimes(data=bbs_spatial %>% distinct(date, lon, lat),
                                             keep = sunlight.keep)
-
 
 ## ebird is so large that I need to split up b/c calculating astronomical info takes forever.
 ## i'd like to use kit::funique, but cannot figure out how to do that with >1 columns.
@@ -401,8 +420,8 @@ bbs.sunlight <- bbs.sunlight %>%
 bbs <- left_join(bbs_spatial, bbs.sunlight)
 ebird <- left_join(ebird_spatial, ebird.sunlight)
 ```
-Export all these data to a folder for quick use in JAGS data munging activities.
-```{r export-munged-data, eval=eval_combo}
+Export all these spatially-referenced data to a folder for quick use in JAGS data munging activities.
+```{r export-munged-data}
 saveRDS(bbs, file=paste0(dir.jags, "bbs.rds"))
 saveRDS(grid, file=paste0(dir.jags, "grid.rds"))
 saveRDS(ebird, file=paste0(dir.jags, "ebird.rds"))
@@ -419,7 +438,7 @@ if(!eval_grid)  grid <- readRDS(fns[stringr::str_detect(fns, "grid.rds")])
 if(!eval_ebird) while(!exists("ebird")) ebird <- readRDS(fns[stringr::str_detect(fns, "ebird.rds")])
 args.save <- junk_it(args.save, c("bbs","grid","ebird"))
 ```
-Although the data are ready for use and technically integratable, we need to munge the data just a little further.
+Although the data are ready for use and technically integrate-able, we need to munge the data just a little further.
 
 ## BBS Data
 Calculate the scaled means of stop-level information to serve as route-level covariate values.
@@ -437,7 +456,7 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
     car.z = (carmean - mean(carmean, na.rm=TRUE))/sd(carmean, na.rm=TRUE)
   ) %>%
   ### weighted counts by prop route in cell and cell area
-  mutate(C.weighted.area = as.numeric(C*proprouteincell/cellarea)) %>% # weighted C per grid area (# per m^2)
+  mutate(C.weighted.area = as.numeric(C*proprouteincell/area)) %>% # weighted C per grid area (# per m^2)
   as.data.frame()
 ```
 
@@ -470,7 +489,7 @@ Create arrays for BBS count data
 ### C.route: C at route level; matrix <rteno by year>
 C.route <- reshape2::acast(bbs.df %>% distinct(rteno, year, C), rteno~year, value.var="C")
 ### C: count at route level; array <rteno by year by grid cell id>
-C.grid       <- reshape2::acast(bbs.df, rteno~year~gridcellid, value.var="C")
+C.grid  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
 ```
 
 Create array for area offsets and weights on the count data. 
@@ -488,9 +507,9 @@ w.prop <-
 ## w.area: an area offset; vector containing area (m^2) for each grid id (dims: grid cell by 1)
 w.area <- scale(as.vector(
   reshape2::acast(
-    bbs.df %>% distinct(gridcellid, cellarea),
+    bbs.df %>% distinct(gridcellid, area),
     gridcellid ~ .,
-    value.var = "cellarea"
+    value.var = "area"
   )
 )) # area (units in original df) of grid cell.
 ```
@@ -553,7 +572,7 @@ ebird.df <- ebird %>%
 ## a join will eat up too much time/comp capacity so we should just impute rows
 # full_join(ebird.df, as.data.frame(grid) %>% dplyr::select(-geometry))
 missing <- setdiff(ebird.df$gridcellid, grid$gridcellid)
-if(length(missing)==0) "NEED TO ADD FUNCTION HERE TO IMPUTE THE MISSING CELLS"
+if(length(missing)!=0) "NEED TO ADD FUNCTION HERE TO IMPUTE THE MISSING CELLS"
 ```
 
 Create some indexing on the eBird data for JAGS
@@ -596,9 +615,12 @@ grid.df <- grid %>%
   st_drop_geometry()
 
 ### create an index for the grid cells with count data
-# gridcellswbbs <- unique(bbs$gridcellid) %>% sort()
-# gridcellswebird <- unique(ebird$gridcellid) %>% sort()
-# gridcellswdata <- unique(c(gridcellswbbs, gridcellswebird))
+gridcellswbbs <- bbs %>% st_drop_geometry() %>% 
+  filter(!is.na(C)) %>% distinct(gridcellid) %>% pull(gridcellid) %>% sort()
+gridcellswebird <- ebird %>% st_drop_geometry() %>% 
+  filter(!is.na(C)) %>% distinct(gridcellid) %>% pull(gridcellid) %>% sort()
+
+gridcellswdata <- unique(c(gridcellswbbs, gridcellswebird))
 
 ## grid cell centroid coordinates
 XY <- grid.df %>% # centroid coordinates of the grid cells
@@ -606,13 +628,15 @@ XY <- grid.df %>% # centroid coordinates of the grid cells
 ```
 
 ```{r make-integrated-indexes}
-# years <- min(c(ebird$year, bbs$year), na.rm=TRUE):max(c(ebird$year, bbs$year), na.rm=TRUE)
-years <- min(bbs$year, na.rm=TRUE):max(bbs$year, na.rm=TRUE) # need to fix this!!
+years <- min(c(ebird$year, bbs$year), na.rm=TRUE):max(c(ebird$year, bbs$year), na.rm=TRUE)
 T     <- length(years)
 G     <- length(unique(grid$gridcellid))
-```
 
-Wrap grid data up into a nice little JAGS list
+## test to see if ebird and bbs have same num years of data. this test needs major improvement.
+if(!length(unique(ebird$year, na.rm=TRUE)!=T))"years of data do not match bbs"
+if(!length(unique(bbs$year, na.rm=TRUE)!=T))"years of data do not match ebird"
+```
+Wrap up relevant data into a nice little JAGS list
 ```{r make-grid-jdat}
 ### create a list of elements relevant to the study area/grid cells
 jdat.grid <- list(
@@ -643,14 +667,21 @@ saveRDS(jdat, file=paste0(dir.jags, "jdat.rds"))
 
 # Other Shit/Notes
 
-```{r}
+```{r, eval=FALSE}
 plot(grid[2])
 ```
 
-```{r}
-temp <- bbs %>% group_by(gridcellid) %>% summarise(max_C_bbs= max(C))
+```{r max-bbs-obs, eval=FALSE}
+temp <- bbs %>% group_by(gridcellid) %>% summarise(max_C_bbs= max(C, na.rm=TRUE))
 plot(temp["max_C_bbs"], main="Max # birds counted on a single BBS route per grid cell.")
 rm(temp)
+```
+
+```{r max-ebird-obs, eval=FALSE}
+# takes too long
+# temp <- ebird %>% group_by(gridcellid) %>% summarise(max_C_ebird= max(C, na.rm=TRUE))
+# plot(temp["max_C_ebird"], main="Max # birds counted on a single BBS route per grid cell.")
+# rm(temp)
 ```
 
 <!-- # Notes -->
