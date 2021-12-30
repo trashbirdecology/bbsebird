@@ -69,3 +69,4 @@ inst/tutorials/*.pdf
 inst/tutorials/*/*.pdf
 inst/tutorials/*/*/*.pdf
 
+inst/tutorials/runthrough/nul
