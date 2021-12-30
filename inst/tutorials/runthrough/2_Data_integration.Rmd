@@ -139,7 +139,7 @@ jdat.bbs <- list()
 for(i in seq_along(names.bbs)){
   jdat.bbs[[i]] <- eval(parse(text=paste(names.bbs[i])))
   names(jdat.bbs)[[i]] <- names.bbs[i] # doing this inside loop to prevent issues where data DNE
-  # jdat.bbs[[i]] <- .trim(jdat.bbs[[i]])
+  jdat.bbs[[i]] <- .trim(jdat.bbs[[i]])
 }
 ```
 
