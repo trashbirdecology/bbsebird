@@ -34,7 +34,7 @@ make_bbs_spatial <- function(bbs.obs,
   # crs.string=sp::CRS(paste0("+init=epsg:", crs.target))
   crs.string = sp::CRS(paste0("+init=epsg:", crs.target))
 
-
+## Import and merge CAN and USA BBS routes -------------
   # LOAD DATA
   ## CWS route shapefiles
   #### Becauset eh shapfile/gdb sent to me is really old, I cant use sf to import and st_ transform. So, I have to import usign sp readOGR, sp::spTransform, and then convert to sf before merign wtih bbs.
@@ -65,21 +65,21 @@ make_bbs_spatial <- function(bbs.obs,
         Route = stringr::str_sub(rteno, start = 3, end = 5)
       ) %>%
       dplyr::rename(RTENO = rteno,
-             RouteName = RTENAME,)
+              RouteName = RTENAME)
     # usgs_routes@data$CountryNum=840
     # usgs_routes@data$StateNum= substr(usgs_routes@data$rteno, 1, 2)
     # usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
-    # usgs_routes@data$RouteName = usgs_routes@data$RTENAME
+    # usgs_routes@data$ = usgs_routes@data$RTENAME
     # usgs_routes@data$RouteLength = usgs_routes@data$rte_length
     # usgs_routes@data <- make.rteno(usgs_routes@data)
   }
   # this is for the layer shared by Dave Z. and Danny L.
   if (usgs.layer == "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020") {
-    # extract RTENO and RouteName
+    # extract RTENO and
     usgs_routes <- usgs_routes %>%
       tidyr::separate(
-        RouteName,
-        into = c("RTENO", "RouteName"),
+        ,
+        into = c("RTENO", ""),
         sep = "_",
         remove = TRUE
       ) %>%
@@ -109,7 +109,6 @@ make_bbs_spatial <- function(bbs.obs,
     usgs_routes <- usgs_routes %>% dplyr::filter(RTENO %in% routes.keep)
   }
 
-
   # merge the CA and USA data
   ## keep just a few of same cols-we can delete this but theyre not too useful.
   keep <-
@@ -119,72 +118,85 @@ make_bbs_spatial <- function(bbs.obs,
     usgs_routes[, tolower(names(usgs_routes)) %in% keep]
 
   ### join CWS and USGS routes
-  bbs_sf <- bind_rows(usgs_routes, cws_routes)
+  bbs_routes <- bind_rows(usgs_routes, cws_routes) %>%
+    ## calculate length of each RTENO (route)
+    dplyr::mutate(StringLength = sf::st_length(.)) %>%
+    # go ahead and remove route name because they dont match the original data
+    dplyr::select(-RouteName)
+
   cat(
       "Number of unique routes in the CWS and USGS merged routes spatial layer: ",
-      length(unique(bbs_sf$RTENO))
+      length(unique(bbs_routes$RTENO))
     )
 
+## Export combined routes layer if no grid is provided...-------------
   # stop here if no grid was provided...
   if (is.null(grid)) {
-    return(bbs_sf)
+    return(bbs_routes)
   }
 
-
-
-  # if grid was provided, overlay and calculate lengths and areas
+## Overlay routes and grid/study area  -------------
+  # match grid projection/crs to target
   grid <- sf::st_transform(grid, crs = crs.string)
-  ## add years to the grid layer
-  grid <- grid %>%
-  tidyr::expand(Year=unique(bbs_obs$Year), gridcellid) %>%
-    full_join(grid) %>%
-    st_as_sf()
+  # expand the grid to include all years and  grid cell ids
+  grid.expanded <- grid %>%
+    ## add years to the grid layer
+    tidyr::expand(Year = unique(bbs_obs$Year), gridcellid)
+  # add these to grid attributes attributes
+  grid.expanded <- full_join(grid, grid.expanded)
 
-
-  ## clip bbs_sf to grid extent
-  # and calculating Route and Segment lengths. May take a minute or three.")
   ## calculate the lengths of Routes and Route Segments within grid cells/ids
   cat(
-    "Clipping BBS routes to grid extent. Takes some hot minutessss for more than 3 states/provinces.\n\n"
+    "BBS routes overlying grid/study area.
+    Takes some many minutes for more than 3 states/provinces.\n\n"
   )
-  cat("Calculating route and segment lengths..\n\n")
 
-  # calculate route lengths
-  bbs_sf_grid <- sf::st_intersection(grid, bbs_sf)
+### Calculate route and segment lengths -----------
+# create line and polygon overlay sof grid and bbs_routes
+lines.bbs.intrsct <-  sf::st_intersection(grid.expanded, bbs_routes) # this produces a sf as LINES with grid cell ids appended as attributes.
 
-  lengths <- bbs_sf_grid %>%
-    ## length of segment within a cell
-    dplyr::mutate(SegmentLength = sf::st_length(.)) %>%
-    dplyr::group_by(RTENO) %>%
-    ## total length of routes
-    dplyr::mutate(RouteLength = sum(SegmentLength)) %>%
-    dplyr::ungroup() %>%
-    dplyr::group_by(gridcellid, RTENO) %>%
+
+# calculate segment lengths inside each grid
+lines.bbs.intrsct2 <- lines.bbs.intrsct %>%
+  # calculate length of route inside a grid cell length
+  dplyr::group_by(RTENO, Year, gridcellid) %>%
+  dplyr::mutate(SegmentLength = sf::st_length(.))
+
+  # calculate total route length
+  dplyr::group_by(RTENO, Year) %>%
+  dplyr::mutate(RouteLength = sf::st_length(.)) %>%
+  ungroup()
+
+
+## create a data frame to append the RTENO geoemtry if you want to plot the route lines later on for some reason..
+route.geometry <- lines.bbs.intrsct %>%
+  dplyr::select(gridcellid, Year, RTENO, RouteLength) %>%
+  mutate(route.geometry=lines.bbs.intrsct$geometry) %>%
+  st_drop_geometry()
+
+### Add line geometry and route lengths to gridded BBS observations---------
+# Append the RTENO geometry/lengths to the grid/bbs overlay
+grid.bbs.intrsct  <-  sf::st_join(grid.expanded, bbs_routes) # this produces a sf as LINES with grid cell ids appended as attributes.
+
+bbs.df <- full_join(grid.bbs.intrsct, route.geometry)
+
+
+bbs_sf.df2 <- bbs.df %>%
+    dplyr::group_by(gridcellid, RTENO, Year) %>%
     ### turn seg length into proportion of the route per cell
     dplyr::mutate(PropRouteInCell = SegmentLength / RouteLength) %>%
     dplyr::ungroup() %>%
-    sf::st_drop_geometry() %>%
-    dplyr::select(-cell.lon.centroid, -cell.lat.centroid, -area, -RouteName)
+    sf::st_drop_geometry() %>% # doing this drops removes it as a line feature
+    dplyr::select( -RouteName)# remove route name: minor issue, but Route Names in route shapefiles do not match the BBS observations data route names.
+  ## Add the BBS observations to the BBS spatial object
+  bbs_sf <- full_join(bbs_sf.df2, bbs_obs)
 
-
-  ## combine bbs routes + area + lengthss
-  cat("Joining BBS routes to grid layer..\n\n")
-  bbs_sf <- grid %>%
-    dplyr::left_join(lengths, by = "gridcellid")
-
-  ### Minor issue, but Route Names in route shapefiles do not match the BBS observations data route names.
-  if ("routename" %in% tolower(names(bbs_obs))) {
-    bbs_obs <-  bbs_obs %>%
-      dplyr::select(-RouteName)
-  }
 
   ## Add the observations tot he spatial layer.
   # append the empty cells if keep.empty.cells is TRUE, or use merge to leave them out.
   # imputes data for each cell where no BBS exists in a year.
-    bbs_spatial <-
-      dplyr::left_join(bbs_sf, bbs_obs, by = "RTENO") %>%
-      # create var with percent route in grid cell
-      dplyr::mutate(PercSegmentInCell = SegmentLength / RouteLength)
+  bbs_spatial <-
+      dplyr::left_join(bbs_sf, bbs_obs)
 
 
   # if empty cells not desired, will remove them.
@@ -226,11 +238,19 @@ make_bbs_spatial <- function(bbs.obs,
                                                     max(TotalSpp)) %>%
         dplyr::select(`max # species detected in single route`)
     )
-    plot(bbs_spatial %>% dplyr::group_by(gridcellid) %>% dplyr::summarise(nRoutesPerCell = dplyr::n_distinct(RTENO)))
-    plot(
+    plot((
       bbs_spatial %>% dplyr::group_by(gridcellid) %>%
+        dplyr::summarise(nRoutesPerCell = dplyr::n_distinct(RTENO))
+    )
+    ["nRoutesPerCell"])
+
+    plot(
+      bbs_spatial %>%
+        dplyr::filter(!is.na(RTENO)) %>%
+        dplyr::group_by(gridcellid) %>%
         dplyr::mutate(num_obs = n()) %>%
-        dplyr::summarise(`% obs == 0` = sum(RouteTotal == 0) / n()) %>% dplyr::select(`% obs == 0`)
+        dplyr::summarise(`% obs == 0` = sum(RouteTotal == 0) / n()) %>%
+        dplyr::select(`% obs == 0`)
     )
 
     if (!is.null(plot.dir)) {
@@ -239,7 +259,8 @@ make_bbs_spatial <- function(bbs.obs,
   }
 
 
-
+  # to be safe.
+  bbs_spatial <- bbs_spatial %>% ungroup()
   return(bbs_spatial)
 
 }
@@ -247,3 +268,4 @@ make_bbs_spatial <- function(bbs.obs,
 
 ## side note for jlb: check out this example on identifying distance between points and nearest line
 # https://gis.stackexchange.com/questions/269746/find-nearest-line-segment-to-each-point-in-r
+  # combo.grid <- grid %>%,%>%  %>%    class()grid
