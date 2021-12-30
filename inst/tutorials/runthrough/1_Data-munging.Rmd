@@ -321,7 +321,7 @@ if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$grid
   warning("Empty grid cells (no ebird or bbs data) are not represented in the bird data.\nShould make sure empty cells are added to bird data.")
 ```
 
-# Step 4: Integrate the BBS and eBird Spatial Data
+# Step 4: Align eBird and BBS Data Further
 To ensure proper integration (or rather, use of all data in JAGS) we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to each other, where appropriate (e.g., bird count, dates).
 ```{r match-colnames}
 ## Force BBS colnames to lowercase.
@@ -362,7 +362,7 @@ ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$tim
 ```
 
 If you don't need local sunlight/rise/set times, specify `eval=FALSE` in this chunk. This process takes a while and sometimes crashes when computing on the ebird data. 
-```{r munge-sunlight}
+```{r munge-sunlight, eval=TRUE}
 ## eventually--need to move this into the munging phases so we dont have to continue to recalculate it...
 # Sunlight/daylight/moonlight ---------------------------------------------
 ## here, data must have columns lat and lon. I took care of this in

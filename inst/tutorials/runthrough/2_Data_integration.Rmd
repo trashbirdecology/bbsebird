@@ -31,7 +31,7 @@ grid <- readRDS(fns[str_detect(fns, "grid.rds")])
 args.save <- junk_it(args.save, c("bbs","grid","ebird"))
 ```
 
-# Step 1: Prep BBS Data
+# Step 2: Prep BBS Data
 ## Handle covariates
 Calculate the scaled means of stop-level information to serve as route-level covariate values.
 ```{r prep-bbs-jags-p-arrays, warning=FALSE,message=FALSE}
@@ -63,23 +63,10 @@ p.wind <-  acast(bbs.df %>% distinct(rteno, year, wind.z), rteno~year, value.var
 doy.bbs <-  acast(bbs.df %>% distinct(rteno, year, yday), rteno~year, value.var = "yday")
 ```
 
-<!-- Create some indexing on the BBS data for potential reference in JAGS.  -->
-```{r prep-bbs-jags-indexing, eval=FALSE}
-## may detlee soon
-# ### unique rtenos sampled
-# id.routessampled <- unique(bbs.df$rteno) %>% sort()
-# ### number of unique routes sampled across the entire dataset
-# n.routessampled  <- length(id.routessampled)
-# ### number of RTENO sampled each year
-# n.routesperyear <- bbs.df %>% group_by(year) %>%
-#   summarise(n = n_distinct(rteno)) %>% arrange(year) %>% ungroup() 
-# n.routesperyear <- n.routesperyear$n # tibbles are annoying in this way..
-```
-
-Create arrays for BBS count data
+Create arrays of BBS count data/
 ```{r prep-bbs-jags-count-arrays}
 ### C: count at route level; array <rteno by year by grid cell id>
-C.grid  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
+# C.grid  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
 ## before creating observations at the route level, ensure the empty data (i.e. RTENO is NA) are gone
 bbs.df.sampled <- bbs.df %>% filter(!is.na(rteno))
 ### C.route: C at route level; matrix <rteno by year>
@@ -92,22 +79,25 @@ Create array for area offsets and weights on the count data.
 ### we don't slice by year because we don't have route locations within grids across time.
 w.prop <-
   acast(
-    bbs.df.sampled %>% units::drop_units() %>% distinct(rteno, gridcellid, proprouteincell),
+    bbs.df %>% units::drop_units() %>% distinct(rteno, gridcellid, proprouteincell),
     rteno ~ gridcellid,
     value.var = "proprouteincell"
   ) %>%    # % of rteno in a cell
   tidyr::replace_na(0)
-# dim(w.prop)
+## Drop the row where rowname==NA
+w.prop <- w.prop[-which(rownames(w.prop)== "NA"),]
 
 ## w.area: an area offset; vector containing area (m^2) for each grid id (dims: grid cell by 1)
 w.area <- scale(as.vector(
   reshape2::acast(
-    bbs.df.sampled %>% distinct(gridcellid, area),
+    bbs.df %>% distinct(gridcellid, area),
     gridcellid ~ .,
     value.var = "area"
   )
-)) # area (units in original df) of grid cell.
-dim()
+)) %>% # area (units in original df) of grid cell.
+as.vector() # yes, we have to do twice and idk why whatever
+
+length(w.area)
 ```
 
 Create indicators for use in JAGS loops
@@ -145,7 +135,7 @@ for(i in seq_along(names.bbs)){
 args.save <- junk_it(args.save, "jdat.bbs")
 ```
 
-## eBird Data
+## Step 3: Prep eBird Data
 Calculate scaled means of event-level information to serve as covariate values.
 ```{r prep-ebird-jags-p-arrays, warning=FALSE,message=FALSE}
 ebird.df <- ebird %>%
@@ -198,7 +188,7 @@ jdat.ebird <- list(ebird)
 args.save <- junk_it(args.save, "jdat.ebird")
 ```
 
-## Study Area and Time
+# Step 3: Prep Grid/Study Area
 Create some indicators describing the grid for use in JAGS.
 ```{r prep-grid-jags}
 ## create a data frame for indexing off the grid cell
@@ -248,11 +238,13 @@ jdat.grid <- list(
 args.save <- junk_it(args.save, "jdat.grid")
 ```
 
-## Integrated Data for JAGS
+# Step 4: Join Data and Export
 ```{r write-jdat}
 jdat <- list(jdat.bbs, jdat.ebird, jdat.grid)
 names(jdat) <- c("bbs", "ebird","grid")
 saveRDS(jdat, file=paste0(dir.jags, "jdat.rds"))
 ```
+
+
 
 
