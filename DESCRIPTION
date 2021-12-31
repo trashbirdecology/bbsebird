@@ -33,10 +33,11 @@ Imports:
     lubridate,
     parallel,
     rnaturalearth,
-    glue
+    glue,
+    purrr,
+    knitr
 Suggests: 
     assertthat,
     learnr,
-    knitr,
     rmarkdown
 VignetteBuilder: knitr

@@ -3,17 +3,12 @@
 #' This function was borrowed from https://gist.githubusercontent.com/brshallo/e963b9dca5e4e1ab12ec6348b135362e/raw/71ad2b7288dc6e4f277f53f00e650d98a8e54aff/source-rmd-chunks.r
 #' @param file Rmarkdown filename to hit up
 #' @param chunk_labels chunk labels to run
-#' @export
 #'
-source_rmd_chunks <- function(file, chunk_labels, skip_plots = TRUE, output_temp = FALSE){
-library(magrittr)
-library(stringr)
-library(readr)
-library(purrr)
-library(glue)
-library(knitr)
+#' @export
 
+source_rmd_chunks <- function(file, chunk_labels, skip_plots = TRUE, output_temp = FALSE){
   temp <- tempfile(fileext=".R")
+
   knitr::purl(file, output = temp)
 
   text <- readr::read_file(temp)
