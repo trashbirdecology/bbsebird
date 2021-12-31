@@ -10,7 +10,7 @@ Use this script to create data for use in JAGS modelling activities.
 
 # Step 1: Setup 
  This chunk sources some redundant chunks in the data-munging r markdown
-```{r source-data-munging}
+```{r setup}
 if(is.null(params$fn.munging)) stop("RMD parameter `params$fn.munging` MUST be specified in YAML header.")
 # rm(list=ls())# for dev
 eval_chunks <- c("libraries", 
@@ -175,7 +175,7 @@ for(i in seq_along(jdat.bbs)){
 View(bbs.structure)
 # kableExtra::kable(bbs.structure) %>%
 #   kableExtra::kable_minimal()
-args.save <- junk_it(args.save, "jdat.bbs", "bbs.structure")
+args.save <- junk_it(args.save, c("jdat.bbs", "bbs.structure"))
 ```
 
 
