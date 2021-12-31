@@ -3,41 +3,56 @@ title: "JAGS Models"
 output:
   pdf_document: default
 params:
-  dir.proj: "getwd()"
+  dir.proj: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   mod.name: "bbs-grid-level-pois.txt"
+  fn.dataint: "2_Data_integration.Rmd"
+  fn.munging: "1_Data-munging.Rmd"
 ---
-```{r setup, include=FALSE}
-# rm(list=ls()) # for use in dev
-knitr::opts_chunk$set(echo = FALSE, 
-                      message=FALSE, 
-                      warning=FALSE,
-                      fig.show = TRUE,
-                      tidy = TRUE)
+Use this script to create data for use in JAGS modelling activities. 
+
+# Step 1: Setup 
+ This chunk sources some redundant chunks in the data-munging r markdown
+```{r setup}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>", 
+  message = TRUE, 
+  echo=FALSE, 
+  warning=FALSE, 
+  fig.path="/plots/", 
+  tidy=TRUE, 
+  include=FALSE
+)
+# rm(list=ls())# for dev
+if(is.null(params$fn.munging)) stop("RMD parameter `params$fn.munging` MUST be specified in YAML header.")
+chunk_labels <- c("libraries", 
+                 "specs-dirs",
+                 "specify-junk"
+                 )
 library(dubcorms)
-library(dplyr)
-library(ggplot2)
-library(rjags)
-library(stringr)
 ```
-# Step 0: Setup
-The parameter `dir.proj` __must__ be specified in the YAML header. 
 
-```{r set-directories, echo=FALSE}
-### i;d like to be able to figure out how to evaluate R code from the YAML header but thats for another time. see this SO issue:https://stackoverflow.com/questions/45646135/evaluating-r-code-in-yaml-header
-if(!exists("dir.proj")) dir.proj <- paste0(getwd(),"")else{dir.proj <- eval(parse(text=params$dir.proj))}
+Source directories and such from data munging RMD
+```{r source-chunks, include=FALSE}
+### for somet reason i cant get this to work by using dubcorms::source_rmd_chunks(). it works when i enter the function but not interactively... stupiddkghsgkjzh ;gkjghk d;j gh
+temp <- tempfile(fileext=".R")
+knitr::purl(params$fn.munging, output = temp)
 
-dir.jags <- paste0(dir.proj, "/jags/")
-dir.plots <- paste0(dir.proj, "/plots/")
-dir.models <- paste0(dir.jags, "/models/")
-sapply(c(dir.plots, dir.models), FUN=
-         function(x) dir.create(x, showWarnings = FALSE))
-fns <- list.files(dir.jags, full.names = TRUE)
+text <- readr::read_file(temp)
+text <- purrr::map(chunk_labels, ~stringr::str_extract(text, glue::glue("(## ----{var})(.|[:space:])*?(?=(## ----)|$)", var = .x))) %>%
+    stringr::str_c(collapse = "\n")
+readr::write_file(text, temp)
+source(temp)
+rm(temp, text)
 ```
+
 # Step 1: Handle Observations Data
 ## Import data
 If data already exists, we can just import it from file. Otherwise, you will need to run through "1-Data_Munging.Rmd", which will take a hot minute.
 ```{r import-jdat, echo=TRUE}
-jdat <- readRDS(fns[stringr::str_detect(fns, "jdat.rds")])
+fn <- list.files(dir.jags, full.names = TRUE, "jdat.rds")
+if(length(fn)>1) "more than one filename in object `fn`. check filenames in dir.jags"
+jdat <- readRDS(fn)
 cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
 names(jdat)
 ```

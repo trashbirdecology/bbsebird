@@ -15,11 +15,13 @@ if(!params$devmode) if(menu(title = cat("Your current working directory is: \n",
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
-  message = TRUE, 
-  echo=FALSE, 
-  warning=FALSE
+  # message = TRUE, 
+  # echo=FALSE, 
+  # warning=FALSE, 
+  fig.path="/plots/", 
+  tidy=TRUE, 
+  include=FALSE
 )
-
 ```
 
 ```{r libraries, echo=TRUE}

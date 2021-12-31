@@ -11,16 +11,41 @@ Use this script to create data for use in JAGS modelling activities.
 # Step 1: Setup 
  This chunk sources some redundant chunks in the data-munging r markdown
 ```{r setup}
-if(is.null(params$fn.munging)) stop("RMD parameter `params$fn.munging` MUST be specified in YAML header.")
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>", 
+  message = TRUE, 
+  echo=FALSE, 
+  warning=FALSE, 
+  fig.path="/plots/", 
+  tidy=TRUE, 
+  include=FALSE
+)
 # rm(list=ls())# for dev
-eval_chunks <- c("libraries", 
+if(is.null(params$fn.munging)) stop("RMD parameter `params$fn.munging` MUST be specified in YAML header.")
+chunk_labels <- c(
+  # "setup",
+  "libraries", 
                  "specs-dirs",
                  "specify-junk"
                  )
-source("C:/Users/jburnett/Documents/GitHub/dubcorms/R/source_rmd_chunks.R")                  
-source_rmd_chunks(params$fn.munging, eval_chunks)
-
+library(dubcorms)
 ```
+
+Source directories and such from data munging RMD
+```{r source-chunks, include=FALSE}
+### for somet reason i cant get this to work by using dubcorms::source_rmd_chunks(). it works when i enter the function but not interactively... stupiddkghsgkjzh ;gkjghk d;j gh
+temp <- tempfile(fileext=".R")
+knitr::purl(params$fn.munging, output = temp)
+
+text <- readr::read_file(temp)
+text <- purrr::map(chunk_labels, ~stringr::str_extract(text, glue::glue("(## ----{var})(.|[:space:])*?(?=(## ----)|$)", var = .x))) %>%
+    stringr::str_c(collapse = "\n")
+readr::write_file(text, temp)
+source(temp)
+rm(temp, text)
+```
+
 Helper functions
 ```{r helper-funs}
 # .trim: function to remove rows where rteno==NA in all relevant objects. 
