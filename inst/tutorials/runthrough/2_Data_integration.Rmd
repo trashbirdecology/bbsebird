@@ -86,8 +86,6 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
   ### weighted counts by prop route in cell and cell area
   mutate(C.weighted.area = as.numeric(C*proprouteincell/area)) %>% # weighted C per grid area (# per m^2)
   as.data.frame()
-
-length(unique(bbs.df$gridcellid))
 ```
 
 Create arrays describing the covariates influencing detection probabilities.
@@ -104,8 +102,6 @@ doy.bbs <-  acast(bbs.df %>% distinct(rteno, year, yday), rteno~year, value.var 
 
 Create arrays of BBS count data/
 ```{r prep-bbs-jags-count-arrays}
-### C: count at route level; array <rteno by year by grid cell id>
-# C.grid  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
 ## before creating observations at the route level, ensure the empty data (i.e. RTENO is NA) are gone
 bbs.df.sampled <- bbs.df %>% filter(!is.na(rteno))
 ### C.route: C at route level; matrix <rteno by year>
@@ -116,13 +112,17 @@ Create array for area offsets and weights on the count data.
 ```{r prep-bbs-jags-area-offsets}
 ### w.prop: matrix containing weights for count data (dims: rteno by grid cell)
 ### we don't slice by year because we don't have route locations within grids across time.
+bbs.temp <-  bbs.df %>% units::drop_units() %>% distinct(rteno, gridcellid, proprouteincell)
+### complete missing grid cells and years.
 w.prop <-
-  acast(
-    bbs.df %>% units::drop_units() %>% distinct(rteno, gridcellid, proprouteincell),
+  acast(bbs.temp,
     rteno ~ gridcellid,
     value.var = "proprouteincell"
   ) %>%    # % of rteno in a cell
   tidyr::replace_na(0)
+### drop the last row in w.prop if RTENO == NA
+if(any(which(rownames(w.prop)=="NA"))) w.prop <- w.prop[-which(rownames(w.prop)=="NA"),]
+
 ## w.area: an area offset; vector containing area (m^2) for each grid id (dims: grid cell by 1)
 w.area <- scale(as.vector(
   reshape2::acast(
@@ -134,11 +134,52 @@ w.area <- scale(as.vector(
 as.vector() # yes, we have to do twice and idk why whatever
 ```
 
+
 Create indicators for use in JAGS loops
 ```{r prep-bbs-jags-loop-inds}
 R.bbs = dim(C.route)[1] # <route> number of unique BBS routes with data
 T.bbs = dim(C.route)[2] # <time> number of years of BBS data
 ```
+
+```{r c.grid-arrays}
+### C: count at route level; array <rteno by year by grid cell id>
+C.grid.temp  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
+### drop all rows where rowname==NA (yes this is a gross workaround and could probbably be improved)
+n.grid <- bbs.df$gridcellid %>% unique() %>% length()
+x=dim(C.grid.temp)[1]
+ind = rownames(C.grid.temp)[x]
+if(is.na(ind) | ind == "NA") C.grid <- C.grid.temp[-x,,]
+rm(C.grid.temp, temp, x)
+```
+
+Create an array comprising the grid and route-level counts WEIGHTED by proportion of a route in a given grid cell.
+```{r c.weighted.arrays}
+## make an array comprising the counts per route WEIGHTED by the proportion of the route inside a given grid cell
+### total count per route and grid in a year
+C.grid.weighted <- array(data=NA, dim=dim(C.grid))
+### total BBS count inside a grid cell across *all routes in that grid* in a year
+C.grid.weighted.sum <- array(data=NA, dim=c(dim(C.grid)[3], T.bbs)) # 
+for(t in 1:ncol(C.grid)){ # time/year
+for(g in 1:dim(C.grid)[3]){ # across grids
+  for(r in 1:nrow(C.grid)){ # across unique routes
+      raw.count <- C.grid[r,t,g]
+      prop <- w.prop[r,g] # w.prop==route by grid
+      C.grid.weighted[r,t,g] <- prop*raw.count # dims route by time by grid
+    } # end route (r) loop
+      gridsum = sum(C.grid.weighted[,t,g], na.rm=TRUE)
+      C.grid.weighted.sum[g,t] <- gridsum # dims grid by time
+  }
+}
+## matrix comprising total obs WEIGHTED counts
+C.route.weighted.sum <- array(data=NA, dim=c(R, T.bbs))
+for(r in 1:R){
+for(t in 1:T.bbs){
+    routesum <- sum(C.grid[r,t,]*w.prop[r,], na.rm=TRUE)
+    C.route.weighted.sum[r,t] <- routesum
+}
+}
+```
+
 
 Specify what to throw into the JAGS list
 ```{r specify-vars-bbs-jdat}
@@ -146,8 +187,11 @@ names.bbs <-
   c(
     "R.bbs", # number of unique routes across entire dataset
     "T.bbs", # will likely always equal T, but just in case
-    # "C.grid",
     "C.route",
+    "C.grid", ## total count per grid
+    "C.grid.weighted", ## C per grid per route weighted by w.prop
+    "C.grid.weighted.sum", ## total C per grid weighted by w.prop
+    "C.route.weighted.sum", ## total weighted C per route by year
     "w.area",
     "w.prop",
     "p.obsfyrbbs",
@@ -166,6 +210,7 @@ for(i in seq_along(names.bbs)){
   names(jdat.bbs)[[i]] <- names.bbs[i] # doing this inside loop to prevent issues where data DNE
   jdat.bbs[[i]] <- .trim(jdat.bbs[[i]])
 }
+
 ```
 
 ## BBS data structures/dims
@@ -197,7 +242,7 @@ for(i in seq_along(jdat.bbs)){
   rownames(bbs.structure)[i] <-  names(jdat.bbs)[i] 
 }
 # for reference
-View(bbs.structure)
+# View(bbs.structure)
 # kableExtra::kable(bbs.structure) %>%
 #   kableExtra::kable_minimal()
 args.save <- junk_it(args.save, c("jdat.bbs", "bbs.structure"))
@@ -281,7 +326,7 @@ XY <- grid.df %>% # centroid coordinates of the grid cells
 
 ```{r make-integrated-indexes}
 years <- min(c(ebird$year, bbs$year), na.rm=TRUE):max(c(ebird$year, bbs$year), na.rm=TRUE)
-T     <- length(years)
+T    <- length(years) # avoid using "T" becuse T==TRUE and hard to redefine
 G     <- length(unique(grid$gridcellid))
 
 ## test to see if ebird and bbs have same num years of data. this test needs major improvement.
@@ -314,7 +359,4 @@ jdat <- list(jdat.bbs, jdat.ebird, jdat.grid)
 names(jdat) <- c("bbs", "ebird","grid")
 saveRDS(jdat, file=paste0(dir.jags, "jdat.rds"))
 ```
-
-
-
 

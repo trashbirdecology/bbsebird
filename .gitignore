@@ -70,3 +70,4 @@ inst/tutorials/*/*.pdf
 inst/tutorials/*/*/*.pdf
 
 inst/tutorials/runthrough/nul
+inst/tutorials/runthrough/model-test-in-R.R

@@ -44,6 +44,7 @@ text <- purrr::map(chunk_labels, ~stringr::str_extract(text, glue::glue("(## ---
 readr::write_file(text, temp)
 source(temp)
 rm(temp, text)
+
 ```
 
 # Step 1: Handle Observations Data
@@ -103,21 +104,55 @@ kableExtra::kable(bbs.structure) %>%
 ```
 
 
+# Step 3: Computational Specifications
+## MCMC
+```{r set-mcmc}
+na <- 1000 # number of adaptation iterations
+nb <- 5000 # number of iterations for burnin per chain
+# nc <- 3 # number of chains (min for now) (defined in call to JAGS as the length of inits list)
+ncores <- parallel::detectCores() - 1 # number of cores to use; keep one free just in case, or not
+ni <- 10000 # number of iterations per chain
+nt <- 10 # thinning rate
+```
+
+## Initial values
+```{r set-inits} 
+inits <- list(
+  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),
+  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),     
+  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10))
+  ) 
+```
+
+## Parameters monitored
+```{r set-params} 
+### must not name `params` b/c will conflict with YAML parameters
+params.monitor <- c("lambda.route", "lambda.grid", "alpha", "beta1", "N")
+```
+
+
 # Step 2: Write JAGS Models
 From here, you can specify JAGS models inside R by interactively creating text files, or you can point to the file in the JAGS model. 
 
 ## BBS-only Poisson
 Grab only necessary data
-```{r grab-data-bbs}
+```{r grab-data}
 w.prop <- tidyr::replace_na(jdat$bbs$w.prop, 0)
 y      <- jdat$bbs$C.route
 G      <- jdat$grid$G
-G.bbs  <- jdat$bbs$
-T      <- jdat$grid$T
+G.bbs  <- jdat$bbs$G.bbs
+T      <- jdat$grid$T 
+if(is.null(T)|length(T)!=1) stop("issues defining `T` in chunk grab-data. must fix.")
 R      <- jdat$bbs$R
 area   <- scale(tidyr::replace_na(units::drop_units(jdat$grid$area), 0), 
-                center = FALSE) # not sure why class is array/matrix, need to fix in munging process.
+                center = FALSE) %>% as.vector() # not sure why class is array/matrix, need to fix in munging process.
 grid.cov1   <- sample(area/10) #dummy
+
+## expected counts at the grid cell level per year (dim: g,t)
+#### aperm flips the dimensions around first then compute colsums to get total C at a g and t
+C.grid.sums <- t(colSums(aperm(C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with aperm and no transpose.
+dim(C.grid.sums)
+
 ```
 
 ## Make Named Data List for JAGS
@@ -125,6 +160,9 @@ grid.cov1   <- sample(area/10) #dummy
 names.jags <- c(
   "w.prop", 
   "y", 
+  "C.grid.sums", # sum of counts in a single grid cell at time t
+  "C.grid.weighted", # weighted count at the route and grid level per year 
+  "C.grid.weighted.sum", # total weighted count at the grid-level per year
   "G", 
   # "G.bbs", 
   "T", 
@@ -143,9 +181,7 @@ for(i in seq_along(names.jags)){
 names(jags.data) <- names.jags
 ```
 
-
-
-Specify JAGS model and etc.
+## Write JAGS model to file
 ```{r write-model}
 # y[r,t] = observed count on route r at time t 
 # lambda.grid[g,t] = expected count in a grid cell, g at time t
@@ -153,22 +189,23 @@ Specify JAGS model and etc.
 # w.prop[r,g] = % of route r in grid cell g
 # area[g] = m^2 of grid cell g 
 
-mod <- "
-model{
+mod <- "model{
 # Likelihood
 
 ### will speed things up later by splitting up the for loops to avoid redundant calcs
 for(r in 1:R){
   for(t in 1:T){  
-
-      y[r,t] ~ dpois(lambda.route[r,t])
-      
     for(g in 1:G){
-
-        lambda.route[r,t] <- sum(w.prop[r,g] * lambda.grid[g,t])
-  
-        log(lambda.grid[g,t]) <-  log(area[g]) + beta0[g] + beta1*grid.cov1[g]
+    
+    ### call vals in R for testing
+    # r=40;t=3;g=13 ## this should have C=11 at this r,t,g
+      y[r,t] ~ dpois(lambda.route[r,t])
+      lambda.route[r,t] <-  C.grid.weighted.sum[g,t] 
+          ## sum across all gs of weighted grid count
       
+      log(C.grid.weighted.sum[g,t]) <- log(area[g]) + alpha[g] + beta1[g]*grid.cov1[g] 
+          ##lambda[g] = expected count for a sample taken in grid cell g
+
     } # end G
     
   } # end T
@@ -177,49 +214,44 @@ for(r in 1:R){
 
 
 # Priors
-  beta0 ~ dunif(0,100)
-  beta1 ~ dunif(0,100)
-
+for(g in 1:G){
+  alpha[g] ~ dunif(0,100)
+  beta1[g] ~ dunif(0,100)
+}
 # Derived Parameters
-# N <- sum(y)
-  
+for(t in 1:T){
+ N[t] <- sum(y[,t])
+}
+
+
+
 }"
 ## export model
 mod.fn <- paste0(dir.models, params$mod.name) # we want to name it now so we can call in jags functions
-write.table(mod, file=mod.fn)
+sink(mod.fn)
+cat(mod)
+sink()
+browseURL(mod.fn) ### open model file if you please
 ```
 
+# Step 4: Make Chains
+```{r make-jm}
+# setup mcmc chain
+jm <- rjags::jags.model(file = mod.fn,
+                        data = jags.data, 
+                        inits = inits,
+                        n.chains = length(inits), 
+                        n.adapt = na)
 
+zm <- coda.samples(jm, 
+                  variable.names = params.monitor,
+                  n.iter = ni, 
+                  n.thin = nt)
 
-# Step 3: Computational Specifications
-## MCMC
-```{r set-mcmc}
-na <- 1000 # number of adaptation iterations
-nb <- 5000 # number of iterations for burnin per chain
-nc <- 3 # number of chains (min for now)
-ncores <- parallel::detectCores() - 1 # number of cores to use; keep one free just in case, or not
-ni <- 10000 # number of iterations per chain
-nt <- 10 # thinning rate
-```
-
-## Initial values
-```{r set-inits} 
-inits <- function() list(beta0 = rnorm(1,0,10), beta1 = rnorm(1,0,10) ) 
-```
-
-## Parameters monitored
-```{r set-params} 
-### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda.grid", "lambda.route", "beta0", "beta1", "N")
-```
-
-
-# Step 4: Computation (Run Model(s))
-```{r}
-out <- jagsUI::jags(data  = jags.data, 
-                    model.file = mod.fn,
-                    inits = inits, 
-                    parameters.to.save = params.jags, 
-                    n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb) 
+# out <- jagsUI::jags(data  = jags.data,
+#                     model.file = mod.fn,
+#                     inits = inits,
+#                     parameters.to.save = params.monitor,
+#                     n.chains = length(inits), n.thin = nt, n.iter = ni, n.burnin = nb)
 ```
 
