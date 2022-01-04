@@ -1,7 +1,8 @@
 ---
 title: "Munge eBird and BBS Data for Integrated Model"
 params: 
-  dir.proj: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
+  proj.shorthand: "fl-ga-example"
+  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   overwrite.jdat: TRUE
   fn.munging: "1_Data-munging.Rmd"
 ---
@@ -34,7 +35,8 @@ library(dubcorms)
 
 Source directories and such from data munging RMD
 ```{r source-chunks, include=FALSE}
-### for somet reason i cant get this to work by using dubcorms::source_rmd_chunks(). it works when i enter the function but not interactively... stupiddkghsgkjzh ;gkjghk d;j gh
+### for somet reason i cant get this to work by using dubcorms::source_rmd_chunks(). 
+### it works when i enter (go inside) the function but not when run interactively.
 temp <- tempfile(fileext=".R")
 knitr::purl(params$fn.munging, output = temp)
 
