@@ -146,6 +146,16 @@ for(t in 1:T.bbs){
 }
 ```
 
+Create a matrix comprising the grid cell identities that a rteno goes through. Since this doesn't change over time, we won't add the time dimension. 
+```{r }
+temp <- bbs.df %>% distinct(gridcellid, rteno) %>% 
+  group_by(rteno) %>% 
+  mutate(grid.order.num = 1:n_distinct(gridcellid)) %>% 
+  ungroup()
+grid.ids.by.year <- acast(temp, rteno~grid.order.num, value.var="gridcellid")
+# dim(ids.grids.by.year) ## dims: [num routes by max-num grids a single rteno goes through]
+rm(temp)
+```
 
 Specify what to throw into the JAGS list
 ```{r specify-vars-bbs-jdat}
@@ -160,6 +170,7 @@ names.bbs <-
     "C.route.weighted.sum", ## total weighted C per route by year
     "w.area",
     "w.prop",
+    "grid.ids.by.year", ## gridcellid identities that a single rteno goes through. colnames unimportant. 
     "p.obsfyrbbs",
     "p.obsfyrrteno",
     "p.cars",
@@ -168,7 +179,7 @@ names.bbs <-
     "doy.bbs"
   )
 ```
-Finally, wrap it all up into a nice little JAGS list.
+Wrap  all the BBS data up into a nice little JAGS list.
 ```{r make-bbs-jdat}
 jdat.bbs <- list()
 for(i in seq_along(names.bbs)){
@@ -176,7 +187,6 @@ for(i in seq_along(names.bbs)){
   names(jdat.bbs)[[i]] <- names.bbs[i] # doing this inside loop to prevent issues where data DNE
   jdat.bbs[[i]] <- .trim(jdat.bbs[[i]])
 }
-
 ```
 
 
