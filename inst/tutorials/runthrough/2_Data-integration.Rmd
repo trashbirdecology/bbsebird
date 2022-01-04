@@ -1,57 +1,26 @@
 ---
 title: "Munge eBird and BBS Data for Integrated Model"
+subtitle: "Use this script to create the single data object called in JAGS models script." 
 params:
-    fn.setup: "0_setup.rmd"
+    fn.munging: "1_data-munging.rmd"
+    fn.setup:   "0_setup.rmd"
 ---
-
-Use this script to create data for use in JAGS modelling activities. 
 
 # Step 1: Setup 
  This chunk sources some redundant chunks in the data-munging r markdown
-```{r setup}
+```{r, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
   message = TRUE, 
   echo=FALSE, 
   warning=FALSE, 
-  fig.path="/plots/", 
   tidy=TRUE, 
   include=FALSE
 )
-```
-
-```{r source-setup-rmd}
-temp=tempfile(fileext=".r")
+temp=tempfile(fileext=".R")
 knitr::purl(params$fn.setup, output=temp)
 source(temp)
-```
-
-Source directories and such from data munging RMD
-```{r source-chunks, include=FALSE}
-### for some reason i cant get this to work by using dubcorms::source_rmd_chunks(). 
-### it works when i enter (go inside) the function but not when run interactively.
-temp <- tempfile(fileext=".R")
-knitr::purl(params$fn.munging, output = temp)
-
-text <- readr::read_file(temp)
-text <- purrr::map(chunk_labels, ~stringr::str_extract(text, glue::glue("(## ----{var})(.|[:space:])*?(?=(## ----)|$)", var = .x))) %>%
-    stringr::str_c(collapse = "\n")
-readr::write_file(text, temp)
-source(temp)
-rm(temp, text)
-```
-
-Helper functions
-```{r helper-funs}
-# .trim: function to remove rows where rteno==NA in all relevant objects. 
-.trim <- function(x){
-  if(is.null(rownames(x))){return(x)} # do nothing if inappropriate for data object
-  .rowtrim <- which(rownames(x)=="NA")
-  if(length(.rowtrim)==0) return(x)
-  x <- x [-.rowtrim,]
-  return(x)
-}
 ```
 
 
@@ -87,8 +56,8 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
 Create arrays describing the covariates influencing detection probabilities.
 ```{r prep-bbs-jags-p-covars}
 ### make route-level observation covariate arrays (dims: rteno by year)
-p.cars <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year, value.var = "car.z")
-p.noise <-  acast(bbs.df %>% distinct(rteno, year, noise.z), rteno~year, value.var = "noise.z")
+p.cars      <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year, value.var = "car.z")
+p.noise     <-  acast(bbs.df %>% distinct(rteno, year, noise.z), rteno~year, value.var = "noise.z")
 p.obsfyrbbs <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearbbs), rteno~year, value.var = "obsfirstyearbbs")
 p.obsfyrrteno <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearroute), rteno~year, value.var = "obsfirstyearroute")
 p.wind <-  acast(bbs.df %>% distinct(rteno, year, wind.z), rteno~year, value.var = "wind.z")

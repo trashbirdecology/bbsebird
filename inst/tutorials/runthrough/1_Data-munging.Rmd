@@ -3,21 +3,16 @@ title: "Munge eBird and BBS Data for Integrated Model"
 params:
   fn.setup: "0_setup.rmd"
 ---
-
-```{r setup, include = FALSE}
+```{r, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
-  # message = TRUE, 
-  # echo=FALSE, 
-  # warning=FALSE, 
-  fig.path="/plots/", 
+  message = TRUE, 
+  echo=FALSE, 
+  warning=FALSE, 
   tidy=TRUE, 
   include=FALSE
 )
-```
-
-```{r source-setup-rmd}
 temp=tempfile(fileext=".r")
 knitr::purl(params$fn.setup, output=temp)
 source(temp)
@@ -81,7 +76,8 @@ if(all(fns.spatial %in% list.files(dir.spatial.out))){
   grid          <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "grid")])
   ebird_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "ebird_spat")]) # sometimes this fails because ebird data hates me, so re-run plz
   ## If you want to check out the spatial grid wtih some basic BBS stats, go for it:
-  if(params$browse.plots) browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
+# if(params$browse.plots) 
+  browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
   }
 ```
 
@@ -244,7 +240,7 @@ ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$tim
 ```
 
 If you don't need local sunlight/rise/set times, specify `eval=FALSE` in this chunk. This process takes a while and sometimes crashes when computing on the ebird data. 
-```{r munge-sunlight, eval=TRUE}
+```{r munge-sunlight, eval=FALSE}
 ## eventually--need to move this into the munging phases so we dont have to continue to recalculate it...
 # Sunlight/daylight/moonlight ---------------------------------------------
 ## here, data must have columns lat and lon. I took care of this in
@@ -279,11 +275,11 @@ ebird.sunlight <- ebird.sunlight  %>%
 bbs.sunlight <- bbs.sunlight %>%
   dplyr::mutate(across(sunlight.keep, hms::as_hms))
 
-# ### dates are a pain in my ass...fix them before attempting a join. will need to address this above somehwere...this is ridiculous
+# ### dates are a pain in my ass...fix them before attempting a join. will need to address this above somehwere...this is ridiculous ---need to just ensure this is working as expected before deleting unused code:
 # str(bbs_spatial$date); str(bbs.sunlight$date)
 # str(ebird_spatial$date); str(ebird.sunlight$date)
 
-### add sunlight information to spatial datasets
+### add sunlight information to spatial data sets
 bbs <- left_join(bbs_spatial, bbs.sunlight)
 ebird <- left_join(ebird_spatial, ebird.sunlight)
 ```
