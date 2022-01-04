@@ -33,7 +33,8 @@ source(temp)
 If data already exists, we can just import it from file. Otherwise, you will need to run through "1-Data_Munging.Rmd", which will take a hot minute.
 ```{r import-jdat, echo=TRUE}
 fn <- list.files(dir.jags, full.names = TRUE, "jdat.rds")
-if(length(fn)>1) "more than one filename in object `fn`. check filenames in dir.jags"
+if(length(fn)>1)  "more than one filename in object `fn`. check filenames in dir.jags"
+if(length(fn)==0) stop("no files named jdat.rds exist in dir.jags" )
 
 jdat <- readRDS(fn)
 cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
@@ -49,6 +50,7 @@ jdat$bbs$C %>% head(2)
 jdat$grid$area # area (m^2) of the grid cell within confines of study area
 jdat$grid$period # years of study
 jdat$grid$T # number of years
+jdat$bbs$grid.ids.by.year %>% head()
 ```
 
 Get the dimensions of the BBS data objects in jdat
@@ -69,8 +71,7 @@ for(i in seq_along(jdat$bbs)){
   if(is.null(nrow))nrow=NA    
   if(is.null(ncol))ncol=NA    
   if(is.null(nslice))nslice=NA    
-  
-  
+
   bbs.structure[i,1] <- class
   bbs.structure[i,2] <- length
   bbs.structure[i,3] <- nrow
@@ -79,14 +80,12 @@ for(i in seq_along(jdat$bbs)){
   rownames(bbs.structure)[i] <-  names(jdat$bbs)[i] 
 }
 
-
 # for reference
 View(bbs.structure)
 # kableExtra::kable(bbs.structure) %>%
 #   kableExtra::kable_minimal()
-
-### whenever we get ebird data settled in we should go write the data structures to file. 
 ```
+
 
 # Step 3: Computational Specifications
 ## MCMC
@@ -101,7 +100,6 @@ nt <- 10 # thinning rate
 
 ## Initial values
 ```{r set-inits} 
-# repeat inits for number of desired chains
 inits <- list(
   list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),
   list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),     
@@ -112,7 +110,7 @@ inits <- list(
 ## Parameters monitored
 ```{r set-params} 
 ### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda.route", "nu", "alpha", "beta1", "N")
+params.monitor <- c("lambda", "nu", "alpha", "beta1", "N")
 ```
 
 # Step 2: Write JAGS Models
@@ -121,7 +119,6 @@ From here, you can specify JAGS models inside R by interactively creating text f
 ## BBS-only Poisson
 Grab only necessary data
 ```{r grab-data}
-w.prop <- tidyr::replace_na(jdat$bbs$w.prop, 0)
 y      <- jdat$bbs$C.route
 G      <- jdat$grid$G
 G.bbs  <- jdat$bbs$G.bbs
@@ -131,19 +128,15 @@ R      <- jdat$bbs$R
 area   <- scale(tidyr::replace_na(units::drop_units(jdat$grid$area), 0), 
                 center = FALSE) %>% as.vector() # not sure why class is array/matrix, need to fix in munging process.
 grid.cov1   <- sample(area/10) #dummy
-C.grid <- jdat$bbs$C.grid # raw counts sliced by grid per route year
 
 ## expected counts at the grid cell level per year (dim: g,t)
 #### aperm flips the dimensions around first then compute colsums to get total C at a g and t
 C.grid.sums <- t(colSums(aperm(jdat$bbs$C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with aperm and no transpose.
 # dim(C.grid.sums)
-
-### alignment of routes and grid
-jdat$bbs$R
-
-
-
-
+w.prop <- tidyr::replace_na(jdat$bbs$w.prop, 0)
+grid.ids.bbs <- jdat$bbs$grid.ids.by.year
+gmax.bbs.index <- rowSums(!is.na(grid.ids.bbs)) # another index used to avoid summing up NA values from grid.ids.bbs and gmax.bbs
+gmax.bbs <- max(gmax.bbs.index, na.rm=TRUE) ## an index used in JAGS to calculate nu (lambda.grid)
 ```
 
 ## Make Named Data List for JAGS
@@ -151,12 +144,13 @@ jdat$bbs$R
 names.jags <- c(
   "w.prop", 
   "y", 
-  # "C.grid", # raw counts sliced by grid cells 
-  # "C.grid.sums", # sum of counts in a single grid cell at time t
+  "gmax.bbs",
+  "gmax.bbs.index",
+  "C.grid.sums", # sum of counts in a single grid cell at time t
   # "C.grid.weighted", # weighted count at the route and grid level per year 
   # "C.grid.weighted.sum", # total weighted count at the grid-level per year
   "G", 
-  # "G.bbs", 
+  "grid.ids.bbs",
   "T", 
   "R", 
   "area", 
@@ -175,32 +169,39 @@ names(jags.data) <- names.jags
 
 ## Write JAGS model to file
 ```{r write-model}
-mod <- "model{
-# Likelihood
+mod <- "model{ 
 for(r in 1:R){
   for(t in 1:T){  
-    for(g in 1:G){ 
+    y[r,t] ~ dpois(lambda[r])
+    lambda[r] <- sum(lambda.temp)
     
-      y[r,t] ~ dpois(lambda[r,t])
+    # JAGS cannot handle summing ragged vectors-> nasty workarounds.
+    for(z in 1:gmax.bbs.index[r]){
+         lambda.temp[z] <- w.prop[r,grid.ids.bbs[r,z]]*nu[grid.ids.bbs[r,z]]
+        # cell.index[z] <- grid.ids.bbs[r,z]
+    
+    for(g in 1:G){ 
+        log(nu[g]) <- area[g] + alpha[g] + beta1[g]*grid.cov1[g]# note log not taken
+      } # end G (grid cell)
       
-      lambda[r,t] <- inprod(w.prop, nu) # w.prop dims=[r,g]; nu dims=[g]
-      
-      log(nu[g]) <- area[g] + alpha + beta1*grid.cov1[g] 
-          # note havent taken log of area -- need to check on previous scaling
-      
-      } # end g
-    } # end T
-  } # end r 
+    } # end z (gmax.bbs.index) 
+    
+  } # end T (year)
+} # end R (routes)
+
 
 # Priors
-alpha ~ dunif(0,10)
-beta1 ~ dunif(0,10)
-
-
-# Derived Parameters
-for(t in 1:T){
- N[t] <- sum(y[,t])
+for(g in 1:G){
+  alpha[g] ~ dunif(0,10)
+  beta1[g] ~ dunif(0,10)
 }
+
+# Derived 
+for(t in 1:T){
+  N[t] <- sum(y[,t])
+}
+
+
 }"
 ## export model
 mod.fn <- paste0(dir.models, params$mod.name) # we want to name it now so we can call in jags functions
@@ -208,10 +209,12 @@ sink(mod.fn)
 cat(mod)
 sink()
 ```
+
+
 # Step 4: Make Chains
 ```{r make-jm}
 # setup mcmc chain
-# browseURL(mod.fn) ### open model file if you please
+browseURL(mod.fn) ### open model file if you please
 jm <- rjags::jags.model(file = mod.fn,
                         data = jags.data, 
                         inits = inits,

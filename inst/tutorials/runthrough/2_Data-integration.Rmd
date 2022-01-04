@@ -276,14 +276,14 @@ if(!length(unique(bbs$year, na.rm=TRUE)!=T))"years of data do not match ebird"
 Wrap up relevant data into a nice little JAGS list
 ```{r make-grid-jdat}
 ### create a list of elements relevant to the study area/grid cells
-jdat.grid <- list(
+jdat.grid <- list(  
   area = grid.df$area,
   period = years, # min and max years of data in integrated data
   T = T, # length of total time period (with or wihtout data)
   coords.gridcells = XY,
   G = nrow(XY), # integer, number of cells in study area (with or without data)
-  # n.gridcellswdata = length(gridcellswdata), # number of grid cells with any count data (ebird or bbs)
   # id.gridcellswdata = sort(gridcellswdata),  # vector of grid cell ids with any count data
+  # n.gridcellswdata = length(gridcellswdata), # number of grid cells with any count data (ebird or bbs)
   # n.gridcellswbbs = length(gridcellswbbs), # number of grid cells with any count data (ebird or bbs)
   # id.gridcellswbbs = sort(gridcellswbbs),  # vector of grid cell ids with any count data
   # n.gridcellswebird = length(gridcellswebird), # number of grid cells with any count data (ebird or bbs)
