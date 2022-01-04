@@ -1,10 +1,10 @@
 ---
 title: "Munge eBird and BBS Data for Integrated Model"
 params: 
-  proj.shorthand: "fl-ga-example"
-  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
+  proj.shorthand: "fl-ga-example" # this should be same as wht's in 1_Data-munging.Rmd
+  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/" # this should be same as wht's in 1_Data-munging.Rmd
   overwrite.jdat: TRUE
-  fn.munging: "1_Data-munging.Rmd"
+  fn.munging: "1_Data-munging.Rmd" # the first data munging script name
 ---
 
 Use this script to create data for use in JAGS modelling activities. 
@@ -24,11 +24,15 @@ knitr::opts_chunk$set(
 )
 # rm(list=ls())# for dev
 if(is.null(params$fn.munging)) stop("RMD parameter `params$fn.munging` MUST be specified in YAML header.")
-chunk_labels <- c(
+chunk_labels <- c( # please don't change chunk call order
   # "setup",
   "libraries", 
-                 "specs-dirs",
-                 "specify-junk"
+  "specs-subsetting",
+  "specs-bbs",
+  "specs-ebird",
+  "specs-geospatial",
+  "specs-dirs",
+  "specify-junk"
                  )
 library(dubcorms)
 ```
