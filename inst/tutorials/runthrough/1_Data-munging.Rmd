@@ -96,6 +96,7 @@ grid.size=1.00 #== 1 dec deg
 
 ## Directory specifications and naming
 ```{r specs-dirs}
+  if(!endsWith(params$dir.proj,"/")) params$dir.proj <- paste0(params$dir.proj,"/")
 ## Where is your original eBird data stored?
 dir.ebird.in <- paste0(params$dir.proj, "ebird")
 ## Where are the BBS route shapefiles stored?
