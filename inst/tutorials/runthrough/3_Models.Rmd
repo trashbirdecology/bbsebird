@@ -3,10 +3,11 @@ title: "JAGS Models"
 output:
   pdf_document: default
 params:
-  dir.proj: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   mod.name: "bbs-grid-level-pois.txt"
-  fn.dataint: "2_Data_integration.Rmd"
+  fn.dataint: "2_Data-integration.Rmd"
   fn.munging: "1_Data-munging.Rmd"
+  proj.shorthand: "fl-ga-example" # this should be same as wht's in 1_Data-munging.Rmd
+  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/" # this should be same as wht's in 1_Data-munging.Rmd
 ---
 Use this script to create data for use in JAGS modelling activities. 
 
@@ -44,7 +45,6 @@ text <- purrr::map(chunk_labels, ~stringr::str_extract(text, glue::glue("(## ---
 readr::write_file(text, temp)
 source(temp)
 rm(temp, text)
-
 ```
 
 # Step 1: Handle Observations Data

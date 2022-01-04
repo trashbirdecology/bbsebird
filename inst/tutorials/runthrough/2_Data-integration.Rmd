@@ -143,7 +143,7 @@ as.vector() # yes, we have to do twice and idk why whatever
 
 Create indicators for use in JAGS loops
 ```{r prep-bbs-jags-loop-inds}
-R.bbs = dim(C.route)[1] # <route> number of unique BBS routes with data
+R = dim(C.route)[1] # <route> number of unique BBS routes with data
 T.bbs = dim(C.route)[2] # <time> number of years of BBS data
 ```
 
@@ -155,7 +155,7 @@ n.grid <- bbs.df$gridcellid %>% unique() %>% length()
 x=dim(C.grid.temp)[1]
 ind = rownames(C.grid.temp)[x]
 if(is.na(ind) | ind == "NA") C.grid <- C.grid.temp[-x,,]
-rm(C.grid.temp, temp, x)
+rm(C.grid.temp, x)
 ```
 
 Create an array comprising the grid and route-level counts WEIGHTED by proportion of a route in a given grid cell.
@@ -191,7 +191,7 @@ Specify what to throw into the JAGS list
 ```{r specify-vars-bbs-jdat}
 names.bbs <-
   c(
-    "R.bbs", # number of unique routes across entire dataset
+    "R", # number of unique routes across entire dataset
     "T.bbs", # will likely always equal T, but just in case
     "C.route",
     "C.grid", ## total count per grid
