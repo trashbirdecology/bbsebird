@@ -130,7 +130,6 @@ inits <- list(
 params.monitor <- c("lambda.route", "lambda.grid", "alpha", "beta1", "N")
 ```
 
-
 # Step 2: Write JAGS Models
 From here, you can specify JAGS models inside R by interactively creating text files, or you can point to the file in the JAGS model. 
 
@@ -183,60 +182,39 @@ names(jags.data) <- names.jags
 
 ## Write JAGS model to file
 ```{r write-model}
-# y[r,t] = observed count on route r at time t 
-# lambda.grid[g,t] = expected count in a grid cell, g at time t
-# lambda.route[r,t] = expected count on a route r at time t
-# w.prop[r,g] = % of route r in grid cell g
-# area[g] = m^2 of grid cell g 
-
 mod <- "model{
-# Likelihood
-
-### will speed things up later by splitting up the for loops to avoid redundant calcs
 for(r in 1:R){
   for(t in 1:T){  
-    for(g in 1:G){
-    
-    ### call vals in R for testing
-    # r=40;t=3;g=13 ## this should have C=11 at this r,t,g
-      y[r,t] ~ dpois(lambda.route[r,t])
-      lambda.route[r,t] <-  C.grid.weighted.sum[g,t] 
-          ## sum across all gs of weighted grid count
-      
-      log(C.grid.weighted.sum[g,t]) <- log(area[g]) + alpha[g] + beta1[g]*grid.cov1[g] 
-          ##lambda[g] = expected count for a sample taken in grid cell g
-
-    } # end G
-    
-  } # end T
-  
-} # end R
-
+      y[r,t] ~ dpois(lambda[r,])
+    for(g in 1:G){ 
+      lambda <- inprod(w.prop, nu) # lambda should have dimensions[r,]
+      log(nu[g]) <- area[g] + alpha[g] + beta1[g]*grid.cov1[g]
+      } # end g
+    } # end T
+  } # end r 
 
 # Priors
 for(g in 1:G){
-  alpha[g] ~ dunif(0,100)
-  beta1[g] ~ dunif(0,100)
+  alpha[g] ~ dunif(0,10)
+  beta1[g] ~ dunif(0,10)
 }
 # Derived Parameters
 for(t in 1:T){
  N[t] <- sum(y[,t])
 }
-
-
-
 }"
 ## export model
 mod.fn <- paste0(dir.models, params$mod.name) # we want to name it now so we can call in jags functions
 sink(mod.fn)
 cat(mod)
 sink()
-browseURL(mod.fn) ### open model file if you please
 ```
+
 
 # Step 4: Make Chains
 ```{r make-jm}
 # setup mcmc chain
+# browseURL(mod.fn) ### open model file if you please
 jm <- rjags::jags.model(file = mod.fn,
                         data = jags.data, 
                         inits = inits,
