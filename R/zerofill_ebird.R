@@ -64,15 +64,13 @@ myList$observations <- convert_cols(myList$observations)
 myList$sampling     <- convert_cols(myList$sampling)
 gc()
 # Full join the filtered sampling events to species observations
-    cat("joining observations and sampling data frames. takes a few minutes...\nyes, le sigh..........")
+    cat("joining observations and sampling data frames. takes a few minutes...\n")
     ebird_zf <- bind_rows(myList$observations, myList$sampling) # seems to be the quickest.
 gc()
     #### full join needs to be double-checked... havent tested to ensure its not missing or falsely capturing non-detection and detection events.
     ### this check should include a review of filter_ebird_data and zerofill-ebird.
     ### next step ensures only one count per checklist is provided. I think this should have been don with auk_unique in filter_ebird_data...
     ### but perhaps the full_join introduces new shit.
-    cat("yes, i'm still working.....\n")
-
     ebird_zf <- auk::auk_unique(ebird_zf)
 
 
