@@ -18,6 +18,7 @@ knitr::opts_chunk$set(
   tidy=TRUE, 
   include=FALSE
 )
+setup.chunk.needed<-FALSE
 temp=tempfile(fileext=".R")
 knitr::purl(params$fn.setup, output=temp)
 source(temp)
@@ -177,42 +178,6 @@ for(i in seq_along(names.bbs)){
 }
 
 ```
-
-## BBS data structures/dims
-Get the dimensions of the BBS data objects in jdat
-```{r data-structure-bbs, eval=FALSE}
-### will turn this into a function probably so we can grab dims of all our data.
-for(i in seq_along(jdat.bbs)){
-  if(i == 1 ){
-    bbs.structure = data.frame(matrix(nrow=max(seq_along(jdat.bbs)), ncol=5)) 
-    colnames(bbs.structure) = c("class", "length", "nrow", "ncol", "nslice") 
-              }
-  dat   <-  jdat.bbs[[i]]
-  class <-  class(dat)[1] # for multiple classifications will just take the first
-  nrow   = dim(dat)[1] #num cols
-  ncol   = dim(dat)[2] #num rows
-  nslice = dim(dat)[3] #num slices
-  # if all those are NA, then its a single value.
-  if(all(is.na(c(nrow, ncol, nslice)))){length=length(dat)}else{length=NA}
-  if(is.null(nrow))nrow=NA    
-  if(is.null(ncol))ncol=NA    
-  if(is.null(nslice))nslice=NA    
-  
-  
-  bbs.structure[i,1] <- class
-  bbs.structure[i,2] <- length
-  bbs.structure[i,3] <- nrow
-  bbs.structure[i,4] <- ncol
-  bbs.structure[i,5] <- nslice
-  rownames(bbs.structure)[i] <-  names(jdat.bbs)[i] 
-}
-# for reference
-# View(bbs.structure)
-# kableExtra::kable(bbs.structure) %>%
-#   kableExtra::kable_minimal()
-args.save <- junk_it(args.save, c("jdat.bbs", "bbs.structure"))
-```
-
 
 
 ## Step 3: Prep eBird Data

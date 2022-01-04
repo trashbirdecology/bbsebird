@@ -12,35 +12,22 @@ See page [45 of the JAGS manual](https://people.stat.sc.edu/hansont/stat740/jags
 
 # Step 1: Setup 
  This chunk sources some redundant chunks in the data-munging r markdown
-```{r setup}
+# Step 1: Setup 
+ This chunk sources some redundant chunks in the data-munging r markdown
+```{r, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
   message = TRUE, 
   echo=FALSE, 
   warning=FALSE, 
-  fig.path="/plots/", 
   tidy=TRUE, 
   include=FALSE
 )
-# Source the setup file containing directory names and project specs
-temp=tempfile(fileext=".r")
+setup.chunk.needed<-FALSE
+temp=tempfile(fileext=".R")
 knitr::purl(params$fn.setup, output=temp)
 source(temp)
-```
-
-Source directories and such from data munging RMD
-```{r source-chunks, include=FALSE}
-### for somet reason i cant get this to work by using dubcorms::source_rmd_chunks(). it works when i enter the function but not interactively... stupiddkghsgkjzh ;gkjghk d;j gh
-temp <- tempfile(fileext=".R")
-knitr::purl(params$fn.munging, output = temp)
-
-text <- readr::read_file(temp)
-text <- purrr::map(chunk_labels, ~stringr::str_extract(text, glue::glue("(## ----{var})(.|[:space:])*?(?=(## ----)|$)", var = .x))) %>%
-    stringr::str_c(collapse = "\n")
-readr::write_file(text, temp)
-source(temp)
-rm(temp, text)
 ```
 
 # Step 1: Handle Observations Data
@@ -49,6 +36,7 @@ If data already exists, we can just import it from file. Otherwise, you will nee
 ```{r import-jdat, echo=TRUE}
 fn <- list.files(dir.jags, full.names = TRUE, "jdat.rds")
 if(length(fn)>1) "more than one filename in object `fn`. check filenames in dir.jags"
+
 jdat <- readRDS(fn)
 cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
 names(jdat)
@@ -63,6 +51,7 @@ jdat$bbs$C %>% head(2)
 jdat$grid$area # area (m^2) of the grid cell within confines of study area
 jdat$grid$period # years of study
 jdat$grid$T # number of years
+
 ```
 
 Get the dimensions of the BBS data objects in jdat
@@ -95,8 +84,8 @@ for(i in seq_along(jdat$bbs)){
 
 # for reference
 View(bbs.structure)
-kableExtra::kable(bbs.structure) %>%
-  kableExtra::kable_minimal()
+# kableExtra::kable(bbs.structure) %>%
+#   kableExtra::kable_minimal()
 ```
 
 
@@ -145,8 +134,8 @@ grid.cov1   <- sample(area/10) #dummy
 
 ## expected counts at the grid cell level per year (dim: g,t)
 #### aperm flips the dimensions around first then compute colsums to get total C at a g and t
-C.grid.sums <- t(colSums(aperm(C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with aperm and no transpose.
-dim(C.grid.sums)
+C.grid.sums <- t(colSums(aperm(jdat$bbs$C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with aperm and no transpose.
+# dim(C.grid.sums)
 
 ```
 
