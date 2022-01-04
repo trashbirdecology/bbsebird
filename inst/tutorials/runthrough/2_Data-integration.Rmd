@@ -187,6 +187,8 @@ for(i in seq_along(names.bbs)){
   names(jdat.bbs)[[i]] <- names.bbs[i] # doing this inside loop to prevent issues where data DNE
   jdat.bbs[[i]] <- .trim(jdat.bbs[[i]])
 }
+
+args.save <- junk_it(args.save, "jdat.bbs")
 ```
 
 
