@@ -49,7 +49,6 @@ jdat$bbs$C %>% head(2)
 jdat$grid$area # area (m^2) of the grid cell within confines of study area
 jdat$grid$period # years of study
 jdat$grid$T # number of years
-
 ```
 
 Get the dimensions of the BBS data objects in jdat
@@ -80,12 +79,14 @@ for(i in seq_along(jdat$bbs)){
   rownames(bbs.structure)[i] <-  names(jdat$bbs)[i] 
 }
 
+
 # for reference
 View(bbs.structure)
 # kableExtra::kable(bbs.structure) %>%
 #   kableExtra::kable_minimal()
-```
 
+### whenever we get ebird data settled in we should go write the data structures to file. 
+```
 
 # Step 3: Computational Specifications
 ## MCMC
@@ -100,6 +101,7 @@ nt <- 10 # thinning rate
 
 ## Initial values
 ```{r set-inits} 
+# repeat inits for number of desired chains
 inits <- list(
   list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),
   list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),     
@@ -110,7 +112,7 @@ inits <- list(
 ## Parameters monitored
 ```{r set-params} 
 ### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda.route", "lambda.grid", "alpha", "beta1", "N")
+params.monitor <- c("lambda.route", "nu", "alpha", "beta1", "N")
 ```
 
 # Step 2: Write JAGS Models
@@ -129,11 +131,18 @@ R      <- jdat$bbs$R
 area   <- scale(tidyr::replace_na(units::drop_units(jdat$grid$area), 0), 
                 center = FALSE) %>% as.vector() # not sure why class is array/matrix, need to fix in munging process.
 grid.cov1   <- sample(area/10) #dummy
+C.grid <- jdat$bbs$C.grid # raw counts sliced by grid per route year
 
 ## expected counts at the grid cell level per year (dim: g,t)
 #### aperm flips the dimensions around first then compute colsums to get total C at a g and t
 C.grid.sums <- t(colSums(aperm(jdat$bbs$C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with aperm and no transpose.
 # dim(C.grid.sums)
+
+### alignment of routes and grid
+jdat$bbs$R
+
+
+
 
 ```
 
@@ -142,9 +151,10 @@ C.grid.sums <- t(colSums(aperm(jdat$bbs$C.grid, c(1,2,3)), na.rm=TRUE))## probba
 names.jags <- c(
   "w.prop", 
   "y", 
-  "C.grid.sums", # sum of counts in a single grid cell at time t
-  "C.grid.weighted", # weighted count at the route and grid level per year 
-  "C.grid.weighted.sum", # total weighted count at the grid-level per year
+  # "C.grid", # raw counts sliced by grid cells 
+  # "C.grid.sums", # sum of counts in a single grid cell at time t
+  # "C.grid.weighted", # weighted count at the route and grid level per year 
+  # "C.grid.weighted.sum", # total weighted count at the grid-level per year
   "G", 
   # "G.bbs", 
   "T", 
@@ -166,21 +176,27 @@ names(jags.data) <- names.jags
 ## Write JAGS model to file
 ```{r write-model}
 mod <- "model{
+# Likelihood
 for(r in 1:R){
   for(t in 1:T){  
-      y[r,t] ~ dpois(lambda[r,])
     for(g in 1:G){ 
-      lambda <- inprod(w.prop, nu) # lambda should have dimensions[r,]
-      log(nu[g]) <- area[g] + alpha[g] + beta1[g]*grid.cov1[g]
+    
+      y[r,t] ~ dpois(lambda[r,t])
+      
+      lambda[r,t] <- inprod(w.prop, nu) # w.prop dims=[r,g]; nu dims=[g]
+      
+      log(nu[g]) <- area[g] + alpha + beta1*grid.cov1[g] 
+          # note havent taken log of area -- need to check on previous scaling
+      
       } # end g
     } # end T
   } # end r 
 
 # Priors
-for(g in 1:G){
-  alpha[g] ~ dunif(0,10)
-  beta1[g] ~ dunif(0,10)
-}
+alpha ~ dunif(0,10)
+beta1 ~ dunif(0,10)
+
+
 # Derived Parameters
 for(t in 1:T){
  N[t] <- sum(y[,t])
@@ -192,8 +208,6 @@ sink(mod.fn)
 cat(mod)
 sink()
 ```
-
-
 # Step 4: Make Chains
 ```{r make-jm}
 # setup mcmc chain
