@@ -1,7 +1,7 @@
 ---
 title: "0_setup"
 params: 
-  proj.shorthand: "fl-example" # name this if you want to create a new proj directory. if you want the current wd use ""
+  proj.shorthand: "fl" # name this if you want to create a new proj directory. if you want the current wd use ""
   dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/" 
   # dir.orig.data: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/dubcorm-data-backup/" 
   overwrite.jdat: TRUE

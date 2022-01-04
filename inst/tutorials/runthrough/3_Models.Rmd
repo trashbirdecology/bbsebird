@@ -12,8 +12,6 @@ See page [45 of the JAGS manual](https://people.stat.sc.edu/hansont/stat740/jags
 
 # Step 1: Setup 
  This chunk sources some redundant chunks in the data-munging r markdown
-# Step 1: Setup 
- This chunk sources some redundant chunks in the data-munging r markdown
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
