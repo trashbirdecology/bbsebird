@@ -1,9 +1,7 @@
 ---
 title: "0_setup"
 params: 
-  fn.setup: "0_setup.Rmd" # the first data munging script name
-  fn.munging: "1_Data-munging.Rmd" # the first data munging script name
-  proj.shorthand: "fl-ga-example" # this should be same as wht's in 1_Data-munging.Rmd
+  proj.shorthand: "fl-example" # name this if you want to create a new proj directory. if you want the current wd use ""
   dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/" # this should be same as wht's in 1_Data-munging.Rmd
   overwrite.jdat: TRUE
   plot:     TRUE 
@@ -11,14 +9,13 @@ params:
   browse.plots: false
 ---
 
-```{r setup, include = FALSE}
+```{r chunks, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
   # message = TRUE, 
   # echo=FALSE, 
   # warning=FALSE, 
-  fig.path="/plots/", 
   tidy=TRUE, 
   include=FALSE
 )
@@ -52,7 +49,8 @@ countries <- c("Canada","USA", "United States", "United States of America") # us
 region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory") 
 
 ## Specify the states/provinces of interest.
-states <- c("FL", "US-FL", "Florida", "GA","US-GA","Georgia")
+states <- c("FL", "US-FL", "Florida")#, 
+            # "GA","US-GA","Georgia")
 
 ## Time frames
 ### range of years for subsetting observations
@@ -107,6 +105,7 @@ if(!any(length(list.files(cws.routes.dir))>0)) stop("No files exist `cws.routes.
 if(!length(list.files(dir.ebird.in)>0)) stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
 
 ## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name. 
+if(!"proj.shorthand" %in% names(params)) params$proj.shorthand <- getwd()
 dir.proj.out <- paste0(params$proj.shorthand,"-example-", round(grid.size*111.111), "km/")
 # dir.proj.out <- paste0(getwd(),"/")
 ## where to store the JAGS objects
@@ -121,25 +120,20 @@ sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, di
 cat("Project directory output files will go to ", dir.proj.out)
 ```
 
-<!-- ## Set Chunk Evaluation Conditions -->
-```{r set-default-eval-conditions}
-# will do this later.
-# if(!exists("params")) params <- list()
-# 
-# names   <- c("overwrite.jdat", 
-#              "eval_bbs",
-#              "eval_ebird",
-#              "eval_grid",
-#              "eval_combo",
-#              ) 
-# logical <- c(TRUE, 
-#              
-#              )
-# 
-# if(is.null(x)) params[[x]] <- TRUE
-
+# Helper Functions
+```{r .trim}
+# .trim: function to remove rows where rteno==NA in all relevant objects. 
+.trim <- function(x){
+  if(is.null(rownames(x))){return(x)} # do nothing if inappropriate for data object
+  .rowtrim <- which(rownames(x)=="NA")
+  if(length(.rowtrim)==0) return(x)
+  x <- x [-.rowtrim,]
+  return(x)
+}
 ```
 
+
+# Specify Junk
 ```{r specify-junk}
 # save a list of elements we always want to keep in memory
 # we also distinguish between the base argumensts for use later in making metadata tables describing our jags objects. 
