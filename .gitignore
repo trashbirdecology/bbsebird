@@ -62,12 +62,18 @@ inst/doc
 ## Remove specific examples
 #### remove data created during vignettes one and two directries down
 inst/tutorials/*/bbs/
+inst/tutorials/*/*/bbs/
 inst/tutorials/*/ebird/
+inst/tutorials/*/*/ebird/
 inst/tutorials/*/jags/
+inst/tutorials/*/*/jags/
 inst/tutorials/*/spatial/
+inst/tutorials/*/*/spatial/
 inst/tutorials/*.pdf
 inst/tutorials/*/*.pdf
 inst/tutorials/*/*/*.pdf
+inst/tutorials/*/*/*/*.pdf
 
 inst/tutorials/runthrough/nul
 inst/tutorials/runthrough/model-test-in-R.R
+inst/tutorials/runthrough/fl-ga-example-example-111km/bbs/50-StopData.zip
