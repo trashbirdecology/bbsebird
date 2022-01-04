@@ -1,18 +1,10 @@
 ---
 title: "Munge eBird and BBS Data for Integrated Model"
-params: 
-  proj.shorthand: "fl-ga-example"
-  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
-  plot:     TRUE 
-  devmode:  TRUE 
-  browse.plots: false
+params:
+  fn.setup: "0_setup.rmd"
 ---
 
 ```{r setup, include = FALSE}
-# if not in development mode (i.e. ur not jessica) this menu will ensure you're in the right working directory!
-if(!params$devmode) if(menu(title = cat("Your current working directory is: \n", getwd(), "\n Is this correct?"), 
-     choices = c("Yes", "No")) == 2)stop("Please change your working directory to desired location before proceeding.\n\n")
-
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>", 
@@ -25,130 +17,13 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r libraries, echo=TRUE}
-## Users may run into issues when installing the following packages:
-devtools::install_github("ropensci/rnaturalearth", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
-unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
-devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
-
-
-library(dubcorms)
-library(bbsAssistant)
-library(ggplot2)
-library(reshape2)
-library(stringr)
-library(dplyr) # we use a LOT of functions from here and often so just load the entire thing
-library(sf) # we use a LOT of functions from here and often so just load the entire thing
-```
-# Step 1: Setup and Specifications
-## Specs for data subsetting
-First, specify the species, regions, and time frames where necessary. Future development suggests include adding everything in the chunk below into the YAML as params. 
-```{r specs-subsetting, echo=TRUE}
-## List out the various uses of the species names and abbreviations, just to be safe. 
-interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") 
-
-## List the countries of interest
-countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps
-
-## Specify the regions you know you definitely don't want to use.
-region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory") 
-
-## Specify the states/provinces of interest.
-states <- c("FL", "US-FL", "Florida", "GA","US-GA","Georgia")
-
-## Time frames
-### range of years for subsetting observations
-year.range <- c(2008:2019) # no bbs data for 2020
-# year.range <- c(2008:lubridate::year(Sys.Date()))
-### range of days of the year for subsetting eBird and BBS data 
-min.yday <- 91  # approximate breeding season day start (day of year)
-max.yday <- 245 # approximate breeding season day end   (day of year)
+```{r source-setup-rmd}
+temp=tempfile(fileext=".r")
+knitr::purl(params$fn.setup, output=temp)
+source(temp)
 ```
 
-## BBS Data Specifications
-The following specifications are for munging BBS data
-```{r specs-bbs, echo=FALSE}
-include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
-```
-
-## eBird Data Specifications
-The following specifications are for munging eBird data
-```{r specs-ebird}
-ebird.protocol <- c("Traveling", "Stationary")
-complete.checklists.only <- TRUE
-max.effort.mins <-  3*60 ## arbitrary
-max.effort.km   <-  5 #This is coarse also, typically 5km or less
-max.num.observers <- 10
-mmyyyy <- "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
-```
-
-
-## Geospatial specifications
-```{r specs-geospatial}
-## specify the target geographic or projected coordinate reference system (CRS)
-crs.target <- 4326 # 4326 == unprojected; 5070=Alberts equal area (used by USGS)
-
-## provide the desired grid cell size (units== decimal degrees)
-### A good estimate for large-scale (>=state) studies in North Am.
-#### is that there are 111.111km in 1 degree latitude or longitude
-#### miles to km: km=1.61*miles
-grid.size=1.00 #== 1 dec deg
-```
-
-## Directory specifications and naming
-```{r specs-dirs}
-if(!endsWith(params$dir.orig.data,"/")) params$dir.orig.data <- paste0(params$dir.orig.data,"/")
-## Where is your original eBird data stored?
-dir.ebird.in <- paste0(params$dir.orig.data, "ebird")
-## Where are the BBS route shapefiles stored?
-cws.routes.dir <- paste0(params$dir.orig.data, "/bbs/route_shapefiles/cws")
-usgs.routes.dir <- paste0(params$dir.orig.data, "/bbs/route_shapefiles/usgs")
-
-if(!any(length(list.files(cws.routes.dir))>0)) stop("No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n")
-
-if(!length(list.files(dir.ebird.in)>0)) stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
-
-## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name. 
-dir.proj.out <- paste0(params$proj.shorthand,"-example-", round(grid.size*111.111), "km/")
-# dir.proj.out <- paste0(getwd(),"/")
-## where to store the JAGS objects
-dir.jags <- paste0(dir.proj.out, "jags/")
-dir.models <- paste0(dir.jags, "models/")  # save model files
-dir.bbs.out <- paste0(dir.proj.out,"bbs/")
-dir.ebird.out <- paste0(dir.proj.out,"ebird/")
-dir.spatial.out <- paste0(dir.proj.out,"spatial/")
-dir.plots <- paste0(dir.proj.out, "plots/")
-sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, dir.models, dir.plots), FUN=function(x) dir.create(x, showWarnings = FALSE))
-
-cat("Project directory output files will go to ", dir.proj.out)
-```
-
-<!-- ## Set Chunk Evaluation Conditions -->
-```{r set-default-eval-conditions}
-# will do this later.
-# if(!exists("params")) params <- list()
-# 
-# names   <- c("overwrite.jdat", 
-#              "eval_bbs",
-#              "eval_ebird",
-#              "eval_grid",
-#              "eval_combo",
-#              ) 
-# logical <- c(TRUE, 
-#              
-#              )
-# 
-# if(is.null(x)) params[[x]] <- TRUE
-
-```
-
-```{r specify-junk}
-# save a list of elements we always want to keep in memory
-# we also distinguish between the base argumensts for use later in making metadata tables describing our jags objects. 
-args.save <- args.save.base <- c("args.save.base", ls()) 
-```
-
-# Step 2: Make a Spatial Grid
+# Step 1: Make a Spatial Grid
 If the spatial grid R object, `grid.rds`, already exists in `r dir.proj.out`, load it into file. If not, will create a new spatial grid and save to file. 
 ```{r make-grid}
 ## If a grid.rds is saved in project directory, will not run script and instead will load that file into memory
@@ -193,8 +68,8 @@ saveRDS(grid, file = paste0(dir.spatial.out, "/", "grid.rds"))
 args.save <- junk_it(args.save, "grid")
 ```
 
-# Step 3: Load or Create BBS and eBird Data
-## Step 3a: Check to see if the munged spatial data files already exist.
+# Step 2: Load or Create BBS and eBird Data
+## Step 2a: Check to see if the munged spatial data files already exist.
 If these files already exist, this will load in those files and skip steps 3b and 3c.
 ```{r spatial-files-load, include=FALSE}
 ## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
@@ -210,7 +85,7 @@ if(all(fns.spatial %in% list.files(dir.spatial.out))){
   }
 ```
 
-## Step 3b: BBS Data Munging
+## Step 2b: BBS Data Munging
 Depending on the size of the study area, resolution of the grid cells, and whether you've already downloaded the BBS data, this may take a few minutes.
 ```{r bbs-munge}
 # Do not run if bbs_spatial already exists
@@ -271,7 +146,7 @@ args.save <- junk_it(args.save, "bbs_spatial")
 }
 ```
 
-## Step 3c: eBird Data Munging 
+## Step 2c: eBird Data Munging 
 Due to the size of the eBird data, it may take many many minutes to munge the data. 
 ```{r ebird-data}
 # Do not run if bbs_spatial already exists
@@ -319,7 +194,7 @@ args.save <- junk_it(args.save, "ebird_spatial")
 }
 ```
 
-## Step 3d: Basic Tests
+## Step 2d: Basic Tests
 Just double-check the CRS on the spatial files. They all should be the same before we integrate. 
 ```{r test-crs}
 if(!(sf::st_crs(grid)==sf::st_crs(bbs_spatial) & sf::st_crs(ebird_spatial)==sf::st_crs(grid)))stop("Warning. The ebird, bbs, and grid spatial layers are not in same projection and/or CRS.")
@@ -328,7 +203,7 @@ if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$grid
   warning("Empty grid cells (no ebird or bbs data) are not represented in the bird data.\nShould make sure empty cells are added to bird data.")
 ```
 
-# Step 4: Align eBird and BBS Data Further
+# Step 3: Align eBird and BBS Data Further
 To ensure proper integration (or rather, use of all data in JAGS) we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to each other, where appropriate (e.g., bird count, dates).
 ```{r match-colnames}
 ## Force BBS colnames to lowercase.

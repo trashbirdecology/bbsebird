@@ -1,10 +1,7 @@
 ---
 title: "Munge eBird and BBS Data for Integrated Model"
-params: 
-  proj.shorthand: "fl-ga-example" # this should be same as wht's in 1_Data-munging.Rmd
-  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/" # this should be same as wht's in 1_Data-munging.Rmd
-  overwrite.jdat: TRUE
-  fn.munging: "1_Data-munging.Rmd" # the first data munging script name
+params:
+    fn.setup: "0_setup.rmd"
 ---
 
 Use this script to create data for use in JAGS modelling activities. 
@@ -22,24 +19,17 @@ knitr::opts_chunk$set(
   tidy=TRUE, 
   include=FALSE
 )
-# rm(list=ls())# for dev
-if(is.null(params$fn.munging)) stop("RMD parameter `params$fn.munging` MUST be specified in YAML header.")
-chunk_labels <- c( # please don't change chunk call order
-  # "setup",
-  "libraries", 
-  "specs-subsetting",
-  "specs-bbs",
-  "specs-ebird",
-  "specs-geospatial",
-  "specs-dirs",
-  "specify-junk"
-                 )
-library(dubcorms)
+```
+
+```{r source-setup-rmd}
+temp=tempfile(fileext=".r")
+knitr::purl(params$fn.setup, output=temp)
+source(temp)
 ```
 
 Source directories and such from data munging RMD
 ```{r source-chunks, include=FALSE}
-### for somet reason i cant get this to work by using dubcorms::source_rmd_chunks(). 
+### for some reason i cant get this to work by using dubcorms::source_rmd_chunks(). 
 ### it works when i enter (go inside) the function but not when run interactively.
 temp <- tempfile(fileext=".R")
 knitr::purl(params$fn.munging, output = temp)
