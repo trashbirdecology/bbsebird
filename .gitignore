@@ -53,10 +53,6 @@ routes.csv
 !/examples/*/.R
 
 *.Rproj
-proj-data-metadata.pdf
-jdat-jar.R
-5b_nmix.R
-5c_nmix_grid_bbs.R
 inst/doc
 
 ## Remove specific examples
@@ -73,7 +69,14 @@ inst/tutorials/*.pdf
 inst/tutorials/*/*.pdf
 inst/tutorials/*/*/*.pdf
 inst/tutorials/*/*/*/*.pdf
-
+inst/tutorials/*.zip
+inst/tutorials/*/*.zip
+inst/tutorials/*/*/*.zip
+inst/tutorials/*/*/*/*.zip
 inst/tutorials/runthrough/nul
 inst/tutorials/runthrough/model-test-in-R.R
-inst/tutorials/runthrough/fl-ga-example-example-111km/bbs/50-StopData.zip
+
+
+proj-data-metadata.pdf
+jdat-jar.R
+
