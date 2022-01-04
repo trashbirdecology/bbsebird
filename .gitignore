@@ -73,6 +73,10 @@ inst/tutorials/*.zip
 inst/tutorials/*/*.zip
 inst/tutorials/*/*/*.zip
 inst/tutorials/*/*/*/*.zip
+inst/tutorials/*.xml
+inst/tutorials/*/*.xml
+inst/tutorials/*/*/*.xml
+inst/tutorials/*/*/*/*.xml
 inst/tutorials/runthrough/nul
 inst/tutorials/runthrough/model-test-in-R.R
 
