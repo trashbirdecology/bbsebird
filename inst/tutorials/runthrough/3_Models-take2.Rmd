@@ -33,11 +33,47 @@ fn <- list.files(dir.jags, full.names = TRUE, "jdat.rds")
 if(length(fn)>1)  "more than one filename in object `fn`. check filenames in dir.jags"
 if(length(fn)==0) stop("no files named jdat.rds exist in dir.jags" )
 
-jdat <- readRDS(fn)
+if(!exists("jdat")) jdat <- readRDS(fn) else(cat("jdat already exists in environment. not overwriting."))
 cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
 names(jdat)
 ```
 
 ```{r metadata-jdat}
-get_data_structure(jdat)
+jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
+# View(jdat.struc)
+# or
+# kableExtra::kable(jdat.struc)
 ```
+
+# Step 2: Computational Specifications
+## MCMC
+```{r set-mcmc}
+na <- 1000 # number of adaptation iterations
+nb <- 5000 # number of iterations for burnin per chain
+# nc <- 3 # number of chains (min for now) (defined in call to JAGS as the length of inits list)
+ncores <- parallel::detectCores() - 1 # number of cores to use; keep one free just in case, or not
+ni <- 10000 # number of iterations per chain
+nt <- 10 # thinning rate
+```
+
+## Initial values
+```{r set-inits} 
+inits <- list(
+  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),
+  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),     
+  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10))
+  ) 
+```
+
+## Parameters monitored
+```{r set-params} 
+### must not name `params` b/c will conflict with YAML parameters
+params.monitor <- c("lambda", "nu", "alpha", "beta1", "N")
+```
+
+
+# Step 3: Specify Model
+
+
+
+# Step 4: Run Model

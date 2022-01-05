@@ -92,6 +92,13 @@ grid.ind.bbs     <- 1:dim(yBBS)[3]
 S.bbs <- length(site.ind.bbs)# num sites
 T.bbs <- length(year.ind.bbs)# num T
 G.bbs <- length(grid.ind.bbs)# num grid cells
+
+
+## for estimating lambda.grid, we need to know
+  ### which grid cells each route runs through, and be
+  ### able to easily index within that route (site) and grid cells (grid)
+
+
 ```
 
 Create matrices for route-grid relationships and descriptors
@@ -111,11 +118,13 @@ Create matrix containing the proportion of routes in each grid cell
 Arrays comprising detection covariate observations
 ```{r bbs-p-covar-arrays}
 p.bbs.wind    <- make_array(bbs, val="wind.z")
-p.bbs.wind    <- make_array(bbs, val="wind.z")
 p.bbs.cars    <- make_array(bbs, val="car.z")
 p.bbs.noise   <- make_array(bbs, val="noise.z")
-p.bbs.yday    <- bbs$yday ### may want to change this to julian date
-p.bbs.jday    <- bbs$julian ### may want to change this to julian date
+p.bbs.yday   <- make_array(bbs, val="yday")
+p.bbs.jday   <- make_array(bbs, val="julian")
+p.bbs.obsfirstyearbbs     <- make_array(bbs, val="obsfirstyearbbs")
+p.bbs.obsfirstyearroute   <- make_array(bbs, val="obsfirstyearroute")
+## need to add conversion of temperatures to C or F in data munging scripts!!!
 ```
 
 Specify desired inputs into JAGS data output for BBS 
