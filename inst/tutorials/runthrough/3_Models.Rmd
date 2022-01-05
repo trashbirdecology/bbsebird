@@ -27,17 +27,33 @@ source(temp)
 
 ```
 
-# Step 1: Import Data
+# Step 1: Data Data
+## Import data
 If data already exists, we can just import it from file. Otherwise, you will need to run through "1-Data_Munging.Rmd", which will take a hot minute.
 ```{r import-jdat, echo=TRUE}
-jdat <- import_jdat()
+jdat <- import_jdat(dir.jags)
 ```
-
+## Browse data
+Check out dimensions and contents of jdat object(imported with `import_jdat()`)
 ```{r metadata-jdat}
 jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
 # View(jdat.struc)
-# or
-# kableExtra::kable(jdat.struc)
+kableExtra::kable(jdat.struc)
+```
+
+## Specify JAGS data
+To avoid warning messages from JAGS, just grab what you need. 
+```{r make-jags.data}
+jdat$prop.site.in.cell.bbs[is.na(jdat$prop.site.in.cell.bbs)] <- 0
+
+jags.data <- list(
+  cov1=cov1, 
+  yBBS.site=jdat$yBBS.site, 
+  T.bbs=jdat$T.bbs, 
+  G.bbs=jdat$G.bbs, 
+  S.bbs=jdat$S.bbs, 
+  w=jdat$prop.site.in.cell.bbs
+)
 ```
 
 # Step 2: Computational Specifications
@@ -51,7 +67,7 @@ ni <- 10000 # number of iterations per chain
 nt <- 10 # thinning rate
 ```
 
-## Initial values
+## Set initial values
 ```{r set-inits} 
 inits <- list(
   list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),
@@ -63,11 +79,10 @@ inits <- list(
 ## Parameters monitored
 ```{r set-params} 
 ### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda", "nu",  "b1", "N")
+params.monitor <- c("lambda", "nu",  "b1", "N", "alpha")
 ```
 
 # Step 3: Specify Model
-<!-- model{ -->
 ```{r}
 cov1 <- rnorm(jdat$G.bbs,0,1)
 mod <- "model{
@@ -102,20 +117,7 @@ cat(mod)
 sink()
 ```
 
-```{r jdat}
-jdat$prop.site.in.cell.bbs[is.na(jdat$prop.site.in.cell.bbs)] <- 0
-
-jags.data <- list(
-  cov1=cov1, 
-  yBBS.site=jdat$yBBS.site, 
-  T.bbs=jdat$T.bbs, 
-  G.bbs=jdat$G.bbs, 
-  S.bbs=jdat$S.bbs, 
-  w=jdat$prop.site.in.cell.bbs
-)
-```
-
-# Step 4: Make Chains
+# Step 4: Run JAGS
 ```{r make-jm}
 # browseURL(mod.fn) ### open model file if you please
 out <- jagsUI::jags(data  = jags.data,
@@ -126,4 +128,7 @@ out <- jagsUI::jags(data  = jags.data,
                     n.thin = nt, n.iter = ni, n.burnin = nb)
 ```
 
+## Save outputs
+
+# Step 5: Celebrate
 

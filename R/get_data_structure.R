@@ -8,6 +8,7 @@ for(i in seq_along(list)){
     output = matrix(nrow=max(seq_along(list)), ncol=5)
     colnames(output) = c("class", "length", "nrow", "ncol", "nslice")
   }
+
   temp   <-  list[[i]]
   if(is.factor(temp)) temp <- as.character(temp)
   class  <-  class(temp)[1] # for multiple classifications will just take the first
