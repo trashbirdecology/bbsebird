@@ -2,9 +2,9 @@
 % Please edit documentation in R/get_data_structure.R
 \name{get_data_structure}
 \alias{get_data_structure}
-\title{Get lista Structure of JAGS lista Inputs}
+\title{Get Data Structure of JAGS List Inputs}
 \usage{
-get_data_structure(list, filename = NULL)
+get_data_structure(list)
 }
 \arguments{
 \item{list}{A list of named objects.}
@@ -12,5 +12,5 @@ get_data_structure(list, filename = NULL)
 \item{filename}{If specified saves the resulting metadata table to file as .csv}
 }
 \description{
-Get lista Structure of JAGS lista Inputs
+Get Data Structure of JAGS List Inputs
 }

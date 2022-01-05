@@ -1,0 +1,43 @@
+---
+title: "JAGS Models"
+output:
+  pdf_document: default
+params:
+  mod.name: "bbs-grid-level-pois.txt"
+  fn.setup: "0_setup.rmd"
+---
+Use this script to create data for use in JAGS modelling activities. See page [45 of the JAGS manual](https://people.stat.sc.edu/hansont/stat740/jags_user_manual.pdf) for common JAGS functions. 
+
+# Step 0: Setup 
+ This chunk sources some redundant chunks in the data-munging r markdown
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>", 
+  message = TRUE, 
+  echo=FALSE, 
+  warning=FALSE, 
+  tidy=TRUE, 
+  include=FALSE
+)
+setup.chunk.needed<-FALSE
+temp=tempfile(fileext=".R")
+knitr::purl(params$fn.setup, output=temp)
+source(temp)
+```
+
+# Step 1: Import Data
+If data already exists, we can just import it from file. Otherwise, you will need to run through "1-Data_Munging.Rmd", which will take a hot minute.
+```{r import-jdat, echo=TRUE}
+fn <- list.files(dir.jags, full.names = TRUE, "jdat.rds")
+if(length(fn)>1)  "more than one filename in object `fn`. check filenames in dir.jags"
+if(length(fn)==0) stop("no files named jdat.rds exist in dir.jags" )
+
+jdat <- readRDS(fn)
+cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
+names(jdat)
+```
+
+```{r metadata-jdat}
+get_data_structure(jdat)
+```
