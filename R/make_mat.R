@@ -8,7 +8,7 @@
 
 make_mat <- function(dat, row="rteno", col="gridcellid", val) {
   
-  names <- names(dat)
+  # names <- names(dat)
   ## will make row and col NULL and then add a thing for when they are NULL for ebird and bbs 
   # e.g. if(is.null(row) & "rteno" %in% names) row <- "rteno"
   
@@ -16,7 +16,7 @@ make_mat <- function(dat, row="rteno", col="gridcellid", val) {
                             id_cols=row, 
                             names_from=col, 
                             values_from=val) %>% 
-    as.matrix()
+    as.data.frame() ## add this instead of matrix otherwise numeric cell values --> character
   # make first col the rownames
   rownames(mat) <- mat[,1]
   # remove it
