@@ -148,7 +148,7 @@ grid <- sf::st_transform(grid, crs = crs.string)
 # append original (projected) grid to bbs_routes spatial lines layer
 cat("overlaying bbs routes and study area grid. this may take a minute or three...\n\n")
 bbs.grid.lines <- sf::st_intersection(grid, bbs_routes) # this produces a sf as LINES with grid cell ids appended as attributes.
-browser()
+
 # Calculate total lengths of routes within a grid cell. -------------------
 bbs.grid.lines.df <- bbs.grid.lines %>%
   # This calculate line segments for each row (segment)
@@ -190,7 +190,7 @@ plot(grid.expanded["area"],main="grid cell area")
 bbs.temp <- bbs.grid.lines.df %>%
   st_drop_geometry() %>%
   select(-SegmentLength) %>%
-  distinct(RTENO, gridcellid, PropRouteInCell, RouteLengthInStudyArea, RouteLength)
+  distinct(RTENO, gridcellid, PropRouteInCell, TotalRouteLength, RouteLength)
 
 ## overlay the bbs routes to the grid
 bbs.grid  <- left_join(grid.expanded, bbs.temp)
