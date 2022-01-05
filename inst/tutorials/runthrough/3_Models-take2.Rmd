@@ -73,7 +73,40 @@ params.monitor <- c("lambda", "nu", "alpha", "beta1", "N")
 
 
 # Step 3: Specify Model
+<!-- model{ -->
+```{r}
+attach(jdat)
+# year.ids.bbs
+# year.ind.bbs
+# yBBS.grid # dims: [s,t,g]
+# yBBS.route # dims: [s,t]
+# bbs.index # contains dimnesions/locations for all available BBS data (cols=site, year grid, (row, col, slice))
+# prop.site.in.cell.bbs # percent of each route within a grid cell (as a percent of all route that falls within the study area) ### needs to be addressed later...
 
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.route[s,t] ~ dpois(lambda)
+  }} # end data model s and t
+
+for(s in 1:S.bbs){
+  lambda[s] = sum(nu for all )
+}# end s    
+      
+for(g in 1:G.bbs){
+  
+      nu[g] <- w.prop * lambda.grid,  summed over all gs that the route lies ine
+    } # end G
+
+  # } # end S
+# } # end T
+
+```
+
+
+
+}
+
+<!-- } -->
 
 
 # Step 4: Run Model

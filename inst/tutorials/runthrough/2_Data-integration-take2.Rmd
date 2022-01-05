@@ -78,28 +78,54 @@ bbs <- bbs %>%
 
 ```{r bbs-y-and-indexing}
 ## Observed counts as 3D array (dims: rteno by year by gridcellid)
-yBBS           <- make_array(bbs, val="C")
+yBBS.grid   <- make_array(bbs, val="C")
+## Observed counts as 2D matrix (dims: rteno by year)
+yBBS.site   <- make_mat(bbs %>% distinct(rteno, year, C), row = "rteno", col="year", val = "C")
 
 ### vectors comprising site, cell, and year identities
-site.ids.bbs   <- dimnames(yBBS)[1] %>% unlist() %>% as.factor()#sites=rteno
-year.ids.bbs   <- dimnames(yBBS)[2] %>% unlist() %>% as.integer()#years
-grid.ids.bbs   <- dimnames(yBBS)[3] %>% unlist() %>% as.numeric()#gridcellid
+site.ids.bbs   <- dimnames(yBBS.grid)[1] %>% unlist() %>% as.factor()#sites=rteno
+year.ids.bbs   <- dimnames(yBBS.grid)[2] %>% unlist() %>% as.integer()#years
+grid.ids.bbs   <- dimnames(yBBS.grid)[3] %>% unlist() %>% as.numeric()#gridcellid
 ### indexes associated with id vectors for site, cell, and year
-site.ind.bbs     <- 1:dim(yBBS)[1]
-year.ind.bbs     <- 1:dim(yBBS)[2]
-grid.ind.bbs     <- 1:dim(yBBS)[3]
+site.ind.bbs     <- 1:dim(yBBS.grid)[1]
+year.ind.bbs     <- 1:dim(yBBS.grid)[2]
+grid.ind.bbs     <- 1:dim(yBBS.grid)[3]
 
 S.bbs <- length(site.ind.bbs)# num sites
 T.bbs <- length(year.ind.bbs)# num T
 G.bbs <- length(grid.ind.bbs)# num grid cells
 
-
+sites.bbs <- data.frame(site.id=site.ids.bbs, ind=site.ind.bbs)
+years.bbs <- data.frame(year.id=year.ids.bbs, year.ind=year.ind.bbs)
 ## for estimating lambda.grid, we need to know
   ### which grid cells each route runs through, and be
   ### able to easily index within that route (site) and grid cells (grid)
+bbs.index <- which(!is.na(yBBS.grid), arr.ind=TRUE, useNames=TRUE)
+colnames(bbs.index) <- c("site", "year", "grid")# rteno, year, gridcellid
+```
 
+Create array comprising all routes identities for a grid cell
+```{r}
+temp <- bbs %>% distinct(gridcellid, rteno) %>% merge(bbs.index) %>% 
+  distinct(site, grid, year) %>% 
+  group_by(grid, year) %>% 
+  mutate(site.order.num = 1:n_distinct(site)) %>% ## site.order.num counts and tags the first, second..nth route that lies in a grid each year (time matters since not all routes are obs. every year)
+  ungroup()
+
+sites.in.grid.bbs <- acast(temp, grid~site.order.num~year, value.var="site") 
+rownames(sites.in.grid.bbs) <- grid.ids.bbs # rows=grid cell identity , where nrow=G.bbs; cols=first, second ...nth RTENO that is in that grid cell; slice=year
+
+## so i think together we can use SITESIN GRIDBBS + bbs.index to say
+# grab an index to determine the number of iterations over a grid's `site.order.num` for est. lambda.grid (nu)
+num.sites.per.grid <- 
+  rowSums(!is.na(sites.in.grid.bbs))
+## need to do that for each array, though^^^
+C.grid.sums <- t(colSums(aperm(jdat$bbs$C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with 
+dim(sites.in.grid.bbs)# dims: g,numsites,t
 
 ```
+
+
 
 Create matrices for route-grid relationships and descriptors
 ```{r bbs-mats-spatial}
@@ -108,12 +134,6 @@ grid.bbs <- bbs %>% distinct(gridcellid, rteno, .keep_all=TRUE) %>% units::drop_
 area.bbs <-  make_mat(grid.bbs, val="area")
 prop.site.in.cell.bbs <- make_mat(grid.bbs, val="proprouteincell")
 ```
-
-Create matrix containing the proportion of routes in each grid cell
-```{r bbs-site-prop-in-cell}
-
-```
-
 
 Arrays comprising detection covariate observations
 ```{r bbs-p-covar-arrays}
@@ -130,26 +150,31 @@ p.bbs.obsfirstyearroute   <- make_array(bbs, val="obsfirstyearroute")
 Specify desired inputs into JAGS data output for BBS 
 ```{r names.bbs}
 names.bbs <- c(
- # route-level detection covariates
+ # route-level detection covariates # keep the ones we actually need
  # 'p.bbs.wind', 
  # 'p.bbs.cars', 
  # 'p.bbs.noise', 
  # 'p.bbs.yday', 
  # 'p.bbs.jday', 
+ # 'p.bbs.obsfirstyearbbs',
+ # 'p.bbs.obsfirstyearroute',
  # for indexing
  'site.ids.bbs', 'year.ids.bbs', 'grid.ids.bbs',  ## identities
  'site.ind.bbs', 'year.ind.bbs', 'grid.ind.bbs',  ## indexing on identities
  # count data
- 'yBBS',
+ 'yBBS.grid', # at the grid-level (replicate counts where multiple rteno in a single grid.)
+ 'yBBS.site',# at the route-level
  # route-grid information
  "prop.site.in.cell.bbs", 
  # grid cell covariates
  "area.bbs",
- # loop indexes
- "S.bbs", "T.bbs", "G.bbs"
+ # indexing
+ ## loop length indexes
+ "S.bbs", "T.bbs", "G.bbs", 
+ ## yBBS array location index 
+ "bbs.index" 
 )
 ```
-
 
 # Step 5: Wrap it All Up 
 ```{r make-jdat}
