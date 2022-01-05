@@ -1,8 +1,8 @@
 #' Get Data Structure of JAGS List Inputs
 #' @param list A list of named objects.
-#' @param filename If specified saves the resulting metadata table to file as .csv
+#' @param dir.output If specified saves the resulting metadata table to file as .csv in this directory
 #' @export get_data_structure
-get_data_structure <- function(list){
+get_data_structure <- function(list, dir.output=NULL){
 for(i in seq_along(list)){
   if(i == 1 ){
     output = matrix(nrow=max(seq_along(list)), ncol=5)
@@ -27,6 +27,11 @@ for(i in seq_along(list)){
   output[i,5] <- nslice
 }
 rownames(output) <- names(list)
+
+if(is.null(dir.output)) dir.output <- "/"
+fn=paste0(dir.output,"jdat-structure" ,".csv")
+cat("saving data structure to file: ", fn)
+write.csv(output, fn)
 
 return(output)
 }
