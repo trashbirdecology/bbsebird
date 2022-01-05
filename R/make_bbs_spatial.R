@@ -148,17 +148,17 @@ grid <- sf::st_transform(grid, crs = crs.string)
 # append original (projected) grid to bbs_routes spatial lines layer
 cat("overlaying bbs routes and study area grid. this may take a minute or three...\n\n")
 bbs.grid.lines <- sf::st_intersection(grid, bbs_routes) # this produces a sf as LINES with grid cell ids appended as attributes.
-
+browser()
 # Calculate total lengths of routes within a grid cell. -------------------
 bbs.grid.lines.df <- bbs.grid.lines %>%
   # This calculate line segments for each row (segment)
   mutate(SegmentLength = st_length(.)) %>%
-  # Calculate the total length of a route within the study area (some routes may have been cut off due to clippings)
+  # Calculate the total length of the entire route (regardless of whether the rteno is clipped by the study area..)
   group_by(RTENO) %>%
-  mutate(RouteLengthInStudyArea = sum(SegmentLength)) %>%
+  mutate(TotalRouteLength = sum(SegmentLength)) %>%
   ## calc proportion as total segment lengths over total route length (within the study area)
   group_by(gridcellid, RTENO) %>%
-  dplyr::mutate(PropRouteInCell = sum(SegmentLength) / RouteLengthInStudyArea) %>%
+  dplyr::mutate(PropRouteInCell = sum(SegmentLength) / TotalRouteLength) %>%
   dplyr::ungroup()
 
 # create an object describing the RTENOs as lines if we want to plot later on
