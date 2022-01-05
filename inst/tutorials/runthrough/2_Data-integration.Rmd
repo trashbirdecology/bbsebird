@@ -56,7 +56,7 @@ bbs.df <- bbs %>% st_drop_geometry() %>%
 Create arrays describing the covariates influencing detection probabilities.
 ```{r prep-bbs-jags-p-covars}
 ### make route-level observation covariate arrays (dims: rteno by year)
-p.cars      <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year, value.var = "car.z")
+p.cars      <-  acast(bbs.df %>% distinct(rteno, year, car.z), rteno~year, value.var = "car.z", drop = TRUE)
 p.noise     <-  acast(bbs.df %>% distinct(rteno, year, noise.z), rteno~year, value.var = "noise.z")
 p.obsfyrbbs <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearbbs), rteno~year, value.var = "obsfirstyearbbs")
 p.obsfyrrteno <-  acast(bbs.df %>% distinct(rteno, year, obsfirstyearroute), rteno~year, value.var = "obsfirstyearroute")

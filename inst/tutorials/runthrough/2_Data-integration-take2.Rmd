@@ -3,6 +3,8 @@ title: "Munge eBird and BBS Data for Integrated Model"
 params:
     fn.munging: "1_data-munging.rmd"
     fn.setup:   "0_setup.rmd"
+    fn.jdat:    "jdat"
+    drop.nas: TRUE # TRUE = drop values where no observations data exists
 ---
 
 # Step 1: Setup 
@@ -23,9 +25,8 @@ knitr::purl(params$fn.setup, output=temp)
 source(temp)
 ```
 
-
 Importing the munged data
-```{r import-data}
+```{r import-munged-data}
 # Filenames for munged data
 fns <- list.files(dir.jags, full.names=TRUE)
 # These files are all sf (spatial data objs)
@@ -33,8 +34,10 @@ ebird.spatial <- readRDS(fns[str_detect(fns, "ebird.rds")])
 bbs.spatial <- readRDS(fns[str_detect(fns, "bbs.rds")])
 grid.spatial <- readRDS(fns[str_detect(fns, "grid.rds")])
 # Convert to non-sf objects
-bbs <- st_drop_geometry(bbs.spatial)
-ebird <- st_drop_geometry(ebird.spatial)
+bbs <- st_drop_geometry(bbs.spatial) %>% 
+  arrange(gridcellid, rteno, year)
+ebird <- st_drop_geometry(ebird.spatial)%>% 
+  arrange(gridcellid, checklist_id, year)
 grid <- st_drop_geometry(grid.spatial)
 
 # Specify junk to keep later on 
@@ -42,10 +45,110 @@ args.save <- junk_it(args.save, c("bbs","grid","ebird",                         
                                   ".trim"))
 ```
 
-# Step 2: BBS Data
+Evaluate parameter logicals
+```{r eval-params}
+if(!"drop.nas" %in% names(params)) params$drop.nas <- TRUE
+if(params$drop.nas){
+  bbs   <- bbs %>% filter(!is.na(C)) %>% as.data.frame()
+  ebird <- ebird %>% filter(!is.na(C)) %>% as.data.frame()
+}
+```
 
-```{r }
-bbs_rows_w_data <- which(!is.na(bbs$C))
+# Step 2: Make BBS Data for JAGS
 
+## Make and scale detection covariates
+```{r bbs-scale-vars}
+bbs <- bbs %>%
+  ### create a variable for the wind "average"
+  group_by(rteno, year) %>%
+  mutate(windmean = abs(startwind-endwind)/2) %>%
+  ungroup() %>% 
+  ### z-scale covariates
+  mutate(
+    wind.z = (windmean - mean(windmean, na.rm=TRUE))/sd(windmean, na.rm=TRUE),
+    noise.z = (noisemean - mean(noisemean, na.rm=TRUE))/sd(noisemean, na.rm=TRUE),
+    car.z = (carmean - mean(carmean, na.rm=TRUE))/sd(carmean, na.rm=TRUE)
+  ) 
+
+# bbs <- bbs %>%
+#   ### weighted counts by prop route in cell and cell area
+#   mutate(C.weighted.by.proparea.in.cell = as.numeric(C*proprouteincell/area)) # weighted C per grid area (# per m^2)
+```
+
+
+```{r bbs-y-and-indexing}
+## Observed counts as 3D array (dims: rteno by year by gridcellid)
+yBBS           <- make_array(bbs, val="C")
+
+### vectors comprising site, cell, and year identities
+site.ids.bbs   <- dimnames(yBBS)[1] %>% unlist() %>% as.factor()#sites=rteno
+year.ids.bbs   <- dimnames(yBBS)[2] %>% unlist() %>% as.integer()#years
+grid.ids.bbs   <- dimnames(yBBS)[3] %>% unlist() %>% as.numeric()#gridcellid
+### indexes associated with id vectors for site, cell, and year
+site.ind.bbs     <- 1:dim(yBBS)[1]
+year.ind.bbs     <- 1:dim(yBBS)[2]
+grid.ind.bbs     <- 1:dim(yBBS)[3]
+
+S.bbs <- length(site.ind.bbs)# num sites
+T.bbs <- length(year.ind.bbs)# num T
+G.bbs <- length(grid.ind.bbs)# num grid cells
+```
+
+Create matrices for route-grid relationships and descriptors
+```{r bbs-mats-spatial}
+## Linear model covariates will be 2-D since, currently, no changes over time. 
+grid.bbs <- bbs %>% distinct(gridcellid, rteno, .keep_all=TRUE) %>% units::drop_units()
+area.bbs <-  make_mat(grid.bbs, val="area")
+prop.site.in.cell.bbs <- make_mat(grid.bbs, val="proprouteincell")
+```
+
+Create matrix containing the proportion of routes in each grid cell
+```{r bbs-site-prop-in-cell}
+
+```
+
+
+Arrays comprising detection covariate observations
+```{r bbs-p-covar-arrays}
+p.bbs.wind    <- make_array(bbs, val="wind.z")
+p.bbs.wind    <- make_array(bbs, val="wind.z")
+p.bbs.cars    <- make_array(bbs, val="car.z")
+p.bbs.noise   <- make_array(bbs, val="noise.z")
+p.bbs.yday    <- bbs$yday ### may want to change this to julian date
+p.bbs.jday    <- bbs$julian ### may want to change this to julian date
+```
+
+Specify desired inputs into JAGS data output for BBS 
+```{r names.bbs}
+names.bbs <- c(
+ # route-level detection covariates
+ # 'p.bbs.wind', 
+ # 'p.bbs.cars', 
+ # 'p.bbs.noise', 
+ # 'p.bbs.yday', 
+ # 'p.bbs.jday', 
+ # for indexing
+ 'site.ids.bbs', 'year.ids.bbs', 'grid.ids.bbs',  ## identities
+ 'site.ind.bbs', 'year.ind.bbs', 'grid.ind.bbs',  ## indexing on identities
+ # count data
+ 'yBBS',
+ # route-grid information
+ "prop.site.in.cell.bbs", 
+ # grid cell covariates
+ "area.bbs",
+ # loop indexes
+ "S.bbs", "T.bbs", "G.bbs"
+)
+```
+
+
+# Step 5: Wrap it All Up 
+```{r make-jdat}
+### use get_data_structure(listname ) to produce a talbe metadata. 
+## use make_jags_list() to create a jdat list from:
+# c(names.bbs, names.grid, names.ebird)
+jdat <- make_jags_list(c(names.bbs))
+# Save to file..
+saveRDS(jdat, file = paste0(dir.jags,params$fn.jdat, ".RDS"))
 ```
 
