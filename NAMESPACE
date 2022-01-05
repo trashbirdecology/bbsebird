@@ -3,6 +3,7 @@
 export("%>%")
 export(convert_cols)
 export(filter_ebird_data)
+export(get_data_structure)
 export(id_ebird_files)
 export(junk_it)
 export(make_array)

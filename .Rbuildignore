@@ -7,7 +7,7 @@
 ^.*\.Rproj$
 ^\.github$
 ^docs$
-inst/examples/
+inst/tutorials/
 png$
 Makefile
 ^README\.md$
