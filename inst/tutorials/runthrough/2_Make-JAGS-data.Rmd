@@ -144,10 +144,10 @@ names.bbs <- c(
  # grid cell covariates
  "area.bbs",
  # indexing
- ## loop length indexes
- "S.bbs", "T.bbs", "G.bbs", 
  ## yBBS array location index 
- # "bbs.index" 
+ # "bbs.index",
+ ## loop length indexes
+ "S.bbs", "T.bbs", "G.bbs"
 )
 ```
 
