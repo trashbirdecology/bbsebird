@@ -15,5 +15,5 @@ expr <- paste(strsplit(names(jdat), split = "#"),
               sep="#")
 
 cat("jdat is of class", toupper(class(jdat)) , "and contains", length(jdat), "elements:\n", expr)
-
+return(jdat)
 }
