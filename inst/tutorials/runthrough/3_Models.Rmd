@@ -214,7 +214,7 @@ sink()
 # Step 4: Make Chains
 ```{r make-jm}
 # setup mcmc chain
-browseURL(mod.fn) ### open model file if you please
+# browseURL(mod.fn) ### open model file if you please
 jm <- rjags::jags.model(file = mod.fn,
                         data = jags.data, 
                         inits = inits,

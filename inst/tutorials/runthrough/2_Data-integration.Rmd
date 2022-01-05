@@ -1,6 +1,5 @@
 ---
 title: "Munge eBird and BBS Data for Integrated Model"
-subtitle: "Use this script to create the single data object called in JAGS models script." 
 params:
     fn.munging: "1_data-munging.rmd"
     fn.setup:   "0_setup.rmd"
@@ -107,6 +106,8 @@ R = dim(C.route)[1] # <route> number of unique BBS routes with data
 T.bbs = dim(C.route)[2] # <time> number of years of BBS data
 ```
 
+
+## Make Arrays
 ```{r c.grid-arrays}
 ### C: count at route level; array <rteno by year by grid cell id>
 C.grid.temp  <- reshape2::acast(bbs.df %>% distinct(rteno, year, gridcellid, C), rteno~year~gridcellid, value.var="C")
@@ -157,10 +158,25 @@ grid.ids.by.year <- acast(temp, rteno~grid.order.num, value.var="gridcellid")
 rm(temp)
 ```
 
+## For indexing on BBS data
+```{r indexing-bbs}
+rteno.fac     <- rownames(C.grid) %>% as.factor()
+rteno.fac     <- data.frame(rteno=rteno.fac, 
+                             rteno.fac=as.numeric(rteno.fac))
+cellids        <- bbs.df.sampled %>% distinct(rteno, gridcellid) %>% 
+  mutate(cellid.fac = as.numeric(as.factor(gridcellid))) 
+cellids <- full_join(cellids, rteno.fac) %>% arrange(rteno.fac, cellid.fac)
+
+```
+
+
+
+## BBS JAGS List
 Specify what to throw into the JAGS list
 ```{r specify-vars-bbs-jdat}
 names.bbs <-
   c(
+    "bbs.df", ## data in full
     "R", # number of unique routes across entire dataset
     "T.bbs", # will likely always equal T, but just in case
     "C.route",
@@ -299,6 +315,8 @@ args.save <- junk_it(args.save, "jdat.grid")
 ```{r write-jdat}
 jdat <- list(jdat.bbs, jdat.ebird, jdat.grid)
 names(jdat) <- c("bbs", "ebird","grid")
+saveRDS(jdat, file=paste0(dir.jags, "jdat.rds"))
+saveRDS(jdat, file=paste0(dir.jags, "jdat.rds"))
 saveRDS(jdat, file=paste0(dir.jags, "jdat.rds"))
 ```
 

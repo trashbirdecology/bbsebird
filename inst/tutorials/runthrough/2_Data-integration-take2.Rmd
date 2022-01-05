@@ -1,0 +1,51 @@
+---
+title: "Munge eBird and BBS Data for Integrated Model"
+params:
+    fn.munging: "1_data-munging.rmd"
+    fn.setup:   "0_setup.rmd"
+---
+
+# Step 1: Setup 
+ This chunk sources some redundant chunks in the data-munging r markdown
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>", 
+  message = TRUE, 
+  echo=FALSE, 
+  warning=FALSE, 
+  tidy=TRUE, 
+  include=FALSE
+)
+setup.chunk.needed<-FALSE
+temp=tempfile(fileext=".R")
+knitr::purl(params$fn.setup, output=temp)
+source(temp)
+```
+
+
+Importing the munged data
+```{r import-data}
+# Filenames for munged data
+fns <- list.files(dir.jags, full.names=TRUE)
+# These files are all sf (spatial data objs)
+ebird.spatial <- readRDS(fns[str_detect(fns, "ebird.rds")])
+bbs.spatial <- readRDS(fns[str_detect(fns, "bbs.rds")])
+grid.spatial <- readRDS(fns[str_detect(fns, "grid.rds")])
+# Convert to non-sf objects
+bbs <- st_drop_geometry(bbs.spatial)
+ebird <- st_drop_geometry(ebird.spatial)
+grid <- st_drop_geometry(grid.spatial)
+
+# Specify junk to keep later on 
+args.save <- junk_it(args.save, c("bbs","grid","ebird",                                "bbs.spatial","grid.spatial","ebird.spatial",
+                                  ".trim"))
+```
+
+# Step 2: BBS Data
+
+```{r }
+bbs_rows_w_data <- which(!is.na(bbs$C))
+
+```
+
