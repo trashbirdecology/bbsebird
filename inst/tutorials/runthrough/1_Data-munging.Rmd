@@ -2,6 +2,7 @@
 title: "Munge eBird and BBS Data for Integrated Model"
 params:
   fn.setup: "0_setup.rmd"
+  get.sunlight: FALSE # if you want sun/moon rise/set times set to TRUE
 ---
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
@@ -13,10 +14,17 @@ knitr::opts_chunk$set(
   tidy=TRUE, 
   include=FALSE
 )
+
+## establish conditions 
+ eval_sunlight <- params$get.sunlight 
+ 
+
 temp=tempfile(fileext=".r")
 knitr::purl(params$fn.setup, output=temp)
 source(temp)
 ```
+
+
 
 # Step 1: Make a Spatial Grid
 If the spatial grid R object, `grid.rds`, already exists in `r dir.proj.out`, load it into file. If not, will create a new spatial grid and save to file. 
@@ -135,7 +143,7 @@ bbs_spatial <-
 
 saveRDS(bbs_spatial, paste0(dir.spatial.out, "/bbs_spatial.rds"))
 ## View the file with basic bbs stats against the spatial grid
-browseURL(list.files(dir.plots, "bbs_spatial_exploratory", full.names = TRUE))
+# browseURL(list.files(dir.plots, "bbs_spatial_exploratory", full.names = TRUE))
 }
 
 args.save <- junk_it(args.save, "bbs_spatial")
@@ -240,7 +248,7 @@ ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$tim
 ```
 
 If you don't need local sunlight/rise/set times, specify `eval=FALSE` in this chunk. This process takes a while and sometimes crashes when computing on the ebird data. 
-```{r munge-sunlight, eval=FALSE}
+```{r munge-sunlight, eval=eval_sunlight}
 ## eventually--need to move this into the munging phases so we dont have to continue to recalculate it...
 # Sunlight/daylight/moonlight ---------------------------------------------
 ## here, data must have columns lat and lon. I took care of this in
@@ -283,6 +291,14 @@ bbs.sunlight <- bbs.sunlight %>%
 bbs <- left_join(bbs_spatial, bbs.sunlight)
 ebird <- left_join(ebird_spatial, ebird.sunlight)
 ```
+```{r rename-spatial-obj}
+# if we didn't calculate sunlight then just rename bbs_spatial as new object to output
+##note: if they are identical it will not make a copy just assign it to the same object. 
+if(!exists("bbs")) bbs   <- bbs_spatial
+if(!exists("ebird")) ebird <- ebird_spatial
+```
+
+
 Export all these spatially-referenced data to a folder for quick use in JAGS data munging activities.
 ```{r export-munged-data}
 saveRDS(bbs, file=paste0(dir.jags, "bbs.rds"))

@@ -134,10 +134,10 @@ names.bbs <- c(
  # 'p.bbs.obsfirstyearbbs',
  # 'p.bbs.obsfirstyearroute',
  # for indexing
- 'site.ids.bbs', 'year.ids.bbs', 'grid.ids.bbs',  ## identities
- 'site.ind.bbs', 'year.ind.bbs', 'grid.ind.bbs',  ## indexing on identities
+ # 'site.ids.bbs', 'year.ids.bbs', 'grid.ids.bbs',  ## identities
+ # 'site.ind.bbs', 'year.ind.bbs', 'grid.ind.bbs',  ## indexing on identities
  # count data
- 'yBBS.grid', # at the grid-level (replicate counts where multiple rteno in a single grid.)
+ # 'yBBS.grid', # at the grid-level (replicate counts where multiple rteno in a single grid.)
  'yBBS.site',# at the route-level
  # route-grid information
  "prop.site.in.cell.bbs", 
@@ -147,13 +147,13 @@ names.bbs <- c(
  ## loop length indexes
  "S.bbs", "T.bbs", "G.bbs", 
  ## yBBS array location index 
- "bbs.index" 
+ # "bbs.index" 
 )
 ```
 
 # Step 3: eBird Data
 ```{r ebird-obs}
-ebird %>% head()
+# ebird %>% head()
 
 
 ```
