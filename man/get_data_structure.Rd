@@ -4,12 +4,12 @@
 \alias{get_data_structure}
 \title{Get Data Structure of JAGS List Inputs}
 \usage{
-get_data_structure(list)
+get_data_structure(list, dir.output = NULL)
 }
 \arguments{
 \item{list}{A list of named objects.}
 
-\item{filename}{If specified saves the resulting metadata table to file as .csv}
+\item{dir.output}{If specified saves the resulting metadata table to file as .csv in this directory}
 }
 \description{
 Get Data Structure of JAGS List Inputs
