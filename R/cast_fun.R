@@ -7,8 +7,8 @@
 #' @param include.na.vals TRUE default. If FALSE will drop the values of arg "val" where is NA.
 #' @importFrom dplyr distinct
 #' @importFrom reshape2::acast
-#' @export cast_fun
-cast_fun <- function(df=bbs,
+#' @export make_array
+make_array <- function(df=bbs,
                      row="rteno",
                      col="year",
                      slice="gridcellid",
@@ -18,7 +18,7 @@ cast_fun <- function(df=bbs,
   keep <- c(row, col, slice, val, NA, "NULL", "NA", NULL)
   keep <- na.omit(keep[!grepl(paste0(c("NULL","NA", NA, NULL), collapse = "|"), keep)])
   df <- df[,keep]
-  df <- dplyr::distinct(df)
+  df <- dplyr::distinct(df) %>% arrange(slice, row, col)
 
   expr <- paste(strsplit(names(df)[-ncol(df)], split = "#"),
            collapse = "~",
