@@ -6,7 +6,7 @@
 #' @param val target value to populate the matri(ces)
 #' @param include.na.vals TRUE default. If FALSE will drop the values of arg "val" where is NA.
 #' @importFrom dplyr distinct
-#' @importFrom reshape2::acast
+#' @importFrom reshape2 "acast"
 #' @export make_array
 make_array <- function(df=bbs,
                      row="rteno",
