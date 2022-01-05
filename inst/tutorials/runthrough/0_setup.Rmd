@@ -28,7 +28,7 @@ devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 
 ### specify packages that we call often 
 pkgs <- c("dubcorms","bbsAssistant","ggplot2","reshape2",
-          "stringr","dplyr","sf")
+          "stringr","dplyr","sf", "jagsUI")
 
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
