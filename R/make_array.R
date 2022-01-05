@@ -29,6 +29,6 @@ make_array <- function(df=bbs,
   df.new <- acast(df, eval(parse(text=expr)), value.var = val)
 
 
-    return(df.new)
+  return(df.new)
 
 }
