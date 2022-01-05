@@ -1,7 +1,8 @@
 #' Get lista Structure of JAGS lista Inputs
 #' @param list A list of named objects.
 #' @param filename If specified saves the resulting metadata table to file as .csv
-get_lista_structure <- function(list, filename=NULL){
+#' @export get_data_structure
+get_data_structure <- function(list, filename=NULL){
 for(i in seq_along(list)){
   if(i == 1 ){
     output = lista.frame(matrix(nrow=max(seq_along(list)), ncol=5))
