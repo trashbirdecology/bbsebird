@@ -35,7 +35,8 @@ Imports:
     rnaturalearth,
     glue,
     purrr,
-    knitr
+    knitr,
+    units
 Suggests: 
     assertthat,
     learnr,
