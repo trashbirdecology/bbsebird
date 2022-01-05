@@ -30,13 +30,7 @@ source(temp)
 # Step 1: Import Data
 If data already exists, we can just import it from file. Otherwise, you will need to run through "1-Data_Munging.Rmd", which will take a hot minute.
 ```{r import-jdat, echo=TRUE}
-fn <- list.files(dir.jags, full.names = TRUE, "jdat.rds")
-if(length(fn)>1)  "more than one filename in object `fn`. check filenames in dir.jags"
-if(length(fn)==0) stop("no files named jdat.rds exist in dir.jags" )
-
-if(!exists("jdat")) jdat <- readRDS(fn) else(cat("jdat already exists in environment. not overwriting."))
-cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
-names(jdat)
+jdat <- import_jdat()
 ```
 
 ```{r metadata-jdat}
