@@ -20,6 +20,7 @@ Imports:
     tidyr,
     sp,
     rjags,
+    jagsUI,
     ggplot2,
     countrycode,
     magrittr,
