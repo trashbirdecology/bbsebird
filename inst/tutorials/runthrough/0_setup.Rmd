@@ -135,5 +135,5 @@ cat("Project directory output files will go to ", dir.proj.out)
 ```{r specify-junk}
 # save a list of elements we always want to keep in memory
 # we also distinguish between the base argumensts for use later in making metadata tables describing our jags objects. 
-args.save <- args.save.base <- c("args.save.base", ls()) 
+args.save <- args.save.base <- c("args.save.base", ls())
 ```

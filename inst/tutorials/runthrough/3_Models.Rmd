@@ -3,7 +3,6 @@ title: "JAGS Models"
 output:
   pdf_document: default
 params:
-  mod.name: "bbs-grid-level-pois.txt"
   fn.setup: "0_setup.rmd"
 ---
 Use this script to create data for use in JAGS modelling activities. See page [45 of the JAGS manual](https://people.stat.sc.edu/hansont/stat740/jags_user_manual.pdf) for common JAGS functions. 
@@ -24,6 +23,8 @@ setup.chunk.needed<-FALSE
 temp=tempfile(fileext=".R")
 knitr::purl(params$fn.setup, output=temp)
 source(temp)
+# eval conditions/params
+
 ```
 
 # Step 1: Import Data
@@ -100,7 +101,8 @@ N[t] <- sum(yBBS.site[,t])
 }"
 ## export model
 # browseURL(mod.fn)
-mod.fn <- paste0(dir.models, params$mod.name) # we want to name it now so we can call in jags functions
+mod.name <- "bbs-pois-base" ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(dir.models, mod.name, ".txt") # we want to name it now so we can call in jags functions
 sink(mod.fn)
 cat(mod)
 sink()
@@ -129,4 +131,5 @@ out <- jagsUI::jags(data  = jags.data,
                     n.chains = length(inits), 
                     n.thin = nt, n.iter = ni, n.burnin = nb)
 ```
+
 

@@ -107,7 +107,7 @@ Create matrices for route-grid relationships and descriptors
 ## Linear model covariates will be 2-D since, currently, no changes over time. 
 grid.bbs <- bbs %>% distinct(gridcellid, rteno, .keep_all=TRUE) %>% units::drop_units()
 area.bbs <-  make_mat(grid.bbs, val="area")
-prop.site.in.cell.bbs <- make_mat(grid.bbs, val="proprouteincell")
+prop.site.in.cell.bbs <- make_mat(grid.bbs, val="proprouteincell", replace.na=TRUE)# this should have no missing data
 ```
 
 Arrays comprising detection covariate observations
