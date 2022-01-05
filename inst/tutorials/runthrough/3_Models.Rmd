@@ -6,11 +6,9 @@ params:
   mod.name: "bbs-grid-level-pois.txt"
   fn.setup: "0_setup.rmd"
 ---
-Use this script to create data for use in JAGS modelling activities. 
+Use this script to create data for use in JAGS modelling activities. See page [45 of the JAGS manual](https://people.stat.sc.edu/hansont/stat740/jags_user_manual.pdf) for common JAGS functions. 
 
-See page [45 of the JAGS manual](https://people.stat.sc.edu/hansont/stat740/jags_user_manual.pdf) for     helpful functions. 
-
-# Step 1: Setup 
+# Step 0: Setup 
  This chunk sources some redundant chunks in the data-munging r markdown
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
@@ -28,42 +26,26 @@ knitr::purl(params$fn.setup, output=temp)
 source(temp)
 ```
 
-# Step 1: Handle Observations Data
-## Import data
+# Step 1: Import Data
 If data already exists, we can just import it from file. Otherwise, you will need to run through "1-Data_Munging.Rmd", which will take a hot minute.
 ```{r import-jdat, echo=TRUE}
 fn <- list.files(dir.jags, full.names = TRUE, "jdat.rds")
 if(length(fn)>1)  "more than one filename in object `fn`. check filenames in dir.jags"
 if(length(fn)==0) stop("no files named jdat.rds exist in dir.jags" )
 
-jdat <- readRDS(fn)
+if(!exists("jdat")) jdat <- readRDS(fn) else(cat("jdat already exists in environment. not overwriting."))
 cat("jdat is of class ", toupper(class(jdat)) , " and contains the following ", length(jdat), " lists:")
 names(jdat)
 ```
 
-## Explore available data
-If desired, go ahead and explore the data. 
-```{r data-metadata-explore, eval=FALSE}
-### placeholder for creating some tables describing the data. 
-jdat$bbs$C.route %>% head(2)
-jdat$bbs$C %>% head(2)
-jdat$grid$area # area (m^2) of the grid cell within confines of study area
-jdat$grid$period # years of study
-jdat$grid$T # number of years
-jdat$bbs$grid.ids.by.year %>% head()
+```{r metadata-jdat}
+jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
+# View(jdat.struc)
+# or
+# kableExtra::kable(jdat.struc)
 ```
 
-Get the dimensions of the BBS data objects in jdat
-```{r data-structure-bbs}
-# bbs.structure <- get_data_structure(listname)
-# for reference
-# View(bbs.structure)
-# kableExtra::kable(bbs.structure) %>%
-#   kableExtra::kable_minimal()
-```
-
-
-# Step 3: Computational Specifications
+# Step 2: Computational Specifications
 ## MCMC
 ```{r set-mcmc}
 na <- 1000 # number of adaptation iterations
@@ -77,135 +59,74 @@ nt <- 10 # thinning rate
 ## Initial values
 ```{r set-inits} 
 inits <- list(
-  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),
-  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10)),     
-  list(alpha = rnorm(1,0,10), beta1 = rnorm(1,0,10))
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),     
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1))
   ) 
 ```
 
 ## Parameters monitored
 ```{r set-params} 
 ### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda", "nu", "alpha", "beta1", "N")
+params.monitor <- c("lambda", "nu",  "b1", "N")
 ```
 
-# Step 2: Write JAGS Models
-From here, you can specify JAGS models inside R by interactively creating text files, or you can point to the file in the JAGS model. 
+# Step 3: Specify Model
+<!-- model{ -->
+```{r}
+cov1 <- rnorm(jdat$G.bbs,0,1)
+mod <- "model{
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.site[s,t] ~ dpois(lambda[s])
+  }} # end data model s and t
+for(s in 1:S.bbs){
+  lambda[s] = inprod(nu[], w[s,]) ## check inprod
+} # end s (lambda route)
 
-## BBS-only Poisson
-Grab only necessary data
-```{r grab-data}
-y      <- jdat$bbs$C.route
-G      <- jdat$grid$G
-G.bbs  <- jdat$bbs$G.bbs
-T      <- jdat$grid$T 
-if(is.null(T)|length(T)!=1) stop("issues defining `T` in chunk grab-data. must fix.")
-R      <- jdat$bbs$R
-area   <- scale(tidyr::replace_na(units::drop_units(jdat$grid$area), 0), 
-                center = FALSE) %>% as.vector() # not sure why class is array/matrix, need to fix in munging process.
-grid.cov1   <- sample(area/10) #dummy
-
-## expected counts at the grid cell level per year (dim: g,t)
-#### aperm flips the dimensions around first then compute colsums to get total C at a g and t
-C.grid.sums <- t(colSums(aperm(jdat$bbs$C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with aperm and no transpose.
-# dim(C.grid.sums)
-w.prop <- tidyr::replace_na(jdat$bbs$w.prop, 0)
-grid.ids.bbs <- jdat$bbs$grid.ids.by.year
-gmax.bbs.index <- rowSums(!is.na(grid.ids.bbs)) # another index used to avoid summing up NA values from grid.ids.bbs and gmax.bbs
-gmax.bbs <- max(gmax.bbs.index, na.rm=TRUE) ## an index used in JAGS to calculate nu (lambda.grid)
-```
-
-## Make Named Data List for JAGS
-```{r make-jags-list}
-names.jags <- c(
-  "w.prop", 
-  "y", 
-  "gmax.bbs",
-  "gmax.bbs.index",
-  "C.grid.sums", # sum of counts in a single grid cell at time t
-  # "C.grid.weighted", # weighted count at the route and grid level per year 
-  # "C.grid.weighted.sum", # total weighted count at the grid-level per year
-  "G", 
-  "grid.ids.bbs",
-  "T", 
-  "R", 
-  "area", 
-  "grid.cov1"
-)
-if(any(lapply(names.jags, function(x) is.null(eval(parse(text=paste(x)))))))"at least one element is NULL or empty in `names.jags`"
-
-jags.data <- list()
-for(i in seq_along(names.jags)){
-  jags.data[[i]] <- eval(parse(text=paste(names.jags[i])))
-  # doing this inside loop to prevent issues where data DNE
-  names(jags.data)[[i]] <- names.jags[i] 
-}
-names(jags.data) <- names.jags
-```
-
-## Write JAGS model to file
-```{r write-model}
-mod <- "model{ 
-for(r in 1:R){
-  for(t in 1:T){  
-    y[r,t] ~ dpois(lambda[r])
-    lambda[r] <- sum(lambda.temp)
-    
-    # JAGS cannot handle summing ragged vectors-> nasty workarounds.
-    for(z in 1:gmax.bbs.index[r]){
-         lambda.temp[z] <- w.prop[r,grid.ids.bbs[r,z]]*nu[grid.ids.bbs[r,z]]
-        # cell.index[z] <- grid.ids.bbs[r,z]
-    
-    for(g in 1:G){ 
-        log(nu[g]) <- area[g] + alpha[g] + beta1[g]*grid.cov1[g]# note log not taken
-      } # end G (grid cell)
-      
-    } # end z (gmax.bbs.index) 
-    
-  } # end T (year)
-} # end R (routes)
-
+for(g in 1:G.bbs){
+  log(nu[g]) <- cov1[g]*b1 + alpha 
+} # end g (nu)
 
 # Priors
-for(g in 1:G){
-  alpha[g] ~ dunif(0,10)
-  beta1[g] ~ dunif(0,10)
-}
+b1    ~ dnorm(0,1)
+alpha ~ dnorm(0,1)
 
-# Derived 
-for(t in 1:T){
-  N[t] <- sum(y[,t])
+# Derived
+for(t in 1:T.bbs){
+N[t] <- sum(yBBS.site[,t])
 }
-
 
 }"
 ## export model
+# browseURL(mod.fn)
 mod.fn <- paste0(dir.models, params$mod.name) # we want to name it now so we can call in jags functions
 sink(mod.fn)
 cat(mod)
 sink()
 ```
 
+```{r jdat}
+jdat$prop.site.in.cell.bbs[is.na(jdat$prop.site.in.cell.bbs)] <- 0
+
+jags.data <- list(
+  cov1=cov1, 
+  yBBS.site=jdat$yBBS.site, 
+  T.bbs=jdat$T.bbs, 
+  G.bbs=jdat$G.bbs, 
+  S.bbs=jdat$S.bbs, 
+  w=jdat$prop.site.in.cell.bbs
+)
+```
 
 # Step 4: Make Chains
 ```{r make-jm}
-# setup mcmc chain
 # browseURL(mod.fn) ### open model file if you please
-jm <- rjags::jags.model(file = mod.fn,
-                        data = jags.data, 
-                        inits = inits,
-                        n.chains = length(inits), 
-                        n.adapt = na)
-
-zm <- coda.samples(jm, 
-                  variable.names = params.monitor,
-                  n.iter = ni, 
-                  n.thin = nt)
-
-# out <- jagsUI::jags(data  = jags.data,
-#                     model.file = mod.fn,
-#                     inits = inits,
-#                     parameters.to.save = params.monitor,
-#                     n.chains = length(inits), n.thin = nt, n.iter = ni, n.burnin = nb)
+out <- jagsUI::jags(data  = jags.data,
+                    model.file = mod.fn,
+                    inits = inits,
+                    parameters.to.save = params.monitor,
+                    n.chains = length(inits), 
+                    n.thin = nt, n.iter = ni, n.burnin = nb)
 ```
 

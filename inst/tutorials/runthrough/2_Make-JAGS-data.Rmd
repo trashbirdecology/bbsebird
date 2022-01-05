@@ -54,8 +54,7 @@ if(params$drop.nas){
 }
 ```
 
-# Step 2: Make BBS Data for JAGS
-
+# Step 2: BBS Data
 ## Make and scale detection covariates
 ```{r bbs-scale-vars}
 bbs <- bbs %>%
@@ -74,7 +73,6 @@ bbs <- bbs %>%
 #   ### weighted counts by prop route in cell and cell area
 #   mutate(C.weighted.by.proparea.in.cell = as.numeric(C*proprouteincell/area)) # weighted C per grid area (# per m^2)
 ```
-
 
 ```{r bbs-y-and-indexing}
 ## Observed counts as 3D array (dims: rteno by year by gridcellid)
@@ -103,29 +101,6 @@ years.bbs <- data.frame(year.id=year.ids.bbs, year.ind=year.ind.bbs)
 bbs.index <- which(!is.na(yBBS.grid), arr.ind=TRUE, useNames=TRUE)
 colnames(bbs.index) <- c("site", "year", "grid")# rteno, year, gridcellid
 ```
-
-Create array comprising all routes identities for a grid cell
-```{r}
-temp <- bbs %>% distinct(gridcellid, rteno) %>% merge(bbs.index) %>% 
-  distinct(site, grid, year) %>% 
-  group_by(grid, year) %>% 
-  mutate(site.order.num = 1:n_distinct(site)) %>% ## site.order.num counts and tags the first, second..nth route that lies in a grid each year (time matters since not all routes are obs. every year)
-  ungroup()
-
-sites.in.grid.bbs <- acast(temp, grid~site.order.num~year, value.var="site") 
-rownames(sites.in.grid.bbs) <- grid.ids.bbs # rows=grid cell identity , where nrow=G.bbs; cols=first, second ...nth RTENO that is in that grid cell; slice=year
-
-## so i think together we can use SITESIN GRIDBBS + bbs.index to say
-# grab an index to determine the number of iterations over a grid's `site.order.num` for est. lambda.grid (nu)
-num.sites.per.grid <- 
-  rowSums(!is.na(sites.in.grid.bbs))
-## need to do that for each array, though^^^
-C.grid.sums <- t(colSums(aperm(jdat$bbs$C.grid, c(1,2,3)), na.rm=TRUE))## probbaly shorter way of doing this with 
-dim(sites.in.grid.bbs)# dims: g,numsites,t
-
-```
-
-
 
 Create matrices for route-grid relationships and descriptors
 ```{r bbs-mats-spatial}
@@ -175,6 +150,17 @@ names.bbs <- c(
  "bbs.index" 
 )
 ```
+
+# Step 3: eBird Data
+```{r ebird-obs}
+ebird %>% head()
+
+
+```
+
+
+
+# Step 4: Grid Shit
 
 # Step 5: Wrap it All Up 
 ```{r make-jdat}
