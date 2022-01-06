@@ -6,7 +6,6 @@
 #' @param states Vector of states to which the spatial grid will be clipped.
 #' @param interative.map TRUE will print an interactive map to device
 #' @export make_spatial_grid
-
 make_spatial_grid <- function(dir.out, overwrite=TRUE, 
                               states = NULL, 
                               countries = c("USA", "CAN", "CA", "United States", "Canada", "United States of America"), 
