@@ -4,12 +4,14 @@
 \alias{dir_spec}
 \title{Specify input and output directories.}
 \usage{
-dir_spec(dir.orig.data, dir.proj = getwd(), subdir.proj = NULL)
+dir_spec(dir.orig.data, dir.proj = NULL, subdir.proj = NULL)
 }
 \arguments{
 \item{dir.orig.data}{Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.}
 
 \item{dir.proj}{Project directory. Assumes current working directory. This is where the directories and output files will be stored.}
+
+\item{subdir.proj}{The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using \code{dubcorms::proj.shorthand()}}
 }
 \description{
 Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with \code{list2env()} to assign directories to desired environment (typically .GlobalEnv)
