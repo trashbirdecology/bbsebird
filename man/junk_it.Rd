@@ -14,4 +14,3 @@ junk_it(args.save, new.args.save = NULL)
 \description{
 Removes all items except those specified. Returns a new list of the arguments you want to always retain in memory while removing duplicates.
 }
-\keyword{internal}

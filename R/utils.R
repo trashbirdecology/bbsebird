@@ -144,8 +144,7 @@ make.integer <- function(x, var=c("AOU", "aou")){
 #' Removes all items except those specified. Returns a new list of the arguments you want to always retain in memory while removing duplicates.
 #' @param args.save A list of new or previously specified arguments.
 #' @param new.args.save Optional. One or more new object names to save (in addition to args.save)
-#' @keywords internal
-#' @export
+#' @export junk_it
 junk_it <- function(args.save, new.args.save=NULL){
   args.save <- c(args.save, new.args.save, "args.save") %>% unique()
   rm(list=setdiff(ls(envir = .GlobalEnv), args.save), envir = .GlobalEnv)
@@ -155,6 +154,7 @@ junk_it <- function(args.save, new.args.save=NULL){
 # mode --------------------------------------------------------------------
 #' @keywords internal
 #' @noRd
+#' @export
 .get_mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
@@ -163,53 +163,55 @@ junk_it <- function(args.save, new.args.save=NULL){
 # function to convert time observation to hours since midnight ------------------------------------------------------------------
 #' @keywords internal
 #' @noRd
+#' @export
 .time_to_decimal <- function(x) {
   x <- hms(x)
   hour(x) + minute(x) / 60 + second(x) / 3600
 }
 
-
-# a song to tell me something has stopped ------------------------------------------------------------------
-#' @keywords internal
-#' @noRd
-.song <- function() {
-  for(i in 1:2) {
-    for(i in 1:4) {
-      for(i in 1:4) {
-        beep(7)
-        Sys.sleep(0.25)
-        beep()
-        Sys.sleep(0.22)
-      }
-      beep(2)
-    }
-    beep(11)
-  }
-  beep(4)
-}
-
-
-
-# windows alert -----------------------------------------------------------
-#' @keywords internal
-#' @noRd
-.windows_alert <- function(message=rep("The really long process you started has completed. Hopefully you got it right the first time and don't have to redo it....that took a while.....BEEEEEEEEEEEEEEEP", 3)){
-  if(.Platform$OS.type == "windows"){return()} # only run for windows OS
-  system2(command = "PowerShell",
-          args = c("-Command",
-                   "\"Add-Type -AssemblyName System.Speech;",
-                   "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-                   paste0("$speak.Speak('", message, "');\"")
-          ))
-}
-
+#'
+#' # a song to tell me something has stopped ------------------------------------------------------------------
+#' #' @keywords internal
+#' #' @noRd
+#' .song <- function() {
+#'   for(i in 1:2) {
+#'     for(i in 1:4) {
+#'       for(i in 1:4) {
+#'         beep(7)
+#'         Sys.sleep(0.25)
+#'         beep()
+#'         Sys.sleep(0.22)
+#'       }
+#'       beep(2)
+#'     }
+#'     beep(11)
+#'   }
+#'   beep(4)
+#' }
+#'
+#'
+#'
+#' # windows alert -----------------------------------------------------------
+#' #' @keywords internal
+#' #' @noRd
+#' .windows_alert <- function(message=rep("The really long process you started has completed. Hopefully you got it right the first time and don't have to redo it....that took a while.....BEEEEEEEEEEEEEEEP", 3)){
+#'   if(.Platform$OS.type == "windows"){return()} # only run for windows OS
+#'   system2(command = "PowerShell",
+#'           args = c("-Command",
+#'                    "\"Add-Type -AssemblyName System.Speech;",
+#'                    "$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
+#'                    paste0("$speak.Speak('", message, "');\"")
+#'           ))
+#' }
+#'
 
 
 # evaluate parameter lists ------------------------------------------------
-#' Spruce up R Markdown YAML parameter values that are lists into clean vectors
+#' Spruce up R Markdown YAML parameter values that are lists into clean vectors. Called for convenience inside .RMD files.
 #' @param x The parameter object from YAML `params`
 #' @keywords internal
 #' @noRd
+#' @export eval_params
 eval_params <- function(x=params){
   y <- list() #make empty list to store new objects
 
@@ -238,37 +240,58 @@ for(i in 1:length(x)){
 }
 
 
-
 # dir specification -------------------------------------------------------
-#' Specify directories for outputs
-#' @noRd
-#' @keywords  internal
+#' Specify input and output directories.
+#' Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with `list2env()` to assign directories to desired environment (typically .GlobalEnv)
+#' @param dir.orig.data Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.
+#' @export dir_spec
+dir_spec <- function(dir.orig.data) {
+  if (!endsWith(dir.orig.data, "/"))
+    dir.orig.data <- paste0(dir.orig.data, "/")
+  ## Where is your original eBird data stored?
+  dir.ebird.in <- paste0(dir.orig.data, "ebird")
+  ## Where are the BBS route shapefiles stored?
+  cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
+  usgs.routes.dir <-
+    paste0(dir.orig.data, "/bbs/route_shapefiles/usgs")
 
-dir_spec <- function(dir.orig.data){
-if(!endsWith(dir.orig.data,"/")) dir.orig.data <- paste0(dir.orig.data,"/")
-## Where is your original eBird data stored?
-dir.ebird.in <- paste0(dir.orig.data, "ebird")
-## Where are the BBS route shapefiles stored?
-cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
-usgs.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/usgs")
+  if (!any(length(list.files(cws.routes.dir)) > 0))
+    stop(
+      "No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n"
+    )
 
-if(!any(length(list.files(cws.routes.dir))>0)) stop("No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n")
+  if (!length(list.files(dir.ebird.in) > 0))
+    stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
 
-if(!length(list.files(dir.ebird.in)>0)) stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
-
-## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name.
-if(!"proj.shorthand" %in% names(params)) proj.shorthand <- getwd()
-dir.proj.out <- paste0(proj.shorthand,"-example-", round(grid.size*111.111), "km/")
-# dir.proj.out <- paste0(getwd(),"/")
-## where to store the JAGS objects
-dir.jags <- paste0(dir.proj.out, "jags/")
-dir.models <- paste0(dir.jags, "models/")  # save model files
-dir.bbs.out <- paste0(dir.proj.out,"bbs/")
-dir.ebird.out <- paste0(dir.proj.out,"ebird/")
-dir.spatial.out <- paste0(dir.proj.out,"spatial/")
-dir.plots <- paste0(dir.proj.out, "plots/")
-sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out,
-         dir.spatial.out, dir.jags, dir.models, dir.plots), FUN=function(x) dir.create(x, showWarnings = FALSE))
+  ## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name.
+  if (!"proj.shorthand" %in% names(params))
+    proj.shorthand <- getwd()
+  dir.proj.out <-
+    paste0(proj.shorthand,
+           "-example-",
+           round(grid.size * 111.111),
+           "km/")
+  # dir.proj.out <- paste0(getwd(),"/")
+  ## where to store the JAGS objects
+  dir.jags <- paste0(dir.proj.out, "jags/")
+  dir.models <- paste0(dir.jags, "models/")  # save model files
+  dir.bbs.out <- paste0(dir.proj.out, "bbs/")
+  dir.ebird.out <- paste0(dir.proj.out, "ebird/")
+  dir.spatial.out <- paste0(dir.proj.out, "spatial/")
+  dir.plots <- paste0(dir.proj.out, "plots/")
+  sapply(
+    c(
+      dir.proj.out,
+      dir.bbs.out,
+      dir.ebird.out,
+      dir.spatial.out,
+      dir.jags,
+      dir.models,
+      dir.plots
+    ),
+    FUN = function(x)
+      dir.create(x, showWarnings = FALSE)
+  )
 
 cat("Project directory output files will go to ", dir.proj.out)
 
@@ -290,12 +313,11 @@ return(dirs)
 }
 
 
-
 # trim --------------------------------------------------------------------
 #' Remove column if exists as object's rownames
 #' @param x a data.frame, matrix, or array of two dimensions
 #' @noRd
-#' @keywords internal
+#' @export .trim
 .trim <- function(x){
   if(is.null(rownames(x))){return(x)} # do nothing if inappropriate for data object
   .rowtrim <- which(rownames(x)=="NA")
