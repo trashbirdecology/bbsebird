@@ -10,6 +10,8 @@ scan_files(
 )
 }
 \arguments{
+\item{dir.proj}{project directory, within which first level subdirectories may include c(jags, ebird, bbs, spatial)}
+
 \item{scan.for}{which types of files to scan for. Must be one or more of c("jdat", "spatial","eBird.obs", "bbs.obs"). If multiples are provided and found, the returned objct will be a named list of those imported files.}
 }
 \description{

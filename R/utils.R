@@ -1,6 +1,5 @@
 # time_to_decimal ---------------------------------------------------------
-#' Convert the ebird zero-filled date to decimal times
-
+#' Time to decimal
 #' @param x the data to to convert to H:M:S
 #' @keywords internal
 #' @noRd
@@ -12,8 +11,6 @@ time_to_decimal <- function(x) {
 
 
 # clean_zf ----------------------------------------------------------------
-#' Clean up variables for the zer-filled ebird data
-#'
 #' @param ebd_zf The zero-filled ebird data object (flat)
 #' @keywords internal
 #' @noRd
@@ -44,9 +41,8 @@ clean_zf <- function(ebd_zf){
 
 
 # convert_cols  --------------------------------------------------------
-#' Convert columns
-#'
-#' Converts columns classes based on names for the bbs and ebird data
+#' @title Convert columns
+#' @description Converts columns classes based on names for the bbs and ebird data
 #' @param x The data frame with one or more columns.
 #' @keywords internal
 #' @export
@@ -98,9 +94,7 @@ return(x)
 
 
 # split_table ---------------------------------
-#' Split a dataframe or tibble into a list
-#'
-#' This is essentially a splice but list elements remain tibble or data.frame, instead of matrices or arrays.
+#' split_table internal function
 #' @param tibble the flat data object
 #' @param col the name(s) of the column(s) used to splice the table into a list
 #' @noRd
@@ -108,7 +102,7 @@ split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
 
 
 # SE ----------------------------------------------------------------------
-##' Standard Error
+#' Standard Error
 #'
 #' Computes standard error of a vector
 #' @param x Numeric vector
@@ -258,7 +252,7 @@ for(i in 1:length(x)){
 #' @param species list of species names. will use the longest value as the name
 #' @param states list of state/province names. will use the shortest values in the name
 #' @param year.range Vector of years. will take the min and max value
-#' @export
+#' @export proj.shorthand
 proj.shorthand <- function(species, states, grid.size, year.range){
 
   x <- paste0(
