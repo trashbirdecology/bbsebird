@@ -9,8 +9,7 @@ make_spatial_grid(
   overwrite = TRUE,
   states = NULL,
   countries = c("USA", "CAN", "CA", "United States", "Canada",
-    "United States of America"),
-  interactive.map = FALSE
+    "United States of America")
 )
 }
 \arguments{
@@ -21,8 +20,6 @@ make_spatial_grid(
 \item{states}{Vector of states to which the spatial grid will be clipped.}
 
 \item{countries}{Vector of countries. Defaults to a base map of USA and CAN, unless arg \code{states} is provided.}
-
-\item{interative.map}{TRUE will print an interactive map to device}
 }
 \description{
 Create a Spatial Sampling Grid
