@@ -49,7 +49,6 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   # add dir.proj to direcotries and dir.create them
   sapply(
     c(
-      # dir.proj,
       dir.bbs.out,
       dir.ebird.out,
       dir.spatial.out,
@@ -64,7 +63,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   cat("Project directory output files will go to ", dir.proj)
 
 
-  subset.names <- paste0("dir.",
+subset.names <- paste0("dir.",
                          c("jags",
                            "plots",
                            "models",
@@ -73,21 +72,25 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
                            "spatial.out"
                          ))
 
+base.names <- c("dir.proj",
+                "cws.routes.dir",
+                "usgs.routes.dir")
+
+paths <- list()
   for(i in seq_along(subset.names)){
-  subset.paths[i] <- stringr::str_replace(paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), "//","/")
+  paths[[i]] <- stringr::str_replace(paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), "//","/")
+  names(paths)[[i]] <- subset.names[i]
   }
+x=length(paths)
+y=length(base.names)
+z=x+y
+for(i in (x+1):z){
+  j = i-x
+  paths[[i]] <- stringr::str_replace(eval(parse(text=base.names[j])), "//","/")
+  names(paths)[i] <- base.names[j]
+}
+paths
 
-  names <- c(subset.names, c("dir.proj",
-             "cws.routes.dir",
-             "usgs.routes.dir"))
-
-  paths <- c(dir.proj, cws.routes.dir, usgs.routes.dir,
-            subset.paths
-             )
-
-  if(length(paths)!= length(names))"length of file names and paths does not match. "
-  dirs <- as.list(paths)
-  names(dirs) <- names
 
 
   return(dirs)
