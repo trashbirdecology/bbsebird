@@ -23,8 +23,10 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   dir.ebird.in <- paste0(dir.orig.data, "ebird")
   ## Where are the BBS route shapefiles stored?
   cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
+  cws.routes.dir <- str_replace(cws.routes.dir, "//","/")
   usgs.routes.dir <-
     paste0(dir.orig.data, "/bbs/route_shapefiles/usgs")
+  usgs.routes.dir <- str_replace(usgs.routes.dir, "//","/")
 
   if (!any(length(list.files(cws.routes.dir)) > 0))
     stop(
@@ -70,18 +72,18 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
                            "ebird.out",
                            "spatial.out"
                          ))
-  subset.paths <- paste0(dir.proj)
 
+  for(i in seq_along(subset.names)){
+  subset.paths[i] <- stringr::str_replace(paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), "//","/")
+  }
 
   names <- c(subset.names, c("dir.proj",
              "cws.routes.dir",
              "usgs.routes.dir"))
 
   paths <- c(dir.proj, cws.routes.dir, usgs.routes.dir,
-            paste0(dir.proj, subset.names)
+            subset.paths
              )
-  ## for good measure remove all double slashes
-  paths <- str_replace(paths, "//","/")
 
   if(length(paths)!= length(names))"length of file names and paths does not match. "
   dirs <- as.list(paths)
