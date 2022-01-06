@@ -210,7 +210,6 @@ junk_it <- function(args.save, new.args.save=NULL){
 #' Spruce up R Markdown YAML parameter values that are lists into clean vectors. Called for convenience inside .RMD files.
 #' @param x The parameter object from YAML `params`
 #' @keywords internal
-#' @noRd
 #' @export eval_params
 eval_params <- function(x=params){
   y <- list() #make empty list to store new objects
