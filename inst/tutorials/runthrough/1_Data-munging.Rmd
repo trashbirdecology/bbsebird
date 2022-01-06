@@ -116,7 +116,7 @@ if (!"bbs_obs.rds" %in% tolower(fns)) {
   bbs_obs <-
     munge_bbs(
       list = bbs_orig,
-      spp = interest.species,
+      spp = params$species,
       states=states,
       keep.stop.level.data = FALSE
     )
@@ -171,7 +171,7 @@ ebird_filtered <- filter_ebird_data(
                                     countries = countries,
                                     states = states,
                                     protocol = c("Traveling","Stationary"),
-                                    species = interest.species,
+                                    species = params$species,
                                     max.num.observers=max.num.observers,
                                     years=year.range
                                     )

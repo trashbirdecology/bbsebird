@@ -20,10 +20,12 @@ knitr::opts_chunk$set(
   include=FALSE
 )
 setup.chunk.needed<-FALSE
+# eval conditions/params
+
+# evaluate setup .rmd file
 temp=tempfile(fileext=".R")
 knitr::purl(params$fn.setup, output=temp)
 source(temp)
-# eval conditions/params
 
 ```
 
@@ -35,16 +37,19 @@ jdat <- import_jdat(dir.jags)
 ```
 ## Browse data
 Check out dimensions and contents of jdat object(imported with `import_jdat()`)
-```{r metadata-jdat}
+```{r metadata-jdat, eval=FALSE}
 jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
+## View the structure with one or more of the following:
 # View(jdat.struc)
-kableExtra::kable(jdat.struc)
+# kableExtra::kable(jdat.struc)
+# browseURL(paste0(dir.jags,"jdat-structure.csv"))
 ```
 
 ## Specify JAGS data
 To avoid warning messages from JAGS, just grab what you need. 
 ```{r make-jags.data}
 jdat$prop.site.in.cell.bbs[is.na(jdat$prop.site.in.cell.bbs)] <- 0
+jdat$area.bbs 
 
 jags.data <- list(
   cov1=cov1, 
@@ -82,9 +87,8 @@ inits <- list(
 params.monitor <- c("lambda", "nu",  "b1", "N", "alpha")
 ```
 
-# Step 3: Specify Model
-```{r}
-cov1 <- rnorm(jdat$G.bbs,0,1)
+# Step 3: Specify Model(s)
+```{r bbs-pois-base}
 mod <- "model{
 for(t in 1:T.bbs){
   for(s in 1:S.bbs){
@@ -110,8 +114,8 @@ N[t] <- sum(yBBS.site[,t])
 }"
 ## export model
 # browseURL(mod.fn)
-mod.name <- "bbs-pois-base" ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
-mod.fn <- paste0(dir.models, mod.name, ".txt") # we want to name it now so we can call in jags functions
+mod.name <- paste0(dir.models,"/bbs-pois-base") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
 sink(mod.fn)
 cat(mod)
 sink()
@@ -126,8 +130,8 @@ out <- jagsUI::jags(data  = jags.data,
                     parameters.to.save = params.monitor,
                     n.chains = length(inits), 
                     n.thin = nt, n.iter = ni, n.burnin = nb)
+saveRDS(out, file=paste0(mod.name, ".rds"))
 ```
-
 ## Save outputs
 
 # Step 5: Celebrate

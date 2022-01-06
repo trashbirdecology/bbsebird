@@ -106,7 +106,7 @@ Create matrices for route-grid relationships and descriptors
 ```{r bbs-mats-spatial}
 ## Linear model covariates will be 2-D since, currently, no changes over time. 
 grid.bbs <- bbs %>% distinct(gridcellid, rteno, .keep_all=TRUE) %>% units::drop_units()
-area.bbs <-  make_mat(grid.bbs, val="area")
+area.bbs <- scale(grid.bbs$area)  # just a list of the areas
 prop.site.in.cell.bbs <- make_mat(grid.bbs, val="proprouteincell", replace.na=TRUE)# this should have no missing data
 ```
 
@@ -142,7 +142,7 @@ names.bbs <- c(
  # route-grid information
  "prop.site.in.cell.bbs", 
  # grid cell covariates
- "area.bbs",
+ "area.bbs", # scaled area of a grid cell (Vec)
  # indexing
  ## yBBS array location index 
  # "bbs.index",
@@ -151,23 +151,12 @@ names.bbs <- c(
 )
 ```
 
-# Step 3: eBird Data
-```{r ebird-obs}
-# ebird %>% head()
-
-
-```
-
-
-
-# Step 4: Grid Shit
-
 # Step 5: Wrap it All Up 
 ```{r make-jdat}
 ### use get_data_structure(listname ) to produce a talbe metadata. 
 ## use make_jags_list() to create a jdat list from:
 # c(names.bbs, names.grid, names.ebird)
-jdat <- make_jags_list(c(names.bbs))
+jdat <- make_list(c(names.bbs))
 # Save to file..
 saveRDS(jdat, file = paste0(dir.jags,params$fn.jdat, ".RDS"))
 ```

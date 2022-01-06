@@ -1,10 +1,25 @@
 ---
 title: "0_setup"
-params: 
+params:
+  species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
   proj.shorthand: "fl" # name this if you want to create a new proj directory. if you want the current wd use ""
   dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   # dir.orig.data: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/dubcorm-data-backup/"
-  overwrite.jdat: TRUE
+  countries: "Canada, USA,United States,United States of America" # used to create base maps
+  states: "FL, Florida, GA, Georgia" # states/regions of interest
+  overwrite.jdat: FALSE
+  year.range: 2008:2019 # for now, supply a range as integers (will fix later in `clean_params()`)
+  mmyyyy: "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
+  grid.size: 1.00 #== 1 dec deg
+  min.yday: 91  # approximate breeding season day start (day of year)
+  max.yday: 245 # approximate breeding season day end   (day of year)
+  ebird.protocol: c("Traveling", "Stationary")
+  complete.checklists.only: TRUE # ebird
+  max.effort.mins: 180 ## arbitrary choice; integer
+  max.effort.km:  5 #This is coarse also, typically 5km or less
+  max.num.observers: 10 # ebird
+  crs.target: 4326 # 4326 == unprojected; 5070=Alberts equal area (used by USGS)
+  # include.unid: FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
 ---
 
 ```{r chunks, include = FALSE}
@@ -19,7 +34,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-
 ```{r libraries, echo=TRUE}
 ## Users may run into issues when installing the following packages:
 devtools::install_github("ropensci/rnaturalearth", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
@@ -29,109 +43,27 @@ devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 ### specify packages that we call often 
 pkgs <- c("dubcorms","bbsAssistant","ggplot2","reshape2",
           "stringr","dplyr","sf", "jagsUI")
-
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
 ```
-# Step 1: Setup and Specifications
-## Specs for data subsetting
-First, specify the species, regions, and time frames where necessary. Future development suggests include adding everything in the chunk below into the YAML as params. 
-```{r specs-subsetting, echo=TRUE}
-## List out the various uses of the species names and abbreviations, just to be safe. 
-interest.species <- c("DOCCOR", "DOCCO", "DCCO", "DCCOR", "Double-crested Cormorant", "Double Crested Cormorant") 
 
-## List the countries of interest
-countries <- c("Canada","USA", "United States", "United States of America") # used to create base maps
-
-## Specify the regions you know you definitely don't want to use.
-region.remove = c("Alaska", "Hawaii", "Northwest Territories", "Yukon", "Nunavut", "Yukon Territory") 
-
-## Specify the states/provinces of interest.
-states <- c("FL", "US-FL", "Florida")#, 
-            # "GA","US-GA","Georgia")
-
-## Time frames
-### range of years for subsetting observations
-year.range <- c(2008:2019) # no bbs data for 2020
-# year.range <- c(2008:lubridate::year(Sys.Date()))
-### range of days of the year for subsetting eBird and BBS data 
-min.yday <- 91  # approximate breeding season day start (day of year)
-max.yday <- 245 # approximate breeding season day end   (day of year)
-```
-
-## BBS Data Specifications
-The following specifications are for munging BBS data
-```{r specs-bbs, echo=FALSE}
-include.unid <- FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
-```
-
-## eBird Data Specifications
-The following specifications are for munging eBird data
-```{r specs-ebird}
-ebird.protocol <- c("Traveling", "Stationary")
-complete.checklists.only <- TRUE
-max.effort.mins <-  3*60 ## arbitrary
-max.effort.km   <-  5 #This is coarse also, typically 5km or less
-max.num.observers <- 10
-mmyyyy <- "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
+# Evaluate Parameters from YAML
+Next, use function `dubcorms::eval_params` to clean up the parameters, then assign all  to global environment.  
+```{r eval-params, eval=TRUE, include=FALSE}
+# eval parameters
+params.temp <- eval_params(params) # we cannot save as params--won't allow us to overwrite
+list2env(params.temp, envir = environment())
+rm(params.temp) # remve temp 
 ```
 
 
-## Geospatial specifications
-```{r specs-geospatial}
-## specify the target geographic or projected coordinate reference system (CRS)
-crs.target <- 4326 # 4326 == unprojected; 5070=Alberts equal area (used by USGS)
-
-## provide the desired grid cell size (units== decimal degrees)
-### A good estimate for large-scale (>=state) studies in North Am.
-#### is that there are 111.111km in 1 degree latitude or longitude
-#### miles to km: km=1.61*miles
-grid.size=1.00 #== 1 dec deg
-```
-
-## Directory specifications and naming
+# Specify Directories
 ```{r specs-dirs}
-if(!endsWith(params$dir.orig.data,"/")) params$dir.orig.data <- paste0(params$dir.orig.data,"/")
-## Where is your original eBird data stored?
-dir.ebird.in <- paste0(params$dir.orig.data, "ebird")
-## Where are the BBS route shapefiles stored?
-cws.routes.dir <- paste0(params$dir.orig.data, "/bbs/route_shapefiles/cws")
-usgs.routes.dir <- paste0(params$dir.orig.data, "/bbs/route_shapefiles/usgs")
-
-if(!any(length(list.files(cws.routes.dir))>0)) stop("No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n")
-
-if(!length(list.files(dir.ebird.in)>0)) stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
-
-## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name. 
-if(!"proj.shorthand" %in% names(params)) params$proj.shorthand <- getwd()
-dir.proj.out <- paste0(params$proj.shorthand,"-example-", round(grid.size*111.111), "km/")
-# dir.proj.out <- paste0(getwd(),"/")
-## where to store the JAGS objects
-dir.jags <- paste0(dir.proj.out, "jags/")
-dir.models <- paste0(dir.jags, "models/")  # save model files
-dir.bbs.out <- paste0(dir.proj.out,"bbs/")
-dir.ebird.out <- paste0(dir.proj.out,"ebird/")
-dir.spatial.out <- paste0(dir.proj.out,"spatial/")
-dir.plots <- paste0(dir.proj.out, "plots/")
-sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out, dir.spatial.out, dir.jags, dir.models, dir.plots), FUN=function(x) dir.create(x, showWarnings = FALSE))
-
-cat("Project directory output files will go to ", dir.proj.out)
+dirs <- dir_spec(dir.orig.data) # create series of directories for later use.
+list2env(dirs)# save as global objects
 ```
 
-# Helper Functions
-```{r .trim}
-# .trim: function to remove rows where rteno==NA in all relevant objects. 
-.trim <- function(x){
-  if(is.null(rownames(x))){return(x)} # do nothing if inappropriate for data object
-  .rowtrim <- which(rownames(x)=="NA")
-  if(length(.rowtrim)==0) return(x)
-  x <- x [-.rowtrim,]
-  return(x)
-}
-```
-
-
-# Specify Junk
+# Specify and Remove Junk
 ```{r specify-junk}
 # save a list of elements we always want to keep in memory
 # we also distinguish between the base argumensts for use later in making metadata tables describing our jags objects. 

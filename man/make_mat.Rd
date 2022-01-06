@@ -4,7 +4,7 @@
 \alias{make_mat}
 \title{Make 2-D array (Matrix for JAGS)}
 \usage{
-make_mat(dat, row = "rteno", col = "gridcellid", val)
+make_mat(dat, row = "rteno", col = "gridcellid", val, replace.na = FALSE)
 }
 \arguments{
 \item{dat}{Data frame}
@@ -14,6 +14,8 @@ make_mat(dat, row = "rteno", col = "gridcellid", val)
 \item{col}{Variable in dat containig target column names}
 
 \item{val}{Variable containing the target cell contents}
+
+\item{replace.na}{Whether to replace NA values with zero.}
 }
 \description{
 Make 2-D array (Matrix for JAGS)

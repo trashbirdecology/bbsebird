@@ -152,8 +152,6 @@ junk_it <- function(args.save, new.args.save=NULL){
   return(args.save)
 }
 
-
-
 # mode --------------------------------------------------------------------
 #' @keywords internal
 #' @noRd
@@ -206,3 +204,102 @@ junk_it <- function(args.save, new.args.save=NULL){
 }
 
 
+
+# evaluate parameter lists ------------------------------------------------
+#' Spruce up R Markdown YAML parameter values that are lists into clean vectors
+#' @param x The parameter object from YAML `params`
+#' @keywords internal
+#' @noRd
+eval_params <- function(x=params){
+  y <- list() #make empty list to store new objects
+
+for(i in 1:length(x)){
+  obj  <- x[[i]]
+  name <- names(x)[i]
+
+  if(is.logical(obj) | is.numeric(obj)){skip=TRUE}else{skip=FALSE} # skip the logicals and numerics
+
+  if(name %in% c("year.range") & !skip){
+    yrs <- as.integer(unlist(strsplit(obj, split = ":")))
+    obj <- yrs[1]:yrs[2]
+  }
+
+  if(length(obj) == 1){
+    if(stringr::str_detect(obj, ",")){
+      obj <- trimws(unlist(strsplit(obj, split = ",")))
+      }}
+
+  # if(obj == x[[i]])stop(print(i))
+  y[[i]] <- obj
+  names(y)[i] <- name
+  }#end for loop
+# browser()
+  return(y)
+}
+
+
+
+# dir specification -------------------------------------------------------
+#' Specify directories for outputs
+#' @noRd
+#' @keywords  internal
+
+dir_spec <- function(dir.orig.data){
+if(!endsWith(dir.orig.data,"/")) dir.orig.data <- paste0(dir.orig.data,"/")
+## Where is your original eBird data stored?
+dir.ebird.in <- paste0(dir.orig.data, "ebird")
+## Where are the BBS route shapefiles stored?
+cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
+usgs.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/usgs")
+
+if(!any(length(list.files(cws.routes.dir))>0)) stop("No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n")
+
+if(!length(list.files(dir.ebird.in)>0)) stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
+
+## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name.
+if(!"proj.shorthand" %in% names(params)) proj.shorthand <- getwd()
+dir.proj.out <- paste0(proj.shorthand,"-example-", round(grid.size*111.111), "km/")
+# dir.proj.out <- paste0(getwd(),"/")
+## where to store the JAGS objects
+dir.jags <- paste0(dir.proj.out, "jags/")
+dir.models <- paste0(dir.jags, "models/")  # save model files
+dir.bbs.out <- paste0(dir.proj.out,"bbs/")
+dir.ebird.out <- paste0(dir.proj.out,"ebird/")
+dir.spatial.out <- paste0(dir.proj.out,"spatial/")
+dir.plots <- paste0(dir.proj.out, "plots/")
+sapply(c(dir.proj.out, dir.bbs.out, dir.ebird.out,
+         dir.spatial.out, dir.jags, dir.models, dir.plots), FUN=function(x) dir.create(x, showWarnings = FALSE))
+
+cat("Project directory output files will go to ", dir.proj.out)
+
+names <- c(paste0("dir.",
+                c("jags",
+                  "plots",
+                  "models",
+                  "bbs.out",
+                  "ebird.out",
+                  "spatial.out",
+                  "proj.out")),
+                  "cws.routes.dir",
+                  "usgs.routes.dir"
+                )
+dirs <- make_list(names)
+
+return(dirs)
+
+}
+
+
+
+# trim --------------------------------------------------------------------
+#' Remove column if exists as object's rownames
+#' @param x a data.frame, matrix, or array of two dimensions
+#' @noRd
+#' @keywords internal
+.trim <- function(x){
+  if(is.null(rownames(x))){return(x)} # do nothing if inappropriate for data object
+  .rowtrim <- which(rownames(x)=="NA")
+  if(length(.rowtrim)==0) return(x)
+  x <- x [-.rowtrim,]
+  return(x)
+}
