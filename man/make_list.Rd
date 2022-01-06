@@ -9,6 +9,8 @@ make_list(input)
 }
 \arguments{
 \item{input}{character vector names of data objects in the workspace to be included in the outputted list}
+
+\item{objects.only}{logical TRUE when the \code{input} list provides names to non-string objects. FALSE when \code{input} comprises names for string-only objcts.}
 }
 \description{
 Make a List With Named

@@ -240,79 +240,6 @@ for(i in 1:length(x)){
 }
 
 
-# dir specification -------------------------------------------------------
-#' Specify input and output directories.
-#' Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with `list2env()` to assign directories to desired environment (typically .GlobalEnv)
-#' @param dir.orig.data Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.
-#' @export dir_spec
-dir_spec <- function(dir.orig.data) {
-  if (!endsWith(dir.orig.data, "/"))
-    dir.orig.data <- paste0(dir.orig.data, "/")
-  ## Where is your original eBird data stored?
-  dir.ebird.in <- paste0(dir.orig.data, "ebird")
-  ## Where are the BBS route shapefiles stored?
-  cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
-  usgs.routes.dir <-
-    paste0(dir.orig.data, "/bbs/route_shapefiles/usgs")
-
-  if (!any(length(list.files(cws.routes.dir)) > 0))
-    stop(
-      "No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n"
-    )
-
-  if (!length(list.files(dir.ebird.in) > 0))
-    stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
-
-  ## automatically creates a new directory for storing munged data, results, figures, etc. based on project shorthand name.
-  if (!"proj.shorthand" %in% names(params))
-    proj.shorthand <- getwd()
-  dir.proj.out <-
-    paste0(proj.shorthand,
-           "-example-",
-           round(grid.size * 111.111),
-           "km/")
-  # dir.proj.out <- paste0(getwd(),"/")
-  ## where to store the JAGS objects
-  dir.jags <- paste0(dir.proj.out, "jags/")
-  dir.models <- paste0(dir.jags, "models/")  # save model files
-  dir.bbs.out <- paste0(dir.proj.out, "bbs/")
-  dir.ebird.out <- paste0(dir.proj.out, "ebird/")
-  dir.spatial.out <- paste0(dir.proj.out, "spatial/")
-  dir.plots <- paste0(dir.proj.out, "plots/")
-  sapply(
-    c(
-      dir.proj.out,
-      dir.bbs.out,
-      dir.ebird.out,
-      dir.spatial.out,
-      dir.jags,
-      dir.models,
-      dir.plots
-    ),
-    FUN = function(x)
-      dir.create(x, showWarnings = FALSE)
-  )
-
-cat("Project directory output files will go to ", dir.proj.out)
-
-names <- c(paste0("dir.",
-                c("jags",
-                  "plots",
-                  "models",
-                  "bbs.out",
-                  "ebird.out",
-                  "spatial.out",
-                  "proj.out")),
-                  "cws.routes.dir",
-                  "usgs.routes.dir"
-                )
-dirs <- make_list(names)
-
-return(dirs)
-
-}
-
-
 # trim --------------------------------------------------------------------
 #' Remove column if exists as object's rownames
 #' @param x a data.frame, matrix, or array of two dimensions
@@ -324,4 +251,26 @@ return(dirs)
   if(length(.rowtrim)==0) return(x)
   x <- x [-.rowtrim,]
   return(x)
+}
+
+
+# proj-shorthand ----------------------------------------------------------
+#' Auto generate a subdirectory name based on project parameters
+#' @param species list of species names. will use the longest value as the name
+#' @param states list of state/province names. will use the shortest values in the name
+#' @param year.range Vector of years. will take the min and max value
+#' @export
+proj.shorthand <- function(species, states, grid.size, year.range){
+
+  x <- paste0(
+  species[nchar(species)==(max(nchar(species)))][1],#take min or max to assign species to dir name
+  "_",
+  paste0(states[nchar(states)==2], collapse = "-"), # regions
+  "_",
+  grid.size*111,"km", # size of grid cells
+  "_",
+  min(year.range), "-", max(year.range) # time period
+)
+
+return(x)
 }
