@@ -6,63 +6,65 @@
 #' @param dir.proj project directory, within which first level subdirectories may include c(jags, ebird, bbs, spatial)
 #' @export scan_files
 
-scan_files <- function(dir.proj, scan.for = c("jags","eBird.obs", "bbs.obs", "grid", "bbs.spatial", "ebird.spatial")
-                       ){
+scan_files <- function(dir.proj, scan.for = c("jags","eBird.obs", "bbs.obs", "grid", "bbs.spatial", "ebird.spatial")){
+
 
   x = list.files(dir.proj, full.names=TRUE)
+  scan.for <- tolower(scan.for)
 
-
-    ## spatial grid
-    if(tolower(scan.for)==c("grid")){
-        sd <- list.files(fns[str_detect(x,"spatial")], full.names=TRUE)
+  ## grid
+  if("grid" %in% scan.for){
+        sd <- list.files(x[str_detect(x,"spatial")], full.names=TRUE)
         s <- sd[str_detect(sd, "grid.rds")]
         if(length(s)>0){grid <- readRDS(s)
         cat("Importing file ", s)
         }else{grid <- NULL; cat('No file named "grid.rds" found in dir: \n', sd)}
-    }
-    if(tolower(scan.for)==c("ebird.spatial")){
-      sd <- list.files(fns[str_detect(x,"spatial")], full.names=TRUE)
+    }else{grid<-NULL}
+
+  ## ebird over spatial grid
+  if("ebird_spatial" %in% scan.for){
+    sd <- list.files(x[str_detect(x,"spatial")], full.names=TRUE)
       s <- sd[str_detect(sd, "ebird")]
       cat("Importing file ", s)
-      if(length(s)>0){bbs_spatial <- readRDS(s)}else{bbs_spatial <- NULL; cat('No file named "ebird_spatial.rds" found in dir: \n', sd)}
-    }
-    if(tolower(scan.for)==c("bbs.spatial")){
-      sd <- list.files(fns[str_detect(x,"spatial")], full.names=TRUE)
+      if(length(s)>0){ebird_spatial <- readRDS(s)}else{ebird_spatial <- NULL; cat('No file named "ebird_spatial.rds" found in dir: \n', sd)}
+  }else{ebird_spatial<-NULL}
+
+  ## bbs obs over spatial grid
+  if("bbs_spatial" %in% scan.for){
+      sd <- list.files(x[str_detect(x,"spatial")], full.names=TRUE)
       s <- sd[str_detect(sd, "bbs")]
       cat("Importing file ", s)
       if(length(s)>0){bbs_spatial <- readRDS(s)}else{bbs_spatial <- NULL; cat('No file named "bbs_spatial.rds" found in dir: \n', sd)}
-    }
+    }else{bbs_spatial<-NULL}
 
-    ## "Raw" ebird observations data
-    if(tolower(scan.for)==c("ebird.obs")){
-      sd <- list.files(fns[str_detect(x,"ebird")], full.names=TRUE)
+  ## "Raw" ebird observations data
+  if("ebird_obs" %in% scan.for){
+    sd <- list.files(x[str_detect(x,"ebird")], full.names=TRUE)
       s <- sd[str_detect(sd, "ebird")]
       cat("Importing file ", s)
-      if(length(s)>0){bbs_spatial <- readRDS(s)}else{bbs_spatial <- NULL; cat('No file named "" found in dir: \n', sd)}
-    }
+      if(length(s)>0){ebird_obs <- readRDS(s)}else{ebird_obs <- NULL; cat('No file named "" found in dir: \n', sd)}}else{ebird_obs<-NULL}
 
     ## "Raw" observations data
-    if(tolower(scan.for)==c("bbs.obs")){
-      sd <- list.files(fns[str_detect(x,"bbs")], full.names=TRUE)
+  if("bbs_obs" %in% scan.for){
+    sd <- list.files(x[str_detect(x,"bbs")], full.names=TRUE)
       s <- sd[str_detect(sd, "bbs_orig.rds")]
-      if(length(s)>0){bbs_orig <- readRDS(s)}else{bbs_orig <- NULL; cat('No file named "bbs_orig.rds" found in dir: \n', sd)}
-    }
+      if(length(s)>0){bbs_obs <- readRDS(s)}else{bbs_obs <- NULL; cat('No file named "bbs_orig.rds" found in dir: \n', sd)}
+    }else{bbs_obs<-NULL}
 
 
     # JAGS Data
-    if(tolower(scan.for)==c("jags")){
-      sd <- list.files(fns[str_detect(x,"jags")], full.names=TRUE)
+  if("jdat"%in% scan.for){
+     sd <- list.files(x[str_detect(x,"jags")], full.names=TRUE)
       s <- sd[str_detect(sd, "jdat.rds|jagsdata.rds")]
       if(length(s)>0){jdat <- readRDS(s)}else{jdat <- NULL; cat('No file named "jdat.rds or jagsdata.rds" found in dir: \n', sd)}
-    }
-
+    }else{jdat<-NULL}
 
 
   # All potential objects
   objs <- c("ebird_obs", "bbs_obs", "grid", "ebird_spatial","bbs_spatial")
   ## see which were imported, if any
   # out <- objs[which(objs %in% ls())] # can use this if make_list fails
-  out <- make_list(out)
+  out <- make_list(objs)
 
   # Return object
   return(out)

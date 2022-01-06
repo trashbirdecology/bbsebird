@@ -7,20 +7,24 @@ make_list <- function(input){
 
 new.list <- list()
 for(i in seq_along(input)){
-
+  if(i==1) to.drop <- NULL
+  null.ind <- is.null(eval(parse(text=paste(input[i]))))
+  if(null.ind){
+    to.drop <- c(to.drop, i)
+    next()}
   # assign the object to a new list
-  new.list[[i]] <- eval(parse(text=paste(input[i])))
+  if(!null.ind) new.list[[i]] <- eval(parse(text=paste(input[i])))
 
   # doing this inside loop to prevent issues where data DNE
-  # names(new.list)[i] <- input[i]
 }
-names(new.list) <- input
 
-x <- new.list
-x <- x[!sapply(x, is.null)]
+x.list <- new.list[-to.drop]
+x.names <- input[-to.drop]
+
+names(x.list) <- x.names
 
 
-return(new.list)
+return(x.list)
 
 }
 
