@@ -5,15 +5,13 @@
 #' @param countries Vector of countries. Defaults to a base map of USA and CAN, unless arg `states` is provided.
 #' @param states Vector of states to which the spatial grid will be clipped.
 #' @param interative.map TRUE will print an interactive map to device
-#' @export make_spatial_grid#' 
-
+#' @export make_spatial_grid
 
 make_spatial_grid <- function(dir.out, overwrite=TRUE, 
                               states = NULL, 
                               countries = c("USA", "CAN", "CA", "United States", "Canada", "United States of America"), 
                               interactive.map = FALSE
-                              )
-{
+                              ){
  # If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file. 
   if("grid.rds" %in% list.files(dir.spatial.out) & !overwrite){ 
   grid <- readRDS(paste0(dir.spatial.out, "/", "grid.rds"))
