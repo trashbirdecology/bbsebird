@@ -7,12 +7,14 @@ make_list <- function(input){
 
 new.list <- list()
 for(i in seq_along(input)){
+
   # assign the object to a new list
   new.list[[i]] <- eval(parse(text=paste(input[i])))
 
   # doing this inside loop to prevent issues where data DNE
-  names(new.list)[[i]] <- input[i]
+  # names(new.list)[i] <- input[i]
 }
+names(new.list) <- input
 
 return(new.list)
 
