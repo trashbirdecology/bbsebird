@@ -10,10 +10,10 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
   if(is.null(dir.proj)) dir.proj <- getwd()
   # first, create the proj directory if necessary
-  if(!file.exists(dir.proj)) dir.create(dir.proj)
+  if(!file.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified
   if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj, "/", subdir.proj)
-  if(!file.exists(dir.proj)) dir.create(dir.proj)
+  if(!file.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
 
   if (!endsWith(dir.orig.data, "/")){
     dir.orig.data <- paste0(dir.orig.data, "/")}
