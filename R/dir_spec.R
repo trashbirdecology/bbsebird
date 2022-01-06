@@ -93,7 +93,7 @@ paths
 
 
 
-  return(dirs)
+  return(paths)
 
   }
 
