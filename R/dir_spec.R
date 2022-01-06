@@ -61,26 +61,32 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   cat("Project directory output files will go to ", dir.proj)
 
 
-  names <- c(paste0("dir.",
-                    c("jags",
-                      "plots",
-                      "models",
-                      "bbs.out",
-                      "ebird.out",
-                      "spatial.out"
-                      )),
+  subset.names <- paste0("dir.",
+                         c("jags",
+                           "plots",
+                           "models",
+                           "bbs.out",
+                           "ebird.out",
+                           "spatial.out"
+                         ))
+  subset.paths <- paste0(dir.proj)
+
+
+  names <- c(subset.names, c("dir.proj",
              "cws.routes.dir",
-             "usgs.routes.dir"
-  )
+             "usgs.routes.dir"))
 
-  # throw all the objects into a list
+  paths <- c(dir.proj, cws.routes.dir, usgs.routes.dir,
+            paste0(dir.proj, subset.names)
+             )
+  ## for good measure remove all double slashes
+  paths <- str_replace(paths, "//","/")
 
-  dirs <- list()
-  for(i in seq_along(names)){
-    dirs[[i]] <- eval(parse(text=names[i]))
-    names(dirs)[i] <- names[i]
-  }
-  # dirs
+  if(length(paths)!= length(names))"length of file names and paths does not match. "
+  dirs <- as.list(paths)
+  names(dirs) <- names
+
+
   return(dirs)
 
   }

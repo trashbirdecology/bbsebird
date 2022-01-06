@@ -63,7 +63,8 @@ rm(params.temp) # remve temp
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <- proj.shorthand(species, states, grid.size, year.range)
 dirs <- dir_spec(dir.orig.data, dir.proj, subdir.proj) # create series of directories for later use.
-list2env(dirs)# bind the dir values as named global objects
+list2env(dirs, env=.GlobalEnv)# bind the dir values as named global objects (MUST INCLUDE `env=.GlobalEnv`)
+rm(dirs)
 ```
 
 # Specify and Remove Junk
@@ -75,6 +76,6 @@ args.save <- args.save.base <- c("args.save.base", ls())
 
 # Spatial Grid
 ```{r make-grid}
-grid <- make_spatial_grid(dir.spatial.out, interactive.map = TRUE)
+grid <- make_spatial_grid(dir.spatial.out, interactive.map = TRUE, states=states)
 ```
 
