@@ -16,6 +16,11 @@ for(i in seq_along(input)){
 }
 names(new.list) <- input
 
+x <- new.list
+x <- x[!sapply(x, is.null)]
+
+
 return(new.list)
 
 }
+
