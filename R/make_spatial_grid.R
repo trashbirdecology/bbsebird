@@ -4,13 +4,11 @@
 #' @param overwrite TRUE will overwrite existing `grid.rds` in `dir.out`
 #' @param countries Vector of countries. Defaults to a base map of USA and CAN, unless arg `states` is provided.
 #' @param states Vector of states to which the spatial grid will be clipped.
-#' @param interative.map TRUE will print an interactive map to device
 #' @export make_spatial_grid
 make_spatial_grid <- function(dir.out,
                               overwrite=TRUE,
                               states = NULL,
-                              countries = c("USA", "CAN", "CA", "United States", "Canada", "United States of America"),
-                              interactive.map = FALSE
+                              countries = c("USA", "CAN", "CA", "United States", "Canada", "United States of America")
                               ){
  # If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file.
   if("grid.rds" %in% list.files(dir.spatial.out) & !overwrite){
@@ -43,10 +41,10 @@ grid <- study.area %>%
   # add the grid cell area as a variable
   grid$area <- sf::st_area(grid)
 
-  # # Visualize to check
-  # tmap::qtm(grid)
-if(interactive.map)  mapview::mapview(grid) # interactive, openstreetmap
-
+#   # # Visualize to check
+#   # tmap::qtm(grid)
+# if(interactive.map)  mapview::mapview(grid) # interactive, openstreetmap
+#
 # Add centroid lat lon to grid
 centroid.coords <- sf::st_coordinates(sf::st_geometry(sf::st_centroid(grid)))
 grid$cell.lon.centroid <- centroid.coords[,1]
