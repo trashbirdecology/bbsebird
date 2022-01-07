@@ -12,6 +12,8 @@ match_col_names <- function(x){
                     lon = c("longitude","long")
                     )
 
+  names(x) <- tolower(names(x))
+
   for(i in seq_along(col_names)){
     newname=names(col_names)[i]
     oldnames=col_names[[i]]

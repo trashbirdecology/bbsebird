@@ -167,40 +167,40 @@ if(!all(grid$gridcellid %in% unique(c(ebird_spatial$gridcellid, bbs_spatial$grid
 To ensure proper integration (or rather, use of all data in JAGS) we need to munge the ebird and bbs spatial data just a little bit. We first ensure column names map to each other, where appropriate (e.g., bird count, dates).
 ```{r match-colnames}
 ## Force BBS colnames to lowercase.
-names(bbs_spatial) <- tolower(names(bbs_spatial))
-bbs_spatial   <- match_col_names(bbs_spatial)
-ebird_spatial <- match_col_names(ebird_spatial)
+# names(bbs_spatial) <- tolower(names(bbs_spatial))
+# bbs_spatial   <- match_col_names(bbs_spatial)
+# ebird_spatial <- match_col_names(ebird_spatial)
 ```
 
 Next, munge the dates, times, julian dates, and days of year for each dataset such that we can properly align on the temporal dimension.
 ```{r munge-dates-times}
-cat("managing dates and times of spatial objects")
-# Dates ---------------------------------------------
-### make julian dates
-bbs_spatial$date <- lubridate::as_date(bbs_spatial$date)
-ebird_spatial$date <- lubridate::as_date(ebird_spatial$date)
-## base date for julian date
-#### eventually will need to save this or export it somewhere, maybe add it to jags list idk
-base.date <- min(c(bbs_spatial$date, ebird_spatial$date), na.rm=TRUE)
-## make julian dates
-bbs_spatial$julian <- julian(bbs_spatial$date, origin = base.date)
-ebird_spatial$julian <- julian(as.Date(ebird_spatial$date), origin = base.date)
-## make day of year
-ebird_spatial$yday <- lubridate::yday(ebird_spatial$date)
-bbs_spatial$yday <- lubridate::yday(bbs_spatial$date)
-
-## Filter days of the year if specified
-if(exists("yday")) ebird_spatial <- ebird_spatial %>%
-  filter(yday >= min.yday & yday <= max.yday)
-if(exists("yday")) ebird_spatial <- ebird_spatial %>%
-  filter(yday >= min.yday & yday <= max.yday)
-
-# Times ---------------------------------------------
-### this is an ugly workaround and can be improved, including throwing the processes into
-### the BBS and eBird munging functions but this is it for now.
-bbs_spatial$starttime=hms::as_hms(as.POSIXct(bbs_spatial$starttime, format="%H%M"))
-bbs_spatial$endtime=hms::as_hms(as.POSIXct(bbs_spatial$endtime, format="%H%M"))
-ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$time_observations_started, format="%H:%M:%S"))
+# cat("managing dates and times of spatial objects")
+# # Dates ---------------------------------------------
+# ### make julian dates
+# ## base date for julian date
+# #### eventually will need to save this or export it somewhere, maybe add it to jags list idk
+# ebird_spatial$date <- lubridate::as_date(ebird_spatial$date)
+# ebird_spatial$julian <- julian(as.Date(ebird_spatial$date), origin = base.date)
+# 
+# ebird_spatial$yday <- lubridate::yday(ebird_spatial$date)
+# ## make julian dates
+# ## make day of year
+# 
+# bbs_spatial$date <- lubridate::as_date(bbs_spatial$date)
+# bbs_spatial$yday <- lubridate::yday(bbs_spatial$date)
+# bbs_spatial$julian <- julian(bbs_spatial$date, origin = base.date)
+# if(exists("yday")) ebird_spatial <- ebird_spatial %>%
+#   filter(yday >= min.yday & yday <= max.yday)
+# ## Filter days of the year if specified
+# if(exists("yday")) bbs_spatial <- ebird_spatial %>%
+#   filter(yday >= min.yday & yday <= max.yday)
+# 
+# # Times ---------------------------------------------
+# ### this is an ugly workaround and can be improved, including throwing the processes into
+# ### the BBS and eBird munging functions but this is it for now.
+# bbs_spatial$starttime=hms::as_hms(as.POSIXct(bbs_spatial$starttime, format="%H%M"))
+# bbs_spatial$endtime=hms::as_hms(as.POSIXct(bbs_spatial$endtime, format="%H%M"))
+# ebird_spatial$time_observations_started=hms::as_hms(as.POSIXct(ebird_spatial$time_observations_started, format="%H:%M:%S"))
 ```
 
 If you don't need local sunlight/rise/set times, specify `eval=FALSE` in this chunk. This process takes a while and sometimes crashes when computing on the ebird data. 

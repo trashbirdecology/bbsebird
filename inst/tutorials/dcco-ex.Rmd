@@ -9,7 +9,7 @@ params:
   states: "FL, Florida, GA, Georgia" # states/regions of interest
   overwrite.jdat: FALSE
   overwrite.bbs:  FALSE
-  overwrte.ebird: FALSE # if TRUE, will re-process all eBird data. Do not do this unless you need to re-create the eBird data for some reason. NOTE: If you change a data subsetting parameter (e.g., year.range, grid.size), this will be ignored because the process herein creates a new subdirectory according to parameter specifications. 
+  overwrite.ebird: FALSE # if TRUE, will re-process all eBird data. Do not do this unless you need to re-create the eBird data for some reason. NOTE: If you change a data subsetting parameter (e.g., year.range, grid.size), this will be ignored because the process herein creates a new subdirectory according to parameter specifications. 
   year.range: 2008:2019 # for now, supply a range as integers (will fix later in `clean_params()`)
   mmyyyy: "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
   grid.size: 1.00 #== 1 dec deg
@@ -57,7 +57,10 @@ Next, use function `dubcorms::eval_params` to clean up the parameters, then assi
 ```{r eval-params, eval=TRUE, include=FALSE}
 # eval parameters
 params.temp <- eval_params(params) # we cannot save as params--won't allow us to overwrite
+# save params as objects in environment instead of inside a list (b.c of my laziness)
 list2env(params.temp, envir = environment())
+
+base.date <- lubridate::ymd(paste0(min(year.range), c("-01-01"))) # make a base.date param for use in generating Julian dates
 rm(params.temp) # remve temp 
 ```
 
@@ -84,19 +87,21 @@ args.save <- args.save.base <- c("args.save.base", ls())
 ## Check for existing files
 ```{r scan-files, include=FALSE}
 ## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
-list <- scan_files(dir.proj = dir.proj)
+### sometimes the sca_files doesn't want to work for no reason, just keep trying????
+list <- scan_files(dir.proj = dir.proj, scan.for = c("ebird_spatial", "bbs_spatial"))
 list2env(list, .GlobalEnv) # unpack the list objects to environment
 rm(list)
 ```
-
+Set chunk evaluation conditions below. In the previous section, the `scan_files()` searched and imported the data specified in argument `scan.for`. If any of those files exist in .GlobalEnv, then the X.ind evaluation condition will be set to FALSE, thereby ignoring relevant data creating or munging chunks. 
 ```{r set-eval-conditions}
-j.ind <- ifelse(!exists("jdat"), TRUE, FALSE)
-e.ind <- ifelse(!exists("ebird_spatial"), TRUE ,FALSE)
-b.ind <- ifelse(!exists("bbs_spatial"), TRUE, FALSE)
+j.ind <- ifelse(!exists("jdat") | (exists("jdat") & overwrite.jdat), TRUE, FALSE)
+b.ind <- ifelse(!exists("bbs_spatial") | (exists("bbs_spatial") & overwrite.bbs), TRUE, FALSE)
+e.ind <- ifelse(!exists("ebird_spatial") | (exists("ebird_spatial") & overwrite.ebird), TRUE, FALSE)
 g.ind <- ifelse(!exists("grid"), TRUE, FALSE)
+args.save <- c(args.save, "j.ind", "e.ind", "b.ind", "g.ind")
 ```
 
-# Step 2: Data Creation and Basic Munging
+# Step 2: Make Data (If Necessary)
 If the files don't exist above, as specified in chunk #set-eval-conditions, the chunks in Step 2 will download, import, and munge where necessary. If you wish to overwrite existing files, delete from file or change evaluation conditions as specified above. 
 
 ## Step 2a: Spatial Grid
@@ -145,7 +150,12 @@ fns.spat <- list.files(dir.spatial.out)
     keep.empty.cells =TRUE,
     plot.dir=dir.plots,
     overwrite=TRUE)
-    saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
+
+  # Munge the spatial data a bit for downstream alignment with ebird_spatial  
+  bbs_spatial  <- match_col_names(bbs_spatial)
+  bbs_spatial  <- munge_date_time(bbs_spatial, base.date)
+  
+  saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
     }
 
 browseURL(list.files(dir.plots, "bbs", full.names = TRUE))
@@ -183,17 +193,41 @@ if(e.ind){
    if("ebird_zf.rds" %in% fns){ebird_zf <- readRDS(paste0(dir.ebird.out, "ebird_zf.rds"))}else{
      # Zero-fill the filtered eBird data
     ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.ebird.out)
-  saveRDS(ebird_zf, paste0(dir.ebird.out,  "ebird_zf.rds"))
+      saveRDS(ebird_zf, paste0(dir.ebird.out,  "ebird_zf.rds"))
    } # end ebird_zf
   
     # Overlay eBird observations and spatial grid 
     ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target, grid = grid)
+    
+    # Munge the spatial data a bit for downstream alignment with bbs_spatial  
+    ebird_spatial  <- match_col_names(ebird_spatial)
+    ebird_spatial  <- munge_date_time(ebird_spatial, base.date)
+
     saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
 }
+```
 
-args.save <- junk_it(args.save, "ebird_spatial")
+
+
+## Step 2d: Run basic tests
+Just run a couple quick tests to ensure spatial data are on same projection.
+```{r test-spatial-alignment}
+if(sf::st_crs(ebird_spatial)!=sf::st_crs(bbs_spatial))stop("Warning. The ebird, and bbs spatial layers are not in same projection and/or CRS.")
+
+# clear unwanted stuff
+args.save <- junk_it(args.save, c("ebird_spatial", "bbs_spatial", "grid"))
+```
+
+# Step 3: Munge Data for Use in JAGS
+We need to munge the data just a little bit further for use in JAGS together. You may need to create/munge data furhter depending on model(s). 
+
+```{r jdat-ebird, eval=j.ind}
+
 
 ```
 
 
+## Step 3a: BBS 
+
+## Step 3b: eBird
 
