@@ -72,8 +72,9 @@ rm(dirs)
 
 ## Specify and Remove Junk
 ```{r specify-junk}
-# save a list of elements we always want to keep in memory
-# we also distinguish between the base argumensts for use later in making metadata tables describing our jags objects. 
+# DO NOT SKIP
+# save a list of elements we always want to keep in memory. 
+# later, we use `junk_it()` to build upon this list (and use it to rm() objs not in this list)
 args.save <- args.save.base <- c("args.save.base", ls())
 ```
 
@@ -102,29 +103,31 @@ b.ind <- ifelse("bbs_spatial.rds" %in% list.files(dir.spatial),
                 TRUE # if first cond. is false
                 )
 g.ind <- ifelse("grid.rds" %in% list.files(dir.spatial), FALSE, TRUE)
-
+args.save <- junk_it(args.save, paste0(c(j.ind, e.ind, b.ind, g.ind), ".ind"))
 ```
 
 
-# Step 2: Munge Data if they DNE
+# Step 2: Data Creation and Basic Munging
 If the files don't exist above, as specified in chunk #set-eval-conditions, the chunks in Step 2 will download, import, and munge where necessary. If you wish to overwrite existing files, delete from file or change evaluation conditions as specified above. 
-
 
 ## Step 2a: Spatial Grid
 Load or create the underlying spatial sampling grid, to which the observations will be overlayed. 
-```{r spatial-grid, eval=g.ind}
+```{r spatial-grid}
 fns <- list.files(dir.spatial.out)
-if("grid.rds" %in% fns){grid <- readRDS(paste0(dir.spatial.out, "grid.rds"))}else{
+if(!g.ind){grid <- readRDS(paste0(dir.spatial.out, "grid.rds"))}else{
 grid <- make_spatial_grid(dir.spatial.out, overwrite=TRUE, states = states)}
 # plot(grid[1])
+args.save <- junk_it(args.save, "grid")
 ```
 
 
 ## Step 2b: BBS Data
 Munging the BBS data shouldn't take too long, regardless spatial extent.
-```{r bbs, eval=b.ind}
+```{r bbs}
 # If the original data already exists, just import it. Unless you are not using the most recent version (as specified in package `bbsAssistant`), bbs_orig should not change.
 fns <- list.files(dir.bbs.out)
+## If b.ind is FALSE then read in bbs_spatial, otherwise, create or import the bbs observations and create bbs_spatial
+if(!b.ind){ bbs_spatial <- readRDS(paste0(dir.spatial.out, "bbs_spatial.rds"))}else{
 if("bbs_orig.rds" %in% fns){bbs_orig <- readRDS(paste0(dir.bbs.out,"bbs_orig.rds"))}else{
   # if DNE, create and import data. 
   bbs_orig <- grab_bbs_data(sb_dir = dir.bbs.out)
@@ -144,7 +147,6 @@ if (!"bbs_obs.rds" %in% tolower(fns)) {
 
 # Overlay BBS observations and spatial grid
 fns.spat <- list.files(dir.spatial.out)
-if ("bbs_spatial.rds" %in% tolower(fns.spat)){
   bbs_spatial <- 
     make_bbs_spatial(
     bbs.obs = bbs_obs,
@@ -157,42 +159,54 @@ if ("bbs_spatial.rds" %in% tolower(fns.spat)){
     plot.dir=dir.plots,
     overwrite=TRUE)
     saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
-    }else{
-  bbs_spatial <- readRDS(paste0(dir.spatial.out, "bbs_spatial.rds"))}
+    
+rm(bbs_obs, bbs_orig)    # shouldn't need these anymore so just clear up a little mem
+}
+
+args.save <- junk_it(args.save, "ebird_spatial")
 # hist(log(bbs_spatial$RouteTotal))
 browseURL(list.files(dir.plots, "bbs", full.names = TRUE))
+
 ```
 
 ## Step 2c: eBird Data
 Munging the eBird will take quite a while, especially if you are running more than a couple of states. This process also requires a significant amount of free RAM. A
 ```{r ebird, eval=e.ind}
-fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 fns <- list.files(dir.ebird.out)
-
-
 # To avoid unnecessary wait times, when overwrite.ebird = FALSE and ebird_spatial.rds already exists, will not run the othre ebird munging processes.
 # Import and pre-process the eBird data
-ebird_filtered <- }else{ebird_filtered <- filter_ebird_data(
-                                    fns.ebird = fns.ebird,
-                                    overwrite = FALSE,
-                                    dir.ebird.out = dir.ebird.out,
-                                    countries = countries,
-                                    states = states,
-                                    protocol = c("Traveling","Stationary"),
-                                    species = species,
-                                    max.num.observers=max.num.observers,
-                                    years=year.range
-                                    )
 
-# Zero-fill the filtered eBird data
+# If e.ind=FALSE, just import the ebird_spatial data object. If true, will take a while to re-do filtering etc.
+if(!e.ind){ebird_spatial <- readRDS(paste0(dir.spatial, "ebird_spatial.rds"))}else{
+  
+  # import existing filtered ebird if it exists:
+  if("ebird_filtered.rds" %in% fns){ebird_filtered <- readRDS(paste0(dir.ebird.out, "ebird_filtered.rds"))}else{
+  ebird_filtered <- filter_ebird_data(
+      fns.ebird = id_ebird_files(dir.ebird.in = dir.ebird.in), # finds only relevant ebird obs and smapling events data in dir.ebird.in
+      overwrite = FALSE,
+      dir.ebird.out = dir.ebird.out,
+      countries = countries,
+      states = states,
+      protocol = c("Traveling", "Stationary"),
+      species = species,
+      max.num.observers = max.num.observers,
+      years = year.range
+  )
+  saveRDS(ebird_filtered, paste0(dir.ebird.out,  "ebird_filtered.rds"))
+  } #end ebird_filtered
+    
+   if("ebird_zf.rds" %in% fns){ebird_zf <- readRDS(paste0(dir.ebird.out, "ebird_zf.rds"))}else{
+     # Zero-fill the filtered eBird data
+    ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.ebird.out)
+  saveRDS(ebird_zf, paste0(dir.ebird.out,  "ebird_zf.rds"))
+   } # end ebird_zf
+  
+    # Overlay eBird observations and spatial grid 
+    ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target, grid = grid)
+    saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
+}
 
-ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.ebird.out)
-
-# Overlay eBird observations and spatial grid
-
-
-saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
-
+args.save <- junk_it(args.save, "ebird_spatial")
 
 ```
 
