@@ -52,6 +52,15 @@ filter_ebird_data <-
            f_samp_out  = paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
            ) {
 
+    # warn about potential memory issues
+    if (parallel::detectCores() <= 4 |
+        memory.limit() < 25000)
+      warning(
+        "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. \n\nIf `filter_ebird_data` takes longer than 20 minutes and your spatial extent <~5 u.s. states, something is probably wrong.\n\n"
+      )
+
+
+
     f_samp_in  <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
     f_obs_in <- setdiff(fns.ebird, f_samp_in)
     if (!length(f_obs_in) > 0)

@@ -73,6 +73,7 @@ subset.names <- paste0("dir.",
                          ))
 
 base.names <- c("dir.proj",
+                "dir.ebird.in",
                 "cws.routes.dir",
                 "usgs.routes.dir")
 

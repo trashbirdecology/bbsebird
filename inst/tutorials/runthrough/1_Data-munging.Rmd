@@ -116,11 +116,6 @@ Due to the size of the eBird data, it may take many many minutes to munge the da
 ```{r ebird-data}
 # Do not run if bbs_spatial already exists
 if(!exists("ebird_spatial")){
-if (parallel::detectCores() <= 4 |
-    memory.limit() < 25000)
-  warning(
-    "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. If `filter_ebird_data` takes longer than 20 minutes and your spatial extent <~5 u.s. states, something is probably wrong.\n\n"
-  )
 
 fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
 
