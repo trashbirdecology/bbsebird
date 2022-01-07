@@ -2,7 +2,6 @@
 title: "Munge eBird and BBS Data for Integrated Model"
 params:
   fn.setup: "0_setup.rmd"
-  get.sunlight: FALSE # if you want sun/moon rise/set times set to TRUE
 ---
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
@@ -15,9 +14,6 @@ knitr::opts_chunk$set(
   include=FALSE
 )
 
-## establish conditions 
- eval_sunlight <- params$get.sunlight 
- 
 
 temp=tempfile(fileext=".r")
 knitr::purl(params$fn.setup, output=temp)
@@ -26,50 +22,15 @@ source(temp)
 
 
 
-# Step 1: Make a Spatial Grid
-If the spatial grid R object, `grid.rds`, already exists in `r dir.proj.out`, load it into file. If not, will create a new spatial grid and save to file. 
-```{r make-grid}
-## If a grid.rds is saved in project directory, will not run script and instead will load that file into memory
-## load in that rds.
-if("grid.rds" %in% list.files(dir.spatial.out)) grid <- readRDS(paste0(dir.spatial.out, "/", "grid.rds"))else{
-study.area <-
-  rnaturalearth::ne_states(country = countries, returnclass = "sf") %>%
-  # remove region(s)
-  filter(tolower(name) %in% tolower(states)) %>%
-  filter(!tolower(name) %in% tolower(region.remove)) %>%
-  sf::st_transform(study.area, crs = crs.target)
-# unique(study.area$adm0_a3) #should add a test here to make sure number of countries expected is grabbed.
+<!-- # Step 1: Make a Spatial Grid -->
+<!-- If the spatial grid R object, `grid.rds`, already exists in `r dir.proj.out`, load it into file. If not, will create a new spatial grid and save to file.  -->
+<!-- ```{r make-grid} -->
+<!-- ## If a grid.rds is saved in project directory, will not run script and instead will load that file into memory -->
+<!-- ## load in that rds. -->
 
-# throw a grid over the study area layer
-grid <- study.area %>%
-  sf::st_make_grid(cellsize = grid.size,
-               square = FALSE,
-               flat_topped = TRUE) %>%
-  sf::st_intersection(study.area) %>%
-  # st_cast("MULTIPOLYGON") %>%
-  sf::st_sf() %>%
-  mutate(gridcellid = row_number()) %>%
-  sf::st_transform(crs = crs.target)
-
-# add the grid cell area as a variable
-grid$area <- sf::st_area(grid)
-
-# # Visualize to check
-# tmap::qtm(grid)
-# mapview::mapview(grid) # interactive, openstreetmap
-
-# Add centroid lat lon to grid 
-centroid.coords <- sf::st_coordinates(sf::st_geometry(sf::st_centroid(grid)))
-grid$cell.lon.centroid <- centroid.coords[,1]
-grid$cell.lat.centroid <- centroid.coords[,2]
-grid$area <- st_area(grid)
-
-# Export Data
-saveRDS(grid, file = paste0(dir.spatial.out, "/", "grid.rds"))
-}
-# Clear junk
-args.save <- junk_it(args.save, "grid")
-```
+<!-- # Clear junk -->
+<!-- args.save <- junk_it(args.save, "grid") -->
+<!-- ``` -->
 
 # Step 2: Load or Create BBS and eBird Data
 ## Step 2a: Check to see if the munged spatial data files already exist.
@@ -84,7 +45,7 @@ if(all(fns.spatial %in% list.files(dir.spatial.out))){
   grid          <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "grid")])
   ebird_spatial <- readRDS(fns.spatial[stringr::str_detect(fns.spatial, "ebird_spat")]) # sometimes this fails because ebird data hates me, so re-run plz
   ## If you want to check out the spatial grid wtih some basic BBS stats, go for it:
-# if(params$browse.plots) 
+# if(params$browse.plots)
   browseURL(list.files(dir.plots, "bbs_spatial_exploratory.pdf", full.names=TRUE))# opens the PDF!
   }
 ```

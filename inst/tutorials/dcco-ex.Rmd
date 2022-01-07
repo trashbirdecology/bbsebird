@@ -23,6 +23,7 @@ params:
   get.sunlight: FALSE # if you need to calculate sun/moonrise times set to TRUE (comp. expenesive for eBird data so don't do this unless you realllly want it.) 
 ---
 
+# Step 0: Setup
 ```{r chunks, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -35,6 +36,7 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Libraries
 ```{r libraries, echo=TRUE}
 ## Users may run into issues when installing the following packages:
 devtools::install_github("ropensci/rnaturalearth", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
@@ -48,7 +50,7 @@ invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
 ```
 
-# Evaluate Parameters from YAML
+## Evaluate Parameters from YAML
 Next, use function `dubcorms::eval_params` to clean up the parameters, then assign all  to global environment.  
 ```{r eval-params, eval=TRUE, include=FALSE}
 # eval parameters
@@ -58,7 +60,7 @@ rm(params.temp) # remve temp
 ```
 
 
-# Specify Directories
+## Specify Directories
 ```{r specs-dirs}
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <- proj.shorthand(species, states, grid.size, year.range)
@@ -67,15 +69,87 @@ list2env(dirs, env=.GlobalEnv)# bind the dir values as named global objects (MUS
 rm(dirs)
 ```
 
-# Specify and Remove Junk
+## Specify and Remove Junk
 ```{r specify-junk}
 # save a list of elements we always want to keep in memory
 # we also distinguish between the base argumensts for use later in making metadata tables describing our jags objects. 
 args.save <- args.save.base <- c("args.save.base", ls())
 ```
 
-# Spatial Grid
-```{r make-grid}
-grid <- make_spatial_grid(dir.spatial.out, interactive.map = TRUE, states=states)
+# Step 1: Check for Existing Files
+
+## Check for existing files
+```{r scan-files, include=FALSE}
+## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
+list <- scan_files(dir.proj = dir.proj)
+list2env(list, .GlobalEnv) # unpack the list objects to environment
+rm(list)
+```
+
+```{r set-eval-conditions}
+j.ind      <- ifelse(exists("jdat"), FALSE, TRUE )
+g.ind      <- ifelse(exists("grid"), FALSE, TRUE )
+e.s.ind    <- ifelse(exists("ebird_spatial"), FALSE, TRUE )
+b.s.ind    <- ifelse(exists("bbs_spatial"), FALSE, TRUE )
+b.ind      <- ifelse(exists("bbs_obs"), FALSE, TRUE )
+e.ind      <- ifelse(exists("ebird_obs"), FALSE, TRUE )
+```
+
+
+# Step 2: Munge Data if they DNE
+If the files don't exist above, as specified in chunk #set-eval-conditions, the chunks in Step 2 will download, import, and munge where necessary. If you wish to overwrite existing files, delete from file or change evaluation conditions as specified above. 
+
+
+## Step 2a: Spatial Grid
+Load or create the underlying spatial sampling grid, to which the observations will be overlayed. 
+```{r spatial-grid, eval=g.ind}
+fns <- list.files(dir.spatial.out)
+if("grid.rds" %in% fns){grid <- readRDS(paste0(dir.spatial.out, "/grid.rds"))}else{
+grid <- make_spatial_grid(dir.spatial.out, overwrite=TRUE, states = states)}
+# plot(grid[1])
+```
+
+
+## Step 2b: BBS Data
+Munging the BBS data shouldn't take too long, regardless spatial extent.
+```{r bbs, eval=b.ind}
+# If the original data already exists, just import it. Unless you are not using the most recent version (as specified in package `bbsAssistant`), bbs_orig should not change.
+fns <- list.files(dir.bbs.out)
+if("bbs_orig.rds" %in% fns){bbs_orig <- readRDS(paste0(dir.bbs.out,"/bbs_orig.rds"))}else{
+  # if DNE, create and import data. 
+  bbs_orig <- grab_bbs_data(sb_dir = dir.bbs.out)
+}
+# Munge the BBS data per specifications in `params`. 
+fns <- list.files(dir.bbs.out)
+if (!"bbs_obs.rds" %in% tolower(fns)) {
+  bbs_obs <-
+    munge_bbs(
+      list = bbs_orig,
+      spp = species,
+      states=states,
+      keep.stop.level.data = FALSE
+    )
+  saveRDS(bbs_obs, paste0(dir.bbs.out, "/bbs_obs.rds"))
+} else{bbs_obs <- readRDS(paste0(dir.bbs.out, "/bbs_obs.rds"))}
+
+
+# Overlay BBS observations and spatial grid
+fns <- list.files(dir.spatial.out)
+if ("bbs_spatial.rds" %in% tolower(fns)){
+  bbs_spatial <- 
+    make_bbs_spatial(
+    bbs.obs = bbs_obs,
+    cws.routes.dir = cws.routes.dir, #location of the CWS BBS routes shapefiles
+    usgs.routes.dir = usgs.routes.dir, #location of the USGS BBS routes shapefiles
+    crs.target = crs.target,
+    routes.keep=unique(bbs_obs$RTENO), 
+    grid=grid,
+    keep.empty.cells =TRUE,
+    plot.dir=dir.plots,
+    overwrite=TRUE
+  )}else{
+  bbs_spatial <- readRDS(paste0(dir.spatial.out, "/bbs_spatial.rds"))}
+
+browseURL()
 ```
 

@@ -1,30 +1,29 @@
-#' Make a List With Named
-#' Take multiple objects from the global environment and place into a single list.
-#' @param input character vector names of data objects in the workspace to be included in the outputted list
-#' @param objects.only logical TRUE when the `input` list provides names to non-string objects. FALSE when `input` comprises names for string-only objcts.
-#' @export make_list
-make_list <- function(input){
-
-new.list <- list()
-for(i in seq_along(input)){
-  if(i==1) to.drop <- NULL
-  null.ind <- is.null(eval(parse(text=paste(input[i]))))
-  if(null.ind){
-    to.drop <- c(to.drop, i)
-    next()}
-  # assign the object to a new list
-  if(!null.ind) new.list[[i]] <- eval(parse(text=paste(input[i])))
-
-  # doing this inside loop to prevent issues where data DNE
-}
-
-x.list <- new.list[-to.drop]
-x.names <- input[-to.drop]
-
-names(x.list) <- x.names
-
-
-return(x.list)
-
-}
-
+#' #' Make a List With Named
+#' #' Take multiple objects from the global environment and place into a single list.
+#' #' @param input
+#' #' @keywords internal
+#' #' @noRd
+#'
+#' make_list <- function(input){
+#'
+#' new.list <- list()
+#' for(i in seq_along(input)){
+#'
+#'   # if(exists(input[i], envir = env)){
+#'         # keep <- c(keep, i)
+#'         # new.list[[i]] <- get(input[i], envir=env)
+#'         # new.list[[i]] <- eval(parse(text=paste(input[i])), envir=env)
+#'         # names <- c(names, input[i])
+#' x <- new.list[!sapply(new.list, is.null)]
+#'   }
+#'
+#'   else{}
+#' }
+#' # drop empty lists
+#' print("sdlkjsdkfj")
+#' names(x) <- input[keep]
+#'
+#' return(x)
+#'
+#' }
+#'

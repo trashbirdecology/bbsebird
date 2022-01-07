@@ -53,8 +53,7 @@ make_bbs_spatial <- function(bbs.obs,
   ### Ex:  state 46 and route 029, RTENO==46029
   # usgs_routes <- rgdal::readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
   usgs_routes <- sf::st_read(dsn = usgs.routes.dir, layer = usgs.layer)
-  usgs_routes <- sf::st_transform(usgs_routes, crs = crs.string)
-
+  suppressWarnings(usgs_routes <- sf::st_transform(usgs_routes, crs = crs.string))
 
   # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
   # These fields are applicable only to the Sauer shapefile.
@@ -167,10 +166,7 @@ route.line.geometry <- bbs.grid.lines %>%
   mutate(route.geometry=geometry) %>%
   st_drop_geometry()
 
-message("FYI: bbs_spatial$PropRouteInCell is the proportion of a route
-within a grid cell, where the denominator is the total amount of (length)
-a RTENO INSIDE THE STUDY AREA. I.e., if part of a RTENO falls outside the
-study area (grid) that length is not used to calcualte the % of route in a grid cell.")
+
 # Expand the grid/study area to include all years and cell combos  -------------
   # expand the grid to include all years and  grid cell ids
 grid.expanded <- grid %>%
@@ -180,8 +176,6 @@ grid.expanded <- grid %>%
 # add these to grid attributes attributes
   full_join(grid) %>%
   sf::st_as_sf()
-
-plot(grid.expanded["area"],main="grid cell area")
 
 
 # Create BBS Routes as GRIDDED object (not lines) -------------------------
@@ -194,8 +188,6 @@ bbs.temp <- bbs.grid.lines.df %>%
 
 ## overlay the bbs routes to the grid
 bbs.grid  <- left_join(grid.expanded, bbs.temp)
-
-plot(bbs.grid[4])
 
 
 # Add attributes and obs to BBS gridded layer -----------------------------
@@ -210,10 +202,10 @@ if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(RTENO))}
 
 # plot if wanted
   if (print.plots) {
-    cat('Making some plots...\n')
+    cat('Printing some plots to:\n')
     if (!is.null(plot.dir)) {
       pdf(file=paste0(dir.plots, "/bbs_spatial_exploratory.pdf"))
-      cat("plots printing to: ", dir.plots, " \n")
+      cat(dir.plots, " \n")
     }
     # exploratory plots (should move elsewhere.....)
     plot(bbs.grid[4])
@@ -274,9 +266,12 @@ if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(RTENO))}
 
   # to be safe.
   if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% ungroup()
-  return(bbs_spatial)
 
-}
+
+
+
+return(bbs_spatial)
+} ## end function
 
 
 ## side note for jlb: check out this example on identifying distance between points and nearest line
