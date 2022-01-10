@@ -45,6 +45,7 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
         # yBBS.grid   <- make_array(bbs, val="c")
         ## Observed counts as 2D matrix (dims: rteno by year)
         yBBS.site   <- make_mat(bbs %>% distinct(rteno, year, c), row = "rteno", col="year", val = "c")
+        yBBS.site   <- yBBS.site %>% select(sort(names(yBBS.site))) # use select to ensure the colnames(years) are in order...
 
         if(scale.vars){
           bbs <- bbs %>%

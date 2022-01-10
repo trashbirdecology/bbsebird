@@ -1,7 +1,8 @@
 ---
 title: "0_setup"
 params:
-  species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
+  species:  "HOSP, House Sparrow, House-Sparrow"
+  # species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
   # dir.orig.data: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/dubcorm-data-backup/"
   dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   dir.proj: "C:/Users/jburnett/documents/github/dubcorms/inst/tutorials/DCCO/"
@@ -187,7 +188,6 @@ if(e.ind){
         states = states,
         protocol = c("Traveling", "Stationary"),
         species = species,
-        
         max.num.observers = max.num.observers,
         years = year.range
     )

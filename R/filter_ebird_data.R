@@ -58,13 +58,20 @@ filter_ebird_data <-
       warning(
         "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. \n\nIf `filter_ebird_data` takes longer than 20 minutes and your spatial extent <~5 u.s. states, something is probably wrong.\n\n"
       )
+    ## if full.data
+    if (parallel::detectCores() <= 4 |
+        memory.limit() < 25000)
+      warning(
+        "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. \n\nIf `filter_ebird_data` takes longer than 20 minutes and your spatial extent <~5 u.s. states, something is probably wrong.\n\n"
+      )
 
 
-
-    f_samp_in  <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
+    ## filenames to import
     f_obs_in <- setdiff(fns.ebird, f_samp_in)
     if (!length(f_obs_in) > 0)
       stop(paste0("No ebd file identified. "))
+
+    f_samp_in  <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
     if (!length(f_samp_in) > 0)
       stop(paste0("No sampling file identified. "))
 
@@ -153,10 +160,10 @@ filter_ebird_data <-
       # ~attempt to~ remove BBS observations if specified
       ### THIS IS A BIG ASSUMPTION SO WILL NEED TO REVISIT EVENTUALLY!!!
       ### in fact, i've got some checklists i need to cross-check against the BBS obserfvations data to see if this correctly removes them all.....
-      if (remove.bbs.obs)
+      if (remove.bbs.obs){
         sampling <- sampling %>%
         dplyr::filter(protocol_type != "Stationary" &
-                 duration_minutes != 3)
+                 duration_minutes != 3)}
 
       # for good measure..
       cat("Taking out the garbage because this data is massive.....\n\n")
@@ -208,6 +215,7 @@ filter_ebird_data <-
       ## keep only useful columns
       observations <-
         observations[names(observations) %in% cols.keep]
+
       ## begin the filtering by params
       if(!is.null(countries)) observations <- observations %>%
         dplyr::filter(country %in% countries)
