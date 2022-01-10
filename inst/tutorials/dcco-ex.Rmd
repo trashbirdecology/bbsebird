@@ -220,18 +220,21 @@ if(sf::st_crs(ebird_spatial)!=sf::st_crs(bbs_spatial))stop("Warning. The ebird, 
 args.save <- junk_it(args.save, c("ebird_spatial", "bbs_spatial", "grid"))
 ```
 
-# Step 3: Munge Data for Use in JAGS
-We need to munge the data just a little bit further for use in JAGS together. You may need to create/munge data furhter depending on model(s). 
+# Step 3: Munge or Import JAGS Data
+We need to munge the data just a little bit further for use in JAGS together. You may need to create/munge data further depending on model(s). 
 
 ```{r jdat-make, eval=j.ind}
 jdat <- make_jags_list(dat =list(ebird_spatial, grid, bbs_spatial), dir.out=dir.jags)
 ```
 
-# Step 4: Import JAGS Data
 ```{r jdat-import}
-# jdat <- readRDS(paste0(dir.jags, "jdat.rds"))
-jdat <- import_jdat(dir.jags)
+if(!exists("jdat")){
+  # jdat <- readRDS(paste0(dir.jags, "jdat.rds"))
+  jdat <- import_jdat(dir.jags)
+}
 ```
+
+View the contents and structure of `jdat`
 ```{r jdat-structure}
 jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
 # View the structure with one or more of the following:
@@ -239,6 +242,41 @@ jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
 # kableExtra::kable(jdat.struc)
 # browseURL(paste0(dir.jags,"jdat-structure.csv"))
 ```
+
+# Step 4: JAGS Model
+
+## Step 4a: Computational Specifications
+### MCMC
+```{r set-mcmc}
+na <- 1000 # number of adaptation iterations
+nb <- 5000 # number of iterations for burnin per chain
+# nc <- 3 # number of chains (min for now) (defined in call to JAGS as the length of inits list)
+ncores <- parallel::detectCores() - 1 # number of cores to use; keep one free just in case, or not
+ni <- 10000 # number of iterations per chain
+nt <- 10 # thinning rate
+```
+
+### Set initial values
+```{r set-inits} 
+inits <- list(
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),     
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1))
+  ) 
+```
+
+### Parameters monitored
+```{r set-params} 
+### must not name `params` b/c will conflict with YAML parameters
+params.monitor <- c("lambda", "nu",  "b1", "N", "alpha")
+```
+
+
+
+```{r}
+
+```
+
 
 
 
