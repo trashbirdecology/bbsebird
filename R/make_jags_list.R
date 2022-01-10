@@ -68,6 +68,8 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
 
       ## proportion of rteno in cell
       prop.site.in.cell.bbs <- make_mat(grid.bbs, val="proprouteincell", replace.na=TRUE)
+      prop.site.in.cell.bbs[is.na(prop.site.in.cell.bbs)] <- 0 # these must be zero for jags model
+
 
       # Loop indexes for JAGS
       S.bbs <- length(unique(bbs$rteno))
