@@ -15,6 +15,8 @@ id_ebird_files <-function(dir.ebird.in,
                           get.full.data=FALSE
                           ){
 
+if(!str_detect(mmyyyy, "-")) stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")
+
 mmyyyy <- tolower(mmyyyy)
 regions <- paste(tolower(apply(expand.grid(paste0(c("us", "ca", "usa", "mx", "mex"), sep="_"), species), 1, paste, collapse="")), collapse="|")
 
