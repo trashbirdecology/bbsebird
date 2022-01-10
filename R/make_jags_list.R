@@ -101,19 +101,20 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
 
 
     if(ind == "ebird"){
-      ebird <- dat[[i]] %>%
-        arrange(gridcellid, checklist_id, year)
+      ebird <- dat[[i]]
       if("sf" %in% class(ebird)) ebird <- ebird %>% sf::st_drop_geometry()
-
 
       names(ebird) <- tolower(names(ebird))
 
-      if(drop.nas) ebird <- ebird %>% filter(!is.na(c), !is.na(checklist_id))
+      if(drop.nas) ebird <- ebird %>% filter(!is.na(c), !is.na(checklist_id)) %>%
+        arrange(gridcellid, checklist_id, year)
 
       # Observed counts as 3D array (dims: rteno by year by gridcellid)
       cat("working...\n\n")
       # yeBird.grid   <- make_array(ebird, row="checklist_id", val="c")
-      yeBird.site   <- make_mat(ebird %>% distinct(checklist_id, year, c), row = "checklist_id", col="year", val = "c")
+      yeBird.site <- make_mat(ebird %>% distinct(checklist_id, year, c), row = "checklist_id", col="year", val = "c")
+      yeBird.site <- yeBird.site %>% select(sort(names(yeBird.site))) # use select to ensure the colnames(years) are in order...
+
 
       G.ebird <- length(unique(ebird$gridcellid))
       S.ebird <- length(unique(ebird$checklist_id))
