@@ -2,25 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{eval_params}
 \alias{eval_params}
-\title{a song to tell me something has stopped ------------------------------------------------------------------
-
-#' @keywords internal
-#' @noRd
-.song <- function() {
-for(i in 1:2) {
-for(i in 1:4) {
-for(i in 1:4) {
-beep(7)
-Sys.sleep(0.25)
-beep()
-Sys.sleep(0.22)
-}
-beep(2)
-}
-beep(11)
-}
-beep(4)
-}}
+\title{Spruce up R Markdown YAML parameter values that are lists into clean vectors. Called for convenience inside .RMD files.}
 \usage{
 eval_params(x = params)
 }
@@ -28,40 +10,6 @@ eval_params(x = params)
 \item{x}{The parameter object from YAML \code{params}}
 }
 \description{
-a song to tell me something has stopped ------------------------------------------------------------------
-
-#' @keywords internal
-#' @noRd
-.song <- function() {
-for(i in 1:2) {
-for(i in 1:4) {
-for(i in 1:4) {
-beep(7)
-Sys.sleep(0.25)
-beep()
-Sys.sleep(0.22)
-}
-beep(2)
-}
-beep(11)
-}
-beep(4)
-}
-}
-\section{windows alert -----------------------------------------------------------}{
-#' @keywords internal
-#' @noRd
-.windows_alert <- function(message=rep("The really long process you started has completed. Hopefully you got it right the first time and don't have to redo it....that took a while.....BEEEEEEEEEEEEEEEP", 3)){
-if(.Platform$OS.type == "windows"){return()} # only run for windows OS
-system2(command = "PowerShell",
-args = c("-Command",
-"\"Add-Type -AssemblyName System.Speech;",
-"$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-paste0("$speak.Speak('", message, "');\"")
-))
-}
-
 Spruce up R Markdown YAML parameter values that are lists into clean vectors. Called for convenience inside .RMD files.
 }
-
 \keyword{internal}

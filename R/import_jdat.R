@@ -3,8 +3,8 @@
 #' @param filename Name of the file to import.
 #' @export import_jdat
 import_jdat <- function(dir.jags, filename="jdat.rds") {
-
-fn <- list.files(path = dir.jags, full.names = TRUE, "jdat.rds")
+fns <- tolower(list.files(path=dir.jags, full.names=TRUE))
+fn <-  fns[stringr::str_detect(fns, filename)]
 if(length(fn)>1)  "more than one filename in object `fn`. check filenames in dir.jags"
 if(length(fn)==0) stop("no files named jdat.rds exist in dir.jags" )
 

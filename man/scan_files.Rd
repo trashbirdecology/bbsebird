@@ -6,13 +6,14 @@
 \usage{
 scan_files(
   dir.proj,
-  scan.for = c("jags", "ebird_obs", "bbs_obs", "grid", "bbs_spatial", "ebird_spatial")
+  scan.for = c("jags", "ebird_filtered", "bbs_obs", "grid", "bbs_spatial",
+    "ebird_spatial", "ebird_zf")
 )
 }
 \arguments{
 \item{dir.proj}{project directory, within which first level subdirectories may include c(jags, ebird, bbs, spatial)}
 
-\item{scan.for}{which types of files to scan for. Must be one or more of c("jdat", "spatial","eBird.obs", "bbs.obs"). If multiples are provided and found, the returned objct will be a named list of those imported files.}
+\item{scan.for}{which types of files to scan for. Must be one or more of c("jags","ebird_filtered", "bbs_obs", "grid", "bbs_spatial", "ebird_spatial", "ebird_zf"). If multiples are provided and found, the returned objct will be a named list of those imported files.}
 }
 \description{
 Checks for existing files to import to avoid length data munging processes.

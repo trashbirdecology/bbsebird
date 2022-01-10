@@ -6,7 +6,7 @@
 \usage{
 make_array(
   df = bbs,
-  row = "rteno",
+  row = c("rteno", "checklist_id"),
   col = "year",
   slice = "gridcellid",
   val,
