@@ -271,12 +271,62 @@ inits <- list(
 params.monitor <- c("lambda", "nu",  "b1", "N", "alpha")
 ```
 
+# Step 3: Specify Model(s)
+```{r bbs-pois-base}
+mod <- "model{
+####################################################
+# Likelihoods
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.site[s,t] ~ dpois(lambda[s])
+  }} # end data model s and t
+  
+for(s in 1:S.bbs){
+  lambda[s] = inprod(nu[], prop.site.in.cell.bbs[s,]) ## check inprod
+} # end s (lambda route)
+
+for(g in 1:G.bbs){
+  log(nu[g]) <- area[g]*b1 + alpha 
+} # end g (nu)
+####################################################
 
 
-```{r}
+####################################################
+# Priors
+b1    ~ dnorm(0,1)
+alpha ~ dnorm(0,1)
+####################################################
 
+
+####################################################
+# Derived
+for(t in 1:T.bbs){
+N[t] <- sum(yBBS.site[,t])
+}
+####################################################
+
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dir.models,"/bbs-pois-null") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
 ```
 
+# Step 5: Run JAGS
+```{r run-jags}
+# browseURL(mod.fn) ### open model file if you please
+out <- jagsUI::jags(data  = jdat,
+                    model.file = mod.fn,
+                    inits = inits,
+                    parameters.to.save = params.monitor,
+                    n.chains = length(inits), 
+                    n.thin = nt, n.iter = ni, n.burnin = nb)
+# save model outputs
+saveRDS(out, file=paste0(mod.name, ".rds"))
+```
 
 
 

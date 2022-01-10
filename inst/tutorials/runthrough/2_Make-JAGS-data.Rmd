@@ -45,7 +45,7 @@ args.save <- junk_it(args.save, c("bbs","grid","ebird",                         
                                   ".trim"))
 ```
 
-Evaluate parameter logicals
+Evaluate document parameter
 ```{r eval-params}
 if(!"drop.nas" %in% names(params)) params$drop.nas <- TRUE
 if(params$drop.nas){
@@ -112,14 +112,6 @@ prop.site.in.cell.bbs <- make_mat(grid.bbs, val="proprouteincell", replace.na=TR
 
 Arrays comprising detection covariate observations
 ```{r bbs-p-covar-arrays}
-p.bbs.wind    <- make_array(bbs, val="wind.z")
-p.bbs.cars    <- make_array(bbs, val="car.z")
-p.bbs.noise   <- make_array(bbs, val="noise.z")
-p.bbs.yday   <- make_array(bbs, val="yday")
-p.bbs.jday   <- make_array(bbs, val="julian")
-p.bbs.obsfirstyearbbs     <- make_array(bbs, val="obsfirstyearbbs")
-p.bbs.obsfirstyearroute   <- make_array(bbs, val="obsfirstyearroute")
-## need to add conversion of temperatures to C or F in data munging scripts!!!
 ```
 
 Specify desired inputs into JAGS data output for BBS 

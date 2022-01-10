@@ -114,7 +114,7 @@ N[t] <- sum(yBBS.site[,t])
 }"
 ## export model
 # browseURL(mod.fn)
-mod.name <- paste0(dir.models,"/bbs-pois-base") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.name <- paste0(dir.models,"/bbs-pois-null") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
 mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
 sink(mod.fn)
 cat(mod)
@@ -124,7 +124,7 @@ sink()
 # Step 4: Run JAGS
 ```{r make-jm}
 # browseURL(mod.fn) ### open model file if you please
-out <- jagsUI::jags(data  = jags.data,
+out <- jagsUI::jags(data  = jdat,
                     model.file = mod.fn,
                     inits = inits,
                     parameters.to.save = params.monitor,
