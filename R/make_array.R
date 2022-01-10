@@ -9,12 +9,17 @@
 #' @importFrom reshape2 "acast"
 #' @export make_array
 make_array <- function(df=bbs,
-                     row="rteno",
+                     row=c("rteno", "checklist_id"),
                      col="year",
                      slice="gridcellid",
                      val,
                      drop.na.rows = FALSE
                      ){
+
+  row <- row[row %in% names(df)]
+  if(length(row)==0) stop("no arguments in `row` were found as variables in `df`")
+
+
   keep <- c(row, col, slice, val, NA, "NULL", "NA", NULL)
   keep <- na.omit(keep[!grepl(paste0(c("NULL","NA", NA, NULL), collapse = "|"), keep)])
   df <- df[,keep]
