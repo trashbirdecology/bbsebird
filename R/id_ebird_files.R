@@ -1,70 +1,70 @@
 #' @title ...
 #' @description ...
 #' @param dir.ebird.in Directory for where the ebird data are stored.
-#' @param regions Character vector comprising state/province or country abbreviations. If not specified, will identify the files associated with the country-level data.
 #' @param species Character vector comprising species identifiers.
 #' @param country.code.identifier Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c
 #' @param sampling.events Logical.
 #' @param mmyyyy The month (mm) and year (yyyy) of the ebird dataset you wish to use. Suggested to use most recent on file.
-#' @param get.full.data Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and regions.
+#' @param get.full.data Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species
 #' @export
 id_ebird_files <-function(dir.ebird.in,
-                          mmyyyy = "oct-2021",
-                          regions=NULL,
+                          mmyyyy = "sep-2021",
                           species="doccor",
                           country.code.identifier="iso2c",
                           sampling.events=TRUE,
                           get.full.data=FALSE
                           ){
 
-# mmyyyy.collapse <- paste(mmyyyy, str_remove(mmyyyy, "-"), sep="|")
 mmyyyy <- tolower(mmyyyy)
-mm.string = paste0("(?=.*",substr(mmyyyy,1,3),")(?=.*txt)")
+regions <- paste(tolower(apply(expand.grid(paste0(c("us", "ca", "usa", "mx", "mex"), sep="_"), species), 1, paste, collapse="")), collapse="|")
 
-## Get filename for the sampling events in directory
-fn_samp <- tolower(list.files(dir.ebird.in, full.names=TRUE))#no need for fullnames because the auk package doesnt handle it well. needs a filename and a directory.
-fn_samp <- fn_samp[stringr::str_detect(fn_samp,"sampling")]  ## get sampling files
-fn_samp <- fn_samp[stringr::str_detect(fn_samp,".tar|.gz|.zip")==FALSE]  ## remove compressed files.
-fn_samp <- fn_samp[stringr::str_detect(tolower(fn_samp), mmyyyy)] ## keep only relevant month/year
+# Grab all relevant filenames in directory
+## no need for fullnames because the auk package doesnt handle it well. auk requires a filename and a directory....
+fns <- tolower(list.files(dir.ebird.in, full.names=FALSE))
+fns <- fns[stringr::str_detect(fns, ".tar|.zip")]
+fns <- fns[stringr::str_detect(fns, mmyyyy)]
 
-# Filename(s) for eBird input data (EBD)
-fns_ebd <- tolower(list.files(dir.ebird.in, full.names=FALSE)) #no need for fullnames because the auk package doesnt handle it well. needs a filename and a directory.
 
-# If we dont want the entire dataset...
-if(!get.full.data){
-## If species are provided, find those files
-if(!is.null(species)){
+# Sampling Events
+fns_samp <- fns[stringr::str_detect(fns,"sampling")]  ## get sampling files
+fns_samp <- fns_samp[stringr::str_detect(tolower(fns_samp), mmyyyy)] ## keep only relevant month/year
+
+
+# Observations
+## filename(s) for eBird input data (EBD)
+fns_ebd <- tolower(list.files(dir.ebird.in))
+fns_ebd <- fns_ebd[stringr::str_detect(tolower(fns_ebd), mmyyyy)] ## keep only relevant month/year
+
+# Species
+if(!is.null(species) & get.full.data){
   fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, paste0(tolower(species), collapse="|"))]
-  } # end species
-## If regions are provided, find those files
-if(!is.null(regions)){
-  # remove the national-level data (too cumbersome)
-  fns_ebd <- fns_ebd[!stringr::str_detect(fns_ebd, c("US_|CA_|sampling"))]
-} # end regions
-if(!is.null(states)){
-  # keep only the states we need.
-  fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, paste(tolower(states), collapse="|"))]
-}# end states
-} # END get.full.data
+} # end species
 
+
+# sampling events data (doesnt matter whether get.full.data)
+fns_samp <- fns_samp[stringr::str_detect(fns_samp, "sampling_rel")]
+fns_samp <- fns_samp[stringr::str_detect(fns_samp, ".tar")]
+
+# If get.full.data==TRUE
 if(get.full.data){
-  str <- paste0("ebd_rel", mmyyyy, ".txt") ## this assumest he filenames do not change on ebird's part...
+##observations
+  str <- paste0("ebd_rel", mmyyyy, ".txt") ## this assumes the filenames do not change on ebird's part...
   fns_ebd_full <- fns_ebd[stringr::str_detect(fns_ebd, str)]
-  fns_ebd <- fns_ebd_full[!stringr::str_detect(fns_ebd_full, ".gz|.zip")]
+  } # end get.full.data
+
+# If get.full.data==FALSE
+if(!get.full.data){
+  fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, regions)]
+  fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, ".zip")]
 }
+
 
 ## a test to ensure we have at least one file for ebird
 if(length(fns_ebd)==0) "no ebd files found in dir.ebird.in. please check direcotry or specifications for id_ebird_files()"
 
 # return the filenames
 fns.final <- c(paste0(dir.ebird.in,"/", fns_ebd), fn_samp)
-fns.final <- fns.final[stringr::str_detect(fns.final,".tar|.gz|.zip")==FALSE]  ## remove compressed files.
-fns.final <- fns.final[stringr::str_detect(fns.final,".txt|.csv")==TRUE]  ## remove compressed files.
-
-# throw message stating these are the target files import
-cat(
-  "The following files were identified as target eBird files for import, according to your regions and species filters (or lack thereof):\n",
-  paste(fns.final,"\n"))
+fns.final <- fns.final[stringr::str_detect(fns.final,".tar|.zip")==TRUE]  ## remove compressed files.
 
 
 return(fns.final)
