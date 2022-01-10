@@ -52,6 +52,10 @@ filter_ebird_data <-
            f_samp_out  = paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
            ) {
 
+
+    # must have at least two files in here
+    if(length(fns.ebird) < 2)stop("check arg `fns.ebird`: must have at least two files (one for sampling events, one for observations.")
+
     # warn about potential memory issues
     if (parallel::detectCores() <= 4 |
         memory.limit() < 25000)
@@ -67,13 +71,12 @@ filter_ebird_data <-
 
 
     ## filenames to import
+    f_samp_in <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
     f_obs_in <- setdiff(fns.ebird, f_samp_in)
-    if (!length(f_obs_in) > 0)
-      stop(paste0("No ebd file identified. "))
-
-    f_samp_in  <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
     if (!length(f_samp_in) > 0)
       stop(paste0("No sampling file identified. "))
+    if (!length(f_obs_in) > 0)
+      stop(paste0("No ebd file identified. "))
 
 
     #specifying the column types helps with vroom::vroom(f_samp_in), which takes a couple of minutes...
@@ -187,10 +190,10 @@ filter_ebird_data <-
       ## remove the files that vroom creates in R session's temp directory just in case
       try(fs::file_delete(list.files(tempdir(), full.names = TRUE)), silent =
             TRUE)
-  }
+  } # end sampling events data import/munging
 
-    ## Read in / filter observations data frame
-    if (file.exists(f_obs_out) & !overwrite) {
+  ## Read in / filter observations data frame
+  if (file.exists(f_obs_out) & !overwrite) {
     cat("Loading the filtered eBird observations.\n\n")
       if (method == "vroom")
         observations <- vroom::vroom(f_obs_out, col_types = col_types)
@@ -279,6 +282,6 @@ filter_ebird_data <-
     cat("Output of `filter_ebird_data()` may contain duplicate observations where multiple observers exist.")
     # rm(observations, sampling)
 
-    return(ebird_filtered)
+return(ebird_filtered)
 
-  } # END FUNCTION
+} # END FUNCTION

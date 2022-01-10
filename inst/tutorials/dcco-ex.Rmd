@@ -97,10 +97,10 @@ args.save <- unique(c(args.save, ls()))
 Set chunk evaluation conditions below. In the previous section, the `scan_files()` searched and imported the data specified in argument `scan.for`. If any of those files exist in .GlobalEnv, then the X.ind evaluation condition will be set to FALSE, thereby ignoring relevant data creating or munging chunks. 
 ```{r set-eval-conditions}
 j.temp <-ifelse(length(list.files(dir.jags, "jdat.rds|jdat.RDS"))>0, FALSE, TRUE)
-j.ind <- ifelse((!exists("jdat") &  j.temp)| (exists("jdat") & overwrite.jdat), TRUE, FALSE)
-b.ind <- ifelse(!exists("bbs_spatial") | (exists("bbs_spatial") & overwrite.bbs), TRUE, FALSE)
-e.ind <- ifelse(!exists("ebird_spatial") | (exists("ebird_spatial") & overwrite.ebird), TRUE, FALSE)
-g.ind <- ifelse(!exists("grid"), TRUE, FALSE)
+j.ind <- ifelse(!("jdat" %in% ls() &  j.temp)| (("jdat" %in% ls()) & overwrite.jdat), TRUE, FALSE)
+b.ind <- ifelse(!("bbs_spatial"   %in% ls()) | ("bbs_spatial" %in% ls() & overwrite.bbs), TRUE, FALSE)
+e.ind <- ifelse(!("ebird_spatial" %in% ls()) | ("ebird_spatial"%in% ls() & overwrite.ebird), TRUE, FALSE)
+g.ind <- ifelse(!("grid" %in% ls()), TRUE, FALSE)
 args.save <- c(args.save, "j.ind", "e.ind", "b.ind", "g.ind")
 ```
 
@@ -123,7 +123,8 @@ fns <- tolower(list.files(dir.bbs.out))
 if(b.ind & overwrite.bbs){
   if("bbs_orig.rds" %in% fns){bbs_orig <- readRDS(paste0(dir.bbs.out,"bbs_orig.rds"))}else{
   # if DNE, create and import data. 
-  bbs_orig <- grab_bbs_data(sb_dir = dir.bbs.out)}
+  bbs_orig <- grab_bbs_data(sb_dir = dir.bbs.out)
+  }
   
   # If exists on file, load in the observations
   if (!exists("bbs_obs") & "bbs_obs.rds" %in% fns){bbs_obs <- readRDS(paste0(dir.bbs.out, "bbs_obs.rds"))}
@@ -163,7 +164,6 @@ fns.spat <- list.files(dir.spatial.out)
 
 browseURL(list.files(dir.plots, "bbs", full.names = TRUE))
 ```
-
 ## Step 2c: eBird Data
 Munging the eBird will take quite a while, especially if you are running more than a couple of states. This process also requires a significant amount of free RAM. A
 ```{r ebird, eval=e.ind}
@@ -178,13 +178,14 @@ if(e.ind){
   # import existing filtered ebird if it exists:
   if("ebird_filtered.rds" %in% fns){ebird_filtered <- readRDS(paste0(dir.ebird.out, "ebird_filtered.rds"))}else{
     gc() # just to maximize space avail
-    fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in)
+    fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in, mmyyyy = mmyyyy, get.full.data = TRUE)
     ebird_filtered <- filter_ebird_data(
         fns.ebird = fns.ebird, 
         overwrite = FALSE,
         dir.ebird.out = dir.ebird.out,
         countries = countries,
         states = states,
+        years=year.range,
         protocol = c("Traveling", "Stationary"),
         species = species,
         

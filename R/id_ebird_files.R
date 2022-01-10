@@ -8,8 +8,11 @@
 #' @param mmyyyy The month (mm) and year (yyyy) of the ebird dataset you wish to use. Suggested to use most recent on file.
 #' @param get.full.data Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and regions.
 #' @export
-id_ebird_files <-function(dir.ebird.in, mmyyyy="oct-2021", regions=NULL,
-                          species="doccor", country.code.identifier="iso2c",
+id_ebird_files <-function(dir.ebird.in,
+                          mmyyyy = "oct-2021",
+                          regions=NULL,
+                          species="doccor",
+                          country.code.identifier="iso2c",
                           sampling.events=TRUE,
                           get.full.data=FALSE
                           ){
@@ -26,18 +29,24 @@ fn_samp <- fn_samp[stringr::str_detect(tolower(fn_samp), mmyyyy)] ## keep only r
 
 # Filename(s) for eBird input data (EBD)
 fns_ebd <- tolower(list.files(dir.ebird.in, full.names=FALSE)) #no need for fullnames because the auk package doesnt handle it well. needs a filename and a directory.
-fns_ebd <- fns_ebd[grepl(mm.string, tolower(fns_ebd), perl = TRUE)]
-### If we dont want the entire dataset...
+
+# If we dont want the entire dataset...
 if(!get.full.data){
 ## If species are provided, find those files
-if(!is.null(species)) fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, paste0(tolower(species), collapse="|"))]
+if(!is.null(species)){
+  fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, paste0(tolower(species), collapse="|"))]
+  } # end species
 ## If regions are provided, find those files
 if(!is.null(regions)){
   # remove the national-level data (too cumbersome)
   fns_ebd <- fns_ebd[!stringr::str_detect(fns_ebd, c("US_|CA_|sampling"))]
+} # end regions
+if(!is.null(states)){
   # keep only the states we need.
   fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, paste(tolower(states), collapse="|"))]
-}else(fns_ebd <- fns_ebd[stringr::str_detect(fns_ebd, tolower(c("US_|CA_|sampling")))])}
+}# end states
+} # END get.full.data
+
 if(get.full.data){
   str <- paste0("ebd_rel", mmyyyy, ".txt") ## this assumest he filenames do not change on ebird's part...
   fns_ebd_full <- fns_ebd[stringr::str_detect(fns_ebd, str)]
@@ -51,7 +60,6 @@ if(length(fns_ebd)==0) "no ebd files found in dir.ebird.in. please check direcot
 fns.final <- c(paste0(dir.ebird.in,"/", fns_ebd), fn_samp)
 fns.final <- fns.final[stringr::str_detect(fns.final,".tar|.gz|.zip")==FALSE]  ## remove compressed files.
 fns.final <- fns.final[stringr::str_detect(fns.final,".txt|.csv")==TRUE]  ## remove compressed files.
-
 
 # throw message stating these are the target files import
 cat(
