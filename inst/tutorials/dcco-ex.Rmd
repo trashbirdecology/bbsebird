@@ -88,13 +88,15 @@ args.save <- args.save.base <- c("args.save.base", ls())
 ```{r scan-files, include=FALSE}
 ## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
 ### sometimes the sca_files doesn't want to work for no reason, just keep trying????
-list <- scan_files(dir.proj = dir.proj, scan.for = c("ebird_spatial", "bbs_spatial"))
+list <- scan_files(dir.proj = dir.proj, scan.for = c("ebird_spatial", "bbs_spatial", "grid"))
 list2env(list, .GlobalEnv) # unpack the list objects to environment
 rm(list)
+args.save <- unique(c(args.save, ls()))
 ```
 Set chunk evaluation conditions below. In the previous section, the `scan_files()` searched and imported the data specified in argument `scan.for`. If any of those files exist in .GlobalEnv, then the X.ind evaluation condition will be set to FALSE, thereby ignoring relevant data creating or munging chunks. 
 ```{r set-eval-conditions}
-j.ind <- ifelse(!exists("jdat") | (exists("jdat") & overwrite.jdat), TRUE, FALSE)
+j.temp <-ifelse(length(list.files(dir.jags, "jdat.rds|jdat.RDS"))>0, FALSE, TRUE)
+j.ind <- ifelse((!exists("jdat") &  j.temp)| (exists("jdat") & overwrite.jdat), TRUE, FALSE)
 b.ind <- ifelse(!exists("bbs_spatial") | (exists("bbs_spatial") & overwrite.bbs), TRUE, FALSE)
 e.ind <- ifelse(!exists("ebird_spatial") | (exists("ebird_spatial") & overwrite.ebird), TRUE, FALSE)
 g.ind <- ifelse(!exists("grid"), TRUE, FALSE)
@@ -221,13 +223,22 @@ args.save <- junk_it(args.save, c("ebird_spatial", "bbs_spatial", "grid"))
 # Step 3: Munge Data for Use in JAGS
 We need to munge the data just a little bit further for use in JAGS together. You may need to create/munge data furhter depending on model(s). 
 
-```{r jdat-ebird, eval=j.ind}
+```{r jdat-make, eval=j.ind}
+jdat <- make_jags_list(dat =list(ebird_spatial, grid, bbs_spatial), dir.out=dir.jags)
+```
 
-
+# Step 4: Import JAGS Data
+```{r jdat-import}
+# jdat <- readRDS(paste0(dir.jags, "jdat.rds"))
+jdat <- import_jdat(dir.jags)
+```
+```{r jdat-structure}
+jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
+# View the structure with one or more of the following:
+# View(jdat.struc)
+# kableExtra::kable(jdat.struc)
+# browseURL(paste0(dir.jags,"jdat-structure.csv"))
 ```
 
 
-## Step 3a: BBS 
-
-## Step 3b: eBird
 
