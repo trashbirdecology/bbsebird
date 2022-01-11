@@ -1,10 +1,13 @@
 #' @title Create and Write or Load In the Filtered eBird Data
+#'
 #' @description Filter the eBird data and sampling events using R package AUK.
-#' @param fns.ebird File paths for the EBD and SamplingEvents data to import. Character vector of filenames for original files.
-#' @param overwrite Logical. If true will overwrite existing filtered data objects in directory `dir.ebird.out`
+#'
+#' @param fns.ebird  File paths for the EBD and SamplingEvents data to import. Character vector of filenames for original files.
+#' @param overwrite  logical If true will overwrite existing filtered data objects in directory `dir.ebird.out`
 #' @param dir.ebird.out Location of where to save and/or find the filtered/subsetted eBird data.
-#' @param f_obs_out Filename for saving the filtered eBird observations data
+#' @param f_obs_out  Filename for saving the filtered eBird observations data
 #' @param f_samp_out Filename for saving the filtered eBird sampling data
+#'
 #' @export
 filter_ebird_data <-
   function(fns.ebird,
@@ -52,9 +55,9 @@ filter_ebird_data <-
            f_samp_out  = paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
            ) {
 
-
     # must have at least two files in here
     if(length(fns.ebird) < 2)stop("check arg `fns.ebird`: must have at least two files (one for sampling events, one for observations.")
+    if(!any(file.exists(fns.ebird))) stop("One or more files specified in `fns.ebird` does not exist")
 
     # warn about potential memory issues
     if (parallel::detectCores() <= 4 |
@@ -72,7 +75,7 @@ filter_ebird_data <-
 
     ## filenames to import
     f_samp_in <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
-    f_obs_in <- setdiff(fns.ebird, f_samp_in)
+    f_obs_in  <- setdiff(fns.ebird, f_samp_in)
     if (!length(f_samp_in) > 0)
       stop(paste0("No sampling file identified. "))
     if (!length(f_obs_in) > 0)
@@ -114,24 +117,20 @@ filter_ebird_data <-
     )
 
     ## Read in / filter sampling data frame
-    if (file.exists(f_samp_out) & !overwrite) {
-      cat("Importing the filtered eBird data. This takes 1-3 minutes, depending on size of object.")
+    ### IMPORTANT: importing the sampling.txt.gz file for nov2021 takes about
+    #### 2.2 minutes with vroom::vroom and XX minutes with data.table::fread!!!!
+    if(file.exists(f_samp_out) & !overwrite) {
+      cat("Importing the filtered eBird data.\n")
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
-      if (!exists("sampling")) # this check is used for development purposes. should be removed prior to publish
-        cat("Importing the eBird sampling events data.\nThis may take 3-5 minutes...\n\n")
-      if (method == "vroom") {
-        sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
-      }
-      if (method == "data.table") {
-        sampling <- data.table::fread(f_samp_in) %>% as_tibble()
-      }
+      cat("Importing the sampling events dataset. Takes about 2 minutes.\n\n")
+      sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)## NEED T FIX for COMPRESS
     ### The base sampling df is large so this script tries to prioritize commands that
     ### will remove the most data to the least.
     ### Try to keep the filtering/subsetting in that order.
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
-      cat("Now filtering the sampling events. This takes a minute or two. \n\n")
+      cat("Filtering the sampling events. Takes a few more minutes. \n\n")
       ## force column names to lower and replace spaces with underscore (_) for my sanity
       colnames(sampling) <-
         stringr::str_replace_all(tolower(colnames(sampling)),
@@ -154,9 +153,10 @@ filter_ebird_data <-
       if(!is.null(max.effort.mins)) sampling <- sampling %>%
         dplyr::filter(duration_minutes<=max.effort.mins)
 
-      # create year and then filter by year
+      # munge the year variable to ensure proper filtering, then filter
       sampling <- sampling %>%
         dplyr::mutate(year = lubridate::year(observation_date))
+      if(!all(years %in% unique(sampling$year)))warning("Note that not all years in arg `years` were found in the sampling events dataset.\n")
       if(!is.null(years)) sampling <- sampling %>%
         dplyr::filter(year %in% years)
 
@@ -166,14 +166,15 @@ filter_ebird_data <-
       if (remove.bbs.obs){
         sampling <- sampling %>%
         dplyr::filter(protocol_type != "Stationary" &
-                 duration_minutes != 3)}
+                 duration_minutes != 3)
+        }
 
       # for good measure..
-      cat("Taking out the garbage because this data is massive.....\n\n")
+      cat("Taking out the garbage because this data is massive.....\n")
       gc()
 
       # remove duplicate checklists for same birding party.
-      cat("Running `auk::auk_unique()` on checklists\n\n")
+      cat("Running `auk::auk_unique()` on checklists. This takes quite a few minutes for more than a few states/provinces. \n")
       sampling <- auk::auk_unique(sampling, checklists_only = TRUE)
       # names(sampling)
 
@@ -181,15 +182,22 @@ filter_ebird_data <-
       sampling <- convert_cols(sampling)
 
       ## save the filtered sampling data
-      cat("Writing the filtered sampling data to file at location:", f_samp_out,"...\n\n")
-      if (method == "vroom")
-        vroom::vroom_write(sampling, f_samp_out)
-      if (method == "data.table")
-        data.table::fwrite(sampling, f_samp_out)
+      cat("Writing the filtered sampling data to: ", f_samp_out, "...\n")
 
-      ## remove the files that vroom creates in R session's temp directory just in case
-      try(fs::file_delete(list.files(tempdir(), full.names = TRUE)), silent =
-            TRUE)
+      if (method == "vroom") {
+        tictoc::tic()
+        vroom::vroom_write(sampling, f_samp_out)
+        tictoc::toc()
+        # remove the temp files that vroom creates in R session's temp directory just in case
+        try(fs::file_delete(list.files(tempdir(), full.names = TRUE)), silent =
+              TRUE)
+      }
+      if (method == "data.table") {
+        tictoc::tic()
+        data.table::fwrite(sampling, f_samp_out)
+        tictoc::toc()
+              }
+
   } # end sampling events data import/munging
 
   ## Read in / filter observations data frame
@@ -209,6 +217,7 @@ filter_ebird_data <-
       observations <- vroom::vroom(f_obs_in, col_types = cols_obs)
 
       ##force colnames to lower and replace spaces with underscore (_)
+      cat("Munging observations data\n\n")
       colnames(observations) <-
         stringr::str_replace_all(tolower(colnames(observations)),
                         pattern = " ",
