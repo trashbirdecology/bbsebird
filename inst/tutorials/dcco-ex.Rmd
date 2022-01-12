@@ -11,7 +11,7 @@ params:
   overwrite.bbs:  FALSE
   overwrite.ebird: FALSE # if TRUE, will re-process all eBird data. Do not do this unless you need to re-create the eBird data for some reason. NOTE: If you change a data subsetting parameter (e.g., year.range, grid.size), this will be ignored because the process herein creates a new subdirectory according to parameter specifications. 
   year.range: 2008:2019 # for now, supply a range as integers (will fix later in `clean_params()`)
-  mmyyyy: "Oct-2021" # month and year of most recent ebird EBD/samp download in file.
+  mmyyyy: "sep-2021" # month and year of most recent ebird EBD/samp download in file.
   grid.size: 1.00 #== 1 dec deg
   min.yday: 91  # approximate breeding season day start (day of year)
   max.yday: 245 # approximate breeding season day end   (day of year)
@@ -162,7 +162,7 @@ fns.spat <- list.files(dir.spatial.out)
   saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
     }
 
-browseURL(list.files(dir.plots, "bbs", full.names = TRUE))
+# browseURL(list.files(dir.plots, "bbs", full.names = TRUE))
 ```
 ## Step 2c: eBird Data
 Munging the eBird will take quite a while, especially if you are running more than a couple of states. This process also requires a significant amount of free RAM. A
@@ -178,19 +178,18 @@ if(e.ind){
   # import existing filtered ebird if it exists:
   if("ebird_filtered.rds" %in% fns){ebird_filtered <- readRDS(paste0(dir.ebird.out, "ebird_filtered.rds"))}else{
     gc() # just to maximize space avail
-    fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in, mmyyyy = mmyyyy, get.full.data = TRUE)
+    fns.ebird <- id_ebird_files(dir.ebird.in = dir.ebird.in, mmyyyy = mmyyyy, 
+                                states.ind=states)
     ebird_filtered <- filter_ebird_data(
         fns.ebird = fns.ebird, 
-        overwrite = FALSE,
+        overwrite = overwrite.ebird,
         dir.ebird.out = dir.ebird.out,
         countries = countries,
         states = states,
         years=year.range,
         protocol = c("Traveling", "Stationary"),
         species = species,
-        
-        max.num.observers = max.num.observers,
-        years = year.range
+        max.num.observers = max.num.observers
     )
     saveRDS(ebird_filtered, paste0(dir.ebird.out,  "ebird_filtered.rds"))
   } #end ebird_filtered
@@ -209,14 +208,20 @@ if(e.ind){
     ebird_spatial  <- munge_date_time(ebird_spatial, base.date)
 
     saveRDS(ebird_spatial, file = paste0(dir.spatial.out, "ebird_spatial.rds"))
-}
+} # End ebird chunk
+# just a simple plot to check out ebird_spatial
+# temp=ebird_spatial %>% 
+#   filter(year==min(year.range, na.rm=TRUE)) %>%
+#         # distinct(gridcellid, C) %>% 
+#         group_by(gridcellid) %>% summarise(maxC=max(C, na.rm=TRUE))
+# plot(temp[2])
+# rm(temp)
 ```
-
 
 
 ## Step 2d: Run basic tests
 Just run a couple quick tests to ensure spatial data are on same projection.
-```{r test-spatial-alignment}
+```{r test-spatial-alignment, eval=TRUE}
 if(sf::st_crs(ebird_spatial)!=sf::st_crs(bbs_spatial))stop("Warning. The ebird, and bbs spatial layers are not in same projection and/or CRS.")
 
 # clear unwanted stuff
