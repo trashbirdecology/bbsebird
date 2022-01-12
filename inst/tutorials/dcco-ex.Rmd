@@ -244,9 +244,9 @@ if(!exists("jdat")){
 
 View the contents and structure of `jdat`
 ```{r jdat-structure}
-jdat.struc <- get_data_structure(jdat, dir.output=dir.jags)
+jdat.struc <- get_data_structure(list=jdat, dir.output=dir.jags)
 # View the structure with one or more of the following:
-# View(jdat.struc)
+View(jdat.struc)
 # kableExtra::kable(jdat.struc)
 # browseURL(paste0(dir.jags,"jdat-structure.csv"))
 ```

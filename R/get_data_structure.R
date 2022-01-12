@@ -15,8 +15,9 @@ for(i in seq_along(list)){
   nrow   = dim(temp)[1] #num rows
   ncol   = dim(temp)[2] #num cols
   nslice = dim(temp)[3] #num slices
-  # if all those are NA, then its a single value.
-  if(all(is.na(c(nrow, ncol, nslice)))){length=length(list)}else{length=NA}
+  length = length(temp)
+  # if all those are NA, then the object is a single
+  if(all(is.na(c(nrow, ncol, nslice))) & length==1){length=temp}
   if(is.null(nrow))nrow=NA
   if(is.null(ncol))ncol=NA
   if(is.null(nslice))nslice=NA
