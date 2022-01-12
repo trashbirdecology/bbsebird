@@ -120,11 +120,12 @@ filter_ebird_data <-
     ### IMPORTANT: importing the sampling.txt.gz file for nov2021 takes about
     #### 2.2 minutes with vroom::vroom and XX minutes with data.table::fread!!!!
     if(file.exists(f_samp_out) & !overwrite) {
-      cat("Importing the filtered eBird data.\n")
+      cat("Overwrite is FALSE and filtered sampling events data already exists. Importing from file (", f_samp_out,")\n")
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
       cat("Importing the sampling events dataset. Takes about 2 minutes.\n\n")
-      sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)## NEED T FIX for COMPRESS
+      sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
+      
     ### The base sampling df is large so this script tries to prioritize commands that
     ### will remove the most data to the least.
     ### Try to keep the filtering/subsetting in that order.
@@ -175,47 +176,52 @@ filter_ebird_data <-
 
       # remove duplicate checklists for same birding party.
       cat("Running `auk::auk_unique()` on checklists. This takes quite a few minutes for more than a few states/provinces. \n")
-      sampling <- auk::auk_unique(sampling, checklists_only = TRUE)
-      # names(sampling)
-
+      ## Sometimes when I run auk_unique() on the full (filtered) sampling df I get bluescreen on DOI machine. So running this command in chunks just to be safe.
+      ## I am running it by date because the data must be in the same day to be considered to be of the same checklist.
+      
+      dates <- unique(sampling$observation_date)
+      date.chunk <- names(bit::chunk(dates, by=100))
+      
+      for(i in seq_along(date.chunk)){
+        print(i)
+      d.ind <- as.integer(unlist(date.chunk[i] %>% str_split(pattern=":")))
+      d.min <- dates[min(d.ind)]
+      d.max <- dates[max(d.ind)]
+      tempdat <- sampling[sampling$observation_date >= d.min & sampling$observation_date <= d.max, ]  
+      mylist[[i]] <- auk::auk_unique(tempdat, checklists_only = TRUE)
+    }
+      ## unlist the list  
+      sampling <- dplyr::bind_rows(mylist)
+      
       # ensure consistency in col types
       sampling <- convert_cols(sampling)
 
-      ## save the filtered sampling data
+      ## save the filtered sampling data (fwrite is superior to vrooom for writing (and reading usually))
       cat("Writing the filtered sampling data to: ", f_samp_out, "...\n")
 
-      if (method == "vroom") {
-        tictoc::tic()
-        vroom::vroom_write(sampling, f_samp_out)
-        tictoc::toc()
-        # remove the temp files that vroom creates in R session's temp directory just in case
-        try(fs::file_delete(list.files(tempdir(), full.names = TRUE)), silent =
-              TRUE)
-      }
-      if (method == "data.table") {
-        tictoc::tic()
-        data.table::fwrite(sampling, f_samp_out)
-        tictoc::toc()
-              }
+      data.table::fwrite(sampling, f_samp_out)
 
   } # end sampling events data import/munging
 
-  ## Read in / filter observations data frame
+
+    
+# Read in or create, and filter observations data frame
+    #fix the col types for observations df
+    cols_obs <- cols_samp[!names(cols_samp) %in% c("country", "sampling event identifier","protocol type", "duration minutes")]
   if (file.exists(f_obs_out) & !overwrite) {
-    cat("Loading the filtered eBird observations.\n\n")
-      if (method == "vroom")
-        observations <- vroom::vroom(f_obs_out, col_types = col_types)
-      if (method == "data.table")
-        observations <- data.table::fread(f_obs_out)
+    ### i can't figure out how to silence vroom import warning re: parsing colnames
+    #### (which is a result of not all names in cols_samp are in this file)
+    ### consequently, I would like to remove the nusance names frm cols_samp here..
+    cat("Overwrite is FALSE and filtered sampling events data already exists. Importing from file (", f_samp_out,")\n")
+
+# observations <- vroom::vroom(f_obs_out, col_types = cols_obs)
+observations <- data.table::fread(f_obs_out) # no huge difference when files are small.
+
     } else{
       cat("Loading the original eBird observations.\n\n")
-          # only use vroom to make it easier to read many files at once...
-      ### i can't figure out how to silence vroom import warning re: parsing colnames
-      #### (which is a result of not all names in cols_samp are in this file)
-      ### consequently, I would like to remove the nusance names frm cols_samp here..
-      cols_obs <- cols_samp[!names(cols_samp) %in% c("country", "sampling event identifier","protocol type", "duration minutes")]
+      # use vroom because its more elegant when reading multiple files at once
       observations <- vroom::vroom(f_obs_in, col_types = cols_obs)
-
+      
       ##force colnames to lower and replace spaces with underscore (_)
       cat("Munging observations data\n\n")
       colnames(observations) <-
@@ -255,6 +261,7 @@ filter_ebird_data <-
           dplyr::filter(protocol_type != "Stationary" &
                    duration_minutes != 3)
       }
+      
       ## since we dropped group id, there may be duplicates to remove
       observations <-
         observations %>% dplyr::distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
@@ -279,18 +286,14 @@ filter_ebird_data <-
       # save to file
       ## write the filtered sampling data
       cat("Writing the filtered observations data to file at location:", f_obs_out,"...\n\n")
-      if (method == "vroom")
-        vroom::vroom_write(observations, f_obs_out)
-      if (method == "data.table")
         data.table::fwrite(observations, f_obs_out)
     }
 
-    # create output file as a list
+    # create output file as a list of sam,pling events and observations
     ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
                            "sampling" = dplyr::as_tibble(sampling))
-    cat("Output of `filter_ebird_data()` may contain duplicate observations where multiple observers exist.")
-    # rm(observations, sampling)
-
+    # cat("Output of `filter_ebird_data()` may contain duplicate observations where multiple observers exist.")
+    
 return(ebird_filtered)
 
 } # END FUNCTION

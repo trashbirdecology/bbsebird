@@ -13,7 +13,7 @@ munge_date_time <- function(dat, base.date, min.yday=0, max.yday=365, sunlight=F
   names=names(dat)
 
   if("date" %in% names){
-    dat$date <- lubridate::as_date(dat$date)
+    dat$date   <- lubridate::as_date(dat$date)
     dat$yday   <- lubridate::yday(dat$date)
     dat$julian <- julian(dat$date, origin = lubridate::as_date(base.date))
     ## filter on the ydays (if provided)
@@ -32,8 +32,7 @@ munge_date_time <- function(dat, base.date, min.yday=0, max.yday=365, sunlight=F
     dat$time_observations_started <- hms::as_hms(as.POSIXct(dat$time_observations_started, format="%H:%M:%S"))
   }
 
-#### SUNLIGHT
-
+#### SUNLIGHT/MOONLIGHT/RISE/SET
 if(sunlight){
 
 sunlight.keep <- c("dawn", "solarNoon", "sunrise","sunriseEnd") # change these later if you need other information.
@@ -70,6 +69,8 @@ cat("Calculating astronomical statistics for each observation. This may take a f
 
 } # END SUNLIGHT
 
+  
+  
 return(dat)
 
 }

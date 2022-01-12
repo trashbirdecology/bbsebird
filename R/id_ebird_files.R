@@ -10,7 +10,7 @@
 id_ebird_files <-function(dir.ebird.in,
                            mmyyyy = "nov-2021",
                            species="doccor",
-                           country.code.identifier="iso2c",
+                           country.code.identifier="iso2c", ## need to incorporate this or remove.
                            get.full.data=FALSE,
                            states.ind=NULL
 ){
@@ -51,8 +51,8 @@ id_ebird_files <-function(dir.ebird.in,
   ## Filter by species if specified
   if(!is.null(species) & !get.full.data){
     if(is.null(states.ind)){region=country.spp}else{region=state.spp}
-
       fns_obs.zip <- fns_obs[grepl(fns_obs,pattern= ".zip")]
+      
   for(i in seq_along(fns_obs.zip)){
       if(i==1) f_obs <- NULL
       f_zip <- paste0(dir.ebird.in, "/", fns_obs.zip[i])

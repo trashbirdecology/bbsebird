@@ -2,16 +2,15 @@
 % Please edit documentation in R/id_ebird_files.R
 \name{id_ebird_files}
 \alias{id_ebird_files}
-\title{...}
+\title{Identify and Decompress Relevant eBird Files for Downstream Importing and Munging}
 \usage{
 id_ebird_files(
   dir.ebird.in,
-  mmyyyy = "oct-2021",
-  regions = NULL,
+  mmyyyy = "nov-2021",
   species = "doccor",
   country.code.identifier = "iso2c",
-  sampling.events = TRUE,
-  get.full.data = FALSE
+  get.full.data = FALSE,
+  states.ind = NULL
 )
 }
 \arguments{
@@ -19,16 +18,14 @@ id_ebird_files(
 
 \item{mmyyyy}{The month (mm) and year (yyyy) of the ebird dataset you wish to use. Suggested to use most recent on file.}
 
-\item{regions}{Character vector comprising state/province or country abbreviations. If not specified, will identify the files associated with the country-level data.}
-
 \item{species}{Character vector comprising species identifiers.}
 
 \item{country.code.identifier}{Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c}
 
-\item{sampling.events}{Logical.}
+\item{get.full.data}{Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and regions}
 
-\item{get.full.data}{Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and regions.}
+\item{states.ind}{one or more two-letter state codes}
 }
 \description{
-...
+Identify and Decompress Relevant eBird Files for Downstream Importing and Munging
 }

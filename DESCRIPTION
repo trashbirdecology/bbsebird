@@ -37,7 +37,9 @@ Imports:
     glue,
     purrr,
     knitr,
-    units
+    units,
+    bit,
+    foreach
 Suggests: 
     assertthat,
     learnr,

@@ -34,7 +34,7 @@ filter_ebird_data(
 
 \item{dir.ebird.out}{Location of where to save and/or find the filtered/subsetted eBird data.}
 
-\item{overwrite}{Logical. If true will overwrite existing filtered data objects in directory \code{dir.ebird.out}}
+\item{overwrite}{logical If true will overwrite existing filtered data objects in directory \code{dir.ebird.out}}
 
 \item{f_obs_out}{Filename for saving the filtered eBird observations data}
 
