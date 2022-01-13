@@ -11,7 +11,8 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Depends: 
-    R (>= 2.10)
+    R (>= 2.10),
+    bbsAssistant
 LazyData: true
 Imports: 
     bbsAssistant,
@@ -20,7 +21,6 @@ Imports:
     tidyr,
     sp,
     rjags,
-    jagsUI,
     ggplot2,
     countrycode,
     magrittr,
@@ -40,10 +40,14 @@ Imports:
     units,
     bit,
     foreach,
-    jagam,
     mgcv
 Suggests: 
     assertthat,
     learnr,
     rmarkdown
 VignetteBuilder: knitr
+Remotes:  
+    trashbirdecology/dubcorms,
+    trashbirdecology/bbsAssistant,
+    ropensci::rnaturalearth
+    

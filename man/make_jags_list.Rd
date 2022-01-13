@@ -7,7 +7,7 @@
 make_jags_list(
   dat,
   dat.names = NULL,
-  drop.nas = TRUE,
+  drop.nas = FALSE,
   scale.vars = TRUE,
   dir.out,
   fn.out = "jdat"
