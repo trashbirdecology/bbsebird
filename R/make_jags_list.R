@@ -40,29 +40,43 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
         if(drop.nas){
           bbs <- bbs %>% filter(!is.na(c), !is.na(rteno))
         }
+        cat("building bbs objects..\n")
+
 
         ## Observed counts as 3D array (dims: rteno by year by gridcellid)
         yBBS.grid   <- make_array(bbs, val="c")
         ## Observed counts as 2D matrix (dims: rteno by year)
         yBBS.site   <- make_mat(bbs %>% distinct(rteno, year, c) %>% filter(!is.na(rteno)), row = "rteno", col="year", val = "c")
         yBBS.site   <- yBBS.site %>% select(sort(names(yBBS.site))) # use select to ensure the colnames(years) are in order...
-        
-        
-        p.wind      <- make_mat(bbs %>% distinct(rteno, year, windmean), 
+
+        # make mean values for detection covariates (some were already done elsewhere -- need to add these to that location at some point)
+        bbs <- bbs %>%
+          group_by(rteno, year) %>%
+          mutate(windmean=abs(startwind-endwind)/2) %>%
+          mutate(skymean=abs(startsky-endsky)/2)
+
+
+        p.wind      <- make_mat(bbs %>% distinct(rteno, year, windmean),
                                 row = "rteno", col="year",
                                 val="windmean")
-        p.car       <- make_mat(bbs %>% distinct(rteno, year, carmean), 
+        p.car       <- make_mat(bbs %>% distinct(rteno, year, carmean),
                                 row = "rteno", col="year",
                                 val="carmean")
-        p.noise     <- make_mat(bbs %>% distinct(rteno, year, noisemean), 
+        p.noise     <- make_mat(bbs %>% distinct(rteno, year, noisemean),
                                 row = "rteno", col="year",
                                 val="noisemean")
-        p.fyrbbs    <- make_mat(bbs %>% distinct(rteno, year, obsfirstyearbbs), 
+        p.fyrbbs    <- make_mat(bbs %>% distinct(rteno, year, obsfirstyearbbs),
                                 row = "rteno", col="year",
                                 val="obsfirstyearbbs")
-        p.fyrroute  <- make_mat(bbs %>% distinct(rteno, year, obsfirstyearroute), 
+        p.fyrroute  <- make_mat(bbs %>% distinct(rteno, year, obsfirstyearroute),
                                   row = "rteno", col="year",
                                   val="obsfirstyearroute")
+        p.assistant <- make_mat(bbs %>% distinct(rteno, year, assistant),
+                                row = "rteno", col="year",
+                                val="assistant")
+        p.assistant <- p.assistant[p.assistant=="NULL"] <- NA
+
+
 
         if(scale.vars){
           bbs <- bbs %>%
@@ -81,7 +95,7 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
 
       # Linear model covariates (2D, since grid/route locations don't change over time.)
       grid.bbs <- bbs %>% distinct(gridcellid, rteno, .keep_all=TRUE)
-      
+
       ## area of each grid cell
       if(scale.vars) area.bbs <- scale(grid.bbs$area)else{area.bbs <- grid.bbs$area}
 
@@ -101,7 +115,7 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
       objs.bbs <- c("prop.site.in.cell.bbs", ## proportion of a route in a grid cell
                     "yBBS.site", ## observed counts for bbs
                     "yBBS.grid", ## counts at route within grid (array)
-                    # "S.bbs", "T.bbs", "G.bbs", ## loop length indexes, 
+                    # "S.bbs", "T.bbs", "G.bbs", ## loop length indexes,
                     "p.wind", "p.car", "p.noise", "p.fyrbbs", "p.fyrroute"  ## detection covariates
                     )
     }#end bbs loop
@@ -113,6 +127,7 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
         distinct(gridcellid, .keep_all=TRUE)
 
       if("sf" %in% class(grid)) grid <- grid %>% sf::st_drop_geometry()
+      cat("building grid objects..\n")
 
 
       names(grid) <- tolower(names(grid))
@@ -134,33 +149,34 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
         arrange(gridcellid, checklist_id, year)
 
       # Observed counts as 3D array (dims: rteno by year by gridcellid)
-      cat("working...\n\n")
+      cat("building eBird objects..\n")
       yeBird.grid   <- make_array(ebird %>% filter(!is.na(year)), row="checklist_id", val="c")
       yeBird.site <- make_mat(ebird %>% distinct(checklist_id, year, c) %>% filter(!is.na(checklist_id)), row = "checklist_id", col="year", val = "c")
       yeBird.site <- yeBird.site %>% select(sort(names(yeBird.site))) # use select to ensure the colnames(years) are in order...
 
 
-      temp.ebird <- ebird %>% filter(!is.na(checklist_id), 
+      temp.ebird <- ebird %>% filter(!is.na(checklist_id),
                                      !is.na(year)
                                      )
-      
+
       G.ebird <- length(unique(ebird$gridcellid))
       S.ebird <- length(unique(temp.ebird$checklist_id))
       T.ebird <- length(unique(temp.ebird$year))
-      
-      
+
+
       # get the maximum value (count) for each column (year) across all slices
-      ## used in GAM -- 
+      ## used in GAM --
       Ni_ebird <- NULL
       for(j in 1:dim(yeBird.grid)[3]){
-        x=jdat$yeBird.grid[,,j]
-        Ni_ebird <- rbind(Ni_ebird, as.integer(sub(".*:", "", summary(x)[6,])))
+        x=yeBird.grid[,,j]
+        ### need to add a silencer to avoid rbind telling me about NAs
+        suppressWarnings(Ni_ebird <- rbind(Ni_ebird, as.integer(sub(".*:", "", summary(x)[6,]))))
       }
       Ni_ebird <- Ni_ebird %>% replace(is.na(.), 0) # replace NA with zeroes
-       
-      
-      
-      
+
+
+
+
 
       # specify objects of interest
       objs.ebird <- c("yeBird.site", "yeBird.grid",

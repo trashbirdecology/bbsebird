@@ -41,9 +41,7 @@ knitr::opts_chunk$set(
 
 ## Libraries
 ```{r libraries, echo=TRUE}
-## Users may run into issues when installing the following packages:
-devtools::install_github("ropensci/rnaturalearth", force=FALSE) ## must install from GH -- source has unresolved issues for 2+years (see issue https://github.com/ropensci/rnaturalearthhires/issues/1)
-unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
+# unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
 devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 
 ### specify packages that we call often 
@@ -258,7 +256,7 @@ View(jdat.struc)
 # Step 4: GAMs
 
 ```{r}
-gam.dat <- data.frame(Ni = Ni_ebird, )
+gam.dat <- data.frame(Ni = Ni_ebird,)
 # Generate the appropriate prior distributions for a poisson gam
 # jagam.data <- data.frame(N = rep(N = Ni[,1], length(jdat$XY[,1])),
 #                          x=scale(jdat$XY[,"x"]), y=scale(jdat$XY[,"y"]))
