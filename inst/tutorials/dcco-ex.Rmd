@@ -260,9 +260,9 @@ gamdat <- make_gam_dat(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jag
 # Step 4: GAMs
 ```{r gam-bbs}
 bbs.gam <- mgcv::jagam(
-  y.bbs ~ s(year) + s(
-    lon,
-    lat,
+  y.bbs ~ s(t.bbs) + s(
+    lon.bbs,
+    lat.bbs,
     k = 20,
     bs = 'ds',#duchon spline
     m = c(1, 0.5)
