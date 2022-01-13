@@ -45,13 +45,15 @@ for(i in seq_along(dat)){
       y.bbs   <- bbs$c
       t.bbs   <- bbs$year
       site    <- bbs$rteno %>% as.factor()
+      grid    <- bbs$gridcellid
 
       ## DEFINE OUTPUT OBJECTS FOR BBS
       objs.bbs <- c("lon.bbs",
                     "lat.bbs",
                     "t.bbs",
                     "y.bbs",
-                    "site"
+                    "site",
+                    "grid"
                     )
       ## Create a data frame for BBS data
       if(exists("objs.bbs")){
@@ -85,14 +87,16 @@ for(i in seq_along(dat)){
       lat.ebird <- ebird$cell.lat.centroid
       y.ebird   <- ebird$c
       t.ebird   <- ebird$year
-      site    <- ebird$checklist_id %>% as.factor()
+      site      <- ebird$checklist_id %>% as.factor()
+      grid      <- ebird$gridcellid
 
       ## DEFINE OUTPUT OBJECTS FOR ebird
       objs.ebird <- c("lon.ebird",
                       "lat.ebird",
                       "t.ebird",
                       "y.ebird",
-                      "site"
+                      "site",
+                      "grid"
       )
       ## Create a data frame for ebird data
       if(exists("objs.ebird")){
