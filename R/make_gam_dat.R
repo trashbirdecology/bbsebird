@@ -4,30 +4,31 @@
 #' @param dir.out Directory within which the output list will be saved  as "jdat"
 #' @param fn.out Filename  of the object output as a .RDS file
 #' @export make_gam_dat
-make_gam_dat <- function(dat, dat.names=NULL, drop.nas=FALSE, dir.out, fn.out="jagamdat"){
+make_gam_dat <- function(dat, drop.nas=FALSE, dir.out, fn.out="jagamdat"){
 
-  # Force object(s) in dat to a list, despite length
-  if(!is.list(dat))       dat <- list(dat)
-  if(!is.null(dat.names)) names(dat) <- tolower(dat.names)
 
+  # In case a single data frame is supplied, add a NULL list element (because im lazy and don't want to rewrite the fucntion rn)
+  if(!"list" %in% class(dat)) dat <- list(dat, NA)
   # Naming the list objects
-  if(is.null(dat.names)){
-    for(i in 1:length(dat)){
-      ind <-  names(dat[[i]])
+  dat.names <- NULL
+  for(i in 1:length(dat)){
+    if(any(class(dat[[i]]) %in% c("sf", "spdf"))) dat[[i]] <- dat[[i]] %>% sf::st_drop_geometry()
+
+      ind <-  colnames(dat[[i]])
       if("checklist_id" %in% ind) dat.names[i] <- "ebird"
       if("rteno" %in% ind) dat.names[i] <- "bbs"
 
-      if(!("rteno" %in% ind) & !("checklist_id" %in% ind)) stop("Input data must comprise bbs and/or ebird data. If supplying a list of data objects, please sure it is defined as a list (e.g., `dat=list(df_1, df_2)`)) ensure argument `dat` ")
-    }#end naming for loop
-    names(dat) <- dat.names
-  }# end dat.names is null
+      }#end naming for loop
+  names(dat) <- dat.names
 
   # Initialize empty objects in case they aren't filled later we can still recall them without asking ls() or exists("")
   objs.bbs <- objs.grid <- objs.ebird <- NULL
 
+ebird.out <- bbs.out <- NULL
+for(i in seq_along(dat)){
 
-  for(i in seq_along(dat)){
     ind <- names(dat)[i] # make lazy indicator for which data we are munging
+
     if(ind == "bbs"){
       bbs <- dat[[i]] %>%
         units::drop_units() %>%
@@ -57,60 +58,60 @@ make_gam_dat <- function(dat, dat.names=NULL, drop.nas=FALSE, dir.out, fn.out="j
         bbs.out <- matrix(NA,
                       nrow=length(eval(parse(text=objs.bbs[1]))),
                       ncol=length(objs.bbs))
-        for(i in seq_along(objs.bbs)){
-          if(i==1){names<-NULL;keep=NULL}
-          if(exists(objs.bbs[i])){
-            keep <- c(keep, i)
-            bbs.out[,i] <- get(objs.bbs[i])
-            names <- c(names, objs.bbs[i])
+        for(j in seq_along(objs.bbs)){
+          if(j==1){names<-NULL;keep=NULL}
+          if(exists(objs.bbs[j])){
+            keep <- c(keep, j)
+            bbs.out[,j] <- get(objs.bbs[j])
+            names <- c(names, objs.bbs[j])
           }
         }
         colnames(bbs.out) <- names
       }
-      }else(bbs.out<-NULL)
-
+      }
 
     if(ind == "ebird"){
-      ebird <- dat[[i]]
-      if("sf" %in% class(ebird)) ebird <- ebird %>% sf::st_drop_geometry()
-
-      names(ebird) <- tolower(names(ebird))
-
-      if(drop.nas) ebird <- ebird %>% filter(!is.na(c), !is.na(checklist_id)) %>%
+      ebird <- dat[[i]] %>%
+        units::drop_units() %>%
         arrange(gridcellid, checklist_id, year)
+      if("sf" %in% class(ebird)) ebird <- ebird %>% sf::st_drop_geometry()
+      names(ebird) <- tolower(names(ebird))
+      if(drop.nas){
+        ebird <- ebird %>% filter(!is.na(c), !is.na(checklist_id))
+      }
 
-      # Observed counts as 3D array (dims: rteno by year by gridcellid)
-      cat("building eBird objects..\n")
+      cat("building ebird objects..\n")
       lon.ebird <- ebird$cell.lon.centroid
       lat.ebird <- ebird$cell.lat.centroid
       y.ebird   <- ebird$c
       t.ebird   <- ebird$year
-      site      <- as.factor(ebird$checklist_id)
+      site    <- ebird$checklist_id %>% as.factor()
 
-      ## DEFINE OUTPUT OBJECTS FOR BBS
+      ## DEFINE OUTPUT OBJECTS FOR ebird
       objs.ebird <- c("lon.ebird",
                       "lat.ebird",
                       "t.ebird",
                       "y.ebird",
                       "site"
-                      )
-
-        ## Create a data frame for BBS data
-        if(exists("objs.ebird")){
-          ebird.out <- matrix(NA,
-                          nrow=length(eval(parse(text=objs.ebird[1]))),
-                          ncol=length(objs.ebird))
-          for(i in seq_along(objs.ebird)){
-            if(i==1){names<-NULL;keep=NULL}
-            if(exists(objs.ebird[i])){
-              keep <- c(keep, i)
-              ebird.out[,i] <- get(objs.ebird[i])
-              names <- c(names, objs.ebird[i])
-            }
+      )
+      ## Create a data frame for ebird data
+      if(exists("objs.ebird")){
+        ebird.out <- matrix(NA,
+                            nrow=length(eval(parse(text=objs.ebird[1]))),
+                            ncol=length(objs.ebird))
+        for(j in seq_along(objs.ebird)){
+          if(j==1){names<-NULL;keep=NULL}
+          if(exists(objs.ebird[j])){
+            keep <- c(keep, j)
+            ebird.out[,j] <- get(objs.ebird[j])
+            names <- c(names, objs.ebird[j])
           }
-          colnames(ebird.out) <- names
-        }#end build matrix ebird
-        }else(ebird.out<-NULL)
+        }
+        colnames(ebird.out) <- names
+      }
+    }
+
+
 
   }# END DAT I LOOP
 
