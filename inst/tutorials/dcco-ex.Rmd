@@ -259,6 +259,7 @@ gamdat <- make_gam_dat(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jag
 
 # Step 4: GAMs
 ```{r gam-bbs}
+bbs.mod.name <- "bbs_jagam"
 bbs.gam <- mgcv::jagam(
   y.bbs ~ s(t.bbs) + s(
     lon.bbs,
@@ -271,9 +272,32 @@ bbs.gam <- mgcv::jagam(
   diagonalize = TRUE,#reparameterize smoothed->iid gaussian
   data = gamdat$bbs,
   family = "poisson",
-  file = paste0(dir.models, "bbs_jagam.txt"),
+  file = paste0(dir.models, bbs.mod.name, ".txt"),
   na.action = na.omit
 )
+
+saveRDS(bbs.gam, file=paste0(dir.models, bbs.mod.name))
+```
+
+```{r gam-ebird}
+ebird.mod.name <- "ebird_jagam"
+ebird.gam <- mgcv::jagam(
+  y.ebird ~ s(t.ebird) + s(
+    lon.ebird,
+    lat.ebird,
+    k = 20,
+    bs = 'ds',#duchon spline
+    m = c(1, 0.5)
+  ),
+  sp.prior = "log.uniform",#lambda penality term
+  diagonalize = TRUE,#reparameterize smoothed->iid gaussian
+  data = gamdat$ebird,
+  family = "poisson",
+  file = paste0(dir.models, ebird.mod.name, ".txt"),
+  na.action = na.omit
+)
+
+saveRDS(ebird.gam, file=paste0(dir.models, ebird.mod.name))
 ```
 
 # Step 5: N-mixture Models
