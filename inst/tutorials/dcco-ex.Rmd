@@ -251,17 +251,19 @@ jdat.struc <- get_data_structure(list=jdat, dir.output=dir.jags)
 View(jdat.struc)
 # kableExtra::kable(jdat.struc)
 # browseURL(paste0(dir.jags,"jdat-structure.csv"))
+args.save <- junk_it(args.save, "jdat.struc")
 ```
 Function `dubcorms::make_gam_list` creates a list of elements used in `mgcv::jagam` models. Accepts the eBird and BBS datasets. 
 ```{r make-gam-dat}
 gamdat <- make_gam_dat(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jags)
+args.save <- junk_it(args.save, "gamdat")
 ```
 
 # Step 4: GAMs
 ```{r gam-bbs}
 bbs.mod.name <- "bbs_jagam"
 bbs.gam <- mgcv::jagam(
-  y.bbs ~ s(t.bbs) + s(
+  y.bbs ~ s(t.bbs, by="site") + s(
     lon.bbs,
     lat.bbs,
     k = 20,
@@ -272,32 +274,30 @@ bbs.gam <- mgcv::jagam(
   diagonalize = TRUE,#reparameterize smoothed->iid gaussian
   data = gamdat$bbs,
   family = "poisson",
-  file = paste0(dir.models, bbs.mod.name, ".txt"),
-  na.action = na.omit
+  # na.action = na.omit,
+  file = paste0(dir.models, bbs.mod.name, ".txt")
 )
-
-saveRDS(bbs.gam, file=paste0(dir.models, bbs.mod.name))
+saveRDS(bbs.gam, file=paste0(dir.models, bbs.mod.name, ".rds"))
 ```
 
 ```{r gam-ebird}
-ebird.mod.name <- "ebird_jagam"
-ebird.gam <- mgcv::jagam(
-  y.ebird ~ s(t.ebird) + s(
-    lon.ebird,
-    lat.ebird,
-    k = 20,
-    bs = 'ds',#duchon spline
-    m = c(1, 0.5)
-  ),
-  sp.prior = "log.uniform",#lambda penality term
-  diagonalize = TRUE,#reparameterize smoothed->iid gaussian
-  data = gamdat$ebird,
-  family = "poisson",
-  file = paste0(dir.models, ebird.mod.name, ".txt"),
-  na.action = na.omit
-)
-
-saveRDS(ebird.gam, file=paste0(dir.models, ebird.mod.name))
+# ebird.mod.name <- "ebird_jagam"
+# ebird.gam <- mgcv::jagam(
+#   y.ebird ~ s(t.ebird) + s(
+#     lon.ebird,
+#     lat.ebird,
+#     k = 20,
+#     bs = 'ds',#duchon spline
+#     m = c(1, 0.5)
+#   ),
+#   sp.prior = "log.uniform",#lambda penalty term
+#   diagonalize = TRUE,#reparameterize smoothed->iid gaussian
+#   data = gamdat$ebird,
+#   family = "poisson",
+#   file = paste0(dir.models, ebird.mod.name, ".txt"),
+#   na.action = na.omit
+# )
+# saveRDS(ebird.gam, file=paste0(dir.models, ebird.mod.name), ".rds")
 ```
 
 # Step 5: N-mixture Models

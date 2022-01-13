@@ -19,7 +19,7 @@ make_gam_dat(
 
 \item{dir.out}{Directory within which the output list will be saved  as "jdat"}
 
-\item{fn.out}{Filename of the object output as a .RDS file}
+\item{fn.out}{Filename  of the object output as a .RDS file}
 }
 \description{
 Munge and Output a Single or List of Data Frames for Use in mgcv::jagam
