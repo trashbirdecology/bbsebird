@@ -254,7 +254,7 @@ View(jdat.struc)
 ```
 Function `dubcorms::make_gam_list` creates a list of elements used in `mgcv::jagam` models. Accepts the eBird and BBS datasets. 
 ```{r make-gam-dat}
-gamdat <- make_gam_list(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jags)
+gamdat <- make_gam_dat(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jags)
 ```
 
 # Step 4: GAMs
@@ -269,7 +269,7 @@ bbs.gam <- mgcv::jagam(
   ),
   sp.prior = "log.uniform",#lambda penality term
   diagonalize = TRUE,#reparameterize smoothed->iid gaussian
-  data = gamdat,
+  data = gamdat$bbs,
   family = "poisson",
   file = paste0(dir.models, "bbs_jagam.txt"),
   na.action = na.omit
