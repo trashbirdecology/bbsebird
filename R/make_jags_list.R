@@ -164,24 +164,24 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
       T.ebird <- length(unique(temp.ebird$year))
 
 
-      # get the maximum value (count) for each column (year) across all slices
-      ## used in GAM --
-      Ni_ebird <- NULL
-      for(j in 1:dim(yeBird.grid)[3]){
-        x=yeBird.grid[,,j]
-        ### need to add a silencer to avoid rbind telling me about NAs
-        suppressWarnings(Ni_ebird <- rbind(Ni_ebird, as.integer(sub(".*:", "", summary(x)[6,]))))
-      }
-      Ni_ebird <- Ni_ebird %>% replace(is.na(.), 0) # replace NA with zeroes
-
+      # # get the maximum value (count) for each column (year) across all slices
+      # ## used in GAM --
+      # Ni_ebird <- NULL
+      # for(j in 1:dim(yeBird.grid)[3]){
+      #   x=yeBird.grid[,,j]
+      #   ### need to add a silencer to avoid rbind telling me about NAs
+      #   suppressWarnings(Ni_ebird <- rbind(Ni_ebird, as.integer(sub(".*:", "", summary(x)[6,]))))
+      # }
+      # Ni_ebird <- Ni_ebird %>% replace(is.na(.), 0) # replace NA with zeroes
+      #
 
 
 
 
       # specify objects of interest
       objs.ebird <- c("yeBird.site", "yeBird.grid",
-                      "G.ebird", "S.ebird","T.ebird",
-                      "Ni_ebird"
+                      "G.ebird", "S.ebird","T.ebird"
+                      # "Ni_ebird"
                       )
     }#end ebird loop
 

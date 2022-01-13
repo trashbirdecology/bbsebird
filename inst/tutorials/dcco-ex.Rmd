@@ -229,7 +229,7 @@ if(sf::st_crs(ebird_spatial)!=sf::st_crs(bbs_spatial))stop("Warning. The ebird, 
 args.save <- junk_it(args.save, c("ebird_spatial", "bbs_spatial", "grid"))
 ```
 
-# Step 3: Munge or Import JAGS Data
+# Step 3: Munge or Import JAGS and GAM Data Lists
 We need to munge the data just a little bit further for use in JAGS together. You may need to create/munge data further depending on model(s). 
 
 ```{r jdat-make, eval=j.ind}
@@ -252,29 +252,28 @@ View(jdat.struc)
 # kableExtra::kable(jdat.struc)
 # browseURL(paste0(dir.jags,"jdat-structure.csv"))
 ```
+Function `dubcorms::make_gam_list` creates a list of elements used in `mgcv::jagam` models. Accepts the eBird and BBS datasets. 
+```{r make-gam-dat}
+gamdat <- make_gam_list(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jags)
+```
 
 # Step 4: GAMs
-
-```{r}
-gam.dat <- data.frame(Ni = Ni_ebird,)
-# Generate the appropriate prior distributions for a poisson gam
-# jagam.data <- data.frame(N = rep(N = Ni[,1], length(jdat$XY[,1])),
-#                          x=scale(jdat$XY[,"x"]), y=scale(jdat$XY[,"y"]))
-jagam.mod <- mgcv::jagam(N ~ s(x, y, # Grid cell centroid coordinates
-                               #  number of basis functions (controls upper
-                               # level of 'smoothness')
-                               k = 20,
-                               bs = 'ds',    # duchon spline
-                               # duchon spline w/ 1st deriv penalty
-                               # (penalizes wiggliness)
-                               m=c(1, 0.5)),
-                         # use log.uniform priors on the lambda penalty term
-                         sp.prior = "log.uniform",
-                         # Smooths re-parameterized to have i.i.d. Gaussian
-                         # priors (where possible)
-                         diagonalize = TRUE,
-                         data = jagam.data, family = "poisson",
-                         file=system.file("./jags/", "jdpois_tp.jags"))
+```{r gam-bbs}
+bbs.gam <- mgcv::jagam(
+  y.bbs ~ s(year) + s(
+    lon,
+    lat,
+    k = 20,
+    bs = 'ds',#duchon spline
+    m = c(1, 0.5)
+  ),
+  sp.prior = "log.uniform",#lambda penality term
+  diagonalize = TRUE,#reparameterize smoothed->iid gaussian
+  data = gamdat,
+  family = "poisson",
+  file = paste0(dir.models, "bbs_jagam.txt"),
+  na.action = na.omit
+)
 ```
 
 # Step 5: N-mixture Models
