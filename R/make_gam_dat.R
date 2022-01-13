@@ -5,10 +5,9 @@
 #' @param fn.out Filename  of the object output as a .RDS file
 #' @export make_gam_dat
 make_gam_dat <- function(dat, drop.nas=FALSE, dir.out, fn.out="jagamdat"){
-
-
+cat("Munging e")
   # In case a single data frame is supplied, add a NULL list element (because im lazy and don't want to rewrite the fucntion rn)
-  if(!"list" %in% class(dat)) dat <- list(dat, NA)
+  if(!"list" %in% class(dat)) dat <- list(dat)
   # Naming the list objects
   dat.names <- NULL
   for(i in 1:length(dat)){
@@ -26,9 +25,7 @@ make_gam_dat <- function(dat, drop.nas=FALSE, dir.out, fn.out="jagamdat"){
 
 ebird.out <- bbs.out <- NULL
 for(i in seq_along(dat)){
-
     ind <- names(dat)[i] # make lazy indicator for which data we are munging
-
     if(ind == "bbs"){
       bbs <- dat[[i]] %>%
         units::drop_units() %>%
@@ -39,22 +36,23 @@ for(i in seq_along(dat)){
         bbs <- bbs %>% filter(!is.na(c), !is.na(rteno))
       }
 
-      cat("building bbs objects..\n")
-      lon.bbs <- bbs$cell.lon.centroid
-      lat.bbs <- bbs$cell.lat.centroid
-      y.bbs   <- bbs$c
-      t.bbs   <- bbs$year
-      site    <- bbs$rteno %>% as.factor()
-      grid    <- bbs$gridcellid
+      cat("building bbs objects.....")
+      lon    <- bbs$cell.lon.centroid
+      lat    <- bbs$cell.lat.centroid
+      y      <- bbs$c
+      year   <- bbs$year
+      site   <- bbs$rteno %>% as.factor()
+      grid   <- bbs$gridcellid
 
       ## DEFINE OUTPUT OBJECTS FOR BBS
-      objs.bbs <- c("lon.bbs",
-                    "lat.bbs",
-                    "t.bbs",
-                    "y.bbs",
-                    "site",
-                    "grid"
-                    )
+      objs.bbs <- c("lon",
+                      "lat",
+                      "year",
+                      "y",
+                      "site",
+                      "grid"
+      )
+
       ## Create a data frame for BBS data
       if(exists("objs.bbs")){
         bbs.out <- matrix(NA,
@@ -70,8 +68,8 @@ for(i in seq_along(dat)){
         }
         colnames(bbs.out) <- names
       }
+      cat("done.\n")
       }
-
     if(ind == "ebird"){
       ebird <- dat[[i]] %>%
         units::drop_units() %>%
@@ -82,19 +80,19 @@ for(i in seq_along(dat)){
         ebird <- ebird %>% filter(!is.na(c), !is.na(checklist_id))
       }
 
-      cat("building ebird objects..\n")
-      lon.ebird <- ebird$cell.lon.centroid
-      lat.ebird <- ebird$cell.lat.centroid
-      y.ebird   <- ebird$c
-      t.ebird   <- ebird$year
-      site      <- ebird$checklist_id %>% as.factor()
-      grid      <- ebird$gridcellid
+      cat("building ebird objects.....")
+      lon    <- ebird$cell.lon.centroid
+      lat    <- ebird$cell.lat.centroid
+      y      <- ebird$c
+      year   <- ebird$year
+      site   <- ebird$checklist_id %>% as.factor()
+      grid   <- ebird$gridcellid
 
       ## DEFINE OUTPUT OBJECTS FOR ebird
-      objs.ebird <- c("lon.ebird",
-                      "lat.ebird",
-                      "t.ebird",
-                      "y.ebird",
+      objs.ebird <- c("lon",
+                      "lat",
+                      "year",
+                      "y",
                       "site",
                       "grid"
       )
@@ -113,23 +111,21 @@ for(i in seq_along(dat)){
         }
         colnames(ebird.out) <- names
       }
+      cat("done.\n")
     }
+}# END DAT I LOOP
 
+output <- list(as.data.frame(bbs.out), as.data.frame(ebird.out)) # mgcv wont take mats or arrays
+names(output) <- c("bbs", "ebird")
 
+# save to  file
+fn=paste0(paste0(dir.out, "/", fn.out,".RDS"))
+cat("Saving output to file: ", fn)
+saveRDS(output, file=fn)
+cat("..done.")
 
-  }# END DAT I LOOP
-
-
-  output <- list(as.data.frame(bbs.out), as.data.frame(ebird.out)) # mgcv wont take mats or arrays
-  names(output) <- c("bbs", "ebird")
-
-  # save to  file
-  fn=paste0(paste0(dir.out, "/", fn.out,".RDS"))
-  cat("Saving output to file: ", fn)
-  saveRDS(output, file=fn)
-
-  # export from function
-  return(output)
+#export
+return(output)
 
 
 } # end fun
