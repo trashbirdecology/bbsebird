@@ -39,7 +39,9 @@ Imports:
     knitr,
     units,
     bit,
-    foreach
+    foreach,
+    jagam,
+    mgcv
 Suggests: 
     assertthat,
     learnr,

@@ -1,4 +1,4 @@
-## ID LOVE to be able to throw all the BBS fitlering into a single function within which I use
+## ID LOVE to be able to throw all the BBS filtering into a single function within which I use
 ## across(fun_x(list elemnt )) and use lapply to apply the function to the entire list. but for now i am just gonna do it ,"by hand"
 # if("citation" %in% names(list)) bbs$citation<-bbs$citation %>% as.data.frame() # this is required for quickly scanning and filtering lists, sorry
 #' @title Subset BBS observations data by one or more species of interest.
