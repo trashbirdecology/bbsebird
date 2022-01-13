@@ -46,5 +46,5 @@ Suggests:
     rmarkdown
 VignetteBuilder: knitr
 Remotes:  
-    trashbirdecology/bbsAssistant,
-    ropensci::rnaturalearth
+    github::trashbirdecology/bbsAssistant,
+    github::ropensci/rnaturalearth
