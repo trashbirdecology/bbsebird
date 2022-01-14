@@ -1,0 +1,279 @@
+---
+title: "specify and run models"
+params:
+  fn.munge: "C:/Users/jburnett/Documents/GitHub/dubcorms/inst/tutorials/dcco-data.Rmd" # full path to .rmd doing the data munging and integration.
+---
+
+```{r retrieve-data, eval=TRUE}
+# Suggest restarting R and clearing output/workspace
+
+
+
+```
+
+
+# Step 4: Specify GAMs
+```{r rushing-gam}
+ind <- names(jagam.data)
+jagam.mods <- rep(list(NA), length(ind))
+names(jagam.mods) <- ind
+for(i in seq_along(ind)){
+mod.name <-  paste0("jagam_", ind[i])
+mod.fn   <- paste0(dir.models, mod.name, ".txt")
+
+# Model
+jagam.mods[[i]] <-
+  mgcv::jagam(
+    Cmax ~ s(
+      x,
+      y,
+      k = 20,
+      bs = 'ds',
+      m = c(1, 0.5)
+      ),
+    data = jagam.data[[i]],
+    family = "poisson",
+    file = mod.fn, 
+    diagonalize = TRUE
+  )
+## Save model output
+saveRDS(jagam.mods[[i]], file=paste0(dir.models, mod.name, ".rds"))
+cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), ".\n")
+
+} #end gam loop
+
+jagam.mods$ebird$jags.data %>% View()
+
+# 
+# 
+#  X = jagam.mod$jags.data$X,
+#     S1 = jagam.mod$jags.data$S1,
+#     zero = jagam.mod$jags.data$zero,
+#     mu = inits$psi.betas,
+#     se = inits$psi.se
+# # Data for JAGS
+# jags.data <-
+#   list(
+#     h = dat$h,
+#     nStops = dat$nStops,
+#     nRoutes = dat$nRoutes,
+#     nYears = dat$nYears,
+#     Xp = dat$wind,
+#     nov = dat$nov,
+#     obs = dat$obs,
+#     nObs = max(dat$obs) - 1,
+#     Xclim = covs,
+#     nPred = dim(covs)[2] / 2,
+#     twedt = dat$twedt,
+#    
+#   )
+# ### Parameters to monitor
+# jags.params <-
+#   c(
+#     "xpsi",
+#     "pi",
+#     "lambda",
+#     "betaT",
+#     "g",
+#     "alpha0",
+#     "alpha1",
+#     "alpha2",
+#     "alpha3",
+#     "sigma.obs",
+#     "sigma.gam",
+#     "rho",
+#     "b",
+#     "omega",
+#     "z"
+#   )
+```
+
+
+```{r gam-ebird}
+ebird.mod.name <- "ebird_jagam"
+ebird.gam <- mgcv::jagam(
+  y.ebird ~ s(t.ebird) + s(
+    lon.ebird,
+    lat.ebird,
+    k = 20,
+    bs = 'ds',#duchon spline
+    m = c(1, 0.5)
+  ),
+  sp.prior = "log.uniform",#lambda penalty term
+  diagonalize = TRUE,#reparameterize smoothed->iid gaussian
+  data = gamdat$ebird %>% filter(grid %in% c(1:10) ),
+  family = "poisson",
+  file = paste0(dir.models, ebird.mod.name, ".txt"),
+  na.action = na.omit
+)
+saveRDS(ebird.gam, file=paste0(dir.models, ebird.mod.name), ".rds")
+```
+
+# Step 5: Integrated Model
+## Step 5a: Computational Specifications
+### MCMC
+```{r set-mcmc}
+na <- 1000 # number of adaptation iterations
+nb <- 5000 # number of iterations for burnin per chain
+# nc <- 3 # number of chains (min for now) (defined in call to JAGS as the length of inits list)
+ncores <- parallel::detectCores() - 1 # number of cores to use; keep one free just in case, or not
+ni <- 10000 # number of iterations per chain
+nt <- 10 # thinning rate
+```
+
+### Set initial values
+```{r set-inits} 
+inits <- list(
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),     
+  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1))
+  )
+```
+
+### Parameters monitored
+```{r set-params} 
+### must not name `params` b/c will conflict with YAML parameters
+params.monitor <- c("lambda", "nu",  "b1", "N", "alpha")
+```
+
+## Step 4b: Specify Model(s)
+```{r bbs-pois-base}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.site[s,t] ~ dpois(lambda[s])
+  } # end data model s
+} # end data model t
+  
+for(s in 1:S.bbs){
+  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
+} # end s (lambda route)
+
+for(g in 1:G){
+  log(nu[g]) = area[g]*b1 + alpha 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+b1    ~ dnorm(0,1)
+alpha ~ dnorm(0,1)
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:T.bbs){
+  N[t] <- sum(yBBS.site[,t])
+}
+####################################################
+####################################################
+}"
+
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dir.models,"/bbs-pois-null") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+
+
+
+```{r bbs-pois-with-p-covs}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.site[s,t] ~ dpois(lambda[s]*pBBS[s,t])
+  } # end data model s
+} # end data model t
+
+  
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    logit(pBBS[s,t]) <- alpha_pb + 
+                        beta_pb1 * p.fyrbbs[s,t] + 
+                        beta_pb2 * p.wind[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:S.bbs){
+  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
+} # end s (lambda route)
+
+
+for(g in 1:G){
+  log(nu[g]) = beta_g1*area[g] + alpha_pb 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,1) # intercept on the BBS detection model
+beta_pb1   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pb2   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g1    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:T.bbs){
+  N[t] <- sum(yBBS.site[,t])
+}
+####################################################
+####################################################
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dir.models,"/bbs-pois-with-p-covs") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+
+
+## Step 4c: Run Model(s)
+```{r run-jags}
+# models in jags model dir
+mod.fns   <- list.files(dir.models, full.names = FALSE, pattern=".txt|.jags") # names of models
+mod.names <- sub(".txt|.jags", "", x=mod.fns) # remove the .rds files
+mod.fns   <- paste0(dir.models, mod.fns) # tack on the directory 
+
+# Choose the model to run
+mod.fn   <- mod.fns[2]
+mod.name <- mod.names[2]
+
+jdat$area <- as.vector(scale(jdat$area, center=TRUE))
+# names(jdat)
+tictoc::tic()
+out <- jagsUI::jags(data  = jdat,
+                    model.file = mod.fn,
+                    inits = inits,
+                    parameters.to.save = params.monitor,
+                    n.chains = length(inits), 
+                    n.thin = nt, n.iter = ni, n.burnin = nb)
+x=tictoc::toc()
+mod.time <- paste0(round(x$toc-x$tic, 2), " seconds")
+out$tictoc.allchains <- mod.time
+# save model outputs
+saveRDS(out, file=paste0(mod.name, ".rds"))
+```
+
+
+
