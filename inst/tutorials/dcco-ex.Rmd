@@ -43,7 +43,7 @@ knitr::opts_chunk$set(
 ```{r libraries, echo=TRUE}
 # unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
 unloadNamespace("dubcorms")
-devtools::install_github("trashbirdecology/dubcorms", force=FALSE,ref="dev-jlb")
+devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 
 ### specify packages that we call often 
 pkgs <- c("dubcorms","bbsAssistant","ggplot2","reshape2",
@@ -120,12 +120,13 @@ Munging the BBS data shouldn't take too long, regardless spatial extent.
 ## If b.ind is FALSE then bbs_spatial should already exist. 
 # If TRUE, then first ensure bbs_obs,  read in bbs_spatial, otherwise, create or import the bbs observations and create bbs_spatial
 fns <- tolower(list.files(dir.bbs.out))
-if(b.ind & overwrite.bbs){
+if(b.ind){
   if("bbs_orig.rds" %in% fns){bbs_orig <- readRDS(paste0(dir.bbs.out,"bbs_orig.rds"))}else{
-  # if DNE, create and import data. 
+  # if DNE, create and import data.
   bbs_orig <- grab_bbs_data(sb_dir = dir.bbs.out)
+  saveRDS(bbs_orig,paste0(dir.bbs.out,"bbs_orig.rds"))
   }
-  
+
   # If exists on file, load in the observations
   if (!exists("bbs_obs") & "bbs_obs.rds" %in% fns){bbs_obs <- readRDS(paste0(dir.bbs.out, "bbs_obs.rds"))}
   ## go ahead and munge if it still DNE
@@ -143,28 +144,29 @@ if(b.ind & overwrite.bbs){
 # Load in or overlay BBS observations and spatial grid
 if(!exists("bbs_spatial") | overwrite.bbs){
 fns.spat <- list.files(dir.spatial.out)
-  bbs_spatial <- 
+  bbs_spatial <-
     make_bbs_spatial(
     bbs.obs = bbs_obs,
     cws.routes.dir = cws.routes.dir, #location of the CWS BBS routes shapefiles
     usgs.routes.dir = usgs.routes.dir, #location of the USGS BBS routes shapefiles
     crs.target = crs.target,
-    routes.keep=unique(bbs_obs$RTENO), 
+    routes.keep=unique(bbs_obs$RTENO),
     grid=grid,
     keep.empty.cells =TRUE,
     plot.dir=dir.plots,
     overwrite=TRUE)
-  # Filter out the years. This needs to go elsewhere eventually. 
-  bbs_spatial  <- bbs_spatial  %>% filter(year >= min(year.range) & year <= max(year.range))
 
-  # Munge the spatial data a bit for downstream alignment with ebird_spatial  
+  # Munge the spatial data a bit for downstream alignment with ebird_spatial
   bbs_spatial  <- match_col_names(bbs_spatial)
   bbs_spatial  <- munge_date_time(bbs_spatial, base.date)
-  
-  saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
-    }
+  # Filter out the years. This needs to go elsewhere eventually.
+  bbs_spatial  <- bbs_spatial  %>% filter(year >= min(year.range) & year <= max(year.range))
 
-# browseURL(list.files(dir.plots, "bbs", full.names = TRUE))
+  saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
+}
+
+browseURL(list.files(dir.plots, pattern="bbs_spatial_exploratory", full.names=TRUE))
+
 ```
 ## Step 2c: eBird Data
 Munging the eBird will take quite a while, especially if you are running more than a couple of states. This process also requires a significant amount of free RAM. A
