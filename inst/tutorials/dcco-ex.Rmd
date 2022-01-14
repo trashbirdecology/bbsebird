@@ -42,7 +42,8 @@ knitr::opts_chunk$set(
 ## Libraries
 ```{r libraries, echo=TRUE}
 # unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
-devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
+unloadNamespace("dubcorms")
+devtools::install_github("trashbirdecology/dubcorms", force=FALSE,ref="dev-jlb")
 
 ### specify packages that we call often 
 pkgs <- c("dubcorms","bbsAssistant","ggplot2","reshape2",
@@ -261,11 +262,12 @@ args.save <- junk_it(args.save, "gamdat")
 
 # Step 4: GAMs
 ```{r gam-bbs}
-bbs.mod.name <- "bbs_jagam"
-bbs.gam <- mgcv::jagam(
-  y.bbs ~ s(t.bbs, by="site") + s(
-    lon.bbs,
-    lat.bbs,
+mod.name <- "bbs_jagam"
+mod.fn   <- paste0(dir.models, mod.name, ".txt")
+gam <- mgcv::jagam(
+  y ~ s(year, by=site) + s(
+    lon,
+    lat,
     k = 20,
     bs = 'ds',#duchon spline
     m = c(1, 0.5)
@@ -275,29 +277,32 @@ bbs.gam <- mgcv::jagam(
   data = gamdat$bbs,
   family = "poisson",
   # na.action = na.omit,
-  file = paste0(dir.models, bbs.mod.name, ".txt")
+  file = bbs.mod.fn
 )
-saveRDS(bbs.gam, file=paste0(dir.models, bbs.mod.name, ".rds"))
+cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), ".\n")
+saveRDS(gam, file=paste0(dir.models, mod.name, ".rds"))
+gam$jags.ini %>% str() # b, rho, X
+gam$jags.data %>% str() # y, n, X
 ```
 
 ```{r gam-ebird}
-# ebird.mod.name <- "ebird_jagam"
-# ebird.gam <- mgcv::jagam(
-#   y.ebird ~ s(t.ebird) + s(
-#     lon.ebird,
-#     lat.ebird,
-#     k = 20,
-#     bs = 'ds',#duchon spline
-#     m = c(1, 0.5)
-#   ),
-#   sp.prior = "log.uniform",#lambda penalty term
-#   diagonalize = TRUE,#reparameterize smoothed->iid gaussian
-#   data = gamdat$ebird,
-#   family = "poisson",
-#   file = paste0(dir.models, ebird.mod.name, ".txt"),
-#   na.action = na.omit
-# )
-# saveRDS(ebird.gam, file=paste0(dir.models, ebird.mod.name), ".rds")
+ebird.mod.name <- "ebird_jagam"
+ebird.gam <- mgcv::jagam(
+  y.ebird ~ s(t.ebird) + s(
+    lon.ebird,
+    lat.ebird,
+    k = 20,
+    bs = 'ds',#duchon spline
+    m = c(1, 0.5)
+  ),
+  sp.prior = "log.uniform",#lambda penalty term
+  diagonalize = TRUE,#reparameterize smoothed->iid gaussian
+  data = gamdat$ebird %>% filter(grid %in% c(1:10) ),
+  family = "poisson",
+  file = paste0(dir.models, ebird.mod.name, ".txt"),
+  na.action = na.omit
+)
+saveRDS(ebird.gam, file=paste0(dir.models, ebird.mod.name), ".rds")
 ```
 
 # Step 5: N-mixture Models

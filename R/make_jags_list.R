@@ -33,7 +33,7 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
     ind <- names(dat)[i] # make lazy indicator for which data we are munging
     if(ind == "bbs"){
       bbs <- dat[[i]] %>%
-          units::drop_units() %>%
+          # units::drop_units() %>%
           arrange(gridcellid, rteno, year)
       if("sf" %in% class(bbs)) bbs <- bbs %>% sf::st_drop_geometry()
         names(bbs) <- tolower(names(bbs))
@@ -122,7 +122,7 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
 
     if(ind == "grid"){
       grid <- dat[[i]] %>%
-        units::drop_units() %>%
+        # units::drop_units() %>%
         arrange(gridcellid) %>%
         distinct(gridcellid, .keep_all=TRUE)
 
