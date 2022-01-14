@@ -1,0 +1,57 @@
+sink(file=here::here("inst/jags/bbs-pois-w-p.jags"))
+cat("model {
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.site[s,t] ~ dpois(lambda[s]*pBBS[s,t])
+  } # end data model s
+} # end data model t
+
+
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    logit(pBBS[s,t]) <- alpha_pb + 
+      beta_pb1 * p.fyrbbs[s,t] + 
+      beta_pb2 * p.wind[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:S.bbs){
+  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
+} # end s (lambda route)
+
+
+for(g in 1:G){
+  log(nu[g]) = beta_g1*area[g] + alpha_pb 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,1) # intercept on the BBS detection model
+beta_pb1   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pb2   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g1    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:T.bbs){
+  N[t] <- sum(yBBS.site[,t])
+}
+####################################################
+####################################################
+
+} # End model
+    ", fill=TRUE)
+
+sink()
