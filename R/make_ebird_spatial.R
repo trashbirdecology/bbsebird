@@ -65,7 +65,9 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
 
   ## append the missing grid cell ids (this is a lot faster than st_joining the ebird_spatial and grid.expanded)
 
-  test=full_join(ebird_spatial, grid.expanded)
+  ebird_spatial <- full_join(ebird_spatial, grid.expanded)
+
+  ebird_spatial <- ebird_spatial %>% filter(!is.na(year))
 
   return(ebird_spatial)
 
