@@ -77,10 +77,10 @@ inst/tutorials/*.xml
 inst/tutorials/*/*.xml
 inst/tutorials/*/*/*.xml
 inst/tutorials/*/*/*/*.xml
-inst/tutorials/runthrough/nul
-inst/tutorials/runthrough/model-test-in-R.R
 
 
 proj-data-metadata.pdf
 jdat-jar.R
 
+
+#inst/tutorials/runthrough ## something is going on with a rogue file in my computer...gonna hav eto figure that shit out
