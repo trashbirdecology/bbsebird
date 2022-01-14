@@ -5,7 +5,6 @@
 #' @param fn.out Filename  of the object output as a .RDS file
 #' @export make_gam_dat
 make_gam_dat <- function(dat, drop.nas=FALSE, dir.out, fn.out="jagamdat"){
-cat("Munging e")
   # In case a single data frame is supplied, add a NULL list element (because im lazy and don't want to rewrite the fucntion rn)
   if(!"list" %in% class(dat)) dat <- list(dat)
   # Naming the list objects
@@ -25,7 +24,9 @@ cat("Munging e")
 
 ebird.out <- bbs.out <- NULL
 for(i in seq_along(dat)){
+  # print(i)
     ind <- names(dat)[i] # make lazy indicator for which data we are munging
+    if(is.na(ind)) next()
     if(ind == "bbs"){
       bbs <- dat[[i]] %>%
         units::drop_units() %>%
