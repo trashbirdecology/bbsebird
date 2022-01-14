@@ -116,7 +116,7 @@ for(i in seq_along(dat)){
     }
 }# END DAT I LOOP
 
-output <- list(as.data.frame(bbs.out), as.data.frame(ebird.out)) # mgcv wont take mats or arrays
+output <- list(as.data.frame(bbs.out) %>% arrange(year, site), as.data.frame(ebird.out) %>% arrange(year, site)) # mgcv wont take mats or arrays
 names(output) <- c("bbs", "ebird")
 
 # save to  file
