@@ -18,7 +18,6 @@ filter_ebird_data(
   max.effort.km = NULL,
   max.effort.mins = NULL,
   max.num.observers = 10,
-  method = "data.table",
   cols.keep = c("all_species_reported", "country", "common_name", "country_code",
     "county", "county_code", "duration_minutes", "effort_area_ha", "effort_distance_km",
     "group_identifier", "latitude", "longitude", "number_observers", "observation_date",

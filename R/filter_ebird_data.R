@@ -23,7 +23,6 @@ filter_ebird_data <-
            max.effort.km = NULL,
            max.effort.mins = NULL,
            max.num.observers = 10,
-           method = "data.table",
            # how to read in sampling data ... vroom often crashes
            cols.keep =
              c(
@@ -124,14 +123,17 @@ filter_ebird_data <-
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
       cat("Importing the sampling events dataset. Takes about 2 minutes.\n\n")
+      tictoc::tic()
       sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
-      
-    ### The base sampling df is large so this script tries to prioritize commands that
+      tictoc::toc()
+
+    ### The sampling df is large so this script tries to prioritize commands that
     ### will remove the most data to the least.
-    ### Try to keep the filtering/subsetting in that order.
+    ### Try to keep the filtering/subsetting in that order..need to run tests to ensure most efficient order...
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
       cat("Filtering the sampling events. Takes a few more minutes. \n\n")
+      tictoc::tic()
       ## force column names to lower and replace spaces with underscore (_) for my sanity
       colnames(sampling) <-
         stringr::str_replace_all(tolower(colnames(sampling)),
@@ -178,33 +180,34 @@ filter_ebird_data <-
       cat("Running `auk::auk_unique()` on checklists. This takes quite a few minutes for more than a few states/provinces. \n")
       ## Sometimes when I run auk_unique() on the full (filtered) sampling df I get bluescreen on DOI machine. So running this command in chunks just to be safe.
       ## I am running it by date because the data must be in the same day to be considered to be of the same checklist.
-      
+
       dates <- unique(sampling$observation_date)
       date.chunk <- names(bit::chunk(dates, by=100))
-      
       for(i in seq_along(date.chunk)){
-        print(i)
+        # print(i)
+      if(i==1) mylist <- list()
       d.ind <- as.integer(unlist(date.chunk[i] %>% str_split(pattern=":")))
       d.min <- dates[min(d.ind)]
       d.max <- dates[max(d.ind)]
-      tempdat <- sampling[sampling$observation_date >= d.min & sampling$observation_date <= d.max, ]  
+      tempdat <- sampling[sampling$observation_date >= d.min & sampling$observation_date <= d.max, ]
       mylist[[i]] <- auk::auk_unique(tempdat, checklists_only = TRUE)
+      rm(tempdat)
     }
-      ## unlist the list  
+      ## unlist the list
       sampling <- dplyr::bind_rows(mylist)
-      
+      rm(tempdat, mylist)
       # ensure consistency in col types
       sampling <- convert_cols(sampling)
+      tictoc::toc()
 
       ## save the filtered sampling data (fwrite is superior to vrooom for writing (and reading usually))
       cat("Writing the filtered sampling data to: ", f_samp_out, "...\n")
-
       data.table::fwrite(sampling, f_samp_out)
 
   } # end sampling events data import/munging
 
 
-    
+
 # Read in or create, and filter observations data frame
     #fix the col types for observations df
     cols_obs <- cols_samp[!names(cols_samp) %in% c("country", "sampling event identifier","protocol type", "duration minutes")]
@@ -221,7 +224,7 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       cat("Loading the original eBird observations.\n\n")
       # use vroom because its more elegant when reading multiple files at once
       observations <- vroom::vroom(f_obs_in, col_types = cols_obs)
-      
+
       ##force colnames to lower and replace spaces with underscore (_)
       cat("Munging observations data\n\n")
       colnames(observations) <-
@@ -261,7 +264,7 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
           dplyr::filter(protocol_type != "Stationary" &
                    duration_minutes != 3)
       }
-      
+
       ## since we dropped group id, there may be duplicates to remove
       observations <-
         observations %>% dplyr::distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
@@ -293,7 +296,7 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
     ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
                            "sampling" = dplyr::as_tibble(sampling))
     # cat("Output of `filter_ebird_data()` may contain duplicate observations where multiple observers exist.")
-    
+
 return(ebird_filtered)
 
 } # END FUNCTION
