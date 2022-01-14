@@ -261,38 +261,42 @@ args.save <- junk_it(args.save, "jdat.struc")
 ```
 Function `dubcorms::make_gam_list` creates a list of elements used in `mgcv::jagam` models. Accepts the eBird and BBS datasets. 
 ```{r make-gam-dat}
-gamdat <- make_gam_dat(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jags)
-args.save <- junk_it(args.save, "gamdat")
+jagam.data <- make_gam_dat(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jags)
+args.save <- junk_it(args.save, "jagam.data")
 ```
 
 # Step 4: GAMs
 ```{r rushing-gam}
-mod.name <- "jagam_bbs"
+ind <- names(jagam.data)
+jagam.mods <- rep(list(NA), length(ind))
+names(jagam.mods) <- ind
+for(i in seq_along(ind)){
+mod.name <-  paste0("jagam_", ind[i])
 mod.fn   <- paste0(dir.models, mod.name, ".txt")
 
-jagam.data <- bbs_spatial %>% 
-  sf::st_drop_geometry() %>%  
-  group_by(gridcellid, cell.lat.centroid, cell.lon.centroid) %>% summarise(maxc=max(c, na.rm=TRUE)) %>% ungroup()
-jagam.data[jagam.data=="-Inf"] <- 0
-
 # Model
-jagam.mod <-
+jagam.mods[[i]] <-
   mgcv::jagam(
-    maxc ~ s(
-      cell.lon.centroid,
-      cell.lat.centroid,
+    Cmax ~ s(
+      x,
+      y,
       k = 20,
       bs = 'ds',
       m = c(1, 0.5)
       ),
-    data = jagam.data,
+    data = jagam.data[[i]],
     family = "poisson",
     file = mod.fn, 
     diagonalize = TRUE
   )
 ## Save model output
-saveRDS(jagam.mod, file=paste0(dir.models, mod.name, ".rds"))
+saveRDS(jagam.mods[[i]], file=paste0(dir.models, mod.name, ".rds"))
 cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), ".\n")
+
+} #end gam loop
+
+jagam.mods$ebird$jags.data %>% View()
+
 # 
 # 
 #  X = jagam.mod$jags.data$X,
