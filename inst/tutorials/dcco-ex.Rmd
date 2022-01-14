@@ -237,8 +237,10 @@ args.save <- junk_it(args.save, c("ebird_spatial", "bbs_spatial", "grid"))
 We need to munge the data just a little bit further for use in JAGS together. You may need to create/munge data further depending on model(s). 
 
 ```{r jdat-make, eval=j.ind}
-cat("creating a list of objects for use in MGCV & JAGS\n\n")
+cat("creating a list of objects for use in MGCV & JAGS..")
+## may throw some random and non-intuitive notebook errors, try again if so.
 jdat <- make_jags_list(dat=list(ebird_spatial, grid, bbs_spatial), dir.out=dir.jags)
+done("..done.")
 ```
 
 ```{r jdat-import}
@@ -264,29 +266,77 @@ args.save <- junk_it(args.save, "gamdat")
 ```
 
 # Step 4: GAMs
-```{r gam-bbs}
-mod.name <- "bbs_jagam"
+```{r rushing-gam}
+mod.name <- "jagam_bbs"
 mod.fn   <- paste0(dir.models, mod.name, ".txt")
-gam <- mgcv::jagam(
-  y ~ s(year, by=site) + s(
-    lon,
-    lat,
-    k = 20,
-    bs = 'ds',#duchon spline
-    m = c(1, 0.5)
-  ),
-  sp.prior = "log.uniform",#lambda penality term
-  diagonalize = TRUE,#reparameterize smoothed->iid gaussian
-  data = gamdat$bbs,
-  family = "poisson",
-  # na.action = na.omit,
-  file = mod.fn
-)
+
+jagam.data <- bbs_spatial %>% 
+  sf::st_drop_geometry() %>%  
+  group_by(gridcellid, cell.lat.centroid, cell.lon.centroid) %>% summarise(maxc=max(c, na.rm=TRUE)) %>% ungroup()
+jagam.data[jagam.data=="-Inf"] <- 0
+
+# Model
+jagam.mod <-
+  mgcv::jagam(
+    maxc ~ s(
+      cell.lon.centroid,
+      cell.lat.centroid,
+      k = 20,
+      bs = 'ds',
+      m = c(1, 0.5)
+      ),
+    data = jagam.data,
+    family = "poisson",
+    file = mod.fn, 
+    diagonalize = TRUE
+  )
+## Save model output
+saveRDS(jagam.mod, file=paste0(dir.models, mod.name, ".rds"))
 cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), ".\n")
-saveRDS(gam, file=paste0(dir.models, mod.name, ".rds"))
-gam$jags.ini %>% str() # b, rho, X
-gam$jags.data %>% str() # y, n, X
+# 
+# 
+#  X = jagam.mod$jags.data$X,
+#     S1 = jagam.mod$jags.data$S1,
+#     zero = jagam.mod$jags.data$zero,
+#     mu = inits$psi.betas,
+#     se = inits$psi.se
+# # Data for JAGS
+# jags.data <-
+#   list(
+#     h = dat$h,
+#     nStops = dat$nStops,
+#     nRoutes = dat$nRoutes,
+#     nYears = dat$nYears,
+#     Xp = dat$wind,
+#     nov = dat$nov,
+#     obs = dat$obs,
+#     nObs = max(dat$obs) - 1,
+#     Xclim = covs,
+#     nPred = dim(covs)[2] / 2,
+#     twedt = dat$twedt,
+#    
+#   )
+# ### Parameters to monitor
+# jags.params <-
+#   c(
+#     "xpsi",
+#     "pi",
+#     "lambda",
+#     "betaT",
+#     "g",
+#     "alpha0",
+#     "alpha1",
+#     "alpha2",
+#     "alpha3",
+#     "sigma.obs",
+#     "sigma.gam",
+#     "rho",
+#     "b",
+#     "omega",
+#     "z"
+#   )
 ```
+
 
 ```{r gam-ebird}
 ebird.mod.name <- "ebird_jagam"
