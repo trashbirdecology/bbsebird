@@ -1,12 +1,71 @@
 ---
-title: "specify and run models"
+title: "Integrated Models"
 params:
-  fn.munge: "C:/Users/jburnett/Documents/GitHub/dubcorms/inst/tutorials/dcco-data.Rmd" # full path to .rmd doing the data munging and integration.
+  # fn.munge: "C:/Users/jburnett/Documents/GitHub/dubcorms/inst/tutorials/dcco-data.Rmd" # full path to .rmd doing the data munging and integration.
+  species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
+  # dir.orig.data: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/dubcorm-data-backup/"
+  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
+  # dir.proj: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/JAR/DCCO/"
+  dir.proj: "C:/Users/jburnett/documents/github/dubcorms/inst/tutorials/DCCO/"
+  countries: "Canada, USA,United States,United States of America" # used to create base maps
+  states: "FL, Florida, GA, Georgia" # states/regions of interest
+  overwrite.jdat: FALSE
+  overwrite.bbs:  FALSE
+  overwrite.ebird: FALSE # if TRUE, will re-process all eBird data. Do not do this unless you need to re-create the eBird data for some reason. NOTE: If you change a data subsetting parameter (e.g., year.range, grid.size), this will be ignored because the process herein creates a new subdirectory according to parameter specifications. 
+  year.range: 2008:2019 # for now, supply a range as integers (will fix later in `clean_params()`)
+  mmyyyy: "sep-2021" # month and year of most recent ebird EBD/samp download in file.
+  grid.size: 1.00 #== 1 dec deg
+  min.yday: 91  # approximate breeding season day start (day of year)
+  max.yday: 245 # approximate breeding season day end   (day of year)
+  ebird.protocol: c("Traveling", "Stationary") # i may need to check capitalization of this later.
+  complete.checklists.only: TRUE # ebird
+  max.effort.mins: 180 ## arbitrary choice; integer 
+  max.effort.km: 5 #This is coarse also, typically 5km or less
+  max.num.observers: 10 # ebird
+  crs.target: 4326 # 4326 == unprojected; 5070=Alberts equal area (used by USGS)
+  # include.unid: FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
+  get.sunlight: FALSE # if you need to calculate sun/moonrise times set to TRUE (comp. expenesive for eBird data so don't do this unless you realllly want it.) 
 ---
 
-```{r retrieve-data, eval=TRUE}
-# Suggest restarting R and clearing output/workspace
+```{r libraries, echo=TRUE}
+# unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
+unloadNamespace("dubcorms")
+devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 
+### specify packages that we call often 
+pkgs <- c("dubcorms","bbsAssistant","rjags",
+          "stringr","dplyr","mgcv")
+invisible(lapply(pkgs, library, character.only = TRUE))
+rm(pkgs)
+```
+
+```{r eval-params, eval=TRUE, include=FALSE}
+library(dubcorms)
+library(stringr)
+library(dplyr)
+library(rjags)
+library(mgcv)
+# eval parameters
+############## need to add into eval_params function some default values such that this can be run outside this rmd and also in case user forgets somethign minor. 
+params.temp <- eval_params(params) # we cannot save as params--won't allow us to overwrite
+# save params as objects in environment instead of inside a list (b.c of my laziness)
+list2env(params.temp, envir = environment())
+
+base.date <- lubridate::ymd(paste0(min(year.range), c("-01-01"))) # make a base.date param for use in generating Julian dates
+rm(params.temp) # remve temp 
+```
+
+```{r specs-dirs}
+# proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
+subdir.proj <- proj.shorthand(species, states, grid.size, year.range)
+dirs <- dir_spec(dir.orig.data, dir.proj, subdir.proj) # create series of directories for later use.
+list2env(dirs, env=.GlobalEnv)# bind the dir values as named global objects (MUST INCLUDE `env=.GlobalEnv`)
+rm(dirs)
+```
+
+```{r retrieve-data, eval=TRUE}
+jdat <- import_jdat(dir.jags)
+jdat <- import_jdat(dir.jags)
 
 
 ```

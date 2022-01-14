@@ -4,7 +4,13 @@
 \alias{make_gam_dat}
 \title{Munge and Output a Single or List of Data Frames for Use in mgcv::jagam}
 \usage{
-make_gam_dat(dat, drop.nas = FALSE, dir.out, fn.out = "jagamdat")
+make_gam_dat(
+  dat,
+  drop.nas = FALSE,
+  dir.out,
+  fn.out = "jagamdat",
+  method = "maxc"
+)
 }
 \arguments{
 \item{dat}{a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS}

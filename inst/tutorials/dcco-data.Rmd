@@ -1,5 +1,5 @@
 ---
-title: "0_setup"
+title: "BBS and eBird Data Munging and Integration"
 params:
   species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
   # dir.orig.data: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/dubcorm-data-backup/"
@@ -16,10 +16,10 @@ params:
   grid.size: 1.00 #== 1 dec deg
   min.yday: 91  # approximate breeding season day start (day of year)
   max.yday: 245 # approximate breeding season day end   (day of year)
-  ebird.protocol: c("Traveling", "Stationary")
+  ebird.protocol: c("Traveling", "Stationary") # i may need to check capitalization of this later.
   complete.checklists.only: TRUE # ebird
   max.effort.mins: 180 ## arbitrary choice; integer 
-  max.effort.km:  5 #This is coarse also, typically 5km or less
+  max.effort.km: 5 #This is coarse also, typically 5km or less
   max.num.observers: 10 # ebird
   crs.target: 4326 # 4326 == unprojected; 5070=Alberts equal area (used by USGS)
   # include.unid: FALSE ## Whether or not to include UNIDENTIFIED // hybrid species
@@ -47,7 +47,7 @@ devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
 
 ### specify packages that we call often 
 pkgs <- c("dubcorms","bbsAssistant","ggplot2","reshape2",
-          "stringr","dplyr","sf", "jagsUI")
+          "stringr","dplyr","sf")
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
 ```
@@ -56,6 +56,7 @@ rm(pkgs)
 Next, use function `dubcorms::eval_params` to clean up the parameters, then assign all  to global environment.  
 ```{r eval-params, eval=TRUE, include=FALSE}
 # eval parameters
+############## need to add into eval_params function some default values such that this can be run outside this rmd and also in case user forgets somethign minor. 
 params.temp <- eval_params(params) # we cannot save as params--won't allow us to overwrite
 # save params as objects in environment instead of inside a list (b.c of my laziness)
 list2env(params.temp, envir = environment())
