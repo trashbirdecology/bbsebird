@@ -29,14 +29,14 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
     sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
   # transform spatial object to sf
-  cat("coercing eBird data to sf object. \n may take between 1 and 20 minutes......lol sry...\n\n")
+  cat("coercing eBird data to sf object. \n may take between 1 and 20 minutes......lol sry...")
   df <- sf::st_as_sf(df)
-
+   cat("\t...done.\n")
   # match proj to target proj
-  cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute.\n\n")
+  cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute...")
   df <-
     sf::st_transform(df, crs = sp::CRS(paste0("+init=epsg:", crs.target)))
-
+  cat("\t...done\n")
   ## Exit function if no grid is provided
   if (is.null(grid)){
     cat("No `grid` provided. Returning ebird spatial data without grid.\n")
@@ -45,11 +45,27 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
   cat(
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
+
+  # expand the grid to include all years and  grid cell ids
+  grid.expanded <- grid %>%
+    as.data.frame() %>%
+    ## add years to the grid layer
+    tidyr::expand(year = unique(df$year), gridcellid) %>%
+    # add these to grid attributes attributes
+    full_join(grid)
+  # %>%
+  #   sf::st_as_sf()
+
+
   ## must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
-  ## st_join(df, grid) but oh well
+  ## st_join(df, grid) but oh well..
   ebird_spatial <-
-    grid %>%
+    grid.expanded %>%
     sf::st_join(df)
+
+  ## append the missing grid cell ids (this is a lot faster than st_joining the ebird_spatial and grid.expanded)
+
+  test=full_join(ebird_spatial, grid.expanded)
 
   return(ebird_spatial)
 

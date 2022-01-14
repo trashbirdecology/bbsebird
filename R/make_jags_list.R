@@ -150,6 +150,9 @@ objs.bbs <- objs.grid <- objs.ebird <- NULL
 
       # Observed counts as 3D array (dims: rteno by year by gridcellid)
       cat("building eBird objects..\n")
+      # Ensure we have all combinations of years and grid cell IDS represented.
+
+
       yeBird.grid   <- make_array(ebird %>% filter(!is.na(year)), row="checklist_id", val="c")
       yeBird.site <- make_mat(ebird %>% distinct(checklist_id, year, c) %>% filter(!is.na(checklist_id)), row = "checklist_id", col="year", val = "c")
       yeBird.site <- yeBird.site %>% select(sort(names(yeBird.site))) # use select to ensure the colnames(years) are in order...

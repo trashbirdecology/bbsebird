@@ -205,7 +205,8 @@ if(e.ind){
    } # end ebird_zf
   
     # Overlay eBird observations and spatial grid 
-    ebird_spatial <- make_ebird_spatial(df=ebird_zf, crs.target = crs.target, grid = grid)
+    ebird_spatial <- make_ebird_spatial(df=ebird_zf, 
+                                        crs.target = crs.target, grid = grid)
     
     # Munge the spatial data a bit for downstream alignment with bbs_spatial  
     ebird_spatial  <- match_col_names(ebird_spatial)
@@ -279,7 +280,7 @@ gam <- mgcv::jagam(
   data = gamdat$bbs,
   family = "poisson",
   # na.action = na.omit,
-  file = bbs.mod.fn
+  file = mod.fn
 )
 cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), ".\n")
 saveRDS(gam, file=paste0(dir.models, mod.name, ".rds"))
