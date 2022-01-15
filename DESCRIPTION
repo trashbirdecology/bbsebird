@@ -43,8 +43,10 @@ Suggests:
     here,
     assertthat,
     learnr,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth
+Config/testthat/edition: 3
