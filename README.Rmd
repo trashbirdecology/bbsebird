@@ -24,7 +24,7 @@ The purpose of this R package (*likely to undergo a name change...*) is three-fo
   1. integrate the BBS and eBird observation datasets for use in JAGS (`rjags`) and `mcgv::jagam()`
   1. run fully Bayesian integrated population models using said data
   
-*Note: [GH user @cboettig](https://github.com/cboettig/) is currently developing an `auk` alternative, [`birddb`](https://github.com/cboettig/birddb/). It is likely that, once stable, this R package will use `birddb` for eBird import/manipulation. 
+*Note: GH users [\@cboettig](https://github.com/cboettig/) and [\@amstrimas](https://github.com/amstrimas/) are currently developing an `auk` alternative, [`birddb`](https://github.com/cboettig/birddb/). It is likely that, once stable, this R package will use `birddb` for eBird import/manipulation. 
 
 
 

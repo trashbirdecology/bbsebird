@@ -18,10 +18,11 @@ three-fold:
     (`rjags`) and `mcgv::jagam()`
 3.  run fully Bayesian integrated population models using said data
 
-\*Note: \[GH user @cboettig\](<https://github.com/cboettig/>) is
-currently developing an `auk` alternative,
-[`birddb`](https://github.com/cboettig/birddb/). It is likely that, once
-stable, this R package will use `birddb` for eBird import/manipulation.
+\*Note: GH users [@cboettig](https://github.com/cboettig/) and
+[@amstrimas](https://github.com/amstrimas/) are currently developing an
+`auk` alternative, [`birddb`](https://github.com/cboettig/birddb/). It
+is likely that, once stable, this R package will use `birddb` for eBird
+import/manipulation.
 
 ## Installation
 
@@ -65,11 +66,11 @@ Current exported functions:
 
 ``` r
 lsf.str("package:dubcorms")[2:22]
-#>  [1] "convert_cols"       "dir_spec"           "eval_params"       
-#>  [4] "filter_ebird_data"  "get_data_structure" "id_ebird_files"    
-#>  [7] "import_jdat"        "junk_it"            "make_array"        
-#> [10] "make_bbs_spatial"   "make_ebird_spatial" "make_gam_dat"      
-#> [13] "make_jags_list"     "make_mat"           "make_spatial_grid" 
-#> [16] "match_col_names"    "munge_bbs"          "munge_date_time"   
-#> [19] "proj.shorthand"     "scan_files"         "zerofill_ebird"
+#>  [1] "dir_spec"           "eval_params"        "filter_ebird_data" 
+#>  [4] "get_data_structure" "id_ebird_files"     "import_jdat"       
+#>  [7] "junk_it"            "make_array"         "make_bbs_spatial"  
+#> [10] "make_ebird_spatial" "make_gam_dat"       "make_jags_list"    
+#> [13] "make_mat"           "make_spatial_grid"  "munge_bbs"         
+#> [16] "munge_date_time"    "proj.shorthand"     "scan_files"        
+#> [19] "zerofill_ebird"     NA                   NA
 ```
