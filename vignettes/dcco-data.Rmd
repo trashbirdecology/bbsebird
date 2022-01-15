@@ -139,12 +139,12 @@ if(b.ind){
         states = states,
         keep.stop.level.data = FALSE
       )
-    saveRDS(bbs_obs, paste0(dir.bbs.out, "bbs_obs.rds"))}
+    saveRDS(bbs_obs, paste0(dir.bbs.out, "bbs_obs.rds"))
+    }
    }
 
 # Load in or overlay BBS observations and spatial grid
 if(!exists("bbs_spatial") | overwrite.bbs){
-fns.spat <- list.files(dir.spatial.out)
   bbs_spatial <-
     make_bbs_spatial(
     bbs.obs = bbs_obs,
@@ -157,17 +157,15 @@ fns.spat <- list.files(dir.spatial.out)
     plot.dir=dir.plots,
     overwrite=TRUE)
 
-  # Munge the spatial data a bit for downstream alignment with ebird_spatial
-  bbs_spatial  <- match_col_names(bbs_spatial)
-  bbs_spatial  <- munge_date_time(bbs_spatial, base.date)
-  # Filter out the years. This needs to go elsewhere eventually.
-  bbs_spatial  <- bbs_spatial  %>% filter(year >= min(year.range) & year <= max(year.range))
+    ## Munge the dates and times variables for integration with eBird. 
+    #### note i need t incorporate this and the munging function inside bbs_spatial into bbs_munging!!!
+    bbs_spatial  <- munge_date_time(bbs_spatial, base.date)
 
-  saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
+    saveRDS(bbs_spatial, paste0(dir.spatial.out, "bbs_spatial.rds"))
 }
 
 browseURL(list.files(dir.plots, pattern="bbs_spatial_exploratory", full.names=TRUE))
-
+args.save <- junk_it(args.save, "bbs_spatial")
 ```
 ## Step 2c: eBird Data
 Munging the eBird will take quite a while, especially if you are running more than a couple of states. This process also requires a significant amount of free RAM. A

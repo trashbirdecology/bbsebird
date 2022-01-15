@@ -1,29 +1,11 @@
-# History files
+.Rproj.user
 .Rhistory
 .Rapp.history
-
-# Session Data files
 .RData
-
-# Example code in package build process
-*-Ex.R
-
-# Output files from R CMD build
-/*.tar.gz
-
-# Output files from R CMD check
+.Ruserdata
 /*.Rcheck/
-
-# RStudio files
-.Rproj.user/
-
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
-
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth
-
+.DS_Store
 # knitr and R markdown default cache directories
 /*_cache/
 /cache/
@@ -32,55 +14,39 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 
-# Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
-rsconnect/
-.Rproj.user
-.DS_Store
-desktop.ini
 
-# Ignore entire local data saves
-data-local/
-data-in/
-routes.csv
 ## ignore all examples files except the .R scripts
 /examples/
 # but do not ignore the R files in examples directory (not subdirectories, though...)
 # Reinclude all folders in /jobs
-!/examples/*/
+#!/examples/*/
 # Ignore everything in the subfolders of /jobs
-/examples/*/*
+#/examples/*/*
 # Reinclude config.xml files in the first-level subfolders of /jobs
-!/examples/*/.R
+#!/examples/*/.R
 
-*.Rproj
-inst/doc
 
 ## Remove specific examples
-#### remove data created during vignettes one and two directries down
-inst/tutorials/*/bbs/
-inst/tutorials/*/*/bbs/
-inst/tutorials/*/ebird/
-inst/tutorials/*/*/ebird/
-inst/tutorials/*/jags/
-inst/tutorials/*/*/jags/
-inst/tutorials/*/spatial/
-inst/tutorials/*/*/spatial/
-inst/tutorials/*.pdf
-inst/tutorials/*/*.pdf
-inst/tutorials/*/*/*.pdf
-inst/tutorials/*/*/*/*.pdf
-inst/tutorials/*.zip
-inst/tutorials/*/*.zip
-inst/tutorials/*/*/*.zip
-inst/tutorials/*/*/*/*.zip
-inst/tutorials/*.xml
-inst/tutorials/*/*.xml
-inst/tutorials/*/*/*.xml
-inst/tutorials/*/*/*/*.xml
+#### remove data created during inst/vignettes one and two directries down
+inst/vignettes/*/bbs/
+inst/vignettes/*/*/bbs/
+inst/vignettes/*/ebird/
+inst/vignettes/*/*/ebird/
+inst/vignettes/*/jags/
+inst/vignettes/*/*/jags/
+inst/vignettes/*/spatial/
+inst/vignettes/*/*/spatial/
+inst/vignettes/*.pdf
+inst/vignettes/*/*.pdf
+inst/vignettes/*/*/*.pdf
+inst/vignettes/*/*/*/*.pdf
+inst/vignettes/*.zip
+inst/vignettes/*/*.zip
+inst/vignettes/*/*/*.zip
+inst/vignettes/*/*/*/*.zip
+inst/vignettes/*.xml
+inst/vignettes/*/*.xml
+inst/vignettes/*/*/*.xml
+inst/vignettes/*/*/*/*.xml
 
-
-proj-data-metadata.pdf
-jdat-jar.R
-
-
-#inst/tutorials/runthrough ## something is going on with a rogue file in my computer...gonna hav eto figure that shit out
+*.pdf

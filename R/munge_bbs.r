@@ -3,6 +3,7 @@
 # if("citation" %in% names(list)) bbs$citation<-bbs$citation %>% as.data.frame() # this is required for quickly scanning and filtering lists, sorry
 #' @title Subset BBS observations data by one or more species of interest.
 #' @description ...
+#' @param years value(s) of year(s) by which to subset the data. If not specified will return all data in the dataset.
 #' @param list A list with element "species_list", obtained from running bbsAssistant::get_bbs_data()...
 #' @param spp A vector of one or more species (using English Common Name) to subset the data by. Capitalization ignored.
 #' @param zero.fill If TRUE and a single species is provided in 'spp', this function will output list$observations with zero-filled data.
@@ -14,6 +15,7 @@ munge_bbs <-
            spp = "Double-crested Cormorant",
            zero.fill = TRUE,
            active.only = FALSE,
+           years = 1966:lubridate::year(Sys.Date()),
            keep.stop.level.data = TRUE,
            QualityCurrentID = 1,
            countrynums.keep=c(124, 840)) {
@@ -37,7 +39,11 @@ munge_bbs <-
       ## of detection covariates per route/yr
       list$observations <-
         list$observations %>%
-        mutate(RouteTotal=rowSums(across(cols.stop)))
+        mutate(RouteTotal=rowSums(across(cols.stop))) %>%
+        # filter out years
+        filter(Year >= min(years) & Year <= max(years))
+
+
       list$vehicle_data <- list$vehicle_data %>%
         mutate(CarMean= round(rowSums(across(all_of(cols.car)))/50)) # rounded
       list$vehicle_data <- list$vehicle_data %>%
@@ -126,7 +132,7 @@ munge_bbs <-
     ## Remove the citation element
     list[which(tolower(names(list)) == "citation")] <- NULL
 
-    # some more munging that needs to ber moved into bbsasst ideally..
+    # some more munging that needs to be moved into bbsAssistant ideally..
     list <- lapply(list, function(x) { x <- make.rteno(x) })
     list <- lapply(list, function(x) { x <- make.dates(x) })
     list <- lapply(list, function(x) x <- x[!(tolower(names(x)) %in% "routedataid")])
@@ -161,6 +167,12 @@ munge_bbs <-
     df <- inner_join(df, list$routes)
     df <- inner_join(df, list$metadata)
     df <- inner_join(df, list$weather)
+
+
+    ## Finally, munge the spatial dataset a little for downstream integration with eBird
+    # Munge the spatial data a bit for downstream alignment with ebird_spatial
+    df  <- match_col_names(df)
+
 
 
    cat("The following species are in your BBS data: ", unique(spp), sep = "\n")

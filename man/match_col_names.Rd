@@ -2,14 +2,14 @@
 % Please edit documentation in R/match_col_names.R
 \name{match_col_names}
 \alias{match_col_names}
-\title{Ensure Consistency Among eBird and BBS Datasets}
+\title{Munge eBird and BBS Column Names}
 \usage{
 match_col_names(x)
 }
 \arguments{
-\item{x}{a data frame}
+\item{x}{a data frame or matrix of eBird or BBS observations. If no column names match function target, will return same object.}
 }
 \description{
-Ensure Consistency Among eBird and BBS Datasets
+Ensure consistency among eBird and BBS datasets for integration
 }
 \keyword{internal}

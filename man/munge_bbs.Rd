@@ -10,6 +10,7 @@ munge_bbs(
   spp = "Double-crested Cormorant",
   zero.fill = TRUE,
   active.only = FALSE,
+  years = 1966:lubridate::year(Sys.Date()),
   keep.stop.level.data = TRUE,
   QualityCurrentID = 1,
   countrynums.keep = c(124, 840)
@@ -23,6 +24,8 @@ munge_bbs(
 \item{zero.fill}{If TRUE and a single species is provided in 'spp', this function will output list$observations with zero-filled data.}
 
 \item{active.only}{Logical. If TRUE keep only active routes. Discontinued routes will be discarded.}
+
+\item{years}{value(s) of year(s) by which to subset the data. If not specified will return all data in the dataset.}
 }
 \description{
 ...
