@@ -6,7 +6,7 @@ params:
 ---
 
 ```{r setup}
-devtools::install_github('trashbirdecology/dubcorms')
+devtools::install_github('trashbirdecology/dubcorms', force=TRUE)
 library(dubcorms)
 library(tidyverse)
 dubcorms::eval_params()
