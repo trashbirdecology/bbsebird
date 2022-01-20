@@ -27,26 +27,26 @@
 
 
 ## Remove specific examples
-#### remove data created during inst/vignettes one and two directries down
-inst/vignettes/*/bbs/
-inst/vignettes/*/*/bbs/
-inst/vignettes/*/ebird/
-inst/vignettes/*/*/ebird/
-inst/vignettes/*/jags/
-inst/vignettes/*/*/jags/
-inst/vignettes/*/spatial/
-inst/vignettes/*/*/spatial/
-inst/vignettes/*.pdf
-inst/vignettes/*/*.pdf
-inst/vignettes/*/*/*.pdf
-inst/vignettes/*/*/*/*.pdf
-inst/vignettes/*.zip
-inst/vignettes/*/*.zip
-inst/vignettes/*/*/*.zip
-inst/vignettes/*/*/*/*.zip
-inst/vignettes/*.xml
-inst/vignettes/*/*.xml
-inst/vignettes/*/*/*.xml
-inst/vignettes/*/*/*/*.xml
+#### remove data created during vignettes one and two directries down
+vignettes/*/bbs/
+vignettes/*/*/bbs/
+vignettes/*/ebird/
+vignettes/*/*/ebird/
+vignettes/*/jags/
+vignettes/*/*/jags/
+vignettes/*/spatial/
+vignettes/*/*/spatial/
+vignettes/*.pdf
+vignettes/*/*.pdf
+vignettes/*/*/*.pdf
+vignettes/*/*/*/*.pdf
+vignettes/*.zip
+vignettes/*/*.zip
+vignettes/*/*/*.zip
+vignettes/*/*/*/*.zip
+vignettes/*.xml
+vignettes/*/*.xml
+vignettes/*/*/*.xml
+vignettes/*/*/*/*.xml
 
 *.pdf

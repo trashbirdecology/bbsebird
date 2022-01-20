@@ -3,9 +3,9 @@ title: "BBS and eBird Data Munging and Integration"
 params:
   species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
   # dir.orig.data: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/dubcorm-data-backup/"
-  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
   # dir.proj: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/JAR/DCCO/"
-  dir.proj: "C:/Users/jburnett/documents/github/dubcorms/inst/tutorials/DCCO/"
+  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
+  dir.proj: "C:/Users/jburnett/documents/github/dubcorms/vignettes/DCCO/"
   countries: "Canada, USA,United States,United States of America" # used to create base maps
   states: "FL, Florida, GA, Georgia" # states/regions of interest
   overwrite.jdat: FALSE

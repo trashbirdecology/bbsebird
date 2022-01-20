@@ -7,7 +7,6 @@
 ^.*\.Rproj$
 ^\.github$
 ^docs$
-inst/tutorials/
 png$
 Makefile
 ^README\.md$
@@ -17,3 +16,4 @@ Makefile
 ^README\.md$
 ^/vignettes$
 ^LICENSE\.md$
+vignettes/

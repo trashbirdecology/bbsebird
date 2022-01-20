@@ -38,7 +38,8 @@ Imports:
     units,
     bit,
     foreach,
-    mgcv
+    mgcv,
+    VGAM
 Suggests: 
     here,
     assertthat,
