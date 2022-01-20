@@ -1,24 +1,33 @@
 ---
 title: "specify and run models"
 params:
-  fn.munge: "C:/Users/jburnett/Documents/GitHub/dubcorms/vignettes/dcco-data.Rmd" # full path to .rmd doing the data munging and integration.
+  dir.proj: "C:/users/jburnett/documents/github/dubcorms/vignettes/DCCO/Double-crested Cormorant_FL-GA_111km_2008-2019"
+  sim.data: TRUE
 ---
 
-```{r retrieve-data, eval=TRUE}
-# Suggest restarting R and clearing output/workspace
-# evaluate setup .rmd file
-temp <- tempfile(fileext=".R")
-file.exists(params$fn.munge)
-knitr::purl(params$fn.munge, output=temp)
-source(temp)
+```{r setup}
+library(dubcorms)
+library(tidyverse)
+dubcorms::eval_params()
+params.temp <- eval_params(params) # we cannot save as params--won't allow us to overwrite
+# save params as objects in environment instead of inside a list (b.c of my laziness)
+list2env(params.temp, envir = environment())
+dir.jags <- paste0(dir.proj, "/jags")
+dir.plots <- paste0(dir.proj, "/plots")
+dir.models <- paste0(dir.jags, "/models")
+dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
+```
 
+```{r retrieve-data}
 # Import the data
-jdat <- import_jdat(dir.jags)
+if(!sim.data) jdat <- import_jdat(dir.jags)
+if(sim.data)  bbs <- sim_bbs(ngrid = 50)
+
 ```
 
 
 # Step 4: Specify GAMs
-```{r rushing-gam}
+```{r get-gam-data-for-jags}
 ind <- names(jagam.data)
 jagam.mods <- rep(list(NA), length(ind))
 names(jagam.mods) <- ind
@@ -47,10 +56,17 @@ cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), "
 
 } #end gam loop
 
-jagam.mods$ebird$jags.data %>% View()
 
-# 
-# 
+jdat$yBBS.grid %>% dim()   # route by time by grid
+jdat$yeBird.grid %>% dim() # checklist by time by grid
+
+jagam.mods$bbs$jags.data$X %>% dim()
+jdat$
+
+
+# jagam.mods$ebird$jags.data %>% str()
+# jagam.mods$bbs$jags.data %>% str()
+
 #  X = jagam.mod$jags.data$X,
 #     S1 = jagam.mod$jags.data$S1,
 #     zero = jagam.mod$jags.data$zero,
@@ -93,26 +109,18 @@ jagam.mods$ebird$jags.data %>% View()
 #   )
 ```
 
+```{r incorporate-gam-data}
+jagam.mods$ebird$jags.data %>% str()
+jagam.mods$bbs$jags.data %>% str()
 
-```{r gam-ebird}
-ebird.mod.name <- "ebird_jagam"
-ebird.gam <- mgcv::jagam(
-  y.ebird ~ s(t.ebird) + s(
-    lon.ebird,
-    lat.ebird,
-    k = 20,
-    bs = 'ds',#duchon spline
-    m = c(1, 0.5)
-  ),
-  sp.prior = "log.uniform",#lambda penalty term
-  diagonalize = TRUE,#reparameterize smoothed->iid gaussian
-  data = gamdat$ebird %>% filter(grid %in% c(1:10) ),
-  family = "poisson",
-  file = paste0(dir.models, ebird.mod.name, ".txt"),
-  na.action = na.omit
-)
-saveRDS(ebird.gam, file=paste0(dir.models, ebird.mod.name), ".rds")
+
+
+
 ```
+
+
+
+
 
 # Step 5: Integrated Model
 ## Step 5a: Computational Specifications

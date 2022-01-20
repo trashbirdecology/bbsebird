@@ -1,3 +1,6 @@
+#' Simulate BBS Data for Use in JAGS
+#'
+#' Creates a list of BBS data for use in JAGS
 #' @param propna proportion of all routes by year combinations to have no data (NA). this is a random process so will not always equal propna (uses rbinom to generate NAs)
 #' @param propfyer proportion of routes by year combinations that comprise an observer's first year
 #' @param nsite number of routes
