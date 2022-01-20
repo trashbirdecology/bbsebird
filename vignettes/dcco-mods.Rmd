@@ -6,6 +6,7 @@ params:
 ---
 
 ```{r setup}
+devtools::install_github('trashbirdecology/dubcorms')
 library(dubcorms)
 library(tidyverse)
 dubcorms::eval_params()
@@ -21,12 +22,10 @@ dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
 ```{r retrieve-data}
 # Import the data
 if(!sim.data) jdat <- import_jdat(dir.jags)
-if(sim.data)  bbs <- sim_bbs(ngrid = 50)
-
+if(sim.data)  bbs  <- dubcorms::sim_bbs(ngrid = 10, maxgridperroute = 2)
 ```
 
-
-# Step 4: Specify GAMs
+# Step 1: Specify GAMs
 ```{r get-gam-data-for-jags}
 ind <- names(jagam.data)
 jagam.mods <- rep(list(NA), length(ind))
@@ -110,20 +109,16 @@ jdat$
 ```
 
 ```{r incorporate-gam-data}
-jagam.mods$ebird$jags.data %>% str()
+# jagam.mods$ebird$jags.data %>% str()
 jagam.mods$bbs$jags.data %>% str()
-
-
 
 
 ```
 
 
 
-
-
-# Step 5: Integrated Model
-## Step 5a: Computational Specifications
+# Step 2: Specify HM
+## Step 2a: Computational specifications
 ### MCMC
 ```{r set-mcmc}
 na <- 1000 # number of adaptation iterations
@@ -261,7 +256,7 @@ sink()
 ```
 
 
-## Step 4c: Run Model(s)
+# Step 3: Build Model
 ```{r run-jags}
 # models in jags model dir
 mod.fns   <- list.files(dir.models, full.names = FALSE, pattern=".txt|.jags") # names of models
