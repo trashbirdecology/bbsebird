@@ -80,7 +80,11 @@ list.out <- list(
   pf=pf,
   hab1=hab1,
   hab2=hab2,
-  prop=prop
+  prop=prop,
+  nyear=T,
+  ngrid=G,
+  nsite=M
+
 )
 return(list.out)
 
