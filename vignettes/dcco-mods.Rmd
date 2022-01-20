@@ -1,62 +1,32 @@
 ---
-title: "Integrated Models"
+title: "specify and run models"
 params:
-  # dir.proj: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/JAR/DCCO/"
-  dir.orig.data: "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
-  dir.proj: "C:/Users/jburnett/documents/github/dubcorms/inst/tutorials/DCCO/"
-  mmyyyy: "sep-2021" # month and year of most recent ebird EBD/samp download in file.
-  species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
-  states: "FL, Florida, GA, Georgia" # states/regions of interest
-  year.range: 2008:2019 # for now, supply a range as integers (will fix later in `clean_params()`)
-  grid.size: 1.00 #== 1 dec deg
+  fn.munge: "C:/Users/jburnett/Documents/GitHub/dubcorms/vignettes/dcco-data.Rmd" # full path to .rmd doing the data munging and integration.
 ---
 
-```{r libraries, echo=TRUE}
-# unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
-unloadNamespace("dubcorms")
-devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
+```{r retrieve-data, eval=TRUE}
+# Suggest restarting R and clearing output/workspace
+# evaluate setup .rmd file
+temp <- tempfile(fileext=".R")
+file.exists(params$fn.munge)
+knitr::purl(params$fn.munge, output=temp)
+source(temp)
 
-### specify packages that we call often 
-pkgs <- c("dubcorms","bbsAssistant","rjags",
-          "stringr","dplyr","mgcv")
-invisible(lapply(pkgs, library, character.only = TRUE))
-rm(pkgs)
-```
-
-```{r eval-params, eval=TRUE, include=FALSE}
-# eval parameters
-############## need to add into eval_params function some default values such that this can be run outside this rmd and also in case user forgets somethign minor. 
-params.temp <- eval_params(params) # we cannot save as params--won't allow us to overwrite
-# save params as objects in environment instead of inside a list (b.c of my laziness)
-list2env(params.temp, envir = environment())
-rm(params.temp) # remve temp 
-```
-
-```{r specs-dirs}
-# proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
-subdir.proj <- proj.shorthand(species, states, grid.size, year.range)
-dirs <- dir_spec(dir.orig.data, dir.proj, subdir.proj) # create series of directories for later use.
-list2env(dirs, env=.GlobalEnv)# bind the dir values as named global objects (MUST INCLUDE `env=.GlobalEnv`)
-rm(dirs)
-```
-
-Import pre-made data files for use in JAGS and mgcv
-```{r retrieve-jags-data, eval=TRUE}
-jags.data <- import_jdat(dir.jags)
-gam.data  <- readRDS(list.files(dir.jags, "jagam", full.names=TRUE))
+# Import the data
+jdat <- import_jdat(dir.jags)
 ```
 
 
 # Step 4: Specify GAMs
 ```{r rushing-gam}
-ind <- names(gam.data)
+ind <- names(jagam.data)
 jagam.mods <- rep(list(NA), length(ind))
 names(jagam.mods) <- ind
 for(i in seq_along(ind)){
 mod.name <-  paste0("jagam_", ind[i])
 mod.fn   <- paste0(dir.models, mod.name, ".txt")
 
-# Specify GAMs
+# Model
 jagam.mods[[i]] <-
   mgcv::jagam(
     Cmax ~ s(
@@ -66,31 +36,18 @@ jagam.mods[[i]] <-
       bs = 'ds',
       m = c(1, 0.5)
       ),
-    data = gam.data[[i]],
+    data = jagam.data[[i]],
     family = "poisson",
     file = mod.fn, 
     diagonalize = TRUE
   )
-cat("JAGS model specification saved:\n", mod.fn, ".\n")
-# ## Save JAGS data from model specification
-# saveRDS(jagam.mods[[i]], file=paste0(dir.models, mod.name, ".rds"))
-
-
-# Initial Values for Gams
-inits$psi.se[abs(inits$psi.betas) > 8] <- 1
-inits$psi.betas[abs(inits$psi.betas) > 8] <- 0
-inits$p.betas[abs(inits$p.betas) > 8] <- 0
-inits$th.betas[abs(inits$th.betas) > 8] <- 0
-
-
-
-
-
-
-
+## Save model output
+saveRDS(jagam.mods[[i]], file=paste0(dir.models, mod.name, ".rds"))
+cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), ".\n")
 
 } #end gam loop
 
+jagam.mods$ebird$jags.data %>% View()
 
 # 
 # 
@@ -185,14 +142,116 @@ params.monitor <- c("lambda", "nu",  "b1", "N", "alpha")
 ```
 
 ## Step 4b: Specify Model(s)
-Get list of models saved in package. 
-```{r}
-bbs-pois <- system.file("inst/models/",
-                     "bbs-pois",
-                     mustWork = TRUE,
-                     package="dubcorms")
+```{r bbs-pois-base}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.site[s,t] ~ dpois(lambda[s])
+  } # end data model s
+} # end data model t
+  
+for(s in 1:S.bbs){
+  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
+} # end s (lambda route)
 
+for(g in 1:G){
+  log(nu[g]) = area[g]*b1 + alpha 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+b1    ~ dnorm(0,1)
+alpha ~ dnorm(0,1)
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:T.bbs){
+  N[t] <- sum(yBBS.site[,t])
+}
+####################################################
+####################################################
+}"
+
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dir.models,"/bbs-pois-null") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
 ```
+
+
+
+```{r bbs-pois-with-p-covs}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    yBBS.site[s,t] ~ dpois(lambda[s]*pBBS[s,t])
+  } # end data model s
+} # end data model t
+
+  
+for(t in 1:T.bbs){
+  for(s in 1:S.bbs){
+    logit(pBBS[s,t]) <- alpha_pb + 
+                        beta_pb1 * p.fyrbbs[s,t] + 
+                        beta_pb2 * p.wind[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:S.bbs){
+  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
+} # end s (lambda route)
+
+
+for(g in 1:G){
+  log(nu[g]) = beta_g1*area[g] + alpha_pb 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,1) # intercept on the BBS detection model
+beta_pb1   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pb2   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g1    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:T.bbs){
+  N[t] <- sum(yBBS.site[,t])
+}
+####################################################
+####################################################
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dir.models,"/bbs-pois-with-p-covs") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+
 
 ## Step 4c: Run Model(s)
 ```{r run-jags}
@@ -220,5 +279,6 @@ out$tictoc.allchains <- mod.time
 # save model outputs
 saveRDS(out, file=paste0(mod.name, ".rds"))
 ```
+
 
 
