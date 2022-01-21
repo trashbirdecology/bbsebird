@@ -11,7 +11,8 @@
 #' @param maxgridperroute max number of grids that a single route can span. use whatever makes most sense. if probMinMultG is very low, then use 1
 #' @param probMinMultG probability of a route falling into multiple grid cells. probMinMultG should decrease as grid cell size increases (i.e., less chance of a rotue falling into multiple grid cells as spatial coverage of a cell increases)
 #'
-#' @export
+#' @export sim_bbs
+#'
 sim_bbs <- function(nyear=20, nsite=10, ngrid=10, zip=TRUE, maxN=33, probMinMultG=0.75, probfyear=0.15, propna=0.25, maxgridperroute=5){
 
 stopifnot(maxgridperroute < ngrid)

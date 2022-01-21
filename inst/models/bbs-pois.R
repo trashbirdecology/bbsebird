@@ -2,20 +2,20 @@ sink(file=here::here("inst/jags/bbs-pois-null.jags"))
 cat("model {
  ####################################################
 ####################################################
-# Likelihoods
+# Likelihood
 ####################################################
 for(t in 1:T.bbs){
   for(s in 1:S.bbs){
     yBBS.site[s,t] ~ dpois(lambda[s])
   } # end data model s
 } # end data model t
-  
+
 for(s in 1:S.bbs){
   lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
 } # end s (lambda route)
 
 for(g in 1:G){
-  log(nu[g]) = area[g]*b1 + alpha 
+  log(nu[g]) = area[g]*b1 + alpha
 } # end g (nu)
 
 ####################################################
@@ -33,7 +33,7 @@ for(t in 1:T.bbs){
 }
 ####################################################
 ####################################################
- 
+
 } # End model
     ", fill=TRUE)
 
