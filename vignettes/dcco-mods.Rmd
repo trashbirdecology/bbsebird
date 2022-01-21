@@ -22,29 +22,33 @@ dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
 ```{r retrieve-data}
 # Import the data
 if(!sim.data) jdat <- import_jdat(dir.jags)
-if(sim.data)  bbs  <- dubcorms::sim_bbs(ngrid = 10, maxgridperroute = 2)
+if(sim.data)  bbs  <- sim_bbs(ngrid = 10, nsite = 100, maxgridperroute = 2, show.plot=FALSE)
+
+if(exists("jdat")) jdat<-list(bbs=bbs)
+
 ```
 
 # Step 1: Specify GAMs
-```{r get-gam-data-for-jags}
-ind <- names(jagam.data)
+```{r specify-gams}
+ind <- names(jdat)
 jagam.mods <- rep(list(NA), length(ind))
 names(jagam.mods) <- ind
 for(i in seq_along(ind)){
 mod.name <-  paste0("jagam_", ind[i])
 mod.fn   <- paste0(dir.models, mod.name, ".txt")
 
+
 # Model
 jagam.mods[[i]] <-
   mgcv::jagam(
-    Cmax ~ s(
-      x,
-      y,
+    C.long ~ s(
+      lon,
+      lat,
       k = 20,
       bs = 'ds',
       m = c(1, 0.5)
       ),
-    data = jagam.data[[i]],
+    data = jdat[[i]],
     family = "poisson",
     file = mod.fn, 
     diagonalize = TRUE
