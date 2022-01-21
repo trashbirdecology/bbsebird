@@ -10,6 +10,8 @@ params:
 devtools::install_github('trashbirdecology/dubcorms')
 library(dubcorms)
 library(tidyverse)
+library(jagsUI)
+library(coda)
 dubcorms::eval_params()
 params.temp <- eval_params(params) # we cannot save as params--won't allow us to overwrite
 # save params as objects in environment instead of inside a list (b.c of my laziness)
@@ -110,19 +112,18 @@ jags.data <-
 ```{r set-mcmc}
 na <- 1000 # number of adaptation iterations
 nb <- 5000 # number of iterations for burnin per chain
-# nc <- 3 # number of chains (min for now) (defined in call to JAGS as the length of inits list)
+nc <- 3 # number of chains (min for now) 
 ncores <- parallel::detectCores() - 1 # number of cores to use; keep one free just in case, or not
-ni <- 10000 # number of iterations per chain
+ni <- 20000 # number of iterations per chain
 nt <- 10 # thinning rate
 ```
 
 ### Set initial values
 ```{r set-inits} 
-inits <- list(
-  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),
-  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1)),     
-  list(b1 = rnorm(1,0,1), alpha  = rnorm(1,0,1))
-  )
+myinits <-list(alpha_pb  = rnorm(1,0,1), 
+       alpha_g = rnorm(1, 0, 1), beta_a = rnorm(1, 0, 1),
+       beta_pb = rnorm(1,0,1), beta_pw = rnorm(1,0,1), beta_pf = rnorm(1,0,1))
+inits <- make_inits_list(myinits, nc)
 ```
 
 ### Parameters monitored
@@ -281,13 +282,23 @@ for(i in seq_along(mod.fns)) {
 ## if i keep loop need to add menu for overwriting existing .rds models
 ```
 # Step 4: Check Models
-## Convergence
-```{r convergence}
+```{r load-mods}
 ## list of model outputs (as .rds)
 mod1 <- readRDS(mods.out[1])
 mod2 <- readRDS(mods.out[2])
-
 ```
 
 
+## Convergence
+```{r convergence}
+coda::densplot(mod2$samples)
+fit.mcmc = summary(mod2$samples)       # retrieve results using 'coda' 
+lattice::densityplot(fit.mcmc) # plot results using 'coda' 
+
+traceplot(mod2$samples)
+```
+
+
+```{r ppcheck}
+```
 

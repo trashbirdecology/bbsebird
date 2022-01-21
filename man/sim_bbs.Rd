@@ -6,14 +6,15 @@
 \usage{
 sim_bbs(
   nyear = 20,
-  nsite = 10,
+  nsite = 100,
   ngrid = 10,
   zip = TRUE,
   maxN = 33,
   probMinMultG = 0.75,
   probfyear = 0.15,
   propna = 0.25,
-  maxgridperroute = 5
+  maxgridperroute = 5,
+  show.plot = TRUE
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ sim_bbs(
 \item{propna}{proportion of all routes by year combinations to have no data (NA). this is a random process so will not always equal propna (uses rbinom to generate NAs)}
 
 \item{maxgridperroute}{max number of grids that a single route can span. use whatever makes most sense. if probMinMultG is very low, then use 1}
+
+\item{show.plot}{if TRUE will print a density plot of N and C to device}
 
 \item{propfyer}{proportion of routes by year combinations that comprise an observer's first year}
 }
