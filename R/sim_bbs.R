@@ -126,7 +126,7 @@ sim_bbs <-
     }
     ## add row and colnames to them
     pcovs <- list(cars=pc, noise=pn, wind=pw, fyear=pf)
-    for(i in seq_along(temp)){
+    for(i in seq_along(pcovs)){
       colnames(pcovs[[i]]) <- 1:ncol(pcovs[[i]])
       rownames(pcovs[[i]]) <- 1:nrow(pcovs[[i]])
     }
@@ -142,13 +142,14 @@ sim_bbs <-
 
 
     # Simulate grid-level covariates
+    area <- rnorm(G, mean=100, sd=5)
     hab1 <- rnorm(G, mean = 0, sd = 1)
     hab2 <- scale(runif(G, 0, 100), center = TRUE)
     # Simulate latitude/longitude
     lat <- runif(n = G, -40, 40)
     lon <- runif(n = G, 60, 80)
     cellids <- 1:G
-    grid <- data.frame(lat=lat, lon=lon, gridcellid=cellids, hab1=hab1, hab2=hab2)
+    grid <- data.frame(lat=lat, lon=lon, gridcellid=cellids, hab1=hab1, hab2=hab2, area=area)
 
     # Save BBS data in long format
     C.long <- reshape2::melt(C, value.name = "C")
@@ -158,7 +159,7 @@ sim_bbs <-
     N.long <- merge(N.long, grid)
     C.long <- merge(C.long, grid)
 
-    bbs.long <- merge(pcovs.long.df, merge(grid, merge(N.long, C.long)))
+    df.long <- merge(pcovs.long.df, merge(grid, merge(N.long, C.long)))
 
     list.out <- list(
       N = N,
@@ -169,13 +170,14 @@ sim_bbs <-
       pf = pf,
       hab1 = hab1,
       hab2 = hab2,
+      area = area,
       prop = prop,
       nyear = T,
       ngrid = G,
       nsite = M,
       lat = lat,
       lon = lon,
-      bbs.long=bbs.long
+      df.long=df.long
     )
     return(list.out)
 

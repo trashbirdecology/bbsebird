@@ -3,6 +3,7 @@ title: "specify and run models"
 params:
   dir.proj: "C:/users/jburnett/documents/github/dubcorms/vignettes/DCCO/Double-crested Cormorant_FL-GA_111km_2008-2019"
   sim.data: TRUE
+  overwrite.jags.models: FALSE
 ---
 
 ```{r setup}
@@ -19,13 +20,22 @@ dir.models <- paste0(dir.jags, "/models")
 dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
 ```
 
-```{r retrieve-data}
+```{r retrieve-observations}
 # Import the data
-if(!sim.data) jdat <- import_jdat(dir.jags)
-if(sim.data)  bbs  <- sim_bbs(ngrid = 10, nsite = 100, maxgridperroute = 2, show.plot=FALSE)
+if(!sim.data)
+  jdat <- import_jdat(dir.jags)
+if (sim.data)
+  bbs  <- sim_bbs(
+    ngrid = 55,
+    nsite = 100,
+    maxgridperroute = 3,
+    nyear = 10,
+    show.plot = FALSE
+  )
 
-if(exists("jdat")) jdat<-list(bbs=bbs)
-
+if (!exists("jdat"))
+  jdat<-list(bbs = bbs
+  )
 ```
 
 # Step 1: Specify GAMs
@@ -33,93 +43,66 @@ if(exists("jdat")) jdat<-list(bbs=bbs)
 ind <- names(jdat)
 jagam.mods <- rep(list(NA), length(ind))
 names(jagam.mods) <- ind
-for(i in seq_along(ind)){
-mod.name <-  paste0("jagam_", ind[i])
-mod.fn   <- paste0(dir.models, mod.name, ".txt")
-
-
-# Model
-jagam.mods[[i]] <-
-  mgcv::jagam(
-    C.long ~ s(
-      lon,
-      lat,
-      k = 20,
-      bs = 'ds',
-      m = c(1, 0.5)
+for(i in seq_along(ind)) {
+  mod.name <-  paste0("/jagam_", ind[i])
+  mod.fn   <- paste0(dir.models, mod.name, ".txt")
+  gamdat <- jdat[[i]]$df.long
+  #write JAGAM model to file
+  jagam.mods[[i]] <-
+    mgcv::jagam(
+      C ~ s(
+        lon,
+        lat,
+        k = 20,
+        ## need to fix to ensure always less than ngrid cells but still high
+        bs = 'ds',
+        m = c(1, 0.5)
       ),
-    data = jdat[[i]],
-    family = "poisson",
-    file = mod.fn, 
-    diagonalize = TRUE
-  )
-## Save model output
-saveRDS(jagam.mods[[i]], file=paste0(dir.models, mod.name, ".rds"))
-cat("JAGS model specification saved:\n", paste0(dir.models, mod.name, ".txt"), ".\n")
-
+      data = gamdat,
+      family = "poisson",
+      file = mod.fn,
+      diagonalize = TRUE
+    )
+  cat("JAGS model specification saved:\n",
+      paste0(dir.models, mod.name, ".txt"),
+      ".\n")
+  
 } #end gam loop
 
+# jagam.mods$bbs$jags.data$X %>% dim()
+# jagam.mods$bbs$jags.data$X %>% head()
+# jagam.mods$bbs$pregam$model$C %>% str()
+# ### This is going to be unnecessarily large for ebird data....it stores all original data, too -- is thi necessary?
+# object.size(jagam.mods)
+# object.size(jagam.mods$bbs$pregam$model$C)
+# object.size(jdat$bbs$C)
 
-jdat$yBBS.grid %>% dim()   # route by time by grid
-jdat$yeBird.grid %>% dim() # checklist by time by grid
+# nKnots <- (jagam.mods$bbs$jags.data$X %>% dim())[2]
+### gam data for JAGS
+jags.data <-
+  list(
+    ## follows are integers
+    nSitesB = dim(jdat$bbs$C)[1],#num routes bbs
+    nYearsB = dim(jdat$bbs$C)[2],#num years bbs
+    nGridsB = jdat$bbs$ngrid,#num grids in bbs data
+    ## follows are matrices with dimensions [site by year]
+    Cb = jdat$bbs$C, #counts
+    pc = jdat$bbs$pc,#cars
+    pn = jdat$bbs$pn,#noise
+    pw = jdat$bbs$pw,#wind
+    pf = jdat$bbs$pf,#obs first yr
+    ## follow are vectors with dimensions == nGrid
+    area = jdat$bbs$area,#gridcell area 
+    hab1 = jdat$bbs$hab1,#made up covar
+    hab2 = jdat$bbs$hab2,#made up covar 
+    ## follows are matrices with dimensions [site by grid]
+    prop = jdat$bbs$prop,#proportion route in cell
+    ## follows are gam data
+    bfunB = jagam.mods$bbs$jags.data$X#dims nobs bbs by nKnots
+  )
 
-jagam.mods$bbs$jags.data$X %>% dim()
-jdat$
-
-
-# jagam.mods$ebird$jags.data %>% str()
-# jagam.mods$bbs$jags.data %>% str()
-
-#  X = jagam.mod$jags.data$X,
-#     S1 = jagam.mod$jags.data$S1,
-#     zero = jagam.mod$jags.data$zero,
-#     mu = inits$psi.betas,
-#     se = inits$psi.se
-# # Data for JAGS
-# jags.data <-
-#   list(
-#     h = dat$h,
-#     nStops = dat$nStops,
-#     nRoutes = dat$nRoutes,
-#     nYears = dat$nYears,
-#     Xp = dat$wind,
-#     nov = dat$nov,
-#     obs = dat$obs,
-#     nObs = max(dat$obs) - 1,
-#     Xclim = covs,
-#     nPred = dim(covs)[2] / 2,
-#     twedt = dat$twedt,
-#    
-#   )
-# ### Parameters to monitor
-# jags.params <-
-#   c(
-#     "xpsi",
-#     "pi",
-#     "lambda",
-#     "betaT",
-#     "g",
-#     "alpha0",
-#     "alpha1",
-#     "alpha2",
-#     "alpha3",
-#     "sigma.obs",
-#     "sigma.gam",
-#     "rho",
-#     "b",
-#     "omega",
-#     "z"
-#   )
+# str(jags.data)
 ```
-
-```{r incorporate-gam-data}
-# jagam.mods$ebird$jags.data %>% str()
-jagam.mods$bbs$jags.data %>% str()
-
-
-```
-
-
 
 # Step 2: Specify HM
 ## Step 2a: Computational specifications
@@ -145,42 +128,42 @@ inits <- list(
 ### Parameters monitored
 ```{r set-params} 
 ### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda", "nu",  "b1", "N", "alpha")
+params.monitor <- c("lambda", "nu",  "N")
 ```
 
-## Step 4b: Specify Model(s)
+## Step 2b: Specify Model(s)
 ```{r bbs-pois-base}
 mod <- "model{
 ####################################################
 ####################################################
 # Likelihoods
 ####################################################
-for(t in 1:T.bbs){
-  for(s in 1:S.bbs){
-    yBBS.site[s,t] ~ dpois(lambda[s])
+for(t in 1:nYearsB){
+  for(s in 1:nSitesB){
+    Cb[s,t] ~ dpois(lambda[s])
   } # end data model s
 } # end data model t
   
-for(s in 1:S.bbs){
-  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
+for(s in 1:nSitesB){
+  lambda[s]  = inprod(nu[], prop[s,])
 } # end s (lambda route)
 
-for(g in 1:G){
-  log(nu[g]) = area[g]*b1 + alpha 
+for(g in 1:nGridsB){
+  log(nu[g]) = area[g]*beta_a + alpha_g 
 } # end g (nu)
 
 ####################################################
 ####################################################
 # Priors
 ####################################################
-b1    ~ dnorm(0,1)
-alpha ~ dnorm(0,1)
+beta_a    ~ dnorm(0,1)
+alpha_g ~ dnorm(0,1)
 ####################################################
 ####################################################
 # Derived
 ####################################################
-for(t in 1:T.bbs){
-  N[t] <- sum(yBBS.site[,t])
+for(t in 1:nYearsB){
+  N[t] <- sum(Cb[,t])
 }
 ####################################################
 ####################################################
@@ -195,37 +178,35 @@ cat(mod)
 sink()
 ```
 
-
-
 ```{r bbs-pois-with-p-covs}
 mod <- "model{
 ####################################################
 ####################################################
 # Likelihoods
 ####################################################
-for(t in 1:T.bbs){
-  for(s in 1:S.bbs){
-    yBBS.site[s,t] ~ dpois(lambda[s]*pBBS[s,t])
+for(t in 1:nYearsB){
+  for(s in 1:nSitesB){
+    Cb[s,t] ~ dpois(lambda[s]*pBBS[s,t])
   } # end data model s
 } # end data model t
 
   
-for(t in 1:T.bbs){
-  for(s in 1:S.bbs){
+for(t in 1:nYearsB){
+  for(s in 1:nSitesB){
     logit(pBBS[s,t]) <- alpha_pb + 
-                        beta_pb1 * p.fyrbbs[s,t] + 
-                        beta_pb2 * p.wind[s,t]
+                        beta_pf * pf[s,t] + 
+                        beta_pw * pw[s,t]
   } # end data model s
 } # end data model t
 
 
-for(s in 1:S.bbs){
-  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
+for(s in 1:nSitesB){
+  lambda[s]  = inprod(nu[], prop[s,])
 } # end s (lambda route)
 
 
-for(g in 1:G){
-  log(nu[g]) = beta_g1*area[g] + alpha_pb 
+for(g in 1:nGridsB){
+  log(nu[g]) = beta_a*area[g] + alpha_g 
 } # end g (nu)
 
 ####################################################
@@ -234,18 +215,18 @@ for(g in 1:G){
 ####################################################
 ## Priors on BBS site(route)-level detection 
 alpha_pb   ~ dnorm(0,1) # intercept on the BBS detection model
-beta_pb1   ~ dnorm(0,1) # observer's first year (on BBS or Route)
-beta_pb2   ~ dnorm(0,1) # wind
+beta_pf   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pw   ~ dnorm(0,1) # wind
 ## Priors on BBS grid-level covariates
 alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
-beta_g1    ~ dnorm(0,1) # grid-cell area (scaled)
+beta_a    ~ dnorm(0,1) # grid-cell area (scaled)
 
 ####################################################
 ####################################################
 # Derived
 ####################################################
-for(t in 1:T.bbs){
-  N[t] <- sum(yBBS.site[,t])
+for(t in 1:nYearsB){
+  N[t] <- sum(Cb[,t])
 }
 ####################################################
 ####################################################
@@ -265,26 +246,47 @@ sink()
 # models in jags model dir
 mod.fns   <- list.files(dir.models, full.names = FALSE, pattern=".txt|.jags") # names of models
 mod.names <- sub(".txt|.jags", "", x=mod.fns) # remove the .rds files
-mod.fns   <- paste0(dir.models, mod.fns) # tack on the directory 
-
+mod.fns   <- paste0(dir.models, "/", mod.fns) # tack on the directory  after grabbuing the mod.names
+gam.mod.fns <- mod.fns[str_detect(mod.fns, "jagam")] # remove jags fns
+mod.fns <- setdiff(mod.fns, gam.mod.fns) # remove jags fns
 # Choose the model to run
-mod.fn   <- mod.fns[2]
-mod.name <- mod.names[2]
+for(i in seq_along(mod.fns)) {
+  mod.fn   <- mod.fns[i]
+  mod.name <- mod.names[i]
+  fn.out <- paste0(dir.models, "/", mod.name, ".rds")
+  mods.out <- if(i==1){fn.out}else{c(mods.out, fn.out)}
+  
+  if (file.exists(fn.out) &
+      !overwrite.jags.models)
+    next(fn.out, " exists. skipping loop", i)
+  jags.data$area <- as.vector(scale(jags.data$area, center = TRUE))
+  # names(jdat)
+  tictoc::tic()
+  out <- jagsUI::jags(
+    data  = jags.data,
+    model.file = mod.fn,
+    inits = inits,
+    parameters.to.save = params.monitor,
+    n.chains = length(inits),
+    n.thin = nt,
+    n.iter = ni,
+    n.burnin = nb
+  )
+  x = tictoc::toc()
+  mod.time <- paste0(round(x$toc - x$tic, 2), " seconds")
+  out$tictoc.allchains <- mod.time
+  # save model outputs
+  saveRDS(out, file = fn.out)
+}
+## if i keep loop need to add menu for overwriting existing .rds models
+```
+# Step 4: Check Models
+## Convergence
+```{r convergence}
+## list of model outputs (as .rds)
+mod1 <- readRDS(mods.out[1])
+mod2 <- readRDS(mods.out[2])
 
-jdat$area <- as.vector(scale(jdat$area, center=TRUE))
-# names(jdat)
-tictoc::tic()
-out <- jagsUI::jags(data  = jdat,
-                    model.file = mod.fn,
-                    inits = inits,
-                    parameters.to.save = params.monitor,
-                    n.chains = length(inits), 
-                    n.thin = nt, n.iter = ni, n.burnin = nb)
-x=tictoc::toc()
-mod.time <- paste0(round(x$toc-x$tic, 2), " seconds")
-out$tictoc.allchains <- mod.time
-# save model outputs
-saveRDS(out, file=paste0(mod.name, ".rds"))
 ```
 
 
