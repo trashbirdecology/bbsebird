@@ -10,4 +10,5 @@ for(i in 1:nc) {
 }
 stopifnot(length(inits.out)==nc)
 return(inits.out)
+
 }

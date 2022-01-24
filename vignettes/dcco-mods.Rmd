@@ -27,40 +27,48 @@ dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
 if(!sim.data)
   jdat <- import_jdat(dir.jags)
 if (sim.data)
-  bbs  <- sim_bbs(
+  jdat  <- sim_data(
     ngrid = 55,
-    nsite = 100,
+    nroutes = 100,
+    nchecklistsmaxperyear = ngrid*10, 
     maxgridperroute = 3,
     nyear = 10,
     show.plot = FALSE
   )
-
-if (!exists("jdat"))
-  jdat<-list(bbs = bbs
-  )
 ```
 
 # Step 1: Specify GAMs
-```{r specify-gams}
+```{r}
+# Generate prior distributions for Poisson gam
+jagam.data <- 
+  data.frame(
+    N = rep(N = Nib[, 1], length(jdat$bbs$lat)),
+    x = scale(jdat$bbs$lon),
+    y = scale(jdat$bbs$lat)
+  )
+```
+
+
+```{r specify-gam-base}
 ind <- names(jdat)
 jagam.mods <- rep(list(NA), length(ind))
 names(jagam.mods) <- ind
 for(i in seq_along(ind)) {
   mod.name <-  paste0("/jagam_", ind[i])
   mod.fn   <- paste0(dir.models, mod.name, ".txt")
-  gamdat <- jdat[[i]]$df.long
   #write JAGAM model to file
   jagam.mods[[i]] <-
     mgcv::jagam(
-      C ~ s(
-        lon,
-        lat,
+      N ~ s(
+        x,
+        y,
         k = 20,
         ## need to fix to ensure always less than ngrid cells but still high
         bs = 'ds',
         m = c(1, 0.5)
       ),
-      data = gamdat,
+      sp.prior = "log.uniform",
+      data = jagam.data,
       family = "poisson",
       file = mod.fn,
       diagonalize = TRUE
@@ -71,15 +79,6 @@ for(i in seq_along(ind)) {
   
 } #end gam loop
 
-# jagam.mods$bbs$jags.data$X %>% dim()
-# jagam.mods$bbs$jags.data$X %>% head()
-# jagam.mods$bbs$pregam$model$C %>% str()
-# ### This is going to be unnecessarily large for ebird data....it stores all original data, too -- is thi necessary?
-# object.size(jagam.mods)
-# object.size(jagam.mods$bbs$pregam$model$C)
-# object.size(jdat$bbs$C)
-
-# nKnots <- (jagam.mods$bbs$jags.data$X %>% dim())[2]
 ### gam data for JAGS
 jags.data <-
   list(
@@ -100,10 +99,8 @@ jags.data <-
     ## follows are matrices with dimensions [site by grid]
     prop = jdat$bbs$prop,#proportion route in cell
     ## follows are gam data
-    bfunB = jagam.mods$bbs$jags.data$X#dims nobs bbs by nKnots
+    b = jagam.mods$bbs$jags.data$X#dims nGRidsB by #basis functions/knots
   )
-
-# str(jags.data)
 ```
 
 # Step 2: Specify HM
@@ -121,7 +118,7 @@ nt <- 10 # thinning rate
 ### Set initial values
 ```{r set-inits} 
 myinits <-list(alpha_pb  = rnorm(1,0,1), 
-       alpha_g = rnorm(1, 0, 1), beta_a = rnorm(1, 0, 1),
+       alpha_g = rnorm(1, 0, 1), beta_g = rnorm(1, 0, 1),
        beta_pb = rnorm(1,0,1), beta_pw = rnorm(1,0,1), beta_pf = rnorm(1,0,1))
 inits <- make_inits_list(myinits, nc)
 ```
@@ -129,7 +126,7 @@ inits <- make_inits_list(myinits, nc)
 ### Parameters monitored
 ```{r set-params} 
 ### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda", "nu",  "N")
+params.monitor <- c("lambda", "nu",  "Nb", "pBBS")
 ```
 
 ## Step 2b: Specify Model(s)
@@ -150,21 +147,21 @@ for(s in 1:nSitesB){
 } # end s (lambda route)
 
 for(g in 1:nGridsB){
-  log(nu[g]) = area[g]*beta_a + alpha_g 
+  log(nu[g]) = alpha_g + area[g]*beta_g
 } # end g (nu)
 
 ####################################################
 ####################################################
 # Priors
 ####################################################
-beta_a    ~ dnorm(0,1)
+beta_g    ~ dnorm(0,1)
 alpha_g ~ dnorm(0,1)
 ####################################################
 ####################################################
 # Derived
 ####################################################
 for(t in 1:nYearsB){
-  N[t] <- sum(Cb[,t])
+  Nb[t] <- sum(Cb[,t])
 }
 ####################################################
 ####################################################
@@ -207,7 +204,7 @@ for(s in 1:nSitesB){
 
 
 for(g in 1:nGridsB){
-  log(nu[g]) = beta_a*area[g] + alpha_g 
+  log(nu[g]) = beta_g*area[g] + alpha_g 
 } # end g (nu)
 
 ####################################################
@@ -215,19 +212,19 @@ for(g in 1:nGridsB){
 # Priors
 ####################################################
 ## Priors on BBS site(route)-level detection 
-alpha_pb   ~ dnorm(0,1) # intercept on the BBS detection model
+alpha_pb   ~ dnorm(0,0.1) # intercept on the BBS detection model
 beta_pf   ~ dnorm(0,1) # observer's first year (on BBS or Route)
 beta_pw   ~ dnorm(0,1) # wind
 ## Priors on BBS grid-level covariates
 alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
-beta_a    ~ dnorm(0,1) # grid-cell area (scaled)
+beta_g    ~ dnorm(0,1) # grid-cell area (scaled)
 
 ####################################################
 ####################################################
 # Derived
 ####################################################
 for(t in 1:nYearsB){
-  N[t] <- sum(Cb[,t])
+  Nb[t] <- sum(Cb[,t])
 }
 ####################################################
 ####################################################
@@ -241,13 +238,18 @@ cat(mod)
 sink()
 ```
 
+### BBS + eBird
+```{r bbs-ebird}
+```
 
-# Step 3: Build Model
+
+
+# Step 3: Build Model(s)
 ```{r run-jags}
 # models in jags model dir
 mod.fns   <- list.files(dir.models, full.names = FALSE, pattern=".txt|.jags") # names of models
 mod.names <- sub(".txt|.jags", "", x=mod.fns) # remove the .rds files
-mod.fns   <- paste0(dir.models, "/", mod.fns) # tack on the directory  after grabbuing the mod.names
+mod.fns   <- paste0(dir.models, "/", mod.fns) # tack on the directory to filename after grabbing the mod.names
 gam.mod.fns <- mod.fns[str_detect(mod.fns, "jagam")] # remove jags fns
 mod.fns <- setdiff(mod.fns, gam.mod.fns) # remove jags fns
 # Choose the model to run
@@ -294,11 +296,16 @@ mod2 <- readRDS(mods.out[2])
 coda::densplot(mod2$samples)
 fit.mcmc = summary(mod2$samples)       # retrieve results using 'coda' 
 lattice::densityplot(fit.mcmc) # plot results using 'coda' 
-
-traceplot(mod2$samples)
+par(mfrow = c(3, 3))  ;  traceplot(mod2$samples)  ;  par(mfrow = c(1, 1))
 ```
-
 
 ```{r ppcheck}
 ```
 
+
+# Step 5: Inference
+```{r}
+# view param estimates in separate window
+jagsUI::jags.View(mod2, title="simple with pcovs", digits=3)
+
+```
