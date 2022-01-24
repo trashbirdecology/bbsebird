@@ -2,7 +2,7 @@
 title: "specify and run models"
 params:
   dir.proj: "C:/users/jburnett/documents/github/dubcorms/vignettes/DCCO/Double-crested Cormorant_FL-GA_111km_2008-2019"
-  sim.data: TRUE
+  sim.data: FALSE
   overwrite.jags.models: FALSE
 ---
 
@@ -30,7 +30,7 @@ if (sim.data)
   jdat  <- sim_data(
     ngrid = 55,
     nroutes = 100,
-    nchecklistsmaxperyear = ngrid*10, 
+    nchecklistsmaxperyear = 55, #total MAX num of checklists allowed in study area each year.
     maxgridperroute = 3,
     nyear = 10,
     plot.dir = dir.plots
@@ -57,7 +57,7 @@ jagam.mods <- rep(list(NA), length(ind))
 names(jagam.mods) <- ind
 for(i in seq_along(ind)) {
   mod.name <-  paste0("/jagam_", ind[i])
-  mod.fn   <- paste0(dir.models, mod.name, ".txt")
+  mod.fn   <- paste0(dir.models, mod.name, "_unedited.txt")
   #write JAGAM model to file
   jagam.mods[[i]] <-
     mgcv::jagam(
@@ -76,7 +76,7 @@ for(i in seq_along(ind)) {
       diagonalize = TRUE
     )
   cat("JAGS model specification saved:\n",
-      paste0(dir.models, mod.name, ".txt"),
+      paste0(dir.models, mod.name, "_unedited.txt"),
       ".\n")
   
 } #end gam loop
@@ -88,7 +88,10 @@ jags.data <-
     nSitesB = dim(jdat$bbs$C)[1],#num routes bbs
     nYearsB = dim(jdat$bbs$C)[2],#num years bbs
     nGridsB = jdat$bbs$ngrid,#num grids in bbs data
-    nMaxChecklists = jdat$ebird$nMaxChecklistsPerGrid,#num routes bbs
+    nSitesE = dim(jdat$ebird$C)[1],#num checklists ebird
+    nYearsE = dim(jdat$ebird$C)[2],#num years ebird
+    nGridsE = jdat$ebird$ngrid,#num grids in ebird data
+    nMaxChecklists = jdat$ebird$nMaxChecklistsInGrid,#num routes bbs
     nYearsB = dim(jdat$bbs$C)[2],#num years bbs
     nGridsB = jdat$bbs$ngrid,#num grids in bbs data
 
@@ -99,6 +102,8 @@ jags.data <-
     pn = jdat$bbs$pn,#noise (bbs)
     pw = jdat$bbs$pw,#wind (bbs)
     pf = jdat$bbs$pf,#obs first yr (bbs)
+    ## follows are vectors with dimensions == nYears
+    nRoutesByYear = , 
     ## follow are vectors with dimensions == nGrid
     area = jdat$bbs$area,#gridcell area 
     hab1 = jdat$bbs$hab1,#made up covar
@@ -128,6 +133,8 @@ myinits <-list(alpha_pb  = rnorm(1,0,1),
        alpha_g = rnorm(1, 0, 1), beta_g = rnorm(1, 0, 1),
        beta_pb = rnorm(1,0,1), beta_pw = rnorm(1,0,1), beta_pf = rnorm(1,0,1))
 inits <- make_inits_list(myinits, nc)
+#gam initial values
+# jagam.mods$bbs$jags.ini %>% View()
 ```
 
 ### Parameters monitored
@@ -146,8 +153,8 @@ mod <- "model{
 for(t in 1:nYearsB){
   for(s in 1:nSitesB){
     Cb[s,t] ~ dpois(lambda[s])
-  } # end data model s
-} # end data model t
+  } # end bbs data model s
+} # end bbs data model t
   
 for(s in 1:nSitesB){
   lambda[s]  = inprod(nu[], prop[s,])
@@ -162,7 +169,7 @@ for(g in 1:nGridsB){
 # Priors
 ####################################################
 beta_g    ~ dnorm(0,1)
-alpha_g ~ dnorm(0,1)
+alpha_g   ~ dnorm(0,1)
 ####################################################
 ####################################################
 # Derived
@@ -247,6 +254,66 @@ sink()
 
 ### BBS + eBird
 ```{r bbs-ebird}
+mod <- "model{
+####################################################
+### Attempt to incorporate Ce (ebird count processes) in 
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:nYearsB){
+  for(s in 1:nSitesB){
+    Cb[s,t] ~ dpois(lambda[s]*pBBS[s,t])
+  } # end data model s
+} # end data model t
+
+  
+for(t in 1:nYearsB){
+  for(s in 1:nSitesB){
+    logit(pBBS[s,t]) <- alpha_pb + 
+                        beta_pf * pf[s,t] + 
+                        beta_pw * pw[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:nSitesB){
+  lambda[s]  = inprod(nu[], prop[s,])
+} # end s (lambda route)
+
+
+for(g in 1:nGridsB){
+  log(nu[g]) = beta_g*area[g] + alpha_g 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,0.1) # intercept on the BBS detection model
+beta_pf   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pw   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:nYearsB){
+  Nb[t] <- sum(Cb[,t])
+}
+####################################################
+####################################################
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dir.models,"/bbs-pois-with-p-covs") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
 ```
 
 

@@ -238,8 +238,8 @@ We need to munge the data just a little bit further for use in JAGS together. Yo
 ```{r jdat-make, eval=j.ind}
 cat("creating a list of objects for use in MGCV & JAGS..")
 ## may throw some random and non-intuitive notebook errors, try again if so.
-jdat <- make_jags_list(dat=list(ebird_spatial, grid, bbs_spatial), dir.out=dir.jags)
-done("..done.")
+jdat <- make_jags_list(dat=list(ebird_spatial, grid, bbs_spatial), dir.out=dir.jags, drop.high.C.ebird=TRUE)
+message("..done.")
 ```
 
 ```{r jdat-import}
