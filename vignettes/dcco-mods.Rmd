@@ -33,24 +33,26 @@ if (sim.data)
     nchecklistsmaxperyear = ngrid*10, 
     maxgridperroute = 3,
     nyear = 10,
-    show.plot = FALSE
+    plot.dir = dir.plots
   )
 ```
 
 # Step 1: Specify GAMs
-```{r}
+Specify the data to use to create basis functions
+```{r jagam-data}
 # Generate prior distributions for Poisson gam
 jagam.data <- 
   data.frame(
-    N = rep(N = Nib[, 1], length(jdat$bbs$lat)),
+    Nib = rep(N = jdat$bbs$Nib[, 1], length(jdat$bbs$lat)),
     x = scale(jdat$bbs$lon),
     y = scale(jdat$bbs$lat)
   )
 ```
 
-
+Use \code{mgcv::jagam} to create the base model that should then be further edited for use in JAGS. 
 ```{r specify-gam-base}
-ind <- names(jdat)
+# ind <- names(jdat)
+ind <- "bbs"
 jagam.mods <- rep(list(NA), length(ind))
 names(jagam.mods) <- ind
 for(i in seq_along(ind)) {
@@ -59,7 +61,7 @@ for(i in seq_along(ind)) {
   #write JAGAM model to file
   jagam.mods[[i]] <-
     mgcv::jagam(
-      N ~ s(
+      Nib ~ s(
         x,
         y,
         k = 20,
@@ -86,19 +88,24 @@ jags.data <-
     nSitesB = dim(jdat$bbs$C)[1],#num routes bbs
     nYearsB = dim(jdat$bbs$C)[2],#num years bbs
     nGridsB = jdat$bbs$ngrid,#num grids in bbs data
-    ## follows are matrices with dimensions [site by year]
-    Cb = jdat$bbs$C, #counts
-    pc = jdat$bbs$pc,#cars
-    pn = jdat$bbs$pn,#noise
-    pw = jdat$bbs$pw,#wind
-    pf = jdat$bbs$pf,#obs first yr
+    nMaxChecklists = jdat$ebird$nMaxChecklistsPerGrid,#num routes bbs
+    nYearsB = dim(jdat$bbs$C)[2],#num years bbs
+    nGridsB = jdat$bbs$ngrid,#num grids in bbs data
+
+    ## follows are matrices with dimensions [route/checklistid (Site) by year]
+    Cb = jdat$bbs$C, #counts on BBS 
+    Ce = jdat$ebird$C, #counts on eBird
+    pc = jdat$bbs$pc,#cars (bbs)
+    pn = jdat$bbs$pn,#noise (bbs)
+    pw = jdat$bbs$pw,#wind (bbs)
+    pf = jdat$bbs$pf,#obs first yr (bbs)
     ## follow are vectors with dimensions == nGrid
     area = jdat$bbs$area,#gridcell area 
     hab1 = jdat$bbs$hab1,#made up covar
     hab2 = jdat$bbs$hab2,#made up covar 
     ## follows are matrices with dimensions [site by grid]
     prop = jdat$bbs$prop,#proportion route in cell
-    ## follows are gam data
+    ## follows are data for the GAM
     b = jagam.mods$bbs$jags.data$X#dims nGRidsB by #basis functions/knots
   )
 ```

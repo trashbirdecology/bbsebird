@@ -12,11 +12,13 @@ sim_data(
   zip = TRUE,
   maxNb = 33,
   maxNe = 25,
+  spatialpattern = NULL,
   probMinMultG = 0.75,
   probChecklistInGrid = 0.85,
   probfyear = 0.15,
   propna = 0.25,
   maxgridperroute = 5,
+  plot.dir = NULL,
   show.plot = TRUE
 )
 }
@@ -24,6 +26,8 @@ sim_data(
 \item{nyear}{number of years}
 
 \item{nroutes}{number of BBS routes sampled across all years}
+
+\item{nchecklistsmaxperyear}{maximum number of ebird checklists to randomly impute into grid cells per year}
 
 \item{ngrid}{number of grid cells}
 
@@ -33,6 +37,8 @@ sim_data(
 
 \item{maxNe}{max number in the true state for eBird}
 
+\item{spatialpattern}{one of c("lat", "lon"). incorporates a very crude linear gradient into one spatial dimension of space in the true and observed counts (N, C)}
+
 \item{probMinMultG}{probability of a route falling into multiple grid cells. probMinMultG should decrease as grid cell size increases (i.e., less chance of a rotue falling into multiple grid cells as spatial coverage of a cell increases)}
 
 \item{probChecklistInGrid}{probability of a gridcell in a given year having data(checklistid). Setting this below 1.0 allows for some cells to be without checklists each year}
@@ -41,11 +47,11 @@ sim_data(
 
 \item{maxgridperroute}{max number of grids that a single route can span. use whatever makes most sense. if probMinMultG is very low, then use 1}
 
+\item{plot.dir}{saves a single .pdf file of the simulated data to this directory. if not specified and show.plots=TRUE will print to local device.}
+
 \item{show.plot}{if TRUE will print a density plot of N and C to device}
 
 \item{propfyer}{proportion of routes by year combinations that comprise an observer's first year}
-
-\item{nchecklistmaxperyear}{maximum number of ebird checklists to randomly impute into grid cells per year}
 }
 \description{
 Creates a list of BBS data for use in JAGS. Data is simulated using Poisson or zero-inflated Poisson distributions. Output includes both N and C.

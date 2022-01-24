@@ -5,15 +5,17 @@
 #' @param propfyer proportion of routes by year combinations that comprise an observer's first year
 #' @param nroutes number of BBS routes sampled across all years
 #' @param nyear number of years
-#' @param nchecklistmaxperyear maximum number of ebird checklists to randomly impute into grid cells per year
+#' @param nchecklistsmaxperyear maximum number of ebird checklists to randomly impute into grid cells per year
 #' @param ngrid number of grid cells
 #' @param zip TRUE will generate N using a zero-inflated poisson distribution, FALSE non-zip
 #' @param maxNb max number in the true state for BBS
 #' @param maxNe max number in the true state for eBird
+#' @param plot.dir saves a single .pdf file of the simulated data to this directory. if not specified and show.plots=TRUE will print to local device.
 #' @param maxgridperroute max number of grids that a single route can span. use whatever makes most sense. if probMinMultG is very low, then use 1
 #' @param probMinMultG probability of a route falling into multiple grid cells. probMinMultG should decrease as grid cell size increases (i.e., less chance of a rotue falling into multiple grid cells as spatial coverage of a cell increases)
 #' @param probChecklistInGrid probability of a gridcell in a given year having data(checklistid). Setting this below 1.0 allows for some cells to be without checklists each year
 #' @param show.plot if TRUE will print a density plot of N and C to device
+#' @param spatialpattern one of c("lat", "lon"). incorporates a very crude linear gradient into one spatial dimension of space in the true and observed counts (N, C)
 #' @export sim_bbs
 sim_data <-
   function(nyear = 20,
@@ -23,11 +25,13 @@ sim_data <-
            zip = TRUE,
            maxNb = 33,
            maxNe = 25,
+           spatialpattern = NULL,
            probMinMultG = 0.75,
            probChecklistInGrid = 0.85,
            probfyear = 0.15,
            propna = 0.25,
            maxgridperroute = 5,
+           plot.dir = NULL,
            show.plot = TRUE) {
     stopifnot(maxgridperroute < ngrid)
 
@@ -55,7 +59,7 @@ grid <-
     area = area
   )
 
-grid.list.out <- list(grid=grid)
+grid.out <- as.data.frame(grid)
 
 # BBS DATA ----------------------------------------------------------------
     # Simulate routes falling in multiple grids
@@ -87,31 +91,32 @@ grid.list.out <- list(grid=grid)
 
 
     # Simulate true state (N)
-    N <- matrix(nrow = M, ncol = T)
+    Nb <- matrix(nrow = M, ncol = T)
     for (j in 1:M) {
       if (zip)
-        N[j,] <-
+        Nb[j,] <-
           VGAM::rzipois(n = nyear, lambda = rpois(n = 1, round(runif(1, 0, maxNb))))
       if (!zip)
-        N[j,] <-
+        Nb[j,] <-
           rpois(n = nyear, lambda = rpois(n = 1, round(runif(1, 0, maxNb))))
     }
 
-    N[N == "NaN"] <- NA
+    Nb[Nb == "NaN"] <- NA
+
 
     # Simulate count data  (observations)
     C <- matrix(nrow = M, ncol = T)
     for (j in 1:M) {
       if (zip)
-        C[j,] <- VGAM::rzipois(n = nyear, lambda = N[j,])
+        C[j,] <- VGAM::rzipois(n = nyear, lambda = Nb[j,])
       if (!zip)
-        C[j,] <- rpois(n = nyear, lambda = N[j,])
+        C[j,] <- rpois(n = nyear, lambda = Nb[j,])
     }
     C[C == "NaN"] <- NA
 
     # Add colnames and rownames to C and N and prop
-    colnames(N) <- 1:ncol(N)
-    rownames(N) <- 1:nrow(N)
+    colnames(Nb) <- 1:ncol(Nb)
+    rownames(Nb) <- 1:nrow(Nb)
     colnames(C) <- 1:ncol(C)
     rownames(C) <- 1:nrow(C)
     colnames(prop) <- 1:ncol(prop)
@@ -122,19 +127,6 @@ grid.list.out <- list(grid=grid)
     C[matrix(rbinom(prod(dim(C)), size = 1, prob = propna) == 1, nrow = dim(C)[1])] <-
       NA
 
-    if (show.plot) {
-      if (zip)
-        sub = "zero-inflated Poisson)"
-      else{
-        sub = "Poisson)"
-      }
-      plot(density(N, na.rm = TRUE), main = paste0("Simulated BBS Data \n(", sub))
-      lines(density(C, na.rm = TRUE), col = "red")
-      legend("topright",
-             c("N", "C"),
-             col = c("black", "red"),
-             lty = 1)
-    }
 
     # Simulate detectability process
     pc <- matrix(nrow = M, ncol = T) ##cars
@@ -176,7 +168,7 @@ grid.list.out <- list(grid=grid)
 
     # Save BBS data in long format
     C.long <- reshape2::melt(C, value.name = "C")
-    N.long <- reshape2::melt(N, value.name = "N")
+    N.long <- reshape2::melt(Nb, value.name = "N")
     names(C.long)[1:2] <- names(N.long)[1:2] <- c("site", "year")
 
     N.long <- merge(N.long, grid)
@@ -204,7 +196,7 @@ grid.list.out <- list(grid=grid)
 
     # Output list
     bbs.list.out <- list(
-      N = N,
+      N = Nb,
       C = C,
       Nib = Nib,
       pc = pc,
@@ -223,18 +215,17 @@ grid.list.out <- list(grid=grid)
       df.long = df.long
     )
 
-
-
 # EBIRD -------------------------------------------------------------------
+#simple function for generating probabiligty of gridcell having any checklists that year
     probfun <-
-      function() {
-        prob = sample(
-          c(0, 1),
-          size = 1,
-          prob = c(1 - probChecklistInGrid, probChecklistInGrid)
-        )
-        return(prob)
-        }
+  function() {
+    prob = sample(
+      c(0, 1),
+      size = 1,
+      prob = c(1 - probChecklistInGrid, probChecklistInGrid)
+    )
+    return(prob)
+    }
 
 grid  <- sort(rep(1:G, T))
 years <- rep(1:T, G)
@@ -272,38 +263,146 @@ ebird <- bind_rows(tempdf, ebird)
 
 }
 ebird$checklistid <- 1:nrow(ebird)
-ebird <- ebird %>% arrange(gridcellid, year, checklistid) %>%
-  filter(!is.na(checklistid))
 
-# ## simulate num observers
-# ebird$nobs <-
 
+ebird <- ebird %>% full_join(grid.list.out %>% select(lat, lon, gridcellid)) %>%
+  filter(!is.na(gridcellid))
+
+# output ebird list
 ebird.list.out <- list(
   df.long = ebird,
-  N = ebird$N,
-  C = ebird$C,
-  nyear = T,
-  ngrid = G,
-  nroutes = M
+  N = reshape2::dcast(ebird, checklistid ~ year, value.var="N") %>%
+    column_to_rownames("checklistid"),
+  C = reshape2::dcast(ebird, checklistid ~ year, value.var="C") %>%
+    column_to_rownames("checklistid"),
+  nyear = length(unique(ebird$year)),
+  ngrid = length(unique(ebird$gridcellid)),
+  nMaxChecklistsInGrid = N
 )
 
+#
+# # Post-hoc spatial pattern  -----------------------------------------------
+# # if specified force simple spatial pattern on C
+# sp <- tolower(spatialpattern)
+# if(any(c("lon", "lat") %in% sp)){
+# tmp.ebird <- ebird.list.out$df.long %>%
+#   select(N, C, gridcellid, lat, lon, gridcellid) #%>%
+#   # full_join(grid.out %>% select(lat, lon, gridcellid))
+#
+# newcol=paste0(sp[1],".temp")
+#
+# tmp.ebird[newcol] <- abs(min(tmp.ebird$lat, na.rm=TRUE))+tmp.ebird$lat
+#
+# C.sp.ebird  <- round(tmp.ebird[newcol]*tmp.ebird$C/tmp.ebird$N)[,1]
+# C.sp.ebird[C.sp.ebird=="NaN"] <- 0
+# rm(tmp.ebird)
+# ebird.list.out$df.long$C.sp <- C.sp.ebird
+#
+# ## repeat for bbs
+# tmp.bbs <- bbs.list.out$df.long %>%
+#   select(N, C, gridcellid, year, site) %>%
+#   full_join(grid.out %>% select(lat, lon, gridcellid))
+#
+# newcol=paste0(sp[1],".temp")
+#
+# tmp.bbs[newcol] <- abs(min(tmp.bbs$lat, na.rm=TRUE))+tmp.bbs$lat
+#
+# C.sp.bbs  <- round(tmp.bbs[newcol]*tmp.bbs$C/tmp.bbs$N)[,1]
+# C.sp.bbs[C.sp.bbs=="NaN"] <- 0
+# bbs.list.out$df.long$C.sp <- C.sp.bbs
+# # rm(tmp.bbs)
+#
+# bbs.list.out$C.sp <- reshape2::dcast(bbs.list.out$df.long %>% distinct(site, year, C.sp), site ~ year, value.var="C.sp", fun=sum) %>%
+#   column_to_rownames("site")
+#
 
-if (show.plot) {
-  if (zip)
-    sub = "zero-inflated Poisson)"
-  else{
+
+# }# end spatial pattern impute
+#
+
+
+
+
+# PLOTS -------------------------------------------------------------------
+
+if (show.plot|!is.null(plot.dir)) {
+  if (zip){sub = "zero-inflated Poisson)"}  else{
     sub = "Poisson)"
   }
-  plot(density(ebird$N, na.rm = TRUE), main = paste0("Simulated eBird Data \n(", sub))
-  lines(density(ebird$C, na.rm = TRUE), col = "red")
-  legend("topright",
+  if(!is.null(plot.dir)){ fn=paste0(plot.dir,"/simdata.pdf")
+  pdf(fn)
+  }
+
+par(mfrow=c(2,1))
+  plot(density(bbs.list.out$df.long$N, na.rm = TRUE), main = paste0("Simulated BBS Data \n(", sub))
+  lines(density(bbs.list.out$df.long$C, na.rm = TRUE), col = "red")
+  # legend("topright",
+  #        c("N", "C"),
+  #        col = c("black", "red"),
+  #        lty = 1)
+
+  plot(density(ebird.list.out$df.long$N, na.rm = TRUE), main = paste0("Simulated eBird Data \n(", sub))
+  lines(density(ebird.list.out$df.long$C, na.rm = TRUE), col = "red")
+  legend("bottomleft",
          c("N", "C"),
          col = c("black", "red"),
          lty = 1)
-}
+  par(mfrow=c(1,1))
+
+if(!is.null(spatialpattern)){
+
+  sub2 = paste0(sub, "\n with linear gradient on ", spatialpattern[1])
+  par(mfrow=c(2,1))
+  plot(density(bbs.list.out$df.long$C.sp, na.rm = TRUE), main = paste0("Simulated BBS Data \n(", sub2))
+  lines(density(C, na.rm = TRUE), col = "red")
+  # legend("topright",
+  #        c("N", "C.gradient"),
+  #        col = c("black", "red"),
+  #        lty = 1)
+
+  plot(density(ebird.list.out$df.long$N, na.rm = TRUE), main = paste0("Simulated eBird Data \n(", sub2))
+  lines(density(ebird.list.out$df.long$C.sp, na.rm = TRUE), col = "red")
+  legend("topright",
+         c("N", "C w/gradient"),
+         col = c("black", "red"),
+         lty = 1)
+  # par(mfrow=c(1,1))
+
+  ## plot one year of data
+  tmpe=ebird.list.out$df.long[ebird.list.out$df.long$year==max(ebird.list.out$df.long$year, na.rm=TRUE),]
+  j=mean(abs(range(tmpe[[sp[1]]], na.rm=TRUE)/n_distinct(tmpe[[sp[1]]])))
+  plot(tmpe[[sp[1]]], tmpe$N,
+       main = paste0("Simulated eBird Data \n(", sub2),
+       xlab=sp[1], ylab="N")
+  points(tmpe[[sp[1]]]+j, tmpe$C.sp,col = "red")
+  # legend("topleft",
+         # c("N", "C w/gradient"),
+         # col = c("black", "red"),
+         # lty = 1)
+
+  tmpb=bbs.list.out$df.long[bbs.list.out$df.long$year==max(bbs.list.out$df.long$year, na.rm=TRUE),]
+  j=mean(abs(range(tmpb[[sp[1]]], na.rm=TRUE)/n_distinct(tmpb[[sp[1]]])))
+  plot(tmpb[[sp[1]]], tmpb$N,
+       main = paste0("Simulated BBS Data \n(", sub2),
+       xlab=sp[1], ylab="N")
+  points(tmpb[[sp[1]]]+j, tmpb$C.sp, col = "red")#jitter points
+  legend("topleft",
+         c("N", "C w/gradient"),
+         col = c("black", "red"),
+         lty = 1, fill = "white")
+
+  par(mfrow=c(1,1))
+
+
+if(!is.null(plot.dir)) dev.off(); browseURL(fn)
+} # end spatial plots
+} # end all plots
+
+
+
+
 
 # OUTPUT ALL DATA ---------------------------------------------------------
-
-return(list(bbs=bbs.list.out, ebird=ebird.list.out, grid=grid.list.out))
+return(list(bbs=bbs.list.out, ebird=ebird.list.out, grid=grid.out))
 
   } # END FUNCTION
