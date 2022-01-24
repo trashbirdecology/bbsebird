@@ -8,8 +8,10 @@ make_jags_list(
   dat,
   dat.names = NULL,
   drop.nas = FALSE,
+  max.C.ebird = 100,
   scale.vars = TRUE,
   dir.out,
+  dir.plots = NULL,
   fn.out = "jdat"
 )
 }
@@ -18,9 +20,13 @@ make_jags_list(
 
 \item{dat.names}{character string or vector of strings for names of input data objects. If not supplied, the function will guess whether the data is ebird, bbs, or grid.}
 
+\item{max.C.ebird}{if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.}
+
 \item{scale.vars}{Logical If TRUE will scale variables. This needs to be improved/checked.}
 
 \item{dir.out}{Directory within which the output list will be saved  as "jdat"}
+
+\item{dir.plots}{where to save density plots of counts}
 
 \item{fn.out}{Filename of the object output as a .RDS file}
 }
