@@ -17,10 +17,11 @@ for(i in seq_along(list)){
   nslice = dim(temp)[3] #num slices
   length = length(temp)
   # if all those are NA, then the object is a single
-  if(all(is.na(c(nrow, ncol, nslice))) & length==1){length=temp}
   if(is.null(nrow))nrow=NA
   if(is.null(ncol))ncol=NA
   if(is.null(nslice))nslice=NA
+  if(any(c("array", "data.frame", "tbl_df
+") %in% class)) length <- NA
 
   output[i,1] <- class
   output[i,2] <- length
@@ -34,6 +35,6 @@ if(is.null(dir.output)) dir.output <- "/"
 fn=paste0(dir.output,"jdat-structure" ,".csv")
 cat("saving data structure to file: ", fn)
 write.csv(output, fn)
-
+View(output)
 return(output)
 }
