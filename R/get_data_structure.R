@@ -42,6 +42,6 @@ if(is.null(dir.output)) dir.output <- "/"
 fn=paste0(dir.output,"jdat-structure" ,".csv")
 cat("saving data structure to file: ", fn)
 write.csv(output, fn)
-View(output)
+# View(output)
 return(output)
 }
