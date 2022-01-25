@@ -10,6 +10,8 @@ make_jags_list(
   max.C.ebird = 100,
   scale.vars = TRUE,
   dir.out,
+  jagam.args = list(bs = "ds", k = 20, family = "poisson", sp.prior = "log.uniform",
+    diagonalize = TRUE),
   fn.out = "jdat"
 )
 }
@@ -24,7 +26,11 @@ make_jags_list(
 
 \item{dir.out}{Directory within which the output list will be saved  as "jdat"}
 
-\item{fn.out}{Filename of the object output as a .RDS file}
+\item{jagam.args}{List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)}
+
+\item{fn.out}{Filename of the list object output as a .RDS file}
+
+\item{dir.models}{Location for where to store the GAM portion of the JAGS model}
 }
 \description{
 Munge and Output a List or List of Lists for Use in JAGS

@@ -1,8 +1,9 @@
 #' Get Data Structure of JAGS List Inputs
 #' @param list A list of named objects.
 #' @param dir.output If specified saves the resulting metadata table to file as .csv in this directory
-#' @export
-get_data_structure <- function(list, dir.output=NULL){
+#' @param fn.out If specified will save the resulting table in `dir.output` with filename `fn.out` and extension (".csv")
+#' NEEDS WORK
+get_data_structure <- function(list, dir.output=NULL, fn.out=NULL){
 
   ### NEED TO MAKE THS WORK FOR LIST OF LISTS........
 
@@ -44,10 +45,10 @@ rownames(output) <- names(list)
 output <- output[order(rownames(output)),]
 
 
-if(is.null(dir.output)) dir.output <- "/"
-fn=paste0(dir.output,"jdat-structure" ,".csv")
+if(!is.null(dir.output)){
+fn=paste0(dir.output, "/",fn.out,"-structure" ,".csv")
 cat("saving data structure to file: ", fn)
-write.csv(output, fn)
+write.csv(output, fn)}
 # View(output)
 return(output)
 }

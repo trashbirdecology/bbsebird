@@ -27,25 +27,6 @@ jdat <- import_jdat(dir.jags)
 ```
 
 # Step 1: Specify GAMs
-Specify the data to use to create basis functions
-```{r jagam-data}
-## grab data using BBS observations
-jagam.data <- 
-  data.frame(
-    lon=jdat$bbs$Xg$XY$X, 
-    lat=jdat$bbs$Xg$XY$X, 
-    Nb = 
-    )
-
-
-# Generate prior distributions for Poisson gam
-jagam.data <-
-  data.frame(
-    Nib = rep(N = jdat$bbs$Nib[, 1], length(jdat$bbs$lat)),
-    x = scale(jdat$bbs$lon),
-    y = scale(jdat$grid$lat)
-  )
-```
 
 Use \code{mgcv::jagam} to create the base model that should then be further edited for use in JAGS. 
 ```{r specify-gam-base}

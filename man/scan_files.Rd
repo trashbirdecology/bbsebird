@@ -6,7 +6,7 @@
 \usage{
 scan_files(
   dir.proj,
-  scan.for = c("jags", "ebird_filtered", "bbs_obs", "grid", "bbs_spatial",
+  scan.for = c("jdat", "jags", "ebird_filtered", "bbs_obs", "grid", "bbs_spatial",
     "ebird_spatial", "ebird_zf")
 )
 }

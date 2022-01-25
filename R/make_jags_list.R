@@ -5,7 +5,9 @@
 #' @param scale.vars Logical If TRUE will scale variables. This needs to be improved/checked.
 #' @param dir.out Directory within which the output list will be saved  as "jdat"
 #' @param max.C.ebird if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.
-#' @param fn.out Filename of the object output as a .RDS file
+#' @param fn.out Filename of the list object output as a .RDS file
+#' @param jagam.args List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)
+#' @param dir.models Location for where to store the GAM portion of the JAGS model
 #' @export make_jags_list
 make_jags_list <-
   function(dat,
@@ -13,8 +15,14 @@ make_jags_list <-
            max.C.ebird=100,
            scale.vars = TRUE,
            dir.out,
+           jagam.args = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform",
+                          diagonalize=TRUE
+                          ),
            fn.out = "jdat") {
     # Force object(s) in dat to a list, despite length
+
+    stopifnot(all(c("bs","k","family","sp.prior","diagonalize") %in% names(jagam.args)))
+
     if (!is.list(dat))
       dat <- list(dat)
     if (!is.null(dat.names))
@@ -37,6 +45,8 @@ make_jags_list <-
     }# end dat.names is null
 
 
+    # initialize am empty obj to store max values of C for use in jagam data
+    maxN <- data.frame()
 
 # Munge Data --------------------------------------------------------------
     for (i in seq_along(dat)) {
@@ -177,23 +187,29 @@ make_jags_list <-
           for (j in seq_along(objs)) {
             if (exists(objs[j])) {
               keep <- c(keep, j)
-              bbs.list[[j]] <- get(objs[j])
+              ebird.list[[j]] <- get(objs[j])
               names <- c(names, objs[j])
             }
           } # end j grid loop
           names(ebird.list) <- names[keep]
           rm(names, keep, j, objs)
 
+
+          ## Grab max values for ebird in each grid cell for use in JAGAM
+         maxN <- rbind(ebird %>%
+            group_by(gridcellid) %>%
+              filter(!is.na(c)) %>%
+            summarise(N.max = max(c, na.rm=TRUE)), maxN)
         }#end ebird i loop
 
 # BBS LOOP --------------------------------------------------------------------
 if (ind == "bbs") {
+        cat("building bbs objects..\n")
         bbs <- dat[[i]] %>%
           # units::drop_units() %>%
           arrange(gridcellid, rteno, year)
         if ("sf" %in% class(bbs)){bbs <- bbs %>% sf::st_drop_geometry()}
         names(bbs) <- tolower(names(bbs))
-        cat("building bbs objects..\n")
 
         ## Observed counts as 2D matrix (dims: rteno by year)
         Nb   <-
@@ -389,6 +405,12 @@ if (ind == "bbs") {
         names(bbs.list) <- names[keep]
         rm(names, keep, j, objs)
 
+        ## Grab max values for BBS in each grid cell for use in JAGAM
+        maxN <- rbind(bbs %>%
+                        group_by(gridcellid) %>%
+                        filter(!is.na(c)) %>%
+                        summarise(N.max = max(c, na.rm=TRUE)), maxN)
+
       }#end bbs loop
 
 
@@ -417,7 +439,7 @@ if (ind == "bbs") {
         for (j in seq_along(objs)) {
           if (exists(objs[j])) {
             keep <- c(keep, j)
-            bbs.list[[j]] <- get(objs[j])
+            grid.list[[j]] <- get(objs[j])
             names <- c(names, objs[j])
           }
         } # end j grid loop
@@ -426,10 +448,49 @@ if (ind == "bbs") {
       }#end grid loop
     }#end i loop for munging `dat`
 
+# Create JAGAM Data ---------------------------------------------------
+# grab max values of N across ebird and bbs for each grid cell
+maxN <- maxN %>% filter(N.max >= 0) %>%
+            full_join(data.frame(gridcellid = grid$gridcellid, N.max = 0)) %>% # ensure all grid cells are represented
+            group_by(gridcellid) %>%
+            summarise(N.max = max(N.max, na.rm=TRUE)) %>%
+            distinct() %>%
+            arrange(gridcellid)
+
+if(exists("grid.list")){
+jagam.data <- data.frame(
+  X=grid.list$XY$X,
+  Y=grid.list$XY$Y,
+  N=maxN$N.max
+  # N.test=dpois(1:length(grid.list$XY$Y), lambda=0.5)
+)
+# ensure k < num grid cells
+stopifnot(k < nrow(jagam.data))
+
+gam.fn <- paste0(dir.jags, "/jagam.jags")
+gam.list <-
+  mgcv::jagam(
+    formula = N ~ s(X, Y,
+                    bs=jagam.args[['bs']],
+                    k=as.integer(jagam.args[['k']])
+                    ),
+    file = gam.fn,
+    sp.prior = jagam.args[['sp.prior']],
+    data = jagam.data,
+    diagonalize = jagam.args[['diagonalize']],
+    family=tolower(tolower(jagam.args[['family']]))
+  )
+
+gam.list$jags.fn = gam.fn
+
+cat("GAM jags model specification saved:\n\t", gam.fn,"\n")
+}else{cat("grid data not provided. currently functionality of `make_jags_list()` requires this to be provided. \nfuture functionality will allow option to infer grid information from BBS or eBird data inuputs.","\n")}
+
+
 
 # Create Return Object ----------------------------------------------------
-objs <- c("ebird.list", "bbs.list", "grid.list")
-names <- c("ebird", "bbs", "grid")
+objs <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
+names <- c("ebird", "bbs", "grid", "gam")
 for (i in seq_along(objs)) {
   if (i == 1) {
     list.out <- list()
@@ -445,10 +506,9 @@ for (i in seq_along(objs)) {
 names(list.out) <- names[keep]
 list.out <- list.out[!sapply(list.out, is.null)]
 
-
 # Export to file ----------------------------------------------------------
 fn = paste0(paste0(dir.out, "/", fn.out, ".RDS"))
-cat("Saving output to file: ", fn)
+cat("Saving output to file: ", fn,"\n")
 saveRDS(list.out, file = fn)
 
 # export obj from function
