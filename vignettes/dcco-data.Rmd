@@ -90,15 +90,15 @@ This chunk will import existing specified files if they already exist for the pa
 ```{r scan-files, include=FALSE}
 ## If all files do not exist, then something is may have gone awry in a previous session and we should be safe and re-create everything.
 ### sometimes the sca_files doesn't want to work for no reason, just keep trying????
-list <- scan_files(dir.proj = dir.proj, scan.for = c("ebird_spatial", "bbs_spatial", "grid"))
+list <- scan_files(dir.proj = dir.proj, scan.for = c("ebird_spatial", "bbs_spatial", "grid", "jags"))
 list2env(list, .GlobalEnv) # unpack the list objects to environment
 rm(list)
 args.save <- unique(c(args.save, ls()))
 ```
 Set chunk evaluation conditions below. In the previous section, the `scan_files()` searched and imported the data specified in argument `scan.for`. If any of those files exist in .GlobalEnv, then the X.ind evaluation condition will be set to FALSE, thereby ignoring relevant data creating or munging chunks. 
 ```{r set-eval-conditions}
-j.temp <-ifelse(length(list.files(dir.jags, "jdat.rds|jdat.RDS"))>0, FALSE, TRUE)
-j.ind <- ifelse(!("jdat" %in% ls() &  j.temp)| (("jdat" %in% ls()) & overwrite.jdat), TRUE, FALSE)
+j.temp <- ifelse(length(list.files(dir.jags, "jdat.rds|jdat.RDS"))>0, FALSE, TRUE)
+j.ind <- ifelse(j.temp|(("jdat" %in% ls()) & overwrite.jdat) | (exists("jdat") & overwrite.jdat), TRUE, FALSE)
 b.ind <- ifelse(!("bbs_spatial"   %in% ls()) | ("bbs_spatial" %in% ls() & overwrite.bbs), TRUE, FALSE)
 e.ind <- ifelse(!("ebird_spatial" %in% ls()) | ("ebird_spatial"%in% ls() & overwrite.ebird), TRUE, FALSE)
 g.ind <- ifelse(!("grid" %in% ls()), TRUE, FALSE)
@@ -236,12 +236,16 @@ args.save <- junk_it(args.save, c("ebird_spatial", "bbs_spatial", "grid"))
 We need to munge the data just a little bit further for use in JAGS together. You may need to create/munge data further depending on model(s). 
 
 ```{r jdat-make, eval=j.ind}
-cat("creating a list of objects for use in MGCV & JAGS..")
+cat("creating a list of objects for use in JAGS...this will take a few to many minutes")
 ## may throw some random and non-intuitive notebook errors, try again if so.
 jdat <- make_jags_list(dat=list(ebird_spatial, grid, bbs_spatial), 
                        dir.out=dir.jags, 
                        max.C.ebird = 100)
 message("..done.")
+
+ebird_struc <- get_data_structure(list=jdat$ebird)
+bbs_struc <- get_data_structure(list=jdat$bbs)
+
 ```
 
 <!-- ```{r jdat-import} -->

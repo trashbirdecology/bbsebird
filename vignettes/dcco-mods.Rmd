@@ -2,8 +2,7 @@
 title: "specify and run models"
 params:
   dir.proj: "C:/users/jburnett/documents/github/dubcorms/vignettes/DCCO/Double-crested Cormorant_FL-GA_111km_2008-2019"
-  sim.data: FALSE
-  overwrite.jags.models: FALSE
+  overwrite.jags.models: TRUE
 ---
 
 ```{r setup}
@@ -24,29 +23,21 @@ dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
 
 ```{r retrieve-observations}
 # Import the data
-if(!sim.data){
-  jdat <- import_jdat(dir.jags)}
-# or simulate it
-if (sim.data){
-  jdat  <- sim_data(
-    ngrid = 55,
-    nroutes = 100,
-    nchecklistsmaxperyear = 55, #total MAX num of checklists allowed in study area each year.
-    maxgridperroute = 3,
-    nyear = 10,
-    plot.dir = dir.plots
-  )}
+jdat <- import_jdat(dir.jags)
 ```
 
 # Step 1: Specify GAMs
 Specify the data to use to create basis functions
 ```{r jagam-data}
+## grab data using BBS observations
+jagam.data <- 
+  data.frame(
+    lon=jdat$bbs$Xg$XY$X, 
+    lat=jdat$bbs$Xg$XY$X, 
+    Nb = 
+    )
 
-x=colSums(aperm(jdat$yBBS.grid[,,], c(2,1,3)))
 
-  
-
-# Join BBS data to grid cells
 # Generate prior distributions for Poisson gam
 jagam.data <-
   data.frame(

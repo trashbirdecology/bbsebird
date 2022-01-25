@@ -16,7 +16,7 @@ scan_files <- function(dir.proj,
 
   ## grid
   if("grid" %in% scan.for){
-        sd <- list.files(x[str_detect(x,"spatial")], full.names=TRUE)
+        sd <- tolower(list.files(x[str_detect(x,"spatial")], full.names=TRUE))
         s <- sd[str_detect(sd, "grid.rds")]
         if(length(s)>0){grid <- readRDS(s)
         }else{grid <- NULL; cat('No file named "grid.rds" found in dir: \n', sd, '\n')}
@@ -32,45 +32,43 @@ scan_files <- function(dir.proj,
 
   ## bbs obs over spatial grid
   if("bbs_spatial" %in% scan.for){
-      sd <- list.files(x[str_detect(x,"spatial")], full.names=TRUE)
+      sd <- tolower(list.files(x[str_detect(x,"spatial")], full.names=TRUE))
       s <- sd[str_detect(sd, "bbs_spatial")]
       if(length(s)>0){bbs_spatial <- readRDS(s)}else{bbs_spatial <- NULL; cat('No file named "bbs_spatial.rds" found in dir: \n', sd, '\n')}
     }else{bbs_spatial<-NULL}
 
   ## "Raw" (filtered) ebird observations data
   if("ebird_filtered" %in% scan.for){
-    sd <- list.files(x[str_detect(x,"ebird")], full.names=TRUE)
+    sd <- tolower(list.files(x[str_detect(x,"ebird")], full.names=TRUE))
       s <- sd[str_detect(sd, "ebird_filtered.rds")]
       if(length(s)>0){ebird_filtered <- readRDS(s)}else{ebird_filtered <- NULL; cat('No file named "TBA" found in dir: \n', sd, '\n')}
       }else{ebird_filtered<-NULL}
 
   ## Te zero-filled, filtered ebird observations data
   if("ebird_zf" %in% scan.for){
-    sd <- list.files(x[str_detect(x,"ebird")], full.names=TRUE)
+    sd <- tolower(list.files(x[str_detect(x,"ebird")], full.names=TRUE))
     s <- sd[str_detect(sd, "ebird_zf.rds")]
     if(length(s)>0){ebird_filtered <- readRDS(s)}else{ebird_filtered <- NULL; cat('No file named "TBA" found in dir: \n', sd, '\n')}
   }else{ebird_filtered<-NULL}
 
-
-
   ## "Raw" (nt the original data, but the filterd raw data) observations data
   if("bbs_obs" %in% scan.for){
-    sd <- list.files(x[str_detect(x,"bbs")], full.names=TRUE)
+    sd <- tolower(list.files(x[str_detect(x,"bbs")], full.names=TRUE))
       s <- sd[str_detect(sd, "bbs_obs.rds")]
       if(length(s)>0){bbs_obs <- readRDS(s)}else{bbs_obs <- NULL; cat('No file named "bbs_orig.rds" found in dir: \n', sd, '\n')}
     }else{bbs_obs<-NULL}
 
 
   # JAGS Data
-  if("jdat"%in% scan.for){
-     sd <- list.files(x[str_detect(x,"jags")], full.names=TRUE)
+  if(any(c("jdat", "jags")) %in% scan.for){
+     sd <- tolower(list.files(x[str_detect(x,"jags")], full.names=TRUE))
       s <- sd[str_detect(sd, "jdat.rds|jagsdata.rds")]
       if(length(s)>0){jdat <- readRDS(s)}else{jdat <- NULL; cat('No file named "jdat.rds or jagsdata.rds" found in dir: \n', sd, '\n')}
     }else{jdat<-NULL}
 
 
   # All potential objects
-  names <- c("ebird_filtered", "bbs_obs", "grid", "ebird_spatial","bbs_spatial")
+  names <- c("ebird_filtered", "bbs_obs", "grid", "ebird_spatial","bbs_spatial", "jdat", "jags", "jagsdata")
  # parse(eval(as.name(names[2]))
   # objs <- list(ebird_filtered, bbs_obs, grid, ebird_spatial,bbs_spatial)
 

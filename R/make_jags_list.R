@@ -36,8 +36,6 @@ make_jags_list <-
       names(dat) <- dat.names
     }# end dat.names is null
 
-    # Initialize empty objects in case they aren't filled later we can still recall them without asking ls() or exists("")
-    objs.bbs <- objs.grid <- objs.ebird <- NULL
 
 
 # Munge Data --------------------------------------------------------------
@@ -48,16 +46,14 @@ make_jags_list <-
 # EBIRD LOOP --------------------------------------------------------------
     if (ind == "ebird") {
           cat("building ebird objects..\n")
-          ebird <- dat[[i]] %>%
-            filter(C <= max.C.ebird)
-          if ("sf" %in% class(ebird)){ebird <- ebird %>% sf::st_drop_geometry()}
+          ebird <- dat[[i]]
           names(ebird) <- tolower(names(ebird))
+          if ("sf" %in% class(ebird)){ebird <- ebird %>% sf::st_drop_geometry()}
           ebird <- ebird %>%
+            filter(c <= max.C.ebird)  %>%
             # Drop unused variables
             select(-all_species_reported, -group_identifier) %>%
             arrange(gridcellid, checklist_id, year)
-
-
 
           ## Observed counts as 2D matrix (dims: checklist_id by year)
           Ne   <-
@@ -71,7 +67,6 @@ make_jags_list <-
             )
           Ne   <-
             Ne %>% select(sort(names(Ne))) # use select to ensure the colnames(years) are in order...
-
 
           nobs      <-
             make_mat(
@@ -156,46 +151,39 @@ make_jags_list <-
           idsGridsE <- sort(unique(temp.ebird$gridcellid))
           idsYearsE <- sort(unique(temp.ebird$year))
 
-          nCheckListsE <- length(idsChecklists)
-          nYearsE  <- length(idsYears)
-          nGridsE  <- length(idsGrids)
+          nCheckListsE <- length(idsChecklistsE)
+          nYearsE  <- length(idsYearsE)
+          nGridsE  <- length(idsGridsE)
 
 
           ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING
           objs <-
             c(
               "Xg", # grid cell level covariates (area, proportion route in cell)
+              "Xp",
               ## observed counts
               "nCheckListsE",
               "nYearsE",
               "nGridsE",
-              "Xp",
               "Ne",
-              "nGridsByRouteYear", # numb opf grids per rte/year
               "nMaxGrid", # max number of grids a route falls in across all years (indexing scalar)
-              "idsChecklists",
+              "idsChecklistsE",
               "idsGridsE",
-              "idsYearsE",
-              "idsGridsByRouteYear" # array [nroutes by nyear by nmaxgrid] values == grid cell ids
+              "idsYearsE"
             )
 
           ebird.list <- list()
           keep<-names<-NULL
           for (j in seq_along(objs)) {
-            if (j == 1) {
-              ebird.list <- list()
-              keep = NULL
-            }
             if (exists(objs[j])) {
               keep <- c(keep, j)
-              ebird.list[[j]] <- get(objs[j])
+              bbs.list[[j]] <- get(objs[j])
               names <- c(names, objs[j])
             }
           } # end j grid loop
-          names(ebird.list) <- names
-          rm(names, keep)
+          names(ebird.list) <- names[keep]
+          rm(names, keep, j, objs)
 
-          rm(i,j)
         }#end ebird i loop
 
 # BBS LOOP --------------------------------------------------------------------
@@ -219,6 +207,14 @@ if (ind == "bbs") {
           )
         Nb   <-
           Nb %>% select(sort(names(Nb))) # use select to ensure the colnames(years) are in order...
+
+        # Nib_gam : used as starting values for grid cells in gam
+        Nib_gam <- bbs %>%
+          group_by(gridcellid, year) %>%
+          summarise(Nib=sum(c)) %>%
+          ungroup()
+        Nib_gam.mat <- make_mat(Nib_gam, row="gridcellid", col="year", val = "Nib")
+
 
         # Calculate mean values for detection covariates (some were already done elsewhere -- need to add these to that location at some point)
         bbs <- bbs %>%
@@ -332,9 +328,9 @@ if (ind == "bbs") {
         idsGridsB <- sort(unique(temp.bbs$gridcellid))
         idsYearsB <- sort(unique(temp.bbs$year))
 
-        nRoutesB <- length(idsRoutes)
-        nYearsB  <- length(idsYears)
-        nGridsB  <- length(idsGrids)
+        nRoutesB <- length(idsRoutesB)
+        nYearsB  <- length(idsYearsB)
+        nGridsB  <- length(idsGridsB)
 
 
         nGridsByRouteYear <- temp.bbs %>%
@@ -357,7 +353,7 @@ if (ind == "bbs") {
           group_by(rteno, year) %>%
           mutate(ng = 1:n()) %>%
           arrange(gridcellid) %>%
-          acast(rteno~year~ng, value.var = "gridcellid")
+          reshape2::acast(rteno~year~ng, value.var = "gridcellid")
 
         ### IDENTIFY DESIRED BBS OBJS AS CHARACTER STRING
         objs <-
@@ -373,31 +369,25 @@ if (ind == "bbs") {
             "idsRoutesB",
             "idsYearsB",
             ##
-            "nRoutesByGridYear",
-            "nRoutesByYear",
+            "Nib_gam.mat",
+            "Nib_gam",
             ##
             "nGridsByRouteYear", # numb opf grids per rte/year
             "idsGridsByRouteYear", # array [nroutes by nyear by nmaxgrid] values == grid cell ids
             "nMaxGrid" # max number of grids a route falls in across all years (indexing scalar)
           )
-
+# objs
         bbs.list <- list()
         keep<-names<-NULL
         for (j in seq_along(objs)) {
-          if (j == 1) {
-            bbs.list <- list()
-            keep = NULL
-          }
           if (exists(objs[j])) {
             keep <- c(keep, j)
             bbs.list[[j]] <- get(objs[j])
             names <- c(names, objs[j])
           }
         } # end j grid loop
-        names(bbs.list) <- names
-        rm(names, keep)
-
-
+        names(bbs.list) <- names[keep]
+        rm(names, keep, j, objs)
 
       }#end bbs loop
 
@@ -425,21 +415,15 @@ if (ind == "bbs") {
         grid.list <- list()
         keep<-names<-NULL
         for (j in seq_along(objs)) {
-          if (j == 1) {
-            grid.list <- list()
-            keep = NULL
-          }
           if (exists(objs[j])) {
             keep <- c(keep, j)
-            grid.list[[j]] <- get(objs[j])
+            bbs.list[[j]] <- get(objs[j])
             names <- c(names, objs[j])
           }
         } # end j grid loop
-        names(grid.list) <- names
-        rm(names, keep)
+        names(grid.list) <- names[keep]
+        rm(names, keep, j, objs)
       }#end grid loop
-
-
     }#end i loop for munging `dat`
 
 
@@ -463,11 +447,11 @@ list.out <- list.out[!sapply(list.out, is.null)]
 
 
 # Export to file ----------------------------------------------------------
-    fn = paste0(paste0(dir.out, "/", fn.out, ".RDS"))
-    cat("Saving output to file: ", fn)
-    saveRDS(list.out, file = fn)
+fn = paste0(paste0(dir.out, "/", fn.out, ".RDS"))
+cat("Saving output to file: ", fn)
+saveRDS(list.out, file = fn)
 
-    # export obj from function
-    return(list.out)
+# export obj from function
+return(list.out)
 
   } # END FUN
