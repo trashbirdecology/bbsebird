@@ -43,7 +43,7 @@ knitr::opts_chunk$set(
 ```{r libraries, echo=TRUE}
 # unloadNamespace("dubcorms") # just a precaution to ensure we get most recent dev version of pkg
 unloadNamespace("dubcorms")
-devtools::install_github("trashbirdecology/dubcorms", force=FALSE)
+devtools::install_github("trashbirdecology/dubcorms", force=FALSE, dependencies = FALSE)## change to dependencies=TRUE when not in dev mode
 
 ### specify packages that we call often 
 pkgs <- c("dubcorms","bbsAssistant","ggplot2","reshape2",
@@ -237,36 +237,15 @@ We need to munge the data just a little bit further for use in JAGS together. Yo
 
 ```{r jdat-make, eval=j.ind}
 cat("creating a list of objects for use in JAGS...this will take a few to many minutes")
-## may throw some random and non-intuitive notebook errors, try again if so.
-jdat <- make_jags_list(dat=list(ebird_spatial, grid, bbs_spatial), 
+jdat <- make_jags_list(dat=list(ebird_spatial, bbs_spatial, grid), 
                        dir.out=dir.jags, 
-                       max.C.ebird = 100)
+                       max.C.ebird = 100, 
+                       scale.vars=TRUE
+                       )
+## if this function throws a non-intuitive error, try again. 
 message("..done.")
 
-ebird_struc <- get_data_structure(list=jdat$ebird)
-bbs_struc <- get_data_structure(list=jdat$bbs)
-
+# view expected data strucutre of jdat lists
+View(jdat$metadata)
 ```
 
-<!-- ```{r jdat-import} -->
-<!-- if(!exists("jdat")){ -->
-<!--   # jdat <- readRDS(paste0(dir.jags, "jdat.rds")) -->
-<!--   jdat <- import_jdat(dir.jags) -->
-<!-- } -->
-<!-- ``` -->
-
-<!-- View the contents and structure of `jdat` (currently needs work see FUN.r for details) -->
-<!-- ```{r jdat-structure} -->
-<!-- # jdat.struc <- get_data_structure(list=jdat, dir.output=dir.jags) -->
-<!-- # View the structure with one or more of the following: -->
-<!-- # View(jdat.struc) -->
-<!-- # kableExtra::kable(jdat.struc) -->
-<!-- # browseURL(paste0(dir.jags,"jdat-structure.csv")) -->
-<!-- # args.save <- junk_it(args.save, "jdat.struc") -->
-<!-- ``` -->
-<!-- Function `dubcorms::make_gam_list` creates a list of elements used in `mgcv::jagam` models. Accepts the eBird and BBS datasets.  -->
-<!-- ```{r make-gam-dat} -->
-<!-- # jagam.data <- make_gam_dat(dat = list(jdat, bbs_spatial), dir.out = dir.jags) -->
-<!-- # args.save <- junk_it(args.save, "jagam.data") -->
-<!-- ``` -->
-# END RUN

@@ -189,16 +189,16 @@ make_jags_list <-
             summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
          ## create the list of ebird elements
-        objs.in <- objs[objs %in% ls(envir = env)] %>% as.vector()
+        objs.in <- objs[objs %in% ls()] %>% as.vector()
         list.out <- vector(mode='list', length=length(objs.in))
          names(list.out) <- objs.in
          for (z in seq_along(objs.in)) {
-           new = eval(parse(text = objs.in[z]), envir = env)# this is necessary for some reason idk why
+           new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
            list.out[[objs.in[z]]] <- new
          }
          ebird.list <- list.out
          #remove all objects to be sure they arent put into other lists
-          rm(list=objs)
+          suppressWarnings(rm(list=objs))
         }#end ebird i loop
 
 # BBS LOOP --------------------------------------------------------------------
@@ -369,16 +369,16 @@ if (ind == "bbs") {
                         summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
         ## create the list of bbs elements
-        objs.in <- objs[objs %in% ls(envir = env)] %>% as.vector()
+        objs.in <- objs[objs %in% ls()] %>% as.vector()
         list.out <- vector(mode='list', length=length(objs.in))
         names(list.out) <- objs.in
         for (z in seq_along(objs.in)) {
-          new = eval(parse(text = objs.in[z]), envir = env)# this is necessary for some reason idk why
+          new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
           list.out[[objs.in[z]]] <- new
         }
         bbs.list <- list.out
         #remove all objects to be sure they arent put into other lists
-        rm(list=objs)
+        suppressWarnings(rm(list=objs))
 
 
 }#end bbs loop
@@ -403,16 +403,16 @@ if (ind == "bbs") {
         area <- grid$area
 
         ## create the list of grid elements
-        objs.in <- objs[objs %in% ls(envir = env)] %>% as.vector()
+        objs.in <- objs[objs %in% ls()] %>% as.vector()
         list.out <- vector(mode='list', length=length(objs.in))
         names(list.out) <- objs.in
         for (z in seq_along(objs.in)) {
-          new = eval(parse(text = objs.in[z]), envir = env)# this is necessary for some reason idk why
+          new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
           list.out[[objs.in[z]]] <- new
         }
         grid.list <- list.out
         #remove all objects to be sure they arent put into other lists
-      rm(list=objs)
+      suppressWarnings(rm(list=objs))
 
     }#end grid loop
 }#end i loop for munging `dat`
@@ -454,11 +454,6 @@ gam.list$jags.fn = gam.fn
 
 cat("GAM jags model specification saved:\n\t", gam.fn,"\n")
 }else{cat("grid data not provided. currently functionality of `make_jags_list()` requires this to be provided. \nfuture functionality will allow option to infer grid information from BBS or eBird data inuputs.","\n")}
-
-# Create table of object descriptions for ref -----------------------------
-# import the metadata for possible jdat contents
-jdat.contents <-data("jdat.contents", package="dubcorms")
-
 
 # Create Return Object ----------------------------------------------------
 objs.out <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
