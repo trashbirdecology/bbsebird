@@ -23,10 +23,9 @@ make_jags_list <-
 
     if (!is.list(dat))
       dat <- list(dat)
-    if (!is.null(dat.names))
-      names(dat) <- tolower(dat.names)
 
     # Name the list objects
+    dat.names<-NA
       for (i in 1:length(dat)) {
         ind <-  names(dat[[i]])
         if ("checklist_id" %in% ind)
