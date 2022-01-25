@@ -1,7 +1,6 @@
 #' Munge and Output a List or List of Lists for Use in JAGS
 #'
 #' @param dat a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS
-#' @param dat.names character string or vector of strings for names of input data objects. If not supplied, the function will guess whether the data is ebird, bbs, or grid.
 #' @param scale.vars Logical If TRUE will scale variables. This needs to be improved/checked.
 #' @param dir.out Directory within which the output list will be saved  as "jdat"
 #' @param max.C.ebird if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.
@@ -11,7 +10,6 @@
 #' @export make_jags_list
 make_jags_list <-
   function(dat,
-           dat.names = NULL,
            max.C.ebird=100,
            scale.vars = TRUE,
            dir.out,
@@ -29,7 +27,6 @@ make_jags_list <-
       names(dat) <- tolower(dat.names)
 
     # Name the list objects
-    if (is.null(dat.names)) {
       for (i in 1:length(dat)) {
         ind <-  names(dat[[i]])
         if ("checklist_id" %in% ind)
@@ -42,12 +39,29 @@ make_jags_list <-
           dat.names[i] <- "grid"
       }#end naming for loop
       names(dat) <- dat.names
-    }# end dat.names is null
 
 
     # initialize am empty obj to store max values of C for use in jagam data
     maxN <- data.frame()
 
+    # specify all the possible objects to go into a single list of listout
+    objs <-
+      c(
+        "C", # observec counts
+        "Xg", # grid cell level covariates (area, proportion route in cell)
+        "Xp", # site-level detection covariates
+        "nYears",
+        "idsYears",
+        "nSites",
+        "idsSites",
+        "nGrids",
+        "idsGrids",
+        "nGridsBySiteByYear",
+        "idsGridsbySiteYear",
+        "nMaxGrid", # max number of grids a route falls in across all years (indexing scalar)--only avail for BBS data
+        "XY", # centroid coords for grid cell
+        "area" # area of the grid cell (m^2 unless shapefiles changed..)
+      )
 # Munge Data --------------------------------------------------------------
     for (i in seq_along(dat)) {
       ind <-
@@ -66,7 +80,7 @@ make_jags_list <-
             arrange(gridcellid, checklist_id, year)
 
           ## Observed counts as 2D matrix (dims: checklist_id by year)
-          Ne   <-
+          C   <-
             make_mat(
               ebird %>%
                 # since we dont use grid cells here, drop where checklist_id==NA
@@ -75,8 +89,8 @@ make_jags_list <-
               col = "year",
               val = "c"
             )
-          Ne   <-
-            Ne %>% select(sort(names(Ne))) # use select to ensure the colnames(years) are in order...
+          C   <-
+            C %>% select(sort(names(C))) # use select to ensure the colnames(years) are in order...
 
           nobs      <-
             make_mat(
@@ -157,42 +171,16 @@ make_jags_list <-
           # Loop indexes for JAGS
           temp.ebird <-
             ebird %>% filter(!is.na(c)) # to ensure we remove the NA checklist_id
-          idsChecklistsE <- sort(unique(temp.ebird$checklist_id))
-          idsGridsE <- sort(unique(temp.ebird$gridcellid))
-          idsYearsE <- sort(unique(temp.ebird$year))
+          idsSites <- sort(unique(temp.ebird$checklist_id))
+          idsGrids <- sort(unique(temp.ebird$gridcellid))
+          idsYears <- sort(unique(temp.ebird$year))
 
-          nCheckListsE <- length(idsChecklistsE)
-          nYearsE  <- length(idsYearsE)
-          nGridsE  <- length(idsGridsE)
+          nSites <- length(idsSites)
+          nYears  <- length(idsYears)
+          nGrids  <- length(idsGrids)
 
 
-          ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING
-          objs <-
-            c(
-              "Xg", # grid cell level covariates (area, proportion route in cell)
-              "Xp",
-              ## observed counts
-              "nCheckListsE",
-              "nYearsE",
-              "nGridsE",
-              "Ne",
-              "nMaxGrid", # max number of grids a route falls in across all years (indexing scalar)
-              "idsChecklistsE",
-              "idsGridsE",
-              "idsYearsE"
-            )
-
-          ebird.list <- list()
-          keep<-names<-NULL
-          for (j in seq_along(objs)) {
-            if (exists(objs[j])) {
-              keep <- c(keep, j)
-              ebird.list[[j]] <- get(objs[j])
-              names <- c(names, objs[j])
-            }
-          } # end j grid loop
-          names(ebird.list) <- names[keep]
-          rm(names, keep, j, objs)
+        ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING
 
 
           ## Grab max values for ebird in each grid cell for use in JAGAM
@@ -200,6 +188,18 @@ make_jags_list <-
             group_by(gridcellid) %>%
               filter(!is.na(c)) %>%
             summarise(N.max = max(c, na.rm=TRUE)), maxN)
+
+         ## create the list of ebird elements
+        objs.in <- objs[objs %in% ls(envir = env)] %>% as.vector()
+        list.out <- vector(mode='list', length=length(objs.in))
+         names(list.out) <- objs.in
+         for (z in seq_along(objs.in)) {
+           new = eval(parse(text = objs.in[z]), envir = env)# this is necessary for some reason idk why
+           list.out[[objs.in[z]]] <- new
+         }
+         ebird.list <- list.out
+         #remove all objects to be sure they arent put into other lists
+          rm(list=objs)
         }#end ebird i loop
 
 # BBS LOOP --------------------------------------------------------------------
@@ -212,7 +212,7 @@ if (ind == "bbs") {
         names(bbs) <- tolower(names(bbs))
 
         ## Observed counts as 2D matrix (dims: rteno by year)
-        Nb   <-
+        C   <-
           make_mat(
             bbs %>%
               # since we dont use grid cells here, drop where rteno==NA
@@ -221,16 +221,8 @@ if (ind == "bbs") {
             col = "year",
             val = "c"
           )
-        Nb   <-
-          Nb %>% select(sort(names(Nb))) # use select to ensure the colnames(years) are in order...
-
-        # Nib_gam : used as starting values for grid cells in gam
-        Nib_gam <- bbs %>%
-          group_by(gridcellid, year) %>%
-          summarise(Nib=sum(c)) %>%
-          ungroup()
-        Nib_gam.mat <- make_mat(Nib_gam, row="gridcellid", col="year", val = "Nib")
-
+        C   <-
+          C %>% select(sort(names(C))) # use select to ensure the colnames(years) are in order...
 
         # Calculate mean values for detection covariates (some were already done elsewhere -- need to add these to that location at some point)
         bbs <- bbs %>%
@@ -340,22 +332,22 @@ if (ind == "bbs") {
         # Loop indexes for JAGS
         temp.bbs <-
           bbs %>% filter(!is.na(c)) # to ensure we remove the NA rteno
-        idsRoutesB <- sort(unique(temp.bbs$rteno))
-        idsGridsB <- sort(unique(temp.bbs$gridcellid))
-        idsYearsB <- sort(unique(temp.bbs$year))
+        idsSites <- sort(unique(temp.bbs$rteno))
+        idsGrids <- sort(unique(temp.bbs$gridcellid))
+        idsYears <- sort(unique(temp.bbs$year))
 
-        nRoutesB <- length(idsRoutesB)
-        nYearsB  <- length(idsYearsB)
-        nGridsB  <- length(idsGridsB)
+        nSites <- length(idsSites)
+        nYears  <- length(idsYears)
+        nGrids  <- length(idsGrids)
 
 
-        nGridsByRouteYear <- temp.bbs %>%
+        nGridsBySiteByYear <- temp.bbs %>%
           group_by(rteno, year) %>%
           mutate(n=n_distinct(gridcellid)) %>%
           distinct(n, year, rteno) %>%
           reshape2::acast(
             rteno~year, value.var = "n")
-        nGridsByRouteYear[is.na(nGridsByRouteYear)] <- 0
+        nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
 
 
 
@@ -364,46 +356,12 @@ if (ind == "bbs") {
                           distinct(gridcellid, rteno, year) %>%
                           group_by(rteno, year) %>%
                           summarise(n=n_distinct(gridcellid)))["n"]) # index used in JAGS
-        idsGridsByRouteYear <- temp.bbs %>%
+        idsGridsbySiteYear <- temp.bbs %>%
           distinct(gridcellid, rteno, year) %>%
           group_by(rteno, year) %>%
           mutate(ng = 1:n()) %>%
           arrange(gridcellid) %>%
           reshape2::acast(rteno~year~ng, value.var = "gridcellid")
-
-        ### IDENTIFY DESIRED BBS OBJS AS CHARACTER STRING
-        objs <-
-          c(
-            "Xg", # grid cell level covariates (area, proportion route in cell)
-            "Xp",
-            ## observed counts
-            "Nb",
-            "nRoutesB",
-            "nYearsB",
-            "nGridsB",
-            "idsGridsB",
-            "idsRoutesB",
-            "idsYearsB",
-            ##
-            "Nib_gam.mat",
-            "Nib_gam",
-            ##
-            "nGridsByRouteYear", # numb opf grids per rte/year
-            "idsGridsByRouteYear", # array [nroutes by nyear by nmaxgrid] values == grid cell ids
-            "nMaxGrid" # max number of grids a route falls in across all years (indexing scalar)
-          )
-# objs
-        bbs.list <- list()
-        keep<-names<-NULL
-        for (j in seq_along(objs)) {
-          if (exists(objs[j])) {
-            keep <- c(keep, j)
-            bbs.list[[j]] <- get(objs[j])
-            names <- c(names, objs[j])
-          }
-        } # end j grid loop
-        names(bbs.list) <- names[keep]
-        rm(names, keep, j, objs)
 
         ## Grab max values for BBS in each grid cell for use in JAGAM
         maxN <- rbind(bbs %>%
@@ -411,7 +369,20 @@ if (ind == "bbs") {
                         filter(!is.na(c)) %>%
                         summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
-      }#end bbs loop
+        ## create the list of bbs elements
+        objs.in <- objs[objs %in% ls(envir = env)] %>% as.vector()
+        list.out <- vector(mode='list', length=length(objs.in))
+        names(list.out) <- objs.in
+        for (z in seq_along(objs.in)) {
+          new = eval(parse(text = objs.in[z]), envir = env)# this is necessary for some reason idk why
+          list.out[[objs.in[z]]] <- new
+        }
+        bbs.list <- list.out
+        #remove all objects to be sure they arent put into other lists
+        rm(list=objs)
+
+
+}#end bbs loop
 
 
 # GRID LOOP ---------------------------------------------------------------
@@ -432,21 +403,20 @@ if (ind == "bbs") {
         XY <- data.frame(X=grid$cell.lon.centroid, Y=grid$cell.lat.centroid)
         area <- grid$area
 
+        ## create the list of grid elements
+        objs.in <- objs[objs %in% ls(envir = env)] %>% as.vector()
+        list.out <- vector(mode='list', length=length(objs.in))
+        names(list.out) <- objs.in
+        for (z in seq_along(objs.in)) {
+          new = eval(parse(text = objs.in[z]), envir = env)# this is necessary for some reason idk why
+          list.out[[objs.in[z]]] <- new
+        }
+        grid.list <- list.out
+        #remove all objects to be sure they arent put into other lists
+      rm(list=objs)
 
-        objs <- c("nGrids", "XY", "area")
-        grid.list <- list()
-        keep<-names<-NULL
-        for (j in seq_along(objs)) {
-          if (exists(objs[j])) {
-            keep <- c(keep, j)
-            grid.list[[j]] <- get(objs[j])
-            names <- c(names, objs[j])
-          }
-        } # end j grid loop
-        names(grid.list) <- names[keep]
-        rm(names, keep, j, objs)
-      }#end grid loop
-    }#end i loop for munging `dat`
+    }#end grid loop
+}#end i loop for munging `dat`
 
 # Create JAGAM Data ---------------------------------------------------
 # grab max values of N across ebird and bbs for each grid cell
@@ -465,9 +435,9 @@ jagam.data <- data.frame(
   # N.test=dpois(1:length(grid.list$XY$Y), lambda=0.5)
 )
 # ensure k < num grid cells
-stopifnot(k < nrow(jagam.data))
+stopifnot(jagam.args[['k']] < nrow(jagam.data))
 
-gam.fn <- paste0(dir.jags, "/jagam.jags")
+gam.fn <- paste0(dir.jags, "/jagam_UNEDITED.jags")
 gam.list <-
   mgcv::jagam(
     formula = N ~ s(X, Y,
@@ -486,19 +456,22 @@ gam.list$jags.fn = gam.fn
 cat("GAM jags model specification saved:\n\t", gam.fn,"\n")
 }else{cat("grid data not provided. currently functionality of `make_jags_list()` requires this to be provided. \nfuture functionality will allow option to infer grid information from BBS or eBird data inuputs.","\n")}
 
+# Create table of object descriptions for ref -----------------------------
+# import the metadata for possible jdat contents
+jdat.contents <-data("jdat.contents", package="dubcorms")
 
 
 # Create Return Object ----------------------------------------------------
-objs <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
+objs.out <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
 names <- c("ebird", "bbs", "grid", "gam")
-for (i in seq_along(objs)) {
+for (i in seq_along(objs.out)) {
   if (i == 1) {
     list.out <- list()
     keep = NULL
   }
-  if (exists(objs[i])) {
+  if (exists(objs.out[i])) {
     keep <- c(keep, i)
-    list.out[[i]] <- get(objs[i])
+    list.out[[i]] <- get(objs.out[i])
   }
 }
 
@@ -506,12 +479,15 @@ for (i in seq_along(objs)) {
 names(list.out) <- names[keep]
 list.out <- list.out[!sapply(list.out, is.null)]
 
+
+# Add metadata to list
+list.out$metadata <- data("jdat.contents", package="dubcorms")
+
 # Export to file ----------------------------------------------------------
 fn = paste0(paste0(dir.out, "/", fn.out, ".RDS"))
-cat("Saving output to file: ", fn,"\n")
+cat("Saving output to file. This may take a minute or two depending on size of eBird data:\n\t", fn)
 saveRDS(list.out, file = fn)
-
+cat("\t\t\t\t\t....done saving\n")
 # export obj from function
 return(list.out)
-
   } # END FUN

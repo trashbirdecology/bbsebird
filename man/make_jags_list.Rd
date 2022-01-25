@@ -6,7 +6,6 @@
 \usage{
 make_jags_list(
   dat,
-  dat.names = NULL,
   max.C.ebird = 100,
   scale.vars = TRUE,
   dir.out,
@@ -17,8 +16,6 @@ make_jags_list(
 }
 \arguments{
 \item{dat}{a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS}
-
-\item{dat.names}{character string or vector of strings for names of input data objects. If not supplied, the function will guess whether the data is ebird, bbs, or grid.}
 
 \item{max.C.ebird}{if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.}
 

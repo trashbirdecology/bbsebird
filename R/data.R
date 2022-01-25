@@ -117,4 +117,4 @@ jdat.contents <-
     row.names = c(NA,-18L)
   )
 
-usethis::use_data(jdat.contents, internal = TRUE)
+usethis::use_data(jdat.contents, internal = TRUE, overwrite=TRUE)
