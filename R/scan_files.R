@@ -7,7 +7,7 @@
 #' @export scan_files
 
 scan_files <- function(dir.proj,
-                       scan.for = c("jags","ebird_filtered", "bbs_obs", "grid", "bbs_spatial", "ebird_spatial", "ebird_zf")
+                       scan.for = c("jdat", "jags","ebird_filtered", "bbs_obs", "grid", "bbs_spatial", "ebird_spatial", "ebird_zf")
                        ){
 
   x = list.files(dir.proj, full.names=TRUE)
@@ -60,15 +60,15 @@ scan_files <- function(dir.proj,
 
 
   # JAGS Data
-  if(any(c("jdat", "jags")) %in% scan.for){
+  if(any(scan.for %in% c("jdat", "jags"))){
      sd <- tolower(list.files(x[str_detect(x,"jags")], full.names=TRUE))
       s <- sd[str_detect(sd, "jdat.rds|jagsdata.rds")]
       if(length(s)>0){jdat <- readRDS(s)}else{jdat <- NULL; cat('No file named "jdat.rds or jagsdata.rds" found in dir: \n', sd, '\n')}
     }else{jdat<-NULL}
 
 
-  # All potential objects
-  names <- c("ebird_filtered", "bbs_obs", "grid", "ebird_spatial","bbs_spatial", "jdat", "jags", "jagsdata")
+  # All potential objects created
+  names <- c("ebird_filtered", "bbs_obs", "grid", "ebird_spatial","bbs_spatial", "jdat")
  # parse(eval(as.name(names[2]))
   # objs <- list(ebird_filtered, bbs_obs, grid, ebird_spatial,bbs_spatial)
 
