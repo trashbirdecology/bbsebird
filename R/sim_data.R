@@ -16,7 +16,7 @@
 #' @param probChecklistInGrid probability of a gridcell in a given year having data(checklistid). Setting this below 1.0 allows for some cells to be without checklists each year
 #' @param show.plot if TRUE will print a density plot of N and C to device
 #' @param spatialpattern one of c("lat", "lon"). incorporates a very crude linear gradient into one spatial dimension of space in the true and observed counts (N, C)
-#' @export sim_bbs
+
 sim_data <-
   function(nyear = 20,
            nroutes = 100,

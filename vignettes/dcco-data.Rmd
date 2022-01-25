@@ -238,28 +238,31 @@ We need to munge the data just a little bit further for use in JAGS together. Yo
 ```{r jdat-make, eval=j.ind}
 cat("creating a list of objects for use in MGCV & JAGS..")
 ## may throw some random and non-intuitive notebook errors, try again if so.
-jdat <- make_jags_list(dat=list(ebird_spatial, grid, bbs_spatial), dir.out=dir.jags, max.C.ebird = 100)
+jdat <- make_jags_list(dat=list(ebird_spatial, grid, bbs_spatial), 
+                       dir.out=dir.jags, 
+                       max.C.ebird = 100)
 message("..done.")
 ```
 
-```{r jdat-import}
-if(!exists("jdat")){
-  # jdat <- readRDS(paste0(dir.jags, "jdat.rds"))
-  jdat <- import_jdat(dir.jags)
-}
-```
+<!-- ```{r jdat-import} -->
+<!-- if(!exists("jdat")){ -->
+<!--   # jdat <- readRDS(paste0(dir.jags, "jdat.rds")) -->
+<!--   jdat <- import_jdat(dir.jags) -->
+<!-- } -->
+<!-- ``` -->
 
-View the contents and structure of `jdat`
-```{r jdat-structure}
-jdat.struc <- get_data_structure(list=jdat, dir.output=dir.jags)
-# View the structure with one or more of the following:
-View(jdat.struc)
-# kableExtra::kable(jdat.struc)
-# browseURL(paste0(dir.jags,"jdat-structure.csv"))
-args.save <- junk_it(args.save, "jdat.struc")
-```
-Function `dubcorms::make_gam_list` creates a list of elements used in `mgcv::jagam` models. Accepts the eBird and BBS datasets. 
-```{r make-gam-dat}
-jagam.data <- make_gam_dat(dat = list(ebird_spatial, bbs_spatial), dir.out = dir.jags)
-args.save <- junk_it(args.save, "jagam.data")
-```
+<!-- View the contents and structure of `jdat` (currently needs work see FUN.r for details) -->
+<!-- ```{r jdat-structure} -->
+<!-- # jdat.struc <- get_data_structure(list=jdat, dir.output=dir.jags) -->
+<!-- # View the structure with one or more of the following: -->
+<!-- # View(jdat.struc) -->
+<!-- # kableExtra::kable(jdat.struc) -->
+<!-- # browseURL(paste0(dir.jags,"jdat-structure.csv")) -->
+<!-- # args.save <- junk_it(args.save, "jdat.struc") -->
+<!-- ``` -->
+<!-- Function `dubcorms::make_gam_list` creates a list of elements used in `mgcv::jagam` models. Accepts the eBird and BBS datasets.  -->
+<!-- ```{r make-gam-dat} -->
+<!-- # jagam.data <- make_gam_dat(dat = list(jdat, bbs_spatial), dir.out = dir.jags) -->
+<!-- # args.save <- junk_it(args.save, "jagam.data") -->
+<!-- ``` -->
+# END RUN

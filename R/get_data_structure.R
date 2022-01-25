@@ -1,9 +1,15 @@
 #' Get Data Structure of JAGS List Inputs
 #' @param list A list of named objects.
 #' @param dir.output If specified saves the resulting metadata table to file as .csv in this directory
-#' @export get_data_structure
+#' @export
 get_data_structure <- function(list, dir.output=NULL){
-for(i in seq_along(list)){
+
+  ### NEED TO MAKE THS WORK FOR LIST OF LISTS........
+
+
+  for(i in seq_along(list)){
+
+
   if(i == 1 ){
     output = matrix(nrow=max(seq_along(list)), ncol=5)
     colnames(output) = c("class", "length", "nrow", "ncol", "nslice")

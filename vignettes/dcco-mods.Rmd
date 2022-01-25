@@ -24,9 +24,10 @@ dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
 
 ```{r retrieve-observations}
 # Import the data
-if(!sim.data)
-  jdat <- import_jdat(dir.jags)
-if (sim.data)
+if(!sim.data){
+  jdat <- import_jdat(dir.jags)}
+# or simulate it
+if (sim.data){
   jdat  <- sim_data(
     ngrid = 55,
     nroutes = 100,
@@ -34,18 +35,24 @@ if (sim.data)
     maxgridperroute = 3,
     nyear = 10,
     plot.dir = dir.plots
-  )
+  )}
 ```
 
 # Step 1: Specify GAMs
 Specify the data to use to create basis functions
 ```{r jagam-data}
+
+x=colSums(aperm(jdat$yBBS.grid[,,], c(2,1,3)))
+
+  
+
+# Join BBS data to grid cells
 # Generate prior distributions for Poisson gam
-jagam.data <- 
+jagam.data <-
   data.frame(
     Nib = rep(N = jdat$bbs$Nib[, 1], length(jdat$bbs$lat)),
     x = scale(jdat$bbs$lon),
-    y = scale(jdat$bbs$lat)
+    y = scale(jdat$grid$lat)
   )
 ```
 
@@ -78,7 +85,7 @@ for(i in seq_along(ind)) {
   cat("JAGS model specification saved:\n",
       paste0(dir.models, mod.name, "_unedited.txt"),
       ".\n")
-  
+
 } #end gam loop
 
 ### gam data for JAGS
@@ -96,18 +103,18 @@ jags.data <-
     nGridsB = jdat$bbs$ngrid,#num grids in bbs data
 
     ## follows are matrices with dimensions [route/checklistid (Site) by year]
-    Cb = jdat$bbs$C, #counts on BBS 
+    Cb = jdat$bbs$C, #counts on BBS
     Ce = jdat$ebird$C, #counts on eBird
     pc = jdat$bbs$pc,#cars (bbs)
     pn = jdat$bbs$pn,#noise (bbs)
     pw = jdat$bbs$pw,#wind (bbs)
     pf = jdat$bbs$pf,#obs first yr (bbs)
     ## follows are vectors with dimensions == nYears
-    nRoutesByYear = , 
+    nRoutesByYear = ,
     ## follow are vectors with dimensions == nGrid
-    area = jdat$bbs$area,#gridcell area 
+    area = jdat$bbs$area,#gridcell area
     hab1 = jdat$bbs$hab1,#made up covar
-    hab2 = jdat$bbs$hab2,#made up covar 
+    hab2 = jdat$bbs$hab2,#made up covar
     ## follows are matrices with dimensions [site by grid]
     prop = jdat$bbs$prop,#proportion route in cell
     ## follows are data for the GAM
@@ -140,7 +147,7 @@ inits <- make_inits_list(myinits, nc)
 ### Parameters monitored
 ```{r set-params} 
 ### must not name `params` b/c will conflict with YAML parameters
-params.monitor <- c("lambda", "nu",  "Nb", "pBBS")
+params.monitor <- c("lambda", "nu",  "Nb", "pB")
 ```
 
 ## Step 2b: Specify Model(s)
@@ -198,14 +205,14 @@ mod <- "model{
 ####################################################
 for(t in 1:nYearsB){
   for(s in 1:nSitesB){
-    Cb[s,t] ~ dpois(lambda[s]*pBBS[s,t])
+    Cb[s,t] ~ dpois(lambda[s]*pB[s,t])
   } # end data model s
 } # end data model t
 
   
 for(t in 1:nYearsB){
   for(s in 1:nSitesB){
-    logit(pBBS[s,t]) <- alpha_pb + 
+    logit(pB[s,t]) <- alpha_pb + 
                         beta_pf * pf[s,t] + 
                         beta_pw * pw[s,t]
   } # end data model s
@@ -262,14 +269,14 @@ mod <- "model{
 ####################################################
 for(t in 1:nYearsB){
   for(s in 1:nSitesB){
-    Cb[s,t] ~ dpois(lambda[s]*pBBS[s,t])
+    Cb[s,t] ~ dpois(lambda[s]*pB[s,t])
   } # end data model s
 } # end data model t
 
   
 for(t in 1:nYearsB){
   for(s in 1:nSitesB){
-    logit(pBBS[s,t]) <- alpha_pb + 
+    logit(pB[s,t]) <- alpha_pb + 
                         beta_pf * pf[s,t] + 
                         beta_pw * pw[s,t]
   } # end data model s
