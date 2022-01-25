@@ -481,7 +481,7 @@ list.out <- list.out[!sapply(list.out, is.null)]
 
 
 # Add metadata to list
-list.out$metadata <- data("jdat.contents", package="dubcorms")
+list.out$metadata <- dubcorms:::jdat.contents
 
 # Export to file ----------------------------------------------------------
 fn = paste0(paste0(dir.out, "/", fn.out, ".RDS"))
