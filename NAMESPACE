@@ -3,7 +3,6 @@
 export(.get_mode)
 export(.time_to_decimal)
 export(.trim)
-export(convert_cols)
 export(dir_spec)
 export(eval_params)
 export(filter_ebird_data)

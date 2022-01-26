@@ -2,7 +2,7 @@
 % Please edit documentation in R/dir_spec.R
 \name{dir_spec}
 \alias{dir_spec}
-\title{Specify input and output directories.}
+\title{Specify Input/Output Directories For Project}
 \usage{
 dir_spec(dir.orig.data, dir.proj = NULL, subdir.proj = NULL)
 }
