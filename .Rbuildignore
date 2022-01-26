@@ -16,4 +16,3 @@ Makefile
 ^README\.md$
 ^/vignettes$
 ^LICENSE\.md$
-vignettes/

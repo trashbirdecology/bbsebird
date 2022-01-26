@@ -1,4 +1,4 @@
-#' Specify input and output directories.
+#' Specify Input/Output Directories For Project
 #'
 #' @description  Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with `list2env()` to assign directories to desired environment (typically .GlobalEnv)
 #' @param dir.orig.data Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.

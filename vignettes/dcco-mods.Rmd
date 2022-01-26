@@ -1,5 +1,10 @@
 ---
-title: "specify and run models"
+title: "N-Mix Models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 params:
   dir.proj: "C:/users/jburnett/documents/github/dubcorms/vignettes/DCCO/Double-crested Cormorant_FL-GA_111km_2008-2019"
   overwrite.jags.models: TRUE
@@ -20,78 +25,17 @@ dir.plots <- paste0(dir.proj, "/plots")
 dir.models <- paste0(dir.jags, "/models")
 dir.exists(dir.jags); dir.exists(dir.plots); dir.exists(dir.models)
 ```
-
+# Step 1: Import  and Munge Data for Use in JAGS
+## Import 
 ```{r retrieve-observations}
 # Import the data
 jdat <- import_jdat(dir.jags)
 ```
+## Grab relevant data for model(s)
+```{r jags-data-list}
+jdat %>% names()
 
-# Step 1: Specify GAMs
 
-Use \code{mgcv::jagam} to create the base model that should then be further edited for use in JAGS. 
-```{r specify-gam-base}
-# ind <- names(jdat)
-ind <- "bbs"
-jagam.mods <- rep(list(NA), length(ind))
-names(jagam.mods) <- ind
-for(i in seq_along(ind)) {
-  mod.name <-  paste0("/jagam_", ind[i])
-  mod.fn   <- paste0(dir.models, mod.name, "_unedited.txt")
-  #write JAGAM model to file
-  jagam.mods[[i]] <-
-    mgcv::jagam(
-      Nib ~ s(
-        x,
-        y,
-        k = 20,
-        ## need to fix to ensure always less than ngrid cells but still high
-        bs = 'ds',
-        m = c(1, 0.5)
-      ),
-      sp.prior = "log.uniform",
-      data = jagam.data,
-      family = "poisson",
-      file = mod.fn,
-      diagonalize = TRUE
-    )
-  cat("JAGS model specification saved:\n",
-      paste0(dir.models, mod.name, "_unedited.txt"),
-      ".\n")
-
-} #end gam loop
-
-### gam data for JAGS
-jags.data <-
-  list(
-    ## follows are integers
-    nSitesB = dim(jdat$bbs$C)[1],#num routes bbs
-    nYearsB = dim(jdat$bbs$C)[2],#num years bbs
-    nGridsB = jdat$bbs$ngrid,#num grids in bbs data
-    nSitesE = dim(jdat$ebird$C)[1],#num checklists ebird
-    nYearsE = dim(jdat$ebird$C)[2],#num years ebird
-    nGridsE = jdat$ebird$ngrid,#num grids in ebird data
-    nMaxChecklists = jdat$ebird$nMaxChecklistsInGrid,#num routes bbs
-    nYearsB = dim(jdat$bbs$C)[2],#num years bbs
-    nGridsB = jdat$bbs$ngrid,#num grids in bbs data
-
-    ## follows are matrices with dimensions [route/checklistid (Site) by year]
-    Cb = jdat$bbs$C, #counts on BBS
-    Ce = jdat$ebird$C, #counts on eBird
-    pc = jdat$bbs$pc,#cars (bbs)
-    pn = jdat$bbs$pn,#noise (bbs)
-    pw = jdat$bbs$pw,#wind (bbs)
-    pf = jdat$bbs$pf,#obs first yr (bbs)
-    ## follows are vectors with dimensions == nYears
-    nRoutesByYear = ,
-    ## follow are vectors with dimensions == nGrid
-    area = jdat$bbs$area,#gridcell area
-    hab1 = jdat$bbs$hab1,#made up covar
-    hab2 = jdat$bbs$hab2,#made up covar
-    ## follows are matrices with dimensions [site by grid]
-    prop = jdat$bbs$prop,#proportion route in cell
-    ## follows are data for the GAM
-    b = jagam.mods$bbs$jags.data$X#dims nGRidsB by #basis functions/knots
-  )
 ```
 
 # Step 2: Specify HM

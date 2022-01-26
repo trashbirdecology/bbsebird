@@ -41,11 +41,11 @@ clean_zf <- function(ebd_zf){
 
 
 # convert_cols  --------------------------------------------------------
-#' @title Convert columns
-#' @description Converts columns classes based on names for the bbs and ebird data
+#' @title Convert Column Types and Names
+#' @description Converts columns classes based to ensure proper integration of eBird and BBS data
 #' @param x The data frame with one or more columns.
 #' @keywords internal
-#' @export
+#' @noRd
 convert_cols <- function(x){
 
   ## numeric
@@ -113,8 +113,8 @@ se <- function(x){
   sd(x)/sqrt(length(x))
 }
 
-
-
+#' Force a AOU Numbers into Integer
+#' Used very specifically as an internal function when munging BBS data.
 #' @keywords internal
 #' @noRd
 make.integer <- function(x, var=c("AOU", "aou")){
