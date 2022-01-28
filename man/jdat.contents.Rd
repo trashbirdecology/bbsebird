@@ -3,7 +3,7 @@
 \docType{data}
 \name{jdat.contents}
 \alias{jdat.contents}
-\title{Descriptions of JDAT Contents}
+\title{Species Lookup Table for BBS and eBird Data}
 \format{
 A data frame
 \describe{
@@ -18,6 +18,11 @@ A data frame
 jdat.contents
 }
 \description{
+\describe{
+\item{}{}
+}
+}
+\details{
 Descriptions of JDAT Contents
 }
 \keyword{datasets}

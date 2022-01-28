@@ -4,7 +4,7 @@
 \alias{make_ebird_spatial}
 \title{Create an SF object for eBird Observations}
 \usage{
-make_ebird_spatial(df, crs.target, grid = NULL)
+make_ebird_spatial(df, crs.target, grid = NULL, dir.out, overwrite = FALSE)
 }
 \arguments{
 \item{df}{A data frame with columns c(latitude, longitude) and optional attributes (columns).}

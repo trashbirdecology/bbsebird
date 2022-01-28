@@ -6,9 +6,9 @@
 \usage{
 id_ebird_files(
   dir.ebird.in,
+  dir.ebird.out = NULL,
   mmyyyy = "nov-2021",
-  species = "doccor",
-  country.code.identifier = "iso2c",
+  species.abbr = "doccor",
   get.full.data = FALSE,
   states.ind = NULL
 )
@@ -16,15 +16,17 @@ id_ebird_files(
 \arguments{
 \item{dir.ebird.in}{Directory for where the ebird data are stored.}
 
+\item{dir.ebird.out}{Location of where to search for existing, created .rds files}
+
 \item{mmyyyy}{The month (mm) and year (yyyy) of the ebird dataset you wish to use. Suggested to use most recent on file.}
 
-\item{species}{Character vector comprising species identifiers.}
+\item{species.abbr}{Character vector comprising species identifiers for filenames.}
 
-\item{country.code.identifier}{Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c}
-
-\item{get.full.data}{Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and regions}
+\item{get.full.data}{Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and e.regions}
 
 \item{states.ind}{one or more two-letter state codes}
+
+\item{country.code.identifier}{Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c}
 }
 \description{
 Identify and Decompress Relevant eBird Files for Downstream Importing and Munging

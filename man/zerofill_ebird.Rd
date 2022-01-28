@@ -6,7 +6,6 @@
 \usage{
 zerofill_ebird(
   myList,
-  dir.out,
   overwrite = FALSE,
   keep.orig = TRUE,
   cols.remove = c("SUBSPECIES_COMMON NAME", "TAXONOMIC_ORDER", "LAST_EDITED_DATE",

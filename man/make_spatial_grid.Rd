@@ -7,9 +7,11 @@
 make_spatial_grid(
   dir.out,
   overwrite = TRUE,
+  countries = c("US", "CA"),
   states = NULL,
-  countries = c("USA", "CAN", "CA", "United States", "Canada",
-    "United States of America")
+  map.view = c("static", "interactive"),
+  crs.target = 4326,
+  hexagonal = TRUE
 )
 }
 \arguments{
@@ -17,9 +19,9 @@ make_spatial_grid(
 
 \item{overwrite}{TRUE will overwrite existing \code{grid.rds} in \code{dir.out}}
 
-\item{states}{Vector of states to which the spatial grid will be clipped.}
+\item{countries}{Vector of countries. Defaults to a base map of USA and CAN, unless arg \code{states} is provided. If arg \code{states} is provided, this argument will be ignored. Must be specified using ISO-A2}
 
-\item{countries}{Vector of countries. Defaults to a base map of USA and CAN, unless arg \code{states} is provided.}
+\item{states}{Vector of states to which the spatial grid will be clipped. Must be specified using ISO 3166-2 (see \url{https://en.wikipedia.org/wiki/ISO_3166-2})}
 }
 \description{
 Create a Spatial Sampling Grid

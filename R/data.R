@@ -129,39 +129,42 @@ jdat.contents <-
   )
 
 
-usethis::use_data(jdat.contents, internal = TRUE, overwrite=TRUE)
+usethis::use_data(jdat.contents, internal = FALSE, overwrite=TRUE)
 
-# REGION CODES ------------------------------------------------------------
-#' Lookup Table for ISO Codes
+#' # REGION CODES ------------------------------------------------------------
+#' #' Lookup Table for ISO Codes
+#' #'
+#' #'
+#' #' @importFrom stringr str_detect
+#' #' @importFrom dplyr select filter
+#' #' @format A data frame
+#' library(dplyr)
 #'
-#' @format A data frame
-library(dplyr)
-
-# grab ebird region codes
-ebird.codes <- auk::ebird_states %>%
-  rename()
-
-# grab bbs region codes
-bbs.codes <- bbsAssistant::region_codes %>%
-  filter(!str_detect())
-setdiff(tolower(bbs.codes$State),toupper(iso.codes$name))
-
-iso.codes <- rnaturalearth::ne_states() %>%
-  as.data.frame() %>%
-  # tibble::column_to_rownames(name_en) %>%
-  select(name_en, iso_3166_2, iso_a2, , name_fr, name_es)
-str(iso.codes$iso_3166_2)
-str(iso.codes$iso_a2)
-str(auk::ebird_states$country_code)
-# Add a column for eBird file identification
+#' # grab ebird region codes
+#' ebird.codes <- auk::ebird_states %>%
+#'   rename()
+#'
+#' # grab bbs region codes
+#' bbs.codes <- bbsAssistant::region_codes %>%
+#'   dplyr::filter(!stringr::str_detect())
+#' setdiff(tolower(bbs.codes$State),toupper(iso.codes$name))
+#'
+#' iso.codes <- rnaturalearth::ne_states() %>%
+#'   as.data.frame() %>%
+#'   # tibble::column_to_rownames(name_en) %>%
+#'   dplyr::select(name_en, iso_3166_2, iso_a2, , name_fr, name_es)
+#' str(iso.codes$iso_3166_2)
+#' str(iso.codes$iso_a2)
+#' str(auk::ebird_states$country_code)
+#' # Add a column for eBird file identification
 
 
 
 
 # Add a column for BBS data subsetting
-region.codes <- iso.codes
+# region.codes <- iso.codes
 
-usethis::use_data(region.codes, internal = FALSE, overwrite=TRUE)
+# usethis::use_data(region.codes, internal = FALSE, overwrite=TRUE)
 # END DATA ----------------------------------------------------------------
 
 

@@ -4,12 +4,12 @@
 \alias{proj.shorthand}
 \title{Auto generate a subdirectory name based on project parameters}
 \usage{
-\method{proj}{shorthand}(species, states, grid.size, year.range)
+\method{proj}{shorthand}(species, regions, grid.size, year.range)
 }
 \arguments{
-\item{species}{list of species names. will use the longest value as the name}
+\item{species}{string of species names using ISO-366-2}
 
-\item{states}{list of state/province names. will use the shortest values in the name}
+\item{regions}{string of countries or states}
 
 \item{year.range}{Vector of years. will take the min and max value}
 }

@@ -1,14 +1,47 @@
-#' @param dir.orig.data
-#'
-#' @export#'
+#' @title My big fkn fun
+#' @description  tba
+#' @param species  tba
+#' @param species.abbr  tba
+#' @param year.range  tba
+#' @param base.julian.date  tba
+#' @param crs.target  tba
+#' @param get.sunlight  tba
+#' @param countries  tba
+#' @param states  tba
+#' @param dir.proj  tba
+#' @param dir.orig.data  tba
+#' @param grid.size  tba
+#' @param overwrite.grid  tba
+#' @param hexagonal  tba
+#' @param usgs.layer  tba
+#' @param cws.layer  tba
+#' @param overwrite.bbs  tba
+#' @param max.C.ebird  tba
+#' @param remove.bbs.obs  tba
+#' @param max.effort.km  tba
+#' @param max.num.observers  tba
+#' @param max.effort.mins  tba
+#' @param complete.checklists.only  tba
+#' @param ebird.protocol  tba
+#' @param min.yday  tba
+#' @param max.yday  tba
+#' @param mmyyyy  tba
+#' @param jagam.args  tba
+#' @param scale.vars  tba
+#' @importFrom lubridate hms ymd
+#' @importFrom bbsAssistant grab_bbs_data munge_bbs_data
+#' @importFrom dplyr select filter group_by ungroup
+#' @importFrom stringr str_detect
+#' @importFrom mapview mapview
+#' @export my_big_fucking_function
 my_big_fucking_function <- function(
   # REQUIRED ARGUMENTS
   dir.orig.data, # directory with subdirectories /bbs/ and /ebird/, within which the BBS route shapefiles and eBird data are stored.
   # OPTIONAL ARGUMENTS
   #general arguments
+  dir.proj     = NULL, # project directory. If NULL will specify and create a project directory within the current working directory. A single primary directory is made for each species within which new directories comprise combinations of years/spatial extent/etc. are housed.
   species      = c("Double-crested Cormorant", "Nannopterum auritum"),
   species.abbr = c("DCCO", "doccor"), # call all the variations especially those that appear int eh EBIRD dwnloaded files
-  dir.proj     = NULL, # project directory. If NULL will specify and create a project directory within the current working directory. A single primary directory is made for each species within which new directories comprise combinations of years/spatial extent/etc. are housed.
   countries    = c("US", "CA"), ## string of  countries Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
   states       = NULL, ## string of  states/provinces/territories. Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
   year.range   = 2008:2019,
@@ -34,7 +67,6 @@ my_big_fucking_function <- function(
     ebird.protocol = c("Traveling", "Stationary"),
     min.yday = 91,
     max.yday = 245,
-    complete.only=TRUE,
     mmyyyy = "sep-2021", # the month and year of the eBird data downloads on file
   #JAGS: arguments for customizing the resulting JAGS data list
    jagam.args = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform", diagonalize=TRUE),
@@ -45,7 +77,7 @@ my_big_fucking_function <- function(
 # TEST THE ARGUMENTS  ---------------------------------------------------------
 ### need to add up front checks (e.g., stop if not integer, or character, or if states are n the preapproved list (whch I still need to create...))
 ### add a bunch of stopif nots across a loop of the logicals or assertthat
-  temp=c("complete.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
+  temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
   for(i in seq_along(temp))assertthat::assert_that(is.logical(eval(parse(text=temp[i]))), msg = paste("argument ", temp[i],"must be a logical."))
   temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
          "grid.size", "crs.target","year.range")
@@ -127,7 +159,7 @@ ebird <- munge_ebird_data(
         protocol = ebird.protocol,
         species = c(species, species.abbr),
         max.num.observers = max.num.observers,
-        complete.only=complete.only,
+        complete.only=complete.checklists.only,
         years=year.range
       )
 

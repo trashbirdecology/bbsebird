@@ -6,24 +6,23 @@
 \usage{
 make_jags_list(
   dat,
+  jagam.args,
   max.C.ebird = 100,
   scale.vars = TRUE,
   dir.out,
-  jagam.args = list(bs = "ds", k = 20, family = "poisson", sp.prior = "log.uniform",
-    diagonalize = TRUE),
   fn.out = "jdat"
 )
 }
 \arguments{
 \item{dat}{a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS}
 
+\item{jagam.args}{List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)}
+
 \item{max.C.ebird}{if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.}
 
 \item{scale.vars}{Logical If TRUE will scale variables. This needs to be improved/checked.}
 
 \item{dir.out}{Directory within which the output list will be saved  as "jdat"}
-
-\item{jagam.args}{List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)}
 
 \item{fn.out}{Filename of the list object output as a .RDS file}
 
