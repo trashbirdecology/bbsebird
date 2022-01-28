@@ -7,7 +7,6 @@
 zerofill_ebird(
   myList,
   overwrite = FALSE,
-  keep.orig = TRUE,
   cols.remove = c("SUBSPECIES_COMMON NAME", "TAXONOMIC_ORDER", "LAST_EDITED_DATE",
     "CATEGORY", "APPROVED", "REVIEWED", "SPECIES_COMMENTS", "...48", "HAS_MEDIA",
     "REASON", "TRIP_COMMENTS")
@@ -15,8 +14,6 @@ zerofill_ebird(
 }
 \arguments{
 \item{myList}{A list containing two named data frames, c("observations", "sampling"). This object is the result of \code{filter_ebird_data()}.}
-
-\item{keep.orig}{Logical. If FALSE will delete the original object, myList, from memory.}
 
 \item{cols.remove}{A vector of column names to be excluded from the output file.}
 

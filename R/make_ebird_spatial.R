@@ -6,7 +6,7 @@
 #' @param grid  a spatial grid over which the eBird data will be overlaid.
 #' @export
 make_ebird_spatial <- function(df, crs.target, grid = NULL, dir.out, overwrite=FALSE) {
-browser()
+
   # first, if overwrite is false and this file exists. import and return asap.
   f=paste0(dir.out, "ebird_spatial.rds")
   if(file.exists(f) & !overwrite){

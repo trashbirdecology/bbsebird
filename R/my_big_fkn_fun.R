@@ -106,7 +106,7 @@ grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           crs.target=crs.target
                           )
 
-mapview::mapview(grid) # interactive, openstreetmap
+mapview::mapview(grid, main="TEST") # interactive, openstreetmap
 
 # BBS Data ----------------------------------------------------------------
 fns.bbs.in <-  list.files(dirs$dir.bbs.out, pattern = "bbs_obs.rds",recursive = TRUE, full.names = TRUE)
@@ -174,7 +174,6 @@ jdat <- make_jags_list(dat=list(ebird_spatial, bbs_spatial, grid),
                        scale.vars=scale.vars,
                        jagam.args = jagam.args
                        )
-
 
 # END FUN -----------------------------------------------------------------
 }#END FUNCTION

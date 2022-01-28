@@ -3,14 +3,12 @@
 #' Creates a zero-filled data object comprising the eBird observations and sampling events data supplied.
 #'
 #' @param myList A list containing two named data frames, c("observations", "sampling"). This object is the result of \code{filter_ebird_data()}.
-#' @param keep.orig Logical. If FALSE will delete the original object, myList, from memory.
 #' @param cols.remove A vector of column names to be excluded from the output file.
 #' @param cols.to.lowercase Logical. If TRUE will export a data frame where all colnames are in lowercase. Capitalization does not matter.
 #' @export
 zerofill_ebird <-
   function(myList,
            overwrite=FALSE,
-           keep.orig = TRUE,
            cols.remove = c(
              "SUBSPECIES_COMMON NAME",
              "TAXONOMIC_ORDER",
@@ -50,8 +48,8 @@ zerofill_ebird <-
     myList$sampling <- myList$sampling %>%
       dplyr::filter(sampling_event_identifier %in% events.zeroes.to.add)
 ## This should already be done in filter_ebird_data()--fpr some reason time wasn't working but needs to be double checked
-myList$observations <- convert_cols(myList$observations)
-myList$sampling     <- convert_cols(myList$sampling)
+myList$observations <- dubcorms:::convert_cols(myList$observations)
+myList$sampling     <- dubcorms:::convert_cols(myList$sampling)
 gc()
 # Full join the filtered sampling events to species observations
     cat("joining observations and sampling data frames. takes a few minutes...\n")
@@ -63,13 +61,8 @@ gc()
     ### but perhaps the full_join introduces new shit.
     ebird_zf <- auk::auk_unique(ebird_zf)
 
-
-    ## munge column names
-    ebird_zf <- clean_ebird_colnames(df=ebird_zf)
-
-
-    # Remove original data object
-    if(!keep.orig){rm(myList)}
+# Replace NA values with zero
+  ebird_zf$observation_count[is.na(ebird_zf$observation_count)]<-0
 
     return(ebird_zf)
   }

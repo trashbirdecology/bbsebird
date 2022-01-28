@@ -65,9 +65,10 @@ if(length(ind)>=1){
     cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite.ebird=FALSE in my_big_fkn_fun().\n")
 
     output <- readRDS(ind)
+     return(output)
     }
-  return(output)
 }
+
 
 # CHECK ARGS AND FILES ----------------------------------------------------
     # must have at least two files in here
@@ -145,7 +146,6 @@ if(!is.null(states)){
   rm(s, rc.i)
   }
 if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain elements witin bbsAssistant::region_codes. See ?filter_ebird_data for further instruction.")
-browser()
 # SAMPLING EVENTS DATASETS ------------------------------------------------------------
     ## Read in / filter sampling data frame
     ### IMPORTANT: importing the sampling.txt.gz file for nov2021 takes about
@@ -222,17 +222,17 @@ browser()
       d.max <- dates[max(d.ind)]
       tempdat <- sampling[sampling$observation_date >= d.min & sampling$observation_date <= d.max, ]
       mylist[[i]] <- auk::auk_unique(tempdat, checklists_only = TRUE)
+      rm(tempdat, d.min, d.ind, d.max)
     }
       ## unlist the list
       sampling <- dplyr::bind_rows(mylist)
-      # rm(tempdat,mylist, d.min, d.ind, d.max)
       # ensure consistency in col types
-      sampling <- convert_cols(sampling)
+      sampling <- dubcorms:::convert_cols(sampling)
       tictoc::toc()
 
       ## save the filtered sampling data (fwrite is superior to vrooom for writing (and reading usually))
       cat("Writing the filtered sampling data to: ", f_samp_out, "...\n")
-      data.table::fwrite(sampling, f_samp_out)
+      data.table::fwrite(x=sampling,file=f_samp_out)
       gc()
   } # end sampling events data import/munging
 
@@ -244,7 +244,7 @@ browser()
     ### i can't figure out how to silence vroom import warning re: parsing colnames
     #### (which is a result of not all names in cols_samp are in this file)
     ### consequently, I would like to remove the nusance names frm cols_samp here..
-    cat("Overwrite is FALSE and filtered sampling events data already exists. Importing from file (", f_samp_out,")\n")
+    cat("Overwrite is FALSE and filtered observations data already exists. Importing from file (", f_obs,")\n")
 
 # observations <- vroom::vroom(f_obs_out, col_types = cols_obs)
 observations <- data.table::fread(f_obs_out) # no huge difference when files are small.
@@ -312,11 +312,11 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
         effort_distance_km = dplyr::if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
                                      0, effort_distance_km)
       )
-      observations <- convert_cols(observations)
+      observations <- dubcorms:::convert_cols(observations)
 
       # save to file
       ## write the filtered sampling data
-      cat("Writing the filtered observations data to file at location:", f_obs_out,"...\n\n")
+      cat("Writing the filtered observations data to:", f_obs_out,"...\n\n")
         data.table::fwrite(observations, f_obs_out)
     }
 
@@ -329,8 +329,17 @@ ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
 ebird_zf <- zerofill_ebird(myList=ebird_filtered,
                              overwrite=overwrite)
 
+
+
+# Final munging of columns  -----------------------------------------------
+## munge column names
+ebird_zf <- dubcorms:::clean_ebird_colnames(df=ebird_zf)
+
+
 # SAVE TO FILE ------------------------------------------------------------
-saveRDS(ebird_zf, paste0(dir.ebird.out,  "ebird_filtered.rds"))
+f.zf.out =  paste0(dir.ebird.out,  "ebird_filtered.rds")
+cat("Writing the filtered and zero-filled eBird data to:", f.zf.out,"...\n\n")
+saveRDS(ebird_zf, f.zf.out)
 
 # RETURNED OBJECT ---------------------------------------------------------
 return(ebird_zf)

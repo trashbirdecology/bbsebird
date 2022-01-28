@@ -19,8 +19,7 @@ make_jags_list <-
 
     stopifnot(all(c("bs","k","family","sp.prior","diagonalize") %in% names(jagam.args)))
 
-    if (!is.list(dat))
-      dat <- list(dat)
+    if (!is.list(dat)){dat <- list(dat)}
 
     # Name the list objects
     dat.names<-NA
@@ -152,6 +151,9 @@ make_jags_list <-
             ebird %>%
             distinct(gridcellid, checklist_id, .keep_all = TRUE)  %>%
             units::drop_units()
+          ## remove rownames
+          rownames(grid.ebird) <- NULL
+
           ## scale area if necessary
           if (scale.vars){grid.ebird$area <- scale(grid.ebird$area)}
 
@@ -181,8 +183,6 @@ make_jags_list <-
 
 
         ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING
-
-
           ## Grab max values for ebird in each grid cell for use in JAGAM
          maxN <- rbind(ebird %>%
             group_by(gridcellid) %>%
@@ -190,17 +190,17 @@ make_jags_list <-
             summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
          ## create the list of ebird elements
-        objs.in <- objs[objs %in% ls()] %>% as.vector()
-        list.out <- vector(mode='list', length=length(objs.in))
-         names(list.out) <- objs.in
-         for (z in seq_along(objs.in)) {
-           new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
-           list.out[[objs.in[z]]] <- new
-         }
-         ebird.list <- list.out
-         #remove all objects to be sure they arent put into other lists
-          suppressWarnings(rm(list=objs))
-        }#end ebird i loop
+          objs.in <- objs[objs %in% ls()] %>% as.vector()
+          list.out <- vector(mode='list', length=length(objs.in))
+           names(list.out) <- objs.in
+           for (z in seq_along(objs.in)) {
+             new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
+             list.out[[objs.in[z]]] <- new
+           }
+           ebird.list <- list.out
+           #remove all objects to be sure they arent put into other lists
+           suppressWarnings(rm(list=objs))
+      }#end ebird i loop
 
 # BBS LOOP --------------------------------------------------------------------
 if (ind == "bbs") {
@@ -397,7 +397,6 @@ if (ind == "bbs") {
             units::drop_units()
         cat("building grid objects..\n")
 
-
         names(grid) <- tolower(names(grid))
         nGrids <- length(unique(grid$gridcellid))
         XY <- data.frame(X=grid$cell.lon.centroid, Y=grid$cell.lat.centroid)
@@ -473,7 +472,6 @@ for (i in seq_along(objs.out)) {
 # drop empty lists
 names(list.out) <- names[keep]
 list.out <- list.out[!sapply(list.out, is.null)]
-
 
 # Add metadata to list
 list.out$metadata <- dubcorms:::jdat.contents
