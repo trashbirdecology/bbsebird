@@ -56,14 +56,16 @@ munge_ebird_data <-
 
 # CHECK / IMPORT FILTERED DATA --------------------------------------------
 # First, check the filepaths for the munged and filtered data. If overwrite is FALSE and exists, will just import that and clal it a day.
-  ind <- fns.ebird.in[str_detect(pattern="ebird_filtered.rds", fns.ebird.in)]
+  ind <- fns.ebird[str_detect(pattern="ebird_filtered.rds", fns.ebird)]
 if(length(ind)>=1){
   # if overwriting the data, remove this from filelist to be safe..
-  if(overwrite.ebird){fns.ebird.in <- setdiff(fns.ebird.in, ind)}
+  if(overwrite.ebird){fns.ebird <- setdiff(fns.ebird, ind)}
   #import data and exist functio nif no overwrite specified
   if(!overwrite.ebird){
     cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite.ebird=FALSE in my_big_fkn_fun().\n")
-    output <- readRDS(ind)}
+
+    output <- readRDS(ind)
+    }
   return(output)
 }
 
@@ -143,7 +145,7 @@ if(!is.null(states)){
   rm(s, rc.i)
   }
 if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain elements witin bbsAssistant::region_codes. See ?filter_ebird_data for further instruction.")
-
+browser()
 # SAMPLING EVENTS DATASETS ------------------------------------------------------------
     ## Read in / filter sampling data frame
     ### IMPORTANT: importing the sampling.txt.gz file for nov2021 takes about
@@ -223,7 +225,7 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
     }
       ## unlist the list
       sampling <- dplyr::bind_rows(mylist)
-      rm(tempdat,mylist, d.min, d.ind, d.max)
+      # rm(tempdat,mylist, d.min, d.ind, d.max)
       # ensure consistency in col types
       sampling <- convert_cols(sampling)
       tictoc::toc()
@@ -233,8 +235,6 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       data.table::fwrite(sampling, f_samp_out)
       gc()
   } # end sampling events data import/munging
-
-
 
 # OBSERVATIONS DATA SETS -------------------------------------------------
 # Read in or create, and filter observations data frame

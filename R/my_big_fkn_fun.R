@@ -89,16 +89,11 @@ my_big_fucking_function <- function(
 # MUNGE ARGUMENTS A LITTLE ---------------------------------------------------------
   ## Munge the states and countries indexes for use in dir/proj dir reation
   if(!is.null(states)){regions <- states}else{regions <- countries}
-  regions <- toupper(regions)
-  regions <- gsub(x=regions, pattern=" ", replacement="", ignore.case=TRUE)
-  regions <- gsub(x=regions, pattern="-", replacement="", ignore.case=TRUE)
-  regions <- gsub(x=regions,pattern=";|,|\\|,", "-")
-  regions <- paste(regions, collapse = "-")
 
 # SPECIFY/CREATE PROJECT DIRECTORIES -----------------------------------------------------
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
-  subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range)
-  dirs         <- dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
+  subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
+  dirs        <- dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
   # ensure all directories exist
   suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 
@@ -139,7 +134,6 @@ if(length(fns.bbs.spat.in)>0 & !overwrite.bbs){bbs_spatial <- readRDS(fns.bbs.sp
                           )
   saveRDS(bbs, paste0(dirs$dir.spatial.out, "/bbs_spatial.rds"))
 }#end bbs_spatial
-plot(bbs["gridcellid"])
 
 # eBIRD DATA --------------------------------------------------------------
 fns.ebird.in <- list.files(dirs$dir.ebird.out, full.names=TRUE, recursive = TRUE)

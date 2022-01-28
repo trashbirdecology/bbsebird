@@ -4,7 +4,7 @@
 \alias{proj.shorthand}
 \title{Auto generate a subdirectory name based on project parameters}
 \usage{
-\method{proj}{shorthand}(species, regions, grid.size, year.range)
+\method{proj}{shorthand}(species, regions, grid.size, year.range, max.C.ebird = NULL)
 }
 \arguments{
 \item{species}{string of species names using ISO-366-2}
@@ -12,6 +12,8 @@
 \item{regions}{string of countries or states}
 
 \item{year.range}{Vector of years. will take the min and max value}
+
+\item{max.C.ebird}{optional NULL or integer representing max number of birds allowed on eBird data}
 }
 \description{
 Auto generate a subdirectory name based on project parameters

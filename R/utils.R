@@ -193,15 +193,18 @@ for(i in 1:length(x)){
 #' Auto generate a subdirectory name based on project parameters
 #' @param species string of species names using ISO-366-2
 #' @param regions string of countries or states
+#' @param max.C.ebird optional NULL or integer representing max number of birds allowed on eBird data
 #' @param year.range Vector of years. will take the min and max value
-proj.shorthand <- function(species, regions, grid.size, year.range){
+proj.shorthand <- function(species, regions, grid.size, year.range, max.C.ebird=NULL){
 
 ## munge the states first.
+  regions <- toupper(regions)
   regions <- gsub(x=regions, pattern=" ", replacement="", ignore.case=TRUE)
   regions <- gsub(x=regions, pattern="-", replacement="", ignore.case=TRUE)
   regions <- gsub(x=regions,pattern=";|,|\\|,", "-")
   regions <- paste(regions, collapse = "-")
 
+  if(length(species)>1)warning("multiple species indexes supplied. please check the project directory naming to ensure it properly represents desired species.")
 
   x <- paste0(
   species[nchar(species)==(max(nchar(species)))][1],#take min or max to assign species to dir name
@@ -210,8 +213,9 @@ proj.shorthand <- function(species, regions, grid.size, year.range){
   "_",
   grid.size*111,"km", # size of grid cells
   "_",
-  min(year.range), "-", max(year.range) # time period
+  min(year.range), "-", max(year.range),  # time period
+  "_",
+  ifelse(is.null(max.C.ebird), "",paste0(max.C.ebird,"maxCebird"))
 )
-
 return(x)
 }
