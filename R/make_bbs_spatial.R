@@ -5,16 +5,16 @@
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
 #' @param usgs.layer Name of the layer to import.
 #' @export
-make_bbs_spatial <- function(bbs.obs,
+make_bbs_spatial <- function(bbs_obs,
                              ## observations data frame. must contain at least var RTENO
                              cws.routes.dir,
                              usgs.routes.dir,
                              routes.keep = NULL,
-                             cws.layer = "ALL_ROUTES",
                              #name of cws layer in cws.routes.dir
+                             cws.layer = "ALL_ROUTES",
                              # usgs.layer="bbsrte_2012_alb", # this one is from Sauer//outdated, not tested well yet
+                             # this was gift by Dave and Danny-DO NT SHARE WITHOUT PERMISSION
                              usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
-                             # this was gift by Dave and Danny-DO NT SHARE
                              crs.target = 4326,
                              grid = NULL,
                              overwrite = TRUE,
@@ -64,8 +64,8 @@ make_bbs_spatial <- function(bbs.obs,
         StateNum = stringr::str_sub(rteno, start = 1, end = 2),
         Route = stringr::str_sub(rteno, start = 3, end = 5)
       ) %>%
-      dplyr::rename(RTENO = rteno,
-              RouteName = RTENAME)
+      dplyr::rename(rteno = rteno,
+              routename = RTENAME)
     # usgs_routes@data$CountryNum=840
     # usgs_routes@data$StateNum= substr(usgs_routes@data$rteno, 1, 2)
     # usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
@@ -172,7 +172,7 @@ route.line.geometry <- bbs.grid.lines %>%
 grid.expanded <- grid %>%
   as.data.frame() %>%
   ## add years to the grid layer
-  tidyr::expand(Year = unique(bbs.obs$Year), gridcellid) %>%
+  tidyr::expand(Year = unique(bbs_obs$Year), gridcellid) %>%
 # add these to grid attributes attributes
   full_join(grid) %>%
   sf::st_as_sf()
@@ -194,7 +194,7 @@ bbs.grid  <- left_join(grid.expanded, bbs.temp)
 ## append the route line geometry
 bbs.grid <- left_join(bbs.grid, route.line.geometry)
 ## add the BBS observations to the BBS spatial object
-bbs_spatial <- left_join(bbs.grid, bbs.obs)
+bbs_spatial <- left_join(bbs.grid, bbs_obs)
 
 
 # if empty cells not desired, will remove them.
@@ -257,7 +257,7 @@ if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(RTENO))}
 
 
   # to be safe.
-  if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% ungroup()
+  if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungroup()
 
 
 

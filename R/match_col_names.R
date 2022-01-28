@@ -1,11 +1,10 @@
 #' Munge eBird and BBS Column Names
 #'
-#' Ensure consistency among eBird and BBS datasets for integration
+#' Munge the names of eBird and BBS data frames to ensure consistency.
 #'
 #' @param x a data frame or matrix of eBird or BBS observations. If no column names match function target, will return same object.
 #' @keywords internal
 match_col_names <- function(x){
-
   col_names <- list(date = c("observation_date", "date"),
                     C =    c("observation_count", "count","routetotal"),
                     yday  = c("dayofyear"),

@@ -97,7 +97,7 @@ my_big_fucking_function <- function(
 
 # SPECIFY/CREATE PROJECT DIRECTORIES -----------------------------------------------------
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
-  (subdir.proj <- proj.shorthand(species.abbr, regions, grid.size, year.range))
+  subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range)
   dirs         <- dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
   # ensure all directories exist
   suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
@@ -106,7 +106,7 @@ my_big_fucking_function <- function(
 grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           overwrite=overwrite.grid,
                           states = gsub(x=toupper(states), pattern="-", replacement=""),
-                          countries = toupper(countries),
+                          countries = countries,
                           hexagonal=hexagonal,
                           crs.target=crs.target
                           )
@@ -122,7 +122,8 @@ if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
                zero.fill = TRUE,
                observations.output = 'df', # do not change!
                year.range = year.range)
-  bbs_obs <- convert_cols(bbs_obs) # mung column names to mesh with eBird
+  bbs_obs <- dubcorms:::convert_cols(bbs_obs) # munge column names to mesh with eBird
+  bbs_obs <- dubcorms:::match_col_names(bbs_obs) # munge column names to mesh with eBird
   saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
 }# end bbs data munging
 
@@ -134,11 +135,11 @@ if(length(fns.bbs.spat.in)>0 & !overwrite.bbs){bbs_spatial <- readRDS(fns.bbs.sp
                           usgs.routes.dir = dirs$usgs.routes.dir,
                           plot.dir = dirs$dir.plots,
                           grid = grid,
-                          overwrite = overwrte.bbs
+                          overwrite = overwrite.bbs
                           )
   saveRDS(bbs, paste0(dirs$dir.spatial.out, "/bbs_spatial.rds"))
 }#end bbs_spatial
-# plot(bbs["gridcellid"])
+plot(bbs["gridcellid"])
 
 # eBIRD DATA --------------------------------------------------------------
 fns.ebird.in <- list.files(dirs$dir.ebird.out, full.names=TRUE, recursive = TRUE)

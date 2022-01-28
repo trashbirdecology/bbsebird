@@ -11,14 +11,19 @@ make_spatial_grid <- function(dir.out,
                               countries = c("US", "CA"),
                               states    = NULL,
                               map.view = c("static", "interactive"),
-                              crs.target=4326,
+                              crs.target = 4326,
                               hexagonal=TRUE
                               ){
- # If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file.
+# check arguments
+if(is.null(countries)){   countries <- c("US", "CA")
+cat("argument `countries` is NULL--creating a grid across Canada and United States of America")
+} ## this is messy -- should be improved to etiher throw a menu to select some countries or approve the north american approach...
+
+# If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file.
 if("grid.rds" %in% list.files(dir.out) & !overwrite){
   grid <- readRDS(paste0(dir.out, "/", "grid.rds"))
   return(grid) # exit function
-}
+}else{cat("Making spatial sampling grid.")}
 
 # Begin by grabbing  all data to check arguments
 regions.avail <-
