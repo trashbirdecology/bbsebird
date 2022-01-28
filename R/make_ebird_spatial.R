@@ -42,7 +42,7 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL, dir.out, overwrite=F
   df <- sf::st_as_sf(df)
    cat("\t...done.\n")
   # match proj to target proj
-  cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute...")
+  cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute for smaller spatial extents...\n")
   df <-
     sf::st_transform(df, crs = sp::CRS(paste0("+init=epsg:", crs.target)))
   cat("\t...done\n")
@@ -55,8 +55,6 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL, dir.out, overwrite=F
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
 
-
-
   # # expand the grid to include all years and  grid cell ids
   ### not really sure why i wanted to do this..eh
   # grid <- grid %>%
@@ -67,7 +65,7 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL, dir.out, overwrite=F
   #   full_join(grid)%>%
   #   sf::st_as_sf()
 
-  cat("Joining ebird to spatial grid. Takes at least a couple of minutes for smaller eBird datasets.\n")
+  # cat("Joining ebird to spatial grid. Takes at least a couple of minutes for smaller eBird datasets.\n")
   ebird_spatial <- sf::st_join(grid, df)
   # ## must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
   # ebird_spatial <-

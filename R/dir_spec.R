@@ -60,7 +60,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       dir.create(paste0(dir.proj, x), showWarnings = FALSE)
   )
 
-  cat("Project directory output files will go to ", dir.proj)
+  cat("Project directory output files will go to ", dir.proj, "/n")
 
 
 subset.names <- paste0("dir.",

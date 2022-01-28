@@ -83,9 +83,7 @@ my_big_fucking_function <- function(
   for(i in seq_along(temp)){assertthat::assert_that(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"),
                             msg = paste("argument ", temp[i], "must be a logical."))}
 
-
   rm(temp)
-  # browser()
 # MUNGE ARGUMENTS A LITTLE ---------------------------------------------------------
   ## Munge the states and countries indexes for use in dir/proj dir reation
   if(!is.null(states)){regions <- states}else{regions <- countries}
@@ -93,27 +91,27 @@ my_big_fucking_function <- function(
 # SPECIFY/CREATE PROJECT DIRECTORIES -----------------------------------------------------
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
   subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
-  dirs        <- dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
+  dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
   # ensure all directories exist
   suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 
 # Create Spatial Grid -----------------------------------------------------
 grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           overwrite=overwrite.grid,
-                          states = gsub(x=toupper(states), pattern="-", replacement=""),
+                          states = ifelse(is.null(states),NULL, gsub(x=toupper(states), pattern="-", replacement="")),
                           countries = countries,
                           hexagonal=hexagonal,
                           crs.target=crs.target,
                           grid.size=grid.size
                           )
 
-# mapview::mapview(grid, main="TEST") # interactive, openstreetmap
-
 # BBS Data ----------------------------------------------------------------
 fns.bbs.in <-  list.files(dirs$dir.bbs.out, pattern = "bbs_obs.rds",recursive = TRUE, full.names = TRUE)
 if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
-  bbs.orig <- grab_bbs_data(overwrite=overwrite.bbs)
-  bbs_obs  <- munge_bbs_data(bbs_list = bbs.orig , states = states,
+  bbs.orig <- grab_bbs_data(overwrite=overwrite.bbs,
+                            bbs_dir=dirs$dir.bbs.out)
+  bbs_obs  <- munge_bbs_data(bbs_list = bbs.orig ,
+                             states = states,
                species=species,
                zero.fill = TRUE,
                observations.output = 'df', # do not change!
@@ -170,7 +168,7 @@ ebird_spatial <- make_ebird_spatial(df=ebird,
 
 
 # OUTPUT A LIST OF SHIT ---------------------------------------------------
-output <- list(ebird_spatial, bbs_spatial, grid)
+output <- list(ebird=ebird_spatial, bbs=bbs_spatial, grid=grid, dirs=dirs)
 
 # END FUN -----------------------------------------------------------------
 

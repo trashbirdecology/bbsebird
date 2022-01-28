@@ -16,11 +16,11 @@ make_jags_list <-
            dir.out,
            fn.out = "jdat") {
     # Force object(s) in dat to a list, despite length
-
     stopifnot(all(c("bs","k","family","sp.prior","diagonalize") %in% names(jagam.args)))
 
     if (!is.list(dat)){dat <- list(dat)}
 
+    cat("creating a list of objects for use in JAGS...this will take a few to many minutes")
     # Name the list objects
     dat.names<-NA
       for (i in 1:length(dat)) {

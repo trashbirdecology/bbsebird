@@ -69,7 +69,7 @@ make_bbs_spatial <- function(bbs_obs,
         Route = stringr::str_sub(rteno, start = 3, end = 5)
       ) %>%
       dplyr::rename(rteno = rteno,
-              routename = RTENAME)
+              RouteName = RTENAME)
     # usgs_routes@data$countrynum=840
     # usgs_routes@data$statenum= substr(usgs_routes@data$rteno, 1, 2)
     # usgs_routes@data$Route= substr(usgs_routes@data$rteno,3,5)
@@ -262,6 +262,8 @@ names(usgs_routes) <- tolower(names(usgs_routes))
     )["nRoutesPerCell"], main="# bbs routes in cell")
 
 
+    plot(bbs.grid.lines[6])
+
     if (!is.null(plot.dir)) {
       dev.off()
       browseURL(p.fn)
@@ -271,7 +273,6 @@ names(usgs_routes) <- tolower(names(usgs_routes))
 
 # to be safe.
 if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungroup()
-
 
 
 return(bbs_spatial)
