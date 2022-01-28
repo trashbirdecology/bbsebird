@@ -1,10 +1,10 @@
 ---
 title: "BBS and eBird Data Munging and Integration"
 output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{data}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+# vignette: >
+#   %\VignetteIndexEntry{data}
+#   %\VignetteEngine{knitr::rmarkdown}
+#   %\VignetteEncoding{UTF-8}
 params:
   species:  "DOCCOR,DOCCO,DCCO,DCCOR,Double-crested Cormorant,Double Crested Cormorant"
   # dir.orig.data: "C:/Users/aroyle/DOI/Burnett, Jessica L - cormorants/dubcorm-data-backup/"

@@ -1,10 +1,10 @@
 ---
 title: "N-Mix Models"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{test}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+# output: rmarkdown::html_vignette
+# vignette: >
+#   %\VignetteIndexEntry{test}
+#   %\VignetteEngine{knitr::rmarkdown}
+#   %\VignetteEncoding{UTF-8}
 params:
   dir.proj: "C:/users/jburnett/documents/github/dubcorms/vignettes/DCCO/Double-crested Cormorant_FL-GA_111km_2008-2019"
   overwrite.jags.models: TRUE
