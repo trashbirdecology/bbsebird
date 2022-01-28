@@ -10,6 +10,6 @@ match_col_names(x)
 \item{x}{a data frame or matrix of eBird or BBS observations. If no column names match function target, will return same object.}
 }
 \description{
-Ensure consistency among eBird and BBS datasets for integration
+Munge the names of eBird and BBS data frames to ensure consistency.
 }
 \keyword{internal}

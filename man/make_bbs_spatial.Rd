@@ -5,7 +5,7 @@
 \title{Manipulate the BBS route shapefiles}
 \usage{
 make_bbs_spatial(
-  bbs.obs,
+  bbs_obs,
   cws.routes.dir,
   usgs.routes.dir,
   routes.keep = NULL,
