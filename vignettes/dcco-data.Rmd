@@ -202,11 +202,6 @@ if(e.ind){
     saveRDS(ebird_filtered, paste0(dir.ebird.out,  "ebird_filtered.rds"))
   } #end ebird_filtered
     
-   if("ebird_zf.rds" %in% fns){ebird_zf <- readRDS(paste0(dir.ebird.out, "ebird_zf.rds"))}else{
-     # Zero-fill the filtered eBird data
-    ebird_zf <- zerofill_ebird(myList=ebird_filtered, overwrite=FALSE, dir.out=dir.ebird.out)
-      saveRDS(ebird_zf, paste0(dir.ebird.out,  "ebird_zf.rds"))
-   } # end ebird_zf
   
     # Overlay eBird observations and spatial grid 
     ebird_spatial <- make_ebird_spatial(df=ebird_zf, 

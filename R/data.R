@@ -1,6 +1,17 @@
-#' Descriptions of JDAT Contents
+# SPECIES LIST ------------------------------------------------------------
+#' Species Lookup Table for BBS and eBird Data
 #'
-#' 
+#' \describe{
+#'   \item{}{}
+#' }
+#'
+
+# b.spp <- bbsAssistant::species_list
+# e.spp <- auk::ebird_species(x=unique(species_lookup$English_Common_Name))
+# auk:::auk_species()
+
+# JDAT CONTENTS -----------------------------------------------------------
+#' Descriptions of JDAT Contents
 #' @format A data frame
 #' \describe{
 #'   \item{name}{object name}
@@ -117,4 +128,41 @@ jdat.contents <-
     row.names = c(NA,-18L)
   )
 
+
 usethis::use_data(jdat.contents, internal = TRUE, overwrite=TRUE)
+
+# REGION CODES ------------------------------------------------------------
+#' Lookup Table for ISO Codes
+#'
+#' @format A data frame
+library(dplyr)
+
+# grab ebird region codes
+ebird.codes <- auk::ebird_states %>%
+  rename()
+
+# grab bbs region codes
+bbs.codes <- bbsAssistant::region_codes %>%
+  filter(!str_detect())
+setdiff(tolower(bbs.codes$State),toupper(iso.codes$name))
+
+iso.codes <- rnaturalearth::ne_states() %>%
+  as.data.frame() %>%
+  # tibble::column_to_rownames(name_en) %>%
+  select(name_en, iso_3166_2, iso_a2, , name_fr, name_es)
+str(iso.codes$iso_3166_2)
+str(iso.codes$iso_a2)
+str(auk::ebird_states$country_code)
+# Add a column for eBird file identification
+
+
+
+
+# Add a column for BBS data subsetting
+region.codes <- iso.codes
+
+usethis::use_data(region.codes, internal = FALSE, overwrite=TRUE)
+# END DATA ----------------------------------------------------------------
+
+
+

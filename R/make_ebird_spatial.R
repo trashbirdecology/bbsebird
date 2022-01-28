@@ -5,7 +5,16 @@
 #' @param crs.target the integer representing the target CRS.
 #' @param grid  a spatial grid over which the eBird data will be overlaid.
 #' @export
-make_ebird_spatial <- function(df, crs.target, grid = NULL) {
+make_ebird_spatial <- function(df, crs.target, grid = NULL, dir.out, overwrite=FALSE) {
+
+  # first, if overwrite is false and this file exists. import and return asap.
+  f=paste0(dir.out, "ebird_spatial.rds")
+  if(file.exists(f) & !overwrite){
+    cat("File ", f," exists and overwrite.ebird = FALSE. Importing spatial ebird data.")
+    ebird_spatial <-readRDS(f)
+    return(ebird_spatial)
+  }
+
   ## need to add messages for when following assers fail
   assertthat::assert_that(is.numeric(crs.target)) ||
     assertthat::assert_that(is.integer(crs.target))
@@ -46,28 +55,34 @@ make_ebird_spatial <- function(df, crs.target, grid = NULL) {
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
 
-  # expand the grid to include all years and  grid cell ids
-  grid.expanded <- grid %>%
-    as.data.frame() %>%
-    ## add years to the grid layer
-    tidyr::expand(year = unique(df$year), gridcellid) %>%
-    # add these to grid attributes attributes
-    full_join(grid)
-  # %>%
+
+
+  # # expand the grid to include all years and  grid cell ids
+  ### not really sure why i wanted to do this..eh
+  # grid <- grid %>%
+  #   as.data.frame() %>%
+  #   ## add years to the grid layer
+  #   tidyr::expand(year = unique(df$year), gridcellid) %>%
+  #   # add these to grid attributes attributes
+  #   full_join(grid)%>%
   #   sf::st_as_sf()
 
+  cat("Joining ebird to spatial grid. Takes at least a couple of minutes for smaller eBird datasets.\n")
+  ebird_spatial <- sf::st_join(grid, df)
+  # ## must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
+  # ebird_spatial <-
+  #   grid.expanded %>%
+  #   sf::st_join(df)
+  #
+  # # append the missing grid cell ids (this is a lot faster than st_joining the ebird_spatial and grid.expanded)
+  # ebird_spatial <- full_join(ebird_spatial, grid.expanded)
+  #
+  # ebird_spatial <- ebird_spatial %>% filter(!is.na(year))
 
-  ## must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
-  ## st_join(df, grid) but oh well..
-  ebird_spatial <-
-    grid.expanded %>%
-    sf::st_join(df)
+  # SAve to file
+  cat("Writing to file: ", f, "\n")
+  saveRDS(ebird_spatial, file=f)
 
-  ## append the missing grid cell ids (this is a lot faster than st_joining the ebird_spatial and grid.expanded)
-
-  ebird_spatial <- full_join(ebird_spatial, grid.expanded)
-
-  ebird_spatial <- ebird_spatial %>% filter(!is.na(year))
 
   return(ebird_spatial)
 

@@ -9,7 +9,6 @@
 #' @export
 zerofill_ebird <-
   function(myList,
-             dir.out, # where to save ebird_Zf to save time
            overwrite=FALSE,
            keep.orig = TRUE,
            cols.remove = c(
@@ -25,15 +24,6 @@ zerofill_ebird <-
              "REASON",
              "TRIP_COMMENTS"
            )) {
-
-
-    # first check to see if already on file
-    if ("ebird_zf.txt" %in% list.files(dir.spatial.out) & !overwrite){
-      cat("ebird_zf.txt exists in ", dir.spatial.out,".\nImporting file.If you wish to process ebird_zf again, either delete",
-        paste0(dir.spatial.out,"/ebird_zf.txt")," or specify `overwrite=TRUE`.\n\n")
-
-      ebird_zf <- data.table::fread(paste0(dir.spatial.out, "ebird_zf.txt"))
-      return(ebird_zf)}
 
 
     # Force columns to lowercase
@@ -74,10 +64,12 @@ gc()
     ebird_zf <- auk::auk_unique(ebird_zf)
 
 
+    ## munge column names
+    ebird_zf <- clean_ebird_colnames(df=ebird_zf)
+
+
     # Remove original data object
     if(!keep.orig){rm(myList)}
-
-    data.table::fwrite(ebird_zf, paste0(dir.spatial.out, "ebird_zf.txt"))
 
     return(ebird_zf)
   }

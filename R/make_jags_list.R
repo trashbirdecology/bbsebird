@@ -10,12 +10,10 @@
 #' @export make_jags_list
 make_jags_list <-
   function(dat,
+           jagam.args,
            max.C.ebird=100,
            scale.vars = TRUE,
            dir.out,
-           jagam.args = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform",
-                          diagonalize=TRUE
-                          ),
            fn.out = "jdat") {
     # Force object(s) in dat to a list, despite length
 
@@ -71,6 +69,9 @@ make_jags_list <-
           cat("building ebird objects..\n")
           ebird <- dat[[i]]
           names(ebird) <- tolower(names(ebird))
+
+          if("observation_count" %in% names(ebird)) ebird <- ebird %>% dplyr::rename(c = observation_count)
+
           if ("sf" %in% class(ebird)){ebird <- ebird %>% sf::st_drop_geometry()}
           ebird <- ebird %>%
             filter(c <= max.C.ebird)  %>%

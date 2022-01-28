@@ -1,40 +1,26 @@
-# time_to_decimal ---------------------------------------------------------
-#' Time to decimal
-#' @param x the data to to convert to H:M:S
-#' @keywords internal
-#' @noRd
-time_to_decimal <- function(x) {
-  x <- lubridate::hms(ebd_zf$time_observations_started)
-  # x <- lubridate::hms(x)
-  # hour(x) + minute(x) / 60 + second(x) / 3600
-}
-
-
-# clean_zf ----------------------------------------------------------------
+# clean_df ----------------------------------------------------------------
 #' @param ebd_zf The zero-filled ebird data object (flat)
 #' @keywords internal
 #' @noRd
-clean_zf <- function(ebd_zf){
-  clean_zf <- ebd_zf %>%
+clean_ebird_colnames <- function(df){
+  clean_df <- df %>%
     mutate(
       # convert X to NA
-      observation_count = if_else(observation_count == "X",
-                                  NA_character_, observation_count),
       observation_count = as.integer(observation_count),
       # effort_distance_km to 0 for non-travelling counts
       effort_distance_km = if_else(protocol_type != "Traveling",
-                                   0, effort_distance_km))
+                                   0, effort_distance_km)) %>%
+    rename(c=observation_count)
 
-  clean_zf %>% mutate(
+  clean_df <- clean_df %>% mutate(
     # convert time to decimal hours since midnight
-    time_observations_started_hsm = time_to_decimal(time_observations_started),
+    time_observations_started_hsm = lubridate::hms(time_observations_started),
     # split date into year and day of year
-    year = year(observation_date),
-    day_of_year = yday(observation_date)
+    year = lubridate::year(observation_date),
+    yday = lubridate::yday(observation_date)
   )
 
-  return(clean_zf)
-
+  return(clean_df)
 
 }
 
@@ -205,16 +191,22 @@ for(i in 1:length(x)){
 
 
 #' Auto generate a subdirectory name based on project parameters
-#' @param species list of species names. will use the longest value as the name
-#' @param states list of state/province names. will use the shortest values in the name
+#' @param species string of species names using ISO-366-2
+#' @param regions string of countries or states
 #' @param year.range Vector of years. will take the min and max value
-#' @export proj.shorthand
-proj.shorthand <- function(species, states, grid.size, year.range){
+proj.shorthand <- function(species, regions, grid.size, year.range){
+
+## munge the states first.
+  regions <- gsub(x=regions, pattern=" ", replacement="", ignore.case=TRUE)
+  regions <- gsub(x=regions, pattern="-", replacement="", ignore.case=TRUE)
+  regions <- gsub(x=regions,pattern=";|,|\\|,", "-")
+  regions <- paste(regions, collapse = "-")
+
 
   x <- paste0(
   species[nchar(species)==(max(nchar(species)))][1],#take min or max to assign species to dir name
   "_",
-  paste0(states[nchar(states)==2], collapse = "-"), # regions
+  regions, # regions
   "_",
   grid.size*111,"km", # size of grid cells
   "_",

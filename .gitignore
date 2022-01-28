@@ -16,7 +16,8 @@
 
 
 ## ignore all examples files except the .R scripts
-/examples/
+/data-in/
+/inst/DCCO/
 # but do not ignore the R files in examples directory (not subdirectories, though...)
 # Reinclude all folders in /jobs
 #!/examples/*/

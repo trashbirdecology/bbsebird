@@ -2,32 +2,49 @@
 #'
 #' @param dir.out Where to save the resulting grid (as .RDS).
 #' @param overwrite TRUE will overwrite existing `grid.rds` in `dir.out`
-#' @param countries Vector of countries. Defaults to a base map of USA and CAN, unless arg `states` is provided.
-#' @param states Vector of states to which the spatial grid will be clipped.
-#' @export make_spatial_grid
+#' @param countries Vector of countries. Defaults to a base map of USA and CAN, unless arg `states` is provided. If arg `states` is provided, this argument will be ignored. Must be specified using ISO-A2
+#' @param states Vector of states to which the spatial grid will be clipped. Must be specified using ISO 3166-2 (see \url{https://en.wikipedia.org/wiki/ISO_3166-2})
+#'
+#' @export
 make_spatial_grid <- function(dir.out,
-                              overwrite=TRUE,
-                              states = NULL,
-                              countries = c("USA", "CAN", "CA", "United States", "Canada", "United States of America")
+                              overwrite = TRUE,
+                              countries = c("US", "CA"),
+                              states    = NULL,
+                              map.view = c("static", "interactive"),
+                              crs.target=4326,
+                              hexagonal=TRUE
                               ){
  # If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file.
-  if("grid.rds" %in% list.files(dir.spatial.out) & !overwrite){
-  grid <- readRDS(paste0(dir.spatial.out, "/", "grid.rds"))
+if("grid.rds" %in% list.files(dir.out) & !overwrite){
+  grid <- readRDS(paste0(dir.out, "/", "grid.rds"))
   return(grid) # exit function
 }
 
+# Begin by grabbing  all data to check arguments
+regions.avail <-
+    rnaturalearth::ne_states() %>% as.data.frame()
 
-# Begin by grabbing national boundaries
-study.area <-
-    rnaturalearth::ne_states(country = countries, returnclass = "sf")
+regions.avail$states    <- toupper(gsub(x=regions.avail$iso_3166_2, pattern="-", replacement=""))
+regions.avail$countries <- toupper(gsub(x=regions.avail$iso_a2, pattern="-", replacement=""))
 
-if(!is.null(states)) study.area <- study.area %>%
-  filter(tolower(name) %in% tolower(states)) ## couldnt get this conditional filter to work inside a full pipe.
+#test
+if(!is.null(states)) stopifnot(all(states    %in% regions.avail$states))
+if(is.null(states))  stopifnot(all(countries %in% regions.avail$countries))
 
+# Match states and countries to rnaturalearth::ne_states codes
+countries.ind <- unique(regions.avail$iso_a2[which(regions.avail$countries %in% countries)]) # grab countries to filter out in study.area
+states.ind    <- unique(regions.avail$iso_3166_2[which(regions.avail$states %in% states)]) # grab countries to filter out in study.area
+
+study.area <- rnaturalearth::ne_states(iso_a2 = countries.ind, returnclass="sf")
+
+if(!is.null(states)) study.area <- study.area %>% filter(iso_3166_2 %in% states.ind)
+
+# crs transform
 study.area <- study.area %>%
     sf::st_transform(study.area, crs = crs.target)
 
 # throw a grid over the study area layer
+square = ifelse(hexagonal, FALSE, TRUE)
 grid <- study.area %>%
   sf::st_make_grid(cellsize = grid.size,
                    square = FALSE,
@@ -38,24 +55,26 @@ grid <- study.area %>%
   mutate(gridcellid = row_number()) %>%
   sf::st_transform(crs = crs.target)
 
-  # add the grid cell area as a variable
-  grid$area <- sf::st_area(grid)
-
-#   # # Visualize to check
-#   # tmap::qtm(grid)
-# if(interactive.map)  mapview::mapview(grid) # interactive, openstreetmap
-#
-# Add centroid lat lon to grid
-centroid.coords <- sf::st_coordinates(sf::st_geometry(sf::st_centroid(grid)))
+# Calculate and add the grid cell centroid to the sf
+suppressWarnings(centroid.coords <- sf::st_coordinates(sf::st_geometry(sf::st_centroid(grid))))
+### This warning is supposed to be regarding calculating centroids on a LAT LON CRS, but I've tried with both PCRS and UNProj-CRS and sitll get the warning..
 grid$cell.lon.centroid <- centroid.coords[,1]
 grid$cell.lat.centroid <- centroid.coords[,2]
 grid$area <- st_area(grid)
 
 # Export Data
-fn <- paste0(dir.spatial.out, "/", "grid.rds")
+fn <- paste0(dir.out, "/", "grid.rds")
 fn <- stringr::str_replace(fn, "//", "/")
 cat("Saving spatial grid as .RDS to file: ", fn)
 saveRDS(grid, file = fn)
+
+
+
+# Visualize to check map ## cant get these to display when called interactively
+if(any(map.view == "static"))       tmap::qtm(grid)
+if(any(map.view == "interactive"))  mapview::mapview(grid) # interactive, openstreetmap
+
+
 
 return(grid)
 }

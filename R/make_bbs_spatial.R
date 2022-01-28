@@ -172,7 +172,7 @@ route.line.geometry <- bbs.grid.lines %>%
 grid.expanded <- grid %>%
   as.data.frame() %>%
   ## add years to the grid layer
-  tidyr::expand(Year = unique(bbs_obs$Year), gridcellid) %>%
+  tidyr::expand(Year = unique(bbs.obs$Year), gridcellid) %>%
 # add these to grid attributes attributes
   full_join(grid) %>%
   sf::st_as_sf()
@@ -194,7 +194,7 @@ bbs.grid  <- left_join(grid.expanded, bbs.temp)
 ## append the route line geometry
 bbs.grid <- left_join(bbs.grid, route.line.geometry)
 ## add the BBS observations to the BBS spatial object
-bbs_spatial <- left_join(bbs.grid, bbs_obs)
+bbs_spatial <- left_join(bbs.grid, bbs.obs)
 
 
 # if empty cells not desired, will remove them.
@@ -204,8 +204,8 @@ if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(RTENO))}
   if (print.plots) {
     cat('Printing some plots to:\n')
     if (!is.null(plot.dir)) {
-      pdf(file=paste0(dir.plots, "/bbs_spatial_exploratory.pdf"))
-      cat(dir.plots, " \n")
+      pdf(file=paste0(plot.dir, "/bbs_spatial_exploratory.pdf"))
+      cat(plot.dir, " \n")
     }
     # exploratory plots (should move elsewhere.....)
     plot(bbs.grid[4])
