@@ -59,10 +59,10 @@ munge_ebird_data <-
   ind <- fns.ebird[str_detect(pattern="ebird_filtered.rds", fns.ebird)]
 if(length(ind)>=1){
   # if overwriting the data, remove this from filelist to be safe..
-  if(overwrite.ebird){fns.ebird <- setdiff(fns.ebird, ind)}
+  if(overwrite){fns.ebird <- setdiff(fns.ebird, ind)}
   #import data and exist functio nif no overwrite specified
-  if(!overwrite.ebird){
-    cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite.ebird=FALSE in my_big_fkn_fun().\n")
+  if(!overwrite){
+    cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in my_big_fkn_fun().\n")
 
     output <- readRDS(ind)
      return(output)

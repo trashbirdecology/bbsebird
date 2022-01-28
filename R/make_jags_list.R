@@ -436,7 +436,7 @@ jagam.data <- data.frame(
 # ensure k < num grid cells
 stopifnot(jagam.args[['k']] < nrow(jagam.data))
 
-gam.fn <- paste0(dir.jags, "/jagam_UNEDITED.jags")
+gam.fn <- paste0(dir.out, "/jagam_UNEDITED.jags")
 gam.list <-
   mgcv::jagam(
     formula = N ~ s(X, Y,

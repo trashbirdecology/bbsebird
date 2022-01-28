@@ -85,6 +85,7 @@ my_big_fucking_function <- function(
 
 
   rm(temp)
+  # browser()
 # MUNGE ARGUMENTS A LITTLE ---------------------------------------------------------
   ## Munge the states and countries indexes for use in dir/proj dir reation
   if(!is.null(states)){regions <- states}else{regions <- countries}
@@ -102,7 +103,8 @@ grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           states = gsub(x=toupper(states), pattern="-", replacement=""),
                           countries = countries,
                           hexagonal=hexagonal,
-                          crs.target=crs.target
+                          crs.target=crs.target,
+                          grid.size=grid.size
                           )
 
 # mapview::mapview(grid, main="TEST") # interactive, openstreetmap
@@ -131,7 +133,7 @@ if(length(fns.bbs.spat.in)>0 & !overwrite.bbs){bbs_spatial <- readRDS(fns.bbs.sp
                           grid = grid,
                           overwrite = overwrite.bbs
                           )
-  saveRDS(bbs, paste0(dirs$dir.spatial.out, "/bbs_spatial.rds"))
+  saveRDS(bbs_spatial, paste0(dirs$dir.spatial.out, "/bbs_spatial.rds"))
 }#end bbs_spatial
 
 # eBIRD DATA --------------------------------------------------------------
@@ -165,14 +167,12 @@ ebird_spatial <- make_ebird_spatial(df=ebird,
                    dir.out=dirs$dir.spatial.out
                    )
 
-# MUNGE DATA FOR JAGS -----------------------------------------------------
-cat("creating a list of objects for use in JAGS...this will take a few to many minutes")
-jdat <- make_jags_list(dat=list(ebird_spatial, bbs_spatial, grid),
-                       dir.out=dirs$dir.jags,
-                       max.C.ebird = max.C.ebird,
-                       scale.vars=scale.vars,
-                       jagam.args = jagam.args
-                       )
+
+
+# OUTPUT A LIST OF SHIT ---------------------------------------------------
+output <- list(ebird_spatial, bbs_spatial, grid)
 
 # END FUN -----------------------------------------------------------------
+
+return(output)
 }#END FUNCTION
