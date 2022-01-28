@@ -32,7 +32,6 @@
 #' @importFrom bbsAssistant grab_bbs_data munge_bbs_data
 #' @importFrom dplyr select filter group_by ungroup
 #' @importFrom stringr str_detect
-#' @importFrom mapview mapview
 #' @export my_big_fucking_function
 my_big_fucking_function <- function(
   # REQUIRED ARGUMENTS
@@ -106,7 +105,7 @@ grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           crs.target=crs.target
                           )
 
-mapview::mapview(grid, main="TEST") # interactive, openstreetmap
+# mapview::mapview(grid, main="TEST") # interactive, openstreetmap
 
 # BBS Data ----------------------------------------------------------------
 fns.bbs.in <-  list.files(dirs$dir.bbs.out, pattern = "bbs_obs.rds",recursive = TRUE, full.names = TRUE)
