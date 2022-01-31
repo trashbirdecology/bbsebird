@@ -4,14 +4,14 @@
 \alias{make_mat}
 \title{Make 2-D array (Matrix for JAGS)}
 \usage{
-make_mat(dat, row = "rteno", col = "gridcellid", val, replace.na = FALSE)
+make_mat(df, row = "rteno", col = "gridcellid", val, replace.na = FALSE)
 }
 \arguments{
-\item{dat}{Data frame}
+\item{df}{Data frame}
 
-\item{row}{Variable in dat containing target row names}
+\item{row}{Variable in df containing target row names}
 
-\item{col}{Variable in dat containig target column names}
+\item{col}{Variable in df containig target column names}
 
 \item{val}{Variable containing the target cell contents}
 
