@@ -149,7 +149,8 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
     ### IMPORTANT: importing the sampling.txt.gz file for nov2021 takes about
     #### 2.2 minutes with vroom::vroom and XX minutes with data.table::fread!!!!
     if(file.exists(f_samp_out) & !overwrite) {
-      cat("Overwrite is FALSE and filtered sampling events data already exists. Importing from file (", f_samp_out,")\n")
+      cat("Overwrite is FALSE and filtered sampling events data already exists. Importing from file (",
+          f_samp_out,")\n")
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
       cat("Importing the sampling events dataset. This file should take ~2 mins to import\n\n")
@@ -242,7 +243,8 @@ if (file.exists(f_obs_out) & !overwrite) {
     ### i can't figure out how to silence vroom import warning re: parsing colnames
     #### (which is a result of not all names in cols_samp are in this file)
     ### consequently, I would like to remove the nusance names frm cols_samp here..
-    cat("Overwrite is FALSE and filtered observations data already exists. Importing from file (", f_obs,")\n")
+    cat("Overwrite is FALSE and filtered observations data already exists. Importing from file (",
+        f_obs_out,")\n")
 
 # observations <- vroom::vroom(f_obs_out, col_types = cols_obs)
 observations <- data.table::fread(f_obs_out) # no huge difference when files are small.
@@ -258,7 +260,6 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
         stringr::str_replace_all(tolower(colnames(observations)),
                         pattern = " ",
                         replacement = "_")
-
       # trying to keep in order of largest cut to smaller to help with memory issues.
       ## keep only useful columns
       observations <-
@@ -271,10 +272,10 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       if(complete.only) observations <- observations %>%
         dplyr::filter(all_species_reported %in% c("TRUE", "True", 1))
 
-
+      species = tolower(species)
       if(!is.null(species)) observations <- observations %>%
-        dplyr::filter(common_name %in% species)
-      stopifnot(length(observations)>0)
+        dplyr::filter(tolower(common_name) %in% species)
+      stopifnot(nrow(observations)>0)
       # create and then filter by year/date
       observations <- observations %>%
         dplyr::mutate(year = lubridate::year(observation_date))
@@ -297,7 +298,6 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       ## since we dropped group id, there may be duplicates to remove
       observations <-
         observations %>% dplyr::distinct(observer_id, common_name, observation_count, observation_date, .keep_all=TRUE)
-
       # collapse duplicate checklists into one, taking the max number identified by the group during an event
       ### This takes FOREVER....not sure why. going to do this manually...
       # cat("Running auk::auk_unique(). This takes a few minutes for some reason")
@@ -341,6 +341,6 @@ cat("Writing the filtered and zero-filled eBird data to:", f.out, "...\n\n")
 saveRDS(ebird_filtered, f.out)
 
 # RETURNED OBJECT ---------------------------------------------------------
-return(ebird_zf)
+return(ebird_filtered)
 
 } # END FUNCTION

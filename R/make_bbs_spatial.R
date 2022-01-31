@@ -21,6 +21,7 @@ make_bbs_spatial <- function(bbs_obs,
                              print.plots = TRUE,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL) {
+  # browser()
   # if plot.dir is NULL and print.plots is TRUE, will just print plots to session and not to file..
   # Warning for proceeding when objects already exist in the workspace
   if (exists("bbs_spatial") & overwrite == FALSE) {
