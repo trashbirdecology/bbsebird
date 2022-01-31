@@ -7,6 +7,7 @@
 #' @param fn.out Filename of the list object output as a .RDS file
 #' @param jagam.args List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)
 #' @param dir.models Location for where to store the GAM portion of the JAGS model
+#' @param overwrite if FALSE will not overwrite file if it exists at location `fn.out`
 #' @export make_jags_list
 make_jags_list <-
   function(dat,
@@ -14,7 +15,12 @@ make_jags_list <-
            max.C.ebird=100,
            scale.vars = TRUE,
            dir.out,
+           overwrite=FALSE,
            fn.out = "jdat") {
+    fn = tolower(paste0(paste0(dir.out, "/", fn.out, ".RDS")))
+    if(file.exists(fn) & !overwrite){return(readRDS(fn))}
+
+
     # Force object(s) in dat to a list, despite length
     stopifnot(all(c("bs","k","family","sp.prior","diagonalize") %in% names(jagam.args)))
 
@@ -450,7 +456,6 @@ list.out <- list.out[!sapply(list.out, is.null)]
 list.out$metadata <- dubcorms:::jdat.contents
 
 # Export to file ----------------------------------------------------------
-fn = paste0(paste0(dir.out, "/", fn.out, ".RDS"))
 cat("Saving output to file. This may take a minute or two depending on size of eBird data:\n\t", fn)
 saveRDS(list.out, file = fn)
 cat("\t....done saving\n")

@@ -10,6 +10,7 @@ make_jags_list(
   max.C.ebird = 100,
   scale.vars = TRUE,
   dir.out,
+  overwrite = FALSE,
   fn.out = "jdat"
 )
 }
@@ -23,6 +24,8 @@ make_jags_list(
 \item{scale.vars}{Logical If TRUE will scale variables. This needs to be improved/checked.}
 
 \item{dir.out}{Directory within which the output list will be saved  as "jdat"}
+
+\item{overwrite}{if FALSE will not overwrite file if it exists at location \code{fn.out}}
 
 \item{fn.out}{Filename of the list object output as a .RDS file}
 
