@@ -18,7 +18,12 @@ make_jags_list <-
            overwrite=FALSE,
            fn.out = "jdat") {
     fn = tolower(paste0(paste0(dir.out, "/", fn.out, ".RDS")))
-    if(file.exists(fn) & !overwrite){return(readRDS(fn))}
+
+
+    if(file.exists(fn) & !overwrite){
+      cat("File ", fn," exists and `overwrite`== FALSE. Importing from file. \n")
+      jdat <- readRDS(fn)
+      return(jdat)}
 
 
     # Force object(s) in dat to a list, despite length
@@ -53,9 +58,6 @@ make_jags_list <-
         "Xg", # grid cell level covariates (area, proportion route in cell)
         "Xp", # site-level detection covariates
         "indexing",
-        # "nYears",
-        # "nSites",
-        # "nGrids",
         "nGridsBySiteByYear",
         "idsGridsbySiteYear",
         "nMaxGrid", # max number of grids a route falls in across all years (indexing scalar)--only avail for BBS data
@@ -429,7 +431,7 @@ gam.list <-
     family=tolower(tolower(jagam.args[['family']]))
   )
 
-gam.list$jags.fn = gam.fn
+gam.list$jags.fn <-  gam.fn
 
 cat("GAM jags model specification saved:\n\t", gam.fn,"\n\n")
 }else{cat("grid data not provided. currently functionality of `make_jags_list()` requires this to be provided. \nfuture functionality will allow option to infer grid information from BBS or eBird data inuputs.","\n\n")}
