@@ -51,6 +51,7 @@ make_jags_list <-
         "idsYears",
         "nSites",
         "idsSites",
+        "idsSitesInd",
         "nGrids",
         "idsGrids",
         "nGridsBySiteByYear",
@@ -179,6 +180,7 @@ make_jags_list <-
           temp.ebird <-
             ebird %>% filter(!is.na(c)) # to ensure we remove the NA checklist_id
           idsSites <- sort(unique(temp.ebird$checklist_id))
+          idsSitesInd <- seq_along(idsSites)
           idsGrids <- sort(unique(temp.ebird$gridcellid))
           idsYears <- sort(unique(temp.ebird$year))
 
@@ -336,6 +338,7 @@ if (ind == "bbs") {
         temp.bbs <-
           bbs %>% filter(!is.na(c)) # to ensure we remove the NA rteno
         idsSites <- sort(unique(temp.bbs$rteno))
+        idsSitesInd <- seq_along(idsSites)
         idsGrids <- sort(unique(temp.bbs$gridcellid))
         idsYears <- sort(unique(temp.bbs$year))
 

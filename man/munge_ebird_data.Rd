@@ -18,12 +18,6 @@ munge_ebird_data(
   max.effort.km = NULL,
   max.effort.mins = NULL,
   max.num.observers = 10,
-  cols.keep = c("all_species_reported", "country", "common_name", "country_code",
-    "county", "county_code", "duration_minutes", "effort_area_ha", "effort_distance_km",
-    "group_identifier", "latitude", "longitude", "number_observers", "observation_date",
-    "observation_count", "observer_id", "protocol_code", "protocol_type",
-    "sampling_event_identifier", "state", "scientific_name", "state_code",
-    "time_observations_started"),
   f_obs_out = paste0(dir.ebird.out, "ebird_obs_filtered.txt"),
   f_samp_out = paste0(dir.ebird.out, "ebird_samp_filtered.txt")
 )

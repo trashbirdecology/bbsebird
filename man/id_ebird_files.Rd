@@ -25,8 +25,6 @@ id_ebird_files(
 \item{get.full.data}{Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and e.regions}
 
 \item{states.ind}{one or more two-letter state codes}
-
-\item{country.code.identifier}{Identifier used by eBird to define countries. Should not be changed unless eBird changes its practice of using the iso2c}
 }
 \description{
 Identify and Decompress Relevant eBird Files for Downstream Importing and Munging

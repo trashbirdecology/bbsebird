@@ -34,7 +34,7 @@ regions.avail$states    <- toupper(gsub(x=regions.avail$iso_3166_2, pattern="-",
 regions.avail$countries <- toupper(gsub(x=regions.avail$iso_a2, pattern="-", replacement=""))
 
 #test
-if(!is.null(states)) stopifnot(all(states    %in% regions.avail$states))
+if(!is.null(states)) if(!all(states    %in% regions.avail$states)){message("the following regions weren't found. please check specification or remove from arg `states`: ", states[which(!states %in% regions.avail$states)], "\n")}
 if(is.null(states))  stopifnot(all(countries %in% regions.avail$countries))
 
 # Match states and countries to rnaturalearth::ne_states codes

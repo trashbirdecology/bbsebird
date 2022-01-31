@@ -24,35 +24,36 @@ munge_ebird_data <-
            max.effort.mins = NULL,
            max.num.observers = 10,
            # how to read in sampling data ... vroom often crashes
-           cols.keep =
-             c(
-               "all_species_reported",
-               "country",
-               "common_name",
-               "country_code",
-               "county",
-               "county_code",
-               "duration_minutes",
-               "effort_area_ha",
-               "effort_distance_km",
-               "group_identifier",
-               "latitude",
-               "longitude",
-               "number_observers",
-               "observation_date",
-               "observation_count",
-               "observer_id",
-               "protocol_code",
-               "protocol_type",
-               "sampling_event_identifier",
-               "state",
-               "scientific_name",
-               "state_code",
-               "time_observations_started"
-             ),
            f_obs_out = paste0(dir.ebird.out, 'ebird_obs_filtered.txt'),
            f_samp_out  = paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
            ) {
+
+    cols.keep =
+      c(
+        "all_species_reported",
+        "country",
+        "common_name",
+        "country_code",
+        "county",
+        "county_code",
+        "duration_minutes",
+        "effort_area_ha",
+        "effort_distance_km",
+        "group_identifier",
+        "latitude",
+        "longitude",
+        "number_observers",
+        "observation_date",
+        "observation_count",
+        "observer_id",
+        "protocol_code",
+        "protocol_type",
+        "sampling_event_identifier",
+        "state",
+        "scientific_name",
+        "state_code",
+        "time_observations_started"
+      )
 
 # CHECK / IMPORT FILTERED DATA --------------------------------------------
 # First, check the filepaths for the munged and filtered data. If overwrite is FALSE and exists, will just import that and clal it a day.
@@ -68,12 +69,10 @@ if(length(ind)>=1){
     }
 }
 
-
 # CHECK ARGS AND FILES ----------------------------------------------------
     # must have at least two files in here
     if(length(fns.ebird) < 2)stop("check arg `fns.ebird`: must have at least two files (one for sampling events, one for observations.")
     if(!any(file.exists(fns.ebird))) stop("One or more files specified in `fns.ebird` does not exist")
-
 
     ## filenames to import
     f_samp_in <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
@@ -237,9 +236,9 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
 
 # OBSERVATIONS DATA SETS -------------------------------------------------
 # Read in or create, and filter observations data frame
-    #fix the col types for observations df
-  cols_obs <- cols_samp[!names(cols_samp) %in% c("country", "sampling event identifier","protocol type", "duration minutes")]
-  if (file.exists(f_obs_out) & !overwrite) {
+  ##fix the col types for observations df
+cols_obs <- cols_samp[!names(cols_samp) %in% c("country", "sampling event identifier","protocol type", "duration minutes")]
+if (file.exists(f_obs_out) & !overwrite) {
     ### i can't figure out how to silence vroom import warning re: parsing colnames
     #### (which is a result of not all names in cols_samp are in this file)
     ### consequently, I would like to remove the nusance names frm cols_samp here..
@@ -271,8 +270,11 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
         filter(state_code %in% rc$iso_3166_2)}
       if(complete.only) observations <- observations %>%
         dplyr::filter(all_species_reported %in% c("TRUE", "True", 1))
+
+
       if(!is.null(species)) observations <- observations %>%
         dplyr::filter(common_name %in% species)
+      stopifnot(length(observations)>0)
       # create and then filter by year/date
       observations <- observations %>%
         dplyr::mutate(year = lubridate::year(observation_date))
@@ -325,20 +327,18 @@ ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
                        "sampling" = dplyr::as_tibble(sampling))
 
 # ZERO-FILL DATA ----------------------------------------------------------
-ebird_zf <- zerofill_ebird(myList=ebird_filtered,
+ebird_filtered <- zerofill_ebird(myList=ebird_filtered,
                              overwrite=overwrite)
-
-
 
 # Final munging of columns  -----------------------------------------------
 ## munge column names
-ebird_zf <- dubcorms:::clean_ebird_colnames(df=ebird_zf)
+ebird_filtered <- dubcorms:::clean_ebird_colnames(df=ebird_filtered)
 
 
 # SAVE TO FILE ------------------------------------------------------------
-f.zf.out =  paste0(dir.ebird.out,  "ebird_filtered.rds")
-cat("Writing the filtered and zero-filled eBird data to:", f.zf.out,"...\n\n")
-saveRDS(ebird_zf, f.zf.out)
+f.out =  paste0(dir.ebird.out, "ebird_filtered.rds")
+cat("Writing the filtered and zero-filled eBird data to:", f.out, "...\n\n")
+saveRDS(ebird_filtered, f.out)
 
 # RETURNED OBJECT ---------------------------------------------------------
 return(ebird_zf)
