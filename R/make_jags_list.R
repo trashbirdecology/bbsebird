@@ -33,7 +33,7 @@ make_jags_list <-
           dat.names[i] <- "grid"
           next()
         }
-        dat.names[i]  = "other"
+        if(any(stringr::str_detect(ind,  "dir."))){dat.names[i]  = "dirs"; next()}
       }#end naming for loop
       names(dat) <- dat.names
 
@@ -99,14 +99,15 @@ make_jags_list <-
               col = "year",
               val = "number_observers"
             )
-          nmins <-
+
+          nmins     <-
             make_mat(
               ebird %>% distinct(checklist_id, year, duration_minutes),
               row = "checklist_id",
               col = "year",
               val = "duration_minutes"
             )
-          doy <-
+          doy       <-
             make_mat(
               ebird %>% distinct(checklist_id, year, yday),
               row = "checklist_id",
@@ -127,6 +128,8 @@ make_jags_list <-
               col = "year",
               val = "time_observations_started"
             )
+
+          start_time[start_time=="<NA>"] <- NA
           obs_id <-
             make_mat(
               ebird %>% distinct(checklist_id, year, observer_id),
