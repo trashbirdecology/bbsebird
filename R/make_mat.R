@@ -1,18 +1,18 @@
 #' Make 2-D array (Matrix for JAGS)
 #'
-#' @param dat Data frame
-#' @param row Variable in dat containing target row names
-#' @param col Variable in dat containig target column names
+#' @param df Data frame
+#' @param row Variable in df containing target row names
+#' @param col Variable in df containig target column names
 #' @param val Variable containing the target cell contents
 #' @param replace.na Whether to replace NA values with zero.
 #' @export make_mat
 
-make_mat <- function(dat, row="rteno", col="gridcellid", val, replace.na=FALSE) {
+make_mat <- function(df, row="rteno", col="gridcellid", val, replace.na=FALSE) {
 
-  # names <- names(dat)
+  # names <- names(df)
   ## will make row and col NULL and then add a thing for when they are NULL for ebird and bbs
   # e.g. if(is.null(row) & "rteno" %in% names) row <- "rteno"
-  mat <- tidyr::pivot_wider(dat,
+  mat <- tidyr::pivot_wider(df,
                             id_cols = row,
                             names_from = col,
                             values_from = val) %>%
@@ -30,6 +30,12 @@ make_mat <- function(dat, row="rteno", col="gridcellid", val, replace.na=FALSE) 
 
   # if replace.na is TRUE, then supply NAs with zeroes
   if(replace.na) mat[is.na(mat)] <- 0
+
+  #ensure matrix is sorted by rownames and colnames
+  mat <- mat[ order(as.numeric(row.names(mat))), ]
+  mat <- mat %>% dplyr::select(sort(names(mat)))
+
+  # return object
   return(mat)
 
   }

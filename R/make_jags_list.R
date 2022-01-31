@@ -35,8 +35,7 @@ make_jags_list <-
         }
         if(any(stringr::str_detect(ind,  "dir."))){dat.names[i]  = "dirs"; next()}
       }#end naming for loop
-      names(dat) <- dat.names
-
+    names(dat) <- dat.names
 
     # initialize am empty obj to store max values of C for use in jagam data
     maxN <- data.frame()
@@ -47,13 +46,10 @@ make_jags_list <-
         "C", # observec counts
         "Xg", # grid cell level covariates (area, proportion route in cell)
         "Xp", # site-level detection covariates
-        "nYears",
-        "idsYears",
-        "nSites",
-        "idsSites",
-        "idsSitesInd",
-        "nGrids",
-        "idsGrids",
+        "indexing",
+        # "nYears",
+        # "nSites",
+        # "nGrids",
         "nGridsBySiteByYear",
         "idsGridsbySiteYear",
         "nMaxGrid", # max number of grids a route falls in across all years (indexing scalar)--only avail for BBS data
@@ -90,9 +86,6 @@ make_jags_list <-
               col = "year",
               val = "c"
             )
-          C   <-
-            C %>% select(sort(names(C))) # use select to ensure the colnames(years) are in order...
-
           nobs      <-
             make_mat(
               ebird %>% distinct(checklist_id, year, number_observers),
@@ -100,7 +93,6 @@ make_jags_list <-
               col = "year",
               val = "number_observers"
             )
-
           nmins     <-
             make_mat(
               ebird %>% distinct(checklist_id, year, duration_minutes),
@@ -150,14 +142,13 @@ make_jags_list <-
           for(j in seq_along(Xp)){
             Xp[[j]][Xp[[j]] == "NULL"] <- NA}
 
-
           # Grid-level covariates(2D, since grid/route locations don't change over time.)
           grid.ebird <-
             ebird %>%
             distinct(gridcellid, checklist_id, .keep_all = TRUE)  %>%
             units::drop_units()
           ## remove rownames
-          rownames(grid.ebird) <- NULL
+          rownames(grid.ebird) <- NULL # need to remove for Xg.XY creation below
 
           ## scale area if necessary
           if (scale.vars){grid.ebird$area <- scale(grid.ebird$area)}
@@ -175,18 +166,9 @@ make_jags_list <-
 
           Xg <- list(area=Xg.area, XY=Xg.XY)
 
-          # Loop indexes for JAGS
-          rownames(ebird) <- NULL
-          temp.ebird <-
-            ebird %>% filter(!is.na(c)) # to ensure we remove the NA checklist_id
-          idsSites <- sort(unique(temp.ebird$checklist_id))
-          idsSitesInd <- seq_along(idsSites)
-          idsGrids <- sort(unique(temp.ebird$gridcellid))
-          idsYears <- sort(unique(temp.ebird$year))
+        # Loop indexes for JAGS
+        indexing <- make_indexing_df(X = C, Y = Xg.area)
 
-          nSites  <- length(idsSites)
-          nYears  <- length(idsYears)
-          nGrids  <- length(idsGrids)
 
         ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING
           ## Grab max values for ebird in each grid cell for use in JAGAM
@@ -217,7 +199,6 @@ if (ind == "bbs") {
         if ("sf" %in% class(bbs)){bbs <- bbs %>% sf::st_drop_geometry()}
         names(bbs) <- tolower(names(bbs))
         ## Observed counts as 2D matrix (dims: rteno by year)
-
         C   <-
           make_mat(
             bbs %>% distinct(year, rteno,c) %>%
@@ -226,8 +207,6 @@ if (ind == "bbs") {
             col = "year",
             val = "c"
           )
-        C   <-
-          C %>% select(sort(names(C))) # use select to ensure the colnames(years) are in order...
 
         # Calculate mean values for detection covariates (some were already done elsewhere -- need to add these to that location at some point)
         bbs <- bbs %>%
@@ -335,16 +314,10 @@ if (ind == "bbs") {
         Xg <- list(prop=Xg.prop, area=Xg.area, XY=Xg.XY)
 
         # Loop indexes for JAGS
+        indexing <- make_indexing_df(X = C, Y = Xg.area)
+
         temp.bbs <-
           bbs %>% filter(!is.na(c)) # to ensure we remove the NA rteno
-        idsSites <- sort(unique(temp.bbs$rteno))
-        idsSitesInd <- seq_along(idsSites)
-        idsGrids <- sort(unique(temp.bbs$gridcellid))
-        idsYears <- sort(unique(temp.bbs$year))
-
-        nSites <- length(idsSites)
-        nYears  <- length(idsYears)
-        nGrids  <- length(idsGrids)
 
         nGridsBySiteByYear <- temp.bbs %>%
           group_by(rteno, year) %>%
@@ -393,9 +366,8 @@ if (ind == "bbs") {
           arrange(gridcellid) %>%
           distinct(gridcellid, .keep_all = TRUE)
 
-        if ("sf" %in% class(grid))
-          grid <- grid %>% sf::st_drop_geometry()  %>%
-            units::drop_units()
+        if ("sf" %in% class(grid)){grid <- grid %>% sf::st_drop_geometry()  %>%
+            units::drop_units()}
         cat("building grid objects..\n")
 
         names(grid) <- tolower(names(grid))
@@ -453,8 +425,8 @@ gam.list <-
 
 gam.list$jags.fn = gam.fn
 
-cat("GAM jags model specification saved:\n\t", gam.fn,"\n")
-}else{cat("grid data not provided. currently functionality of `make_jags_list()` requires this to be provided. \nfuture functionality will allow option to infer grid information from BBS or eBird data inuputs.","\n")}
+cat("GAM jags model specification saved:\n\t", gam.fn,"\n\n")
+}else{cat("grid data not provided. currently functionality of `make_jags_list()` requires this to be provided. \nfuture functionality will allow option to infer grid information from BBS or eBird data inuputs.","\n\n")}
 
 # Create Return Object ----------------------------------------------------
 objs.out <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
@@ -481,7 +453,7 @@ list.out$metadata <- dubcorms:::jdat.contents
 fn = paste0(paste0(dir.out, "/", fn.out, ".RDS"))
 cat("Saving output to file. This may take a minute or two depending on size of eBird data:\n\t", fn)
 saveRDS(list.out, file = fn)
-cat("\t\t\t\t\t....done saving\n")
+cat("\t....done saving\n")
 # export obj from function
 return(list.out)
 
