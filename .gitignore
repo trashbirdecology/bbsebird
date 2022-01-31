@@ -50,6 +50,8 @@ inst/vignettes/*.xml
 inst/vignettes/*/*.xml
 inst/vignettes/*/*/*.xml
 inst/vignettes/*/*/*/*.xml
+inst/vignettes/packrat/
+inst/vignettes/dcco/
 
 *.pdf
 inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/ebird/ebird_filtered.rds
