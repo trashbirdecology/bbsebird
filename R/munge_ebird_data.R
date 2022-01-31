@@ -56,14 +56,13 @@ munge_ebird_data <-
 
 # CHECK / IMPORT FILTERED DATA --------------------------------------------
 # First, check the filepaths for the munged and filtered data. If overwrite is FALSE and exists, will just import that and clal it a day.
-  ind <- fns.ebird[str_detect(pattern="ebird_filtered.rds", fns.ebird)]
+ind <- fns.ebird[str_detect(pattern="ebird_filtered.rds", fns.ebird)]
 if(length(ind)>=1){
   # if overwriting the data, remove this from filelist to be safe..
   if(overwrite){fns.ebird <- setdiff(fns.ebird, ind)}
   #import data and exist functio nif no overwrite specified
   if(!overwrite){
     cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in my_big_fkn_fun().\n")
-
     output <- readRDS(ind)
      return(output)
     }

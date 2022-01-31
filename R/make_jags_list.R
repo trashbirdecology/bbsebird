@@ -20,19 +20,20 @@ make_jags_list <-
 
     if (!is.list(dat)){dat <- list(dat)}
 
-    cat("creating a list of objects for use in JAGS...this will take a few to many minutes")
+    cat("creating a list of objects for use in JAGS...this will take a few to many minutes\n")
     # Name the list objects
     dat.names<-NA
       for (i in 1:length(dat)) {
         ind <-  names(dat[[i]])
-        if ("checklist_id" %in% ind)
-          dat.names[i] <- "ebird"
-        if ("rteno" %in% ind)
-          dat.names[i] <- "bbs"
-
+        if ("checklist_id" %in% ind){dat.names[i] <- "ebird"; next()}
+        if ("rteno" %in% ind){dat.names[i] <- "bbs"; next()}
         if (!("rteno" %in% ind) &
-            !("checklist_id" %in% ind))
+            !("checklist_id" %in% ind) &
+            !any(stringr::str_detect(ind,  "dir."))){
           dat.names[i] <- "grid"
+          next()
+        }
+        dat.names[i]  = "other"
       }#end naming for loop
       names(dat) <- dat.names
 
@@ -171,16 +172,16 @@ make_jags_list <-
           Xg <- list(area=Xg.area, XY=Xg.XY)
 
           # Loop indexes for JAGS
+          rownames(ebird) <- NULL
           temp.ebird <-
             ebird %>% filter(!is.na(c)) # to ensure we remove the NA checklist_id
           idsSites <- sort(unique(temp.ebird$checklist_id))
           idsGrids <- sort(unique(temp.ebird$gridcellid))
           idsYears <- sort(unique(temp.ebird$year))
 
-          nSites <- length(idsSites)
+          nSites  <- length(idsSites)
           nYears  <- length(idsYears)
           nGrids  <- length(idsGrids)
-
 
         ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING
           ## Grab max values for ebird in each grid cell for use in JAGAM
@@ -190,9 +191,9 @@ make_jags_list <-
             summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
          ## create the list of ebird elements
-          objs.in <- objs[objs %in% ls()] %>% as.vector()
-          list.out <- vector(mode='list', length=length(objs.in))
-           names(list.out) <- objs.in
+         objs.in <- objs[objs %in% ls()] %>% as.vector()
+         list.out <- vector(mode='list', length=length(objs.in))
+         names(list.out) <- objs.in
            for (z in seq_along(objs.in)) {
              new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
              list.out[[objs.in[z]]] <- new
@@ -210,13 +211,12 @@ if (ind == "bbs") {
           arrange(gridcellid, rteno, year)
         if ("sf" %in% class(bbs)){bbs <- bbs %>% sf::st_drop_geometry()}
         names(bbs) <- tolower(names(bbs))
-
         ## Observed counts as 2D matrix (dims: rteno by year)
+
         C   <-
           make_mat(
-            bbs %>%
-              # since we dont use grid cells here, drop where rteno==NA
-              distinct(rteno, year, c) %>% filter(!is.na(rteno)),
+            bbs %>% distinct(year, rteno,c) %>%
+              filter(!is.na(rteno)),
             row = "rteno",
             col = "year",
             val = "c"
@@ -340,7 +340,6 @@ if (ind == "bbs") {
         nYears  <- length(idsYears)
         nGrids  <- length(idsGrids)
 
-
         nGridsBySiteByYear <- temp.bbs %>%
           group_by(rteno, year) %>%
           mutate(n=n_distinct(gridcellid)) %>%
@@ -348,8 +347,6 @@ if (ind == "bbs") {
           reshape2::acast(
             rteno~year, value.var = "n")
         nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
-
-
 
         #create an array with dimensions [nRoutes by nYears by nMaxNumberGridsASingleRteFallsInto (nMaxGrid)]
         nMaxGrid <-max((temp.bbs %>%
@@ -380,8 +377,6 @@ if (ind == "bbs") {
         bbs.list <- list.out
         #remove all objects to be sure they arent put into other lists
         suppressWarnings(rm(list=objs))
-
-
 }#end bbs loop
 
 
@@ -483,4 +478,8 @@ saveRDS(list.out, file = fn)
 cat("\t\t\t\t\t....done saving\n")
 # export obj from function
 return(list.out)
-  } # END FUN
+
+
+# END FUN -----------------------------------------------------------------
+
+} # END FUN
