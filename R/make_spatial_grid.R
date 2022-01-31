@@ -75,7 +75,6 @@ cat("Saving spatial grid as .RDS to file: ", fn)
 saveRDS(grid, file = fn)
 
 
-
 # Visualize to check map ## cant get these to display when called interactively
 if(any(map.view == "static"))       tmap::qtm(grid)
 if(any(map.view == "interactive"))  mapview::mapview(grid) # interactive, openstreetmap
