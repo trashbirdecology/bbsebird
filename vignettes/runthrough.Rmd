@@ -1,54 +1,22 @@
 ---
-output: github_document
+title: "runthrough"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{runthrough}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  eval=FALSE,## this is false for development purposes.
-  comment = "#>",
-  message=FALSE, 
-  warning=FALSE, 
-  fig.path = "man/figures/README-",
-  out.width = "100%"
+  comment = "#>"
 )
 ```
 
-<!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![R-CMD-check](https://github.com/trashbirdecology/dubcorms/workflows/R-CMD-check/badge.svg)](https://github.com/trashbirdecology/dubcorms/actions)
-<!-- badges: end -->
-
-# dubcorms
-The purpose of this R package (*likely to undergo a name change...*) is three-fold:
-
-  1. provide a (currently) faster alternative to the R package `auk ` for importing and munging the large eBird datasets (*see note)
-  1. integrate the BBS and eBird observation datasets for use in JAGS (`rjags`) and `mcgv::jagam()`
-  1. run fully Bayesian integrated population models using said data
-  
-*Note: GH users [\@cboettig](https://github.com/cboettig/) and [\@amstrimas](https://github.com/amstrimas/) are currently developing an `auk` alternative, [`birddb`](https://github.com/cboettig/birddb/). It is likely that, once stable, this R package will use `birddb` for eBird import/manipulation. 
-
-
-## Installation
-Download development version from GitHub with:
-```{r results=FALSE, echo=TRUE, warning=FALSE, message=FALSE, eval=TRUE}
-# install.packages("devtools")
-devtools::install_github("trashbirdecology/dubcorms")
-```
-
-## eBird Data Requirements
-Prior to using this package, you must have downloaded eBird data. To request and download eBird observations, visit [the eBird website](https://ebird.org/data/download). Credentials are required, and may take up to a few business days for approval, depending on use case. For more information on the eBird data see the eBird website, or visit [the repository for the Cornell Lab of Ornithology's offical R package for munging eBird data,  `auk`](https://github.com/CornellLabofOrnithology/auk/).
-
-When your account is approved, you will gain access to the [eBird Basic Database (EBD)](https://ebird.org/data/download/ebd). This package requires two components of the EBD to be saved to local file:
-
-1. the **observations** (i.e. counts) 
-1. the **sampling events** (i.e. information about the observation process)
-
-
-# Runthrough
-## Step 1: Setup
-```{r}
+## Runthrough
+### Step 1: Setup
+```{r, eval=TRUE}
 # 0:Setup -----------------------------------------------------------------
 devtools::install_github("trashbirdecology/dubcorms",
                          force = FALSE, 
@@ -66,7 +34,7 @@ invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
 ```
 
-```{r set-args}
+```{r set-args, eval=eval.ind}
 # REQUIRED ARGUMENTS
 dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
 # OPTIONAL ARGUMENTS
@@ -137,7 +105,7 @@ dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or s
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 ```
 
-## Step 2: Make Integrated Data
+### Step 2: Make Integrated Data
 ```{r spatial-grid}
 if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
 grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
@@ -222,7 +190,7 @@ ebird_spatial <- make_ebird_spatial(df=ebird,
                    )
 ```
 
-## Step 3: Bundle Data for Use in JAGS/Elsewhere
+### Step 3: Bundle Data for Use in JAGS/Elsewhere
 ```{r jdat}
 jdat <- make_jags_list(
   dat = list(ebird=ebird_spatial, 
@@ -239,3 +207,249 @@ jdat <- make_jags_list(
 )
 ```
 
+
+# Step 4: Specify Model(s)
+## BBS Only
+```{r bbs-pois-base}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    C.b[s,t] ~ dpois(lambda[s])
+  } # end bbs data model s
+} # end bbs data model t
+  
+for(s in 1:nsites.b){
+  lambda[s]  = inprod(nu[], prop.b[s,])
+} # end s (lambda route)
+
+for(g in 1:ngrids.b){
+  log(nu[g]) = alpha_g + area.b[g]*beta_g
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+beta_g    ~ dnorm(0,1)
+alpha_g   ~ dnorm(0,1)
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:nyears.b){
+  N.b[t] <- sum(C.b[,t])
+}
+####################################################
+####################################################
+}"
+
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dirs$dir.models,"/bbs-pois-null") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+
+```{r bbs-pois-with-p-covs}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    C.b[s,t] ~ dpois(lambda[s]*pB[s,t])
+  } # end data model s
+} # end data model t
+
+  
+for(t in 1:nYearsB){
+  for(s in 1:nsites.b){
+    logit(pB[s,t]) <- alpha_pb + 
+                        beta_pf * pf[s,t] + 
+                        beta_pw * pw[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:nsites.b){
+  lambda[s]  = inprod(nu[], prop[s,])
+} # end s (lambda route)
+
+
+for(g in 1:nGridsB){
+  log(nu[g]) = beta_g*area[g] + alpha_g 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,0.1) # intercept on the BBS detection model
+beta_pf   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pw   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:nYearsB){
+  N.b[t] <- sum(C.b[,t])
+}
+####################################################
+####################################################
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dirs$dir.models,"/bbs-pois-with-p-covs") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+## BBS + eBird
+```{r bbs-ebird-w-p-covs}
+mod <- "model{
+####################################################
+### Attempt to incorporate Ce (ebird count processes) in 
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    C.b[s,t] ~ dpois(lambda[s]*pB[s,t])
+  } # end data model s
+} # end data model t
+
+  
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    logit(pB[s,t]) <- alpha_pb + 
+                        beta_pf * pf[s,t] + 
+                        beta_pw * pw[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:nSitesB){
+  lambda[s]  = inprod(nu[], prop[s,])
+} # end s (lambda route)
+
+
+for(g in 1:nGridsB){
+  log(nu[g]) = beta_g*area[g] + alpha_g 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,0.1) # intercept on the BBS detection model
+beta_pf   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pw   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:nyears.b){
+  N.b[t] <- sum(C.b[,t])
+}
+####################################################
+####################################################
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dirs$dir.models,"/bbs-ebird-pois-with-p-covs") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+
+# Step 5: Grab Only Necessary Data
+
+```{r jags.data}
+jags.data <- list(
+  ## COUNTS 
+  C.b         = jdat$bbs$C,
+  C.e         = jdat$ebird$C,
+  ## INDEXES 
+  ### bbs
+  indexing.e    = jdat$bbs$idsYears,
+  nyears.b    = jdat$bbs$nYears,
+  nsites.b    = jdat$bbs$nSites,
+  ngrids.b    = jdat$bbs$nGrids,
+  gridid.b    = jdat$bbs$idsGrids, 
+  # siteid.b    = jdat$bbs$idsSites,
+  siteid.b    = as.numeric(jdat$bbs$idsSites),
+  siteind.b   = jdat$bbs$idsSitesInd,
+  ### ebird
+  yearid.e    = jdat$ebird$idsYears,
+  nyears.e    = jdat$ebird$nYears,
+  ngrids.e    = jdat$ebird$nGrids,
+  nsites.e    = jdat$ebird$nSites,
+  gridid.e    = jdat$ebird$idsGrids, 
+  # siteid.e    = jdat$ebird$idsSites,
+  siteid.e    = as.numeric(jdat$ebird$idsSites),
+  siteind.e   = jdat$ebird$idsSitesInd,
+  ## DETECTION COVARIATES
+  ### bbs
+  p.b.a      = jdat$bbs$Xp$assistant, 
+  p.b.c      = jdat$bbs$Xp$car, 
+  p.b.fy     = jdat$bbs$Xp$fyrbbs, 
+  p.b.n      = jdat$bbs$Xp$noise, 
+  p.b.w      = jdat$bbs$Xp$wind, 
+  ### ebird
+  p.e.nobs   = jdat$ebird$Xp$nobs,
+  p.e.nmins  = jdat$ebird$Xp$nmins,
+  p.e.doy    = jdat$ebird$Xp$doy,
+  ## GRID-LEVEL COVARIATES
+  ### bbs-grids (only where bbs data exists..)
+  area.b      = jdat$bbs$Xg$area, 
+  coords.b    = jdat$bbs$Xg$XY,
+  prop.b      = jdat$bbs$Xg$prop, 
+  ### ebird-grids (only where ebird data exists)
+  area.e      = jdat$ebird$Xg$area, 
+  coords.e    = jdat$ebird$Xg$XY,
+  ## GAM DATA
+  X.gam       = jdat$gam$X, 
+  Y.gam       = jdat$gam$Y, 
+  N.gam       = jdat$gam$N
+)
+sort(names(jags.data))
+```
+
+
+# Step 6: Inits and MCMC Specifications
+## Inits + MCMC
+```{r mcmc-specs, eval=eval.mods}
+mcmc <- set_mcmc_specs()
+```
+
+```{r jags-inits, eval=eval.mods}
+params.monitor <- c("lambda", "nu",  "N.b", "pB")
+myinits <- list(alpha_pb  = rnorm(1,0,1), 
+               alpha_g = rnorm(1, 0, 1), 
+               beta_g = rnorm(1, 0, 1),
+               beta_pb = rnorm(1,0,1), 
+               beta_pw = rnorm(1,0,1), 
+               beta_pf = rnorm(1,0,1))
+inits <- make_inits_list(myinits, mcmc$nc)
+```
+
+# Step 7: Build Model(s)
