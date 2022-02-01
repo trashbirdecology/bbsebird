@@ -4,14 +4,24 @@
 \alias{make_ebird_spatial}
 \title{Create an SF object for eBird Observations}
 \usage{
-make_ebird_spatial(df, crs.target, grid = NULL, dir.out, overwrite = FALSE)
+make_ebird_spatial(
+  df,
+  crs.target,
+  dir.out = NULL,
+  grid = NULL,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{df}{A data frame with columns c(latitude, longitude) and optional attributes (columns).}
 
 \item{crs.target}{the integer representing the target CRS.}
 
+\item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
+
 \item{grid}{a spatial grid over which the eBird data will be overlaid.}
+
+\item{overwrite}{logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out}
 }
 \description{
 Converts eBird (preferably zero-filled data) into a simple features spatial object.

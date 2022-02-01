@@ -5,21 +5,23 @@
 \title{Manipulate the BBS route shapefiles}
 \usage{
 make_bbs_spatial(
-  bbs_obs,
+  df,
   cws.routes.dir,
   usgs.routes.dir,
-  routes.keep = NULL,
   cws.layer = "ALL_ROUTES",
   usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
   crs.target = 4326,
   grid = NULL,
-  overwrite = TRUE,
   print.plots = TRUE,
   keep.empty.cells = TRUE,
-  plot.dir = NULL
+  plot.dir = NULL,
+  overwrite = TRUE,
+  dir.out = NULL
 )
 }
 \arguments{
+\item{df}{A data frame with columns c(latitude, longitude) and optional attributes (columns).}
+
 \item{cws.routes.dir}{Directory for where the CWS (Canadian BBS) shapefiles are stored.}
 
 \item{usgs.routes.dir}{Directory for where the USGS (USA BBS) shapefiles are stored.}
@@ -27,6 +29,18 @@ make_bbs_spatial(
 \item{cws.layer}{Name of the layer to import. Defaults to "ALL_ROUTES"}
 
 \item{usgs.layer}{Name of the layer to import.}
+
+\item{crs.target}{the integer representing the target CRS.}
+
+\item{grid}{a spatial grid over which the eBird data will be overlaid.}
+
+\item{print.plots}{logical if TRUE will print exploratory figures to device}
+
+\item{keep.empty.cells}{logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.}
+
+\item{overwrite}{logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out}
+
+\item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
 }
 \description{
 This function is meant to intake two shapefiles, one per cws and usgs munges them such that they conform to the USGS data release for BBS observations and route metadata.

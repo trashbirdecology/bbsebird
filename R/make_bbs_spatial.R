@@ -1,15 +1,21 @@
 #' @title Manipulate the BBS route shapefiles
 #' @description This function is meant to intake two shapefiles, one per cws and usgs munges them such that they conform to the USGS data release for BBS observations and route metadata.
+#' @param df A data frame with columns c(latitude, longitude) and optional attributes (columns).
+#' @param crs.target the integer representing the target CRS.
+#' @param grid  a spatial grid over which the eBird data will be overlaid.
+#' @param dir.out path to where the resulting spatial data frame will be saved. If NULL will not save to file.
+#' @param overwrite logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out
 #' @param cws.routes.dir Directory for where the CWS (Canadian BBS) shapefiles are stored.
 #' @param cws.layer Name of the layer to import. Defaults to "ALL_ROUTES"
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
+#' @param print.plots logical if TRUE will print exploratory figures to device
+#' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.
 #' @export
-make_bbs_spatial <- function(bbs_obs,
+make_bbs_spatial <- function(df,
                              ## observations data frame. must contain at least var rteno
                              cws.routes.dir,
                              usgs.routes.dir,
-                             routes.keep = NULL,
                              #name of cws layer in cws.routes.dir
                              cws.layer = "ALL_ROUTES",
                              # usgs.layer="bbsrte_2012_alb", # this one is from Sauer//outdated, not tested well yet
@@ -17,23 +23,24 @@ make_bbs_spatial <- function(bbs_obs,
                              usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
                              crs.target = 4326,
                              grid = NULL,
-                             overwrite = TRUE,
                              print.plots = TRUE,
                              keep.empty.cells = TRUE,
-                             plot.dir = NULL) {
-  # browser()
-  # if plot.dir is NULL and print.plots is TRUE, will just print plots to session and not to file..
-  # Warning for proceeding when objects already exist in the workspace
-  if (exists("bbs_spatial") & overwrite == FALSE) {
-    ind = menu(title = "bbs_routes may already exist and `overwrite=FALSE`.\n This function may take 1-2 minutes.Are you sure you want to proceed?",
-               choices = c("Yes!", "No."))
-    if (ind == 2)
-      cat("Function cancelled.")
+                             plot.dir = NULL,
+                             overwrite = TRUE,
+                             dir.out=NULL
+                             ) {
+  # first, if overwrite is false and this file exists. import and return asap.
+  f <- paste0(dir.out, "bbs_spatial.rds")
+  if(file.exists(f) & !overwrite){
+    cat("File ", f," exists and overwrite.ebird = FALSE. Importing spatial bbs data.")
+    bbs_spatial <-readRDS(f)
+    return(bbs_spatial)
   }
 
 
+
   # force colanms to lower just in case
-  names(bbs_obs) <- tolower(names(bbs_obs))
+  names(df) <- tolower(names(df))
 
   # create as string for the crs.target
   # crs.string=sp::CRS(paste0("+init=epsg:", crs.target))
@@ -178,7 +185,7 @@ route.line.geometry <- bbs.grid.lines %>%
 grid.expanded <- grid %>%
   as.data.frame() %>%
   ## add years to the grid layer
-  tidyr::expand(year = unique(bbs_obs$year), gridcellid) %>%
+  tidyr::expand(year = unique(df$year), gridcellid) %>%
 # add these to grid attributes attributes
   full_join(grid) %>%
   sf::st_as_sf()
@@ -200,7 +207,7 @@ bbs.grid  <- left_join(grid.expanded, bbs.temp)
 ## append the route line geometry
 bbs.grid <- left_join(bbs.grid, route.line.geometry)
 ## add the BBS observations to the BBS spatial object
-bbs_spatial <- left_join(bbs.grid, bbs_obs)
+bbs_spatial <- left_join(bbs.grid, df)
 
 
 # if empty cells not desired, will remove them.
@@ -274,6 +281,15 @@ names(usgs_routes) <- tolower(names(usgs_routes))
 
 # to be safe.
 if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungroup()
+
+# remove rownames
+rownames(bbs_spatial) <- NULL
+
+
+
+# Outputs -----------------------------------------------------------------
+cat("Writing to file: ", f, "\n")
+saveRDS(bbs_spatial, file=f)
 
 
 return(bbs_spatial)
