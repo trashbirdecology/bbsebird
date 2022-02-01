@@ -60,7 +60,7 @@ if(!is.null(states)){regions <- states}else{regions <- countries}
 ## proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
 if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifing a new name for project."); subdir.proj="myproject"}
-dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
+dirs        <-  dubcorms:::dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
 
 # ensure all directories exist
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))

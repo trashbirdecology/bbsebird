@@ -3,7 +3,6 @@
 export(.get_mode)
 export(.time_to_decimal)
 export(.trim)
-export(dir_spec)
 export(eval_params)
 export(id_ebird_files)
 export(import_jdat)
