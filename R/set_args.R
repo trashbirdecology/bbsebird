@@ -1,8 +1,6 @@
 #' Specify Arguments and Directories
 #'
 #' Function to specify arugments and create/point to directories based on those arguments.
-#' @param
-#'
 #' @importFrom assertthat assert_that
 #' @importFrom stringr str_replace
 #' @export set_args
@@ -112,7 +110,7 @@ args <-
   )
 
 ## create the list of ebird elements
-list.out <- vector(mode='list', length=length(args))
+list.out <-NULL
 for (z in seq_along(args)) {
   new = eval(parse(text = args[z]))# this is necessary for some reason idk why
   list.out[[args[z]]] <- new
