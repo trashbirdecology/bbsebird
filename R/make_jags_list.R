@@ -58,9 +58,6 @@ make_jags_list <-
         "Xg", # grid cell level covariates (area, proportion route in cell)
         "Xp", # site-level detection covariates
         "indexing",
-        "nGridsBySiteByYear",
-        "idsGridsbySiteYear",
-        "nMaxGrid", # max number of grids a route falls in across all years (indexing scalar)--only avail for BBS data
         "XY", # centroid coords for grid cell
         "area" # area of the grid cell (m^2 unless shapefiles changed..)
       )
@@ -83,7 +80,7 @@ make_jags_list <-
             # Drop unused variables
             select(-all_species_reported, -group_identifier) %>%
             arrange(gridcellid, checklist_id, year)
-
+          rownames(ebird) <- NULL
           ## Observed counts as 2D matrix (dims: checklist_id by year)
           C   <-
             make_mat(
@@ -177,8 +174,7 @@ make_jags_list <-
         # Loop indexes for JAGS
         indexing <- make_indexing_df(X = C, Y = Xg.area)
 
-
-        ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING
+        ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING ###
           ## Grab max values for ebird in each grid cell for use in JAGAM
          maxN <- rbind(ebird %>%
             group_by(gridcellid) %>%
@@ -196,7 +192,7 @@ make_jags_list <-
            ebird.list <- list.out
            #remove all objects to be sure they arent put into other lists
            suppressWarnings(rm(list=objs))
-      }#end ebird i loop
+      }#end ebird i loopf
 
 # BBS LOOP --------------------------------------------------------------------
 if (ind == "bbs") {
@@ -353,7 +349,13 @@ if (ind == "bbs") {
                         filter(!is.na(c)) %>%
                         summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
-        ## create the list of bbs elements
+        ## add these indexes to bbs$indexing
+        # indexing$maxn <- maxN
+        indexing$gridsiteyear.id <- idsGridsbySiteYear
+        indexing$ngridsiteyear <- nGridsBySiteByYear
+        indexing$nmaxgrids <- nMaxGrid
+
+        # create the list of bbs elements
         objs.in <- objs[objs %in% ls()] %>% as.vector()
         list.out <- vector(mode='list', length=length(objs.in))
         names(list.out) <- objs.in

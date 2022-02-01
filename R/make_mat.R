@@ -32,7 +32,7 @@ make_mat <- function(df, row="rteno", col="gridcellid", val, replace.na=FALSE) {
   if(replace.na) mat[is.na(mat)] <- 0
 
   #ensure matrix is sorted by rownames and colnames
-  mat <- mat[ order(as.numeric(row.names(mat))), ]
+  suppressWarnings(mat <- mat[ order(as.numeric(row.names(mat))), ]) ##ignore warning re: NAs in numeric rownames
   mat <- mat %>% dplyr::select(sort(names(mat)))
 
   # return object

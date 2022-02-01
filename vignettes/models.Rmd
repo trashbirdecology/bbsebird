@@ -1,0 +1,228 @@
+---
+title: "Models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(dubcorms)
+```
+
+# Step 0: Setup
+```{r setup}
+## specify the project directory
+dir.proj <- 
+
+
+```
+
+
+# Step 1: Model and MCMC Specs
+This section allows user to create a JAGS model file within R, and saves to relevant JAGS directory. 
+## Step 1a: Specify model
+```{r bbs-pois-base}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    C.b[s,t] ~ dpois(lambda[s])
+  } # end bbs data model s
+} # end bbs data model t
+  
+for(s in 1:nsites.b){
+  lambda[s]  = inprod(nu[], prop.b[s,])
+} # end s (lambda route)
+
+for(g in 1:ngrids.b){
+  log(nu[g]) = alpha_g + area.b[g]*beta_g
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+beta_g    ~ dnorm(0,1)
+alpha_g   ~ dnorm(0,1)
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:nyears.b){
+  N.b[t] <- sum(C.b[,t])
+}
+####################################################
+####################################################
+}"
+
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dirs$dir.models,"/bbs-pois-null") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+
+```{r bbs-pois-with-p-covs}
+mod <- "model{
+####################################################
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    C.b[s,t] ~ dpois(lambda[s]*pB[s,t])
+  } # end data model s
+} # end data model t
+
+  
+for(t in 1:nYearsB){
+  for(s in 1:nsites.b){
+    logit(pB[s,t]) <- alpha_pb + 
+                        beta_pf * pf[s,t] + 
+                        beta_pw * pw[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:nsites.b){
+  lambda[s]  = inprod(nu[], prop[s,])
+} # end s (lambda route)
+
+
+for(g in 1:nGridsB){
+  log(nu[g]) = beta_g*area[g] + alpha_g 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,0.1) # intercept on the BBS detection model
+beta_pf   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pw   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:nYearsB){
+  N.b[t] <- sum(C.b[,t])
+}
+####################################################
+####################################################
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dirs$dir.models,"/bbs-pois-with-p-covs") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+## BBS + eBird
+```{r bbs-ebird-w-p-covs}
+mod <- "model{
+####################################################
+### Attempt to incorporate Ce (ebird count processes) in 
+####################################################
+# Likelihoods
+####################################################
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    C.b[s,t] ~ dpois(lambda[s]*pB[s,t])
+  } # end data model s
+} # end data model t
+
+  
+for(t in 1:nyears.b){
+  for(s in 1:nsites.b){
+    logit(pB[s,t]) <- alpha_pb + 
+                        beta_pf * pf[s,t] + 
+                        beta_pw * pw[s,t]
+  } # end data model s
+} # end data model t
+
+
+for(s in 1:nSitesB){
+  lambda[s]  = inprod(nu[], prop[s,])
+} # end s (lambda route)
+
+
+for(g in 1:nGridsB){
+  log(nu[g]) = beta_g*area[g] + alpha_g 
+} # end g (nu)
+
+####################################################
+####################################################
+# Priors
+####################################################
+## Priors on BBS site(route)-level detection 
+alpha_pb   ~ dnorm(0,0.1) # intercept on the BBS detection model
+beta_pf   ~ dnorm(0,1) # observer's first year (on BBS or Route)
+beta_pw   ~ dnorm(0,1) # wind
+## Priors on BBS grid-level covariates
+alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
+beta_g    ~ dnorm(0,1) # grid-cell area (scaled)
+
+####################################################
+####################################################
+# Derived
+####################################################
+for(t in 1:nyears.b){
+  N.b[t] <- sum(C.b[,t])
+}
+####################################################
+####################################################
+}"
+## export model
+# browseURL(mod.fn)
+mod.name <- paste0(dirs$dir.models,"/bbs-ebird-pois-with-p-covs") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
+mod.fn <- paste0(mod.name, ".txt") # we want to name it now so we can call in jags functions
+sink(mod.fn)
+cat(mod)
+sink()
+```
+
+# Stage 2: Grab Only Necessary Data
+
+```{r jags.data}
+jags.data <- jdat
+```
+
+
+# Step 3: Inits and MCMC Specifications
+## Inits + MCMC
+```{r mcmc-specs, eval=eval.mods}
+mcmc <- set_mcmc_specs()
+```
+
+```{r jags-inits, eval=eval.mods}
+params.monitor <- c("lambda", "nu",  "N.b", "pB")
+myinits <- list(alpha_pb  = rnorm(1,0,1), 
+               alpha_g = rnorm(1, 0, 1), 
+               beta_g = rnorm(1, 0, 1),
+               beta_pb = rnorm(1,0,1), 
+               beta_pw = rnorm(1,0,1), 
+               beta_pf = rnorm(1,0,1))
+inits <- make_inits_list(myinits, mcmc$nc)
+```
+
+# Step 7: Build Model(s)

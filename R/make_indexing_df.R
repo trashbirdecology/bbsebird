@@ -25,15 +25,15 @@ temp.grid <- Y %>%
   tidyr::pivot_longer(cols=-c(site.ind),
                       names_to="gridcellid",
                       values_to="temp") %>%
-  filter(temp>0) %>%
-  dplyr::select(site.ind, gridcellid)
-
+  dplyr::distinct(site.ind, gridcellid)
+# %>%
+#   filter(temp>0) %>% # not sure why i wanted to remove this.
+if("checklist_id"%in%rownames(X))cat("creating the indexing for ebird...may take a minute...\n")
 indexing <- dplyr::left_join(indexing, temp.grid) %>%
   filter(!is.na(gridcellid)) %>%
-  dplyr::arrange(site.ind, year, gridcellid) %>% 
-  mutate(gridcellid = as.integer(gridcellid)) %>% 
+  dplyr::arrange(site.ind, year, gridcellid) %>%
+  mutate(gridcellid = as.integer(gridcellid)) %>%
   mutate(year = as.integer(year))
-
 
 nSites <- length(unique(indexing$site.ind))
 nGrids <- length(unique(indexing$gridcellid))
@@ -41,12 +41,12 @@ nYears <- length(unique(indexing$year))
 
 # output list
 index.out <- list(
-  indexing   = indexing,
-  nsites     = nSites, 
-  nGrids     = nGrids,
-  nYears     = nYears, 
+  # indexing   = indexing,
+  nsites     = nSites,
+  ngrids     = nGrids,
+  nyears     = nYears,
   sites.id   = sites.ind$site.id,
-  sites.ind  = sites.ind$site.ind, 
+  sites.ind  = sites.ind$site.ind,
   year.id    = year.ind$year.id,
   year.ind   = year.ind$year.ind
 )

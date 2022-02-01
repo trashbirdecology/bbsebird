@@ -4,6 +4,7 @@
 #' @param dir.orig.data Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.
 #' @param dir.proj Project directory. Assumes current working directory. This is where the directories and output files will be stored.
 #' @param subdir.proj The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using `dubcorms::proj.shorthand()`
+#' @importFrom stringr str_replace str_detect
 #' @export dir_spec
 
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
@@ -13,7 +14,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   if(!dir.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified
   dir.proj <- paste0(dir.proj, "/", subdir.proj)
-  dir.proj <- str_replace(dir.proj, "//","/")
+  dir.proj <- stringr::str_replace(dir.proj, "//","/")
   if(!dir.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
 
   if (!endsWith(dir.orig.data, "/")){
@@ -23,10 +24,10 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   dir.ebird.in <- paste0(dir.orig.data, "ebird")
   ## Where are the BBS route shapefiles stored?
   cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
-  cws.routes.dir <- str_replace(cws.routes.dir, "//","/")
+  cws.routes.dir <- stringr::str_replace(cws.routes.dir, "//","/")
   usgs.routes.dir <-
     paste0(dir.orig.data, "/bbs/route_shapefiles/usgs")
-  usgs.routes.dir <- str_replace(usgs.routes.dir, "//","/")
+  usgs.routes.dir <- stringr::str_replace(usgs.routes.dir, "//","/")
 
   if (!any(length(list.files(cws.routes.dir)) > 0))
     stop(
