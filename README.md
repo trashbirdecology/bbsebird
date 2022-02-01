@@ -18,11 +18,12 @@ three-fold:
     (`rjags`) and `mcgv::jagam()`
 3.  run fully Bayesian integrated population models using said data
 
-\*Note: GH users [@cboettig](https://github.com/cboettig/) and
-[@amstrimas](https://github.com/amstrimas/) are currently developing an
-`auk` alternative, [`birddb`](https://github.com/cboettig/birddb/). It
-is likely that, once stable, this R package will use `birddb` for eBird
-import/manipulation.
+> \*[@cboettig](https://github.com/cboettig/) and
+> [@amstrimas](https://github.com/amstrimas/) are currently developing
+> an `auk` alternative, [`birddb`](https://github.com/cboettig/birddb/).
+> It is likely that, once stable, this R package will use `birddb` as
+> dependency for eBird import and manipulation. For now, however, the
+> functions herein provide a much faster alternative to `auk`.
 
 ## Installation
 
