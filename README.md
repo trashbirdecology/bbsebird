@@ -86,7 +86,7 @@ lsf.str("package:dubcorms")[2:22]
 devtools::install_github("trashbirdecology/dubcorms",
                          force = FALSE, 
                          dependencies = TRUE)
-#> Skipping install of 'dubcorms' from a github remote, the SHA1 (3ccc690d) has not changed since last install.
+#> Skipping install of 'dubcorms' from a github remote, the SHA1 (db20603b) has not changed since last install.
 #>   Use `force = TRUE` to force installation
 #explicitly load some packages
 pkgs <- c("dubcorms",
@@ -130,9 +130,9 @@ rm(pkgs)
 dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
 # OPTIONAL ARGUMENTS
 #general arguments
-dir.proj  = "C:/Users/jburnett/documents/github/dubcorms/inst/vignettes/packrat/"
+dir.proj  = "C:/Users/jburnett/documents/github/dubcorms-dev-scene/"
 # dir.proj     = NULL # project directory. If NULL will specify and create a project directory within the current working directory. A single primary directory is made for each species within which new directories comprise combinations of years/spatial extent/etc. are housed.
-states              = c("us-co", "us-ne")
+states              = c("us-co", "us-ne", "us-wy", "us-SD")
 species             = c("house sparrow", "passer domesticus")
 species.abbr        = c("houspa", "HOSP") # call all the variations especially those that appear int eh EBIRD dwnloaded files
 # species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
@@ -195,7 +195,7 @@ subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year
 #> directory naming to ensure it properly represents desired species.
 if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifing a new name for project."); subdir.proj="myproject"}
 dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
-#> Project directory output files will go to  C:/Users/jburnett/documents/github/dubcorms/inst/vignettes/packrat/houspa_USCO-USNE_111km_2008-2019_100maxCebird /n
+#> Project directory output files will go to  C:/Users/jburnett/documents/github/dubcorms-dev-scene/houspa_USCO-USNE-USWY-USSD_111km_2008-2019_100maxCebird /n
 # ensure all directories exist
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 ```
@@ -219,6 +219,8 @@ grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
 Make BBS data.
 
 ``` r
+## wrapper for creating all bbs dafa
+# bbs <- make_bbs_data()
 fns.bbs.in <-  list.files(dirs$dir.bbs.out, pattern = "bbs_obs.rds",recursive = TRUE, full.names = TRUE)
 if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
   bbs_orig <- grab_bbs_data(overwrite = overwrite.bbs,
@@ -238,33 +240,36 @@ if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
 }# end bbs data munging
 
 # Overlay BBS and study area/sampling grid
-fns.bbs.spat.in <-  list.files(dirs$dir.spatial.out, pattern = "bbs_spatial.rds", recursive = TRUE, full.names = TRUE)
-if(length(fns.bbs.spat.in)>0 & !overwrite.bbs){bbs_spatial <- readRDS(fns.bbs.spat.in)}else{
   bbs_spatial <- make_bbs_spatial(bbs_obs,
                           cws.routes.dir = dirs$cws.routes.dir,
                           usgs.routes.dir = dirs$usgs.routes.dir,
                           plot.dir = dirs$dir.plots,
                           crs.target = crs.target,
                           grid = grid,
+                          dir.out = dirs$dir.spatial.out,
                           overwrite = overwrite.bbs
                           )
-  saveRDS(bbs_spatial, paste0(dirs$dir.spatial.out, "/bbs_spatial.rds"))
-}#end bbs_spatial
+#> File  C:/Users/jburnett/documents/github/dubcorms-dev-scene/houspa_USCO-USNE-USWY-USSD_111km_2008-2019_100maxCebird/spatial/bbs_spatial.rds  exists and overwrite.ebird = FALSE. Importing spatial bbs data.
 ```
 
 Make eBird data,
 
 ``` r
-fns.ebird.in <- list.files(dirs$dir.ebird.out,
-                            full.names = TRUE,
-                            recursive = TRUE)
-fns.ebird    <- id_ebird_files(
+# fns.ebird.in <- list.files(dirs$dir.ebird.out,
+#                             full.names = TRUE,
+#                             recursive = TRUE)
+(fns.ebird    <- id_ebird_files(
                         dir.ebird.in = dirs$dir.ebird.in,
                         dir.ebird.out = dirs$dir.ebird.out,
                         mmyyyy = mmyyyy,
                         species = species.abbr,
                         states.ind = states
-)
+))
+#> [1] "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird/ebd_sampling_relNov-2021.txt.gz"                        
+#> [2] "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird/ebd_ca_houspa_relnov-2021.txt"                          
+#> [3] "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/ebird/ebd_us_houspa_relnov-2021.txt"                          
+#> [4] "C:/Users/jburnett/documents/github/dubcorms-dev-scene/houspa_USCO-USNE-USWY-USSD_111km_2008-2019_100maxCebird/ebird/ebird_filtered.rds"
+stopifnot(length(fns.ebird)>1)
 
 # Import and munge the desired files..
 ebird <- munge_ebird_data(
@@ -279,7 +284,7 @@ ebird <- munge_ebird_data(
   complete.only = complete.checklists.only,
   years = year.range
 )
-#> File  C:/Users/jburnett/documents/github/dubcorms/inst/vignettes/packrat/houspa_USCO-USNE_111km_2008-2019_100maxCebird/ebird/ebird_filtered.rds exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in my_big_fkn_fun().
+#> File  C:/Users/jburnett/documents/github/dubcorms-dev-scene/houspa_USCO-USNE-USWY-USSD_111km_2008-2019_100maxCebird/ebird/ebird_filtered.rds exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in my_big_fkn_fun().
 
 # Create spatial ebird
 ebird_spatial <- make_ebird_spatial(df=ebird,
@@ -288,7 +293,7 @@ ebird_spatial <- make_ebird_spatial(df=ebird,
                    overwrite=overwrite.ebird,
                    dir.out=dirs$dir.spatial.out
                    )
-#> File  C:/Users/jburnett/documents/github/dubcorms/inst/vignettes/packrat/houspa_USCO-USNE_111km_2008-2019_100maxCebird/spatial/ebird_spatial.rds  exists and overwrite.ebird = FALSE. Importing spatial ebird data.
+#> File  C:/Users/jburnett/documents/github/dubcorms-dev-scene/houspa_USCO-USNE-USWY-USSD_111km_2008-2019_100maxCebird/spatial/ebird_spatial.rds  exists and overwrite.ebird = FALSE. Importing spatial ebird data.
 ```
 
 # 2: Make JAGS Data List
@@ -307,6 +312,7 @@ jdat <- make_jags_list(
     sp.prior = "log.uniform",
     diagonalize = TRUE)
 )
+#> File  c:/users/jburnett/documents/github/dubcorms-dev-scene/houspa_usco-usne-uswy-ussd_111km_2008-2019_100maxcebird/jags//jdat.rds  exists and `overwrite`== FALSE. Importing from file.
 ```
 
 # 3: Specify Model(s)
@@ -635,7 +641,7 @@ jags.data <- list(
   C.e         = jdat$ebird$C,
   ## INDEXES 
   ### bbs
-  yearid.b    = jdat$bbs$idsYears,
+  indexing.e    = jdat$bbs$idsYears,
   nyears.b    = jdat$bbs$nYears,
   nsites.b    = jdat$bbs$nSites,
   ngrids.b    = jdat$bbs$nGrids,
@@ -677,12 +683,13 @@ jags.data <- list(
   N.gam       = jdat$gam$N
 )
 sort(names(jags.data))
-#>  [1] "area.b"    "area.e"    "C.b"       "C.e"       "coords.b"  "coords.e" 
-#>  [7] "gridid.b"  "gridid.e"  "N.gam"     "ngrids.b"  "ngrids.e"  "nsites.b" 
-#> [13] "nsites.e"  "nyears.b"  "nyears.e"  "p.b.a"     "p.b.c"     "p.b.fy"   
-#> [19] "p.b.n"     "p.b.w"     "p.e.doy"   "p.e.nmins" "p.e.nobs"  "prop.b"   
-#> [25] "siteid.b"  "siteid.e"  "siteind.b" "siteind.e" "X.gam"     "Y.gam"    
-#> [31] "yearid.b"  "yearid.e"
+#>  [1] "area.b"     "area.e"     "C.b"        "C.e"        "coords.b"  
+#>  [6] "coords.e"   "gridid.b"   "gridid.e"   "indexing.e" "N.gam"     
+#> [11] "ngrids.b"   "ngrids.e"   "nsites.b"   "nsites.e"   "nyears.b"  
+#> [16] "nyears.e"   "p.b.a"      "p.b.c"      "p.b.fy"     "p.b.n"     
+#> [21] "p.b.w"      "p.e.doy"    "p.e.nmins"  "p.e.nobs"   "prop.b"    
+#> [26] "siteid.b"   "siteid.e"   "siteind.b"  "siteind.e"  "X.gam"     
+#> [31] "Y.gam"      "yearid.e"
 ```
 
 # 6: Inits and MCMC Specifications
