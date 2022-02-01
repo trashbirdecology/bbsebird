@@ -55,6 +55,8 @@ args <-
     species    = c("house sparrow", "passer domesticus"),
     species.abbr    = c("houspa", "HOSP")
   )
+## commit the args to global environment so we don't have to index them
+list2env(args, globalenv())
 ```
 
 # Step 1: Spatial Grid
@@ -76,10 +78,10 @@ grid <- make_spatial_grid(dir.out = args[['dir.spatial.out']],
 ```{r bbs-data}
 ## wrapper for creating all bbs dafa
 # bbs <- make_bbs_data()
-fns.bbs.in <-  list.files(args$dir.bbs.out, pattern = "bbs_obs.rds",recursive = TRUE, full.names = TRUE)
+fns.bbs.in <-  list.files(dir.bbs.out, pattern = "bbs_obs.rds",recursive = TRUE, full.names = TRUE)
 if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
   bbs_orig <- grab_bbs_data(overwrite = overwrite.bbs,
-                            bbs_dir = args$dir.bbs.out)
+                            bbs_dir = dir.bbs.out)
   bbs_obs  <- munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
@@ -91,28 +93,28 @@ if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
   )
   bbs_obs <-
     dubcorms:::match_col_names(bbs_obs) # munge column names to mesh with eBird
-  saveRDS(bbs_obs, paste0(args$dir.bbs.out, "/bbs_obs.rds"))
+  saveRDS(bbs_obs, paste0(dir.bbs.out, "/bbs_obs.rds"))
 }# end bbs data munging
 
 # Overlay BBS and study area/sampling grid
   bbs_spatial <- make_bbs_spatial(bbs_obs,
-                          cws.routes.dir = args$cws.routes.dir,
-                          usgs.routes.dir = args$usgs.routes.dir,
-                          plot.dir = args$dir.plots,
+                          cws.routes.dir = cws.routes.dir,
+                          usgs.routes.dir = usgs.routes.dir,
+                          plot.dir = dir.plots,
                           crs.target = crs.target,
                           grid = grid,
-                          dir.out = args$dir.spatial.out,
+                          dir.out = dir.spatial.out,
                           overwrite = overwrite.bbs
                           )
 ```
 # Step 3: eBird
 ```{r ebird}
-# fns.ebird.in <- list.files(args$dir.ebird.out,
+# fns.ebird.in <- list.files(dir.ebird.out,
 #                             full.names = TRUE,
 #                             recursive = TRUE)
 (fns.ebird    <- id_ebird_files(
-                        dir.ebird.in = args$dir.ebird.in,
-                        dir.ebird.out = args$dir.ebird.out,
+                        dir.ebird.in = dir.ebird.in,
+                        dir.ebird.out = dir.ebird.out,
                         mmyyyy = mmyyyy,
                         species = species.abbr,
                         states.ind = states
@@ -124,7 +126,7 @@ ebird <- munge_ebird_data(
   fns.ebird = fns.ebird,
   species = c(species, species.abbr),
   overwrite = overwrite.ebird,
-  dir.ebird.out = args$dir.ebird.out,
+  dir.ebird.out = dir.ebird.out,
   countries = countries,
   states = states,
   protocol = ebird.protocol,
@@ -138,7 +140,7 @@ ebird_spatial <- make_ebird_spatial(df=ebird,
                    crs.target = crs.target,
                    grid=grid,
                    overwrite=overwrite.ebird,
-                   dir.out=args$dir.spatial.out
+                   dir.out=dir.spatial.out
                    )
 ```
 ## Step 4: Bundle data for Use in JAGS/Elsewhere
@@ -146,7 +148,7 @@ ebird_spatial <- make_ebird_spatial(df=ebird,
 jdat <- make_jags_list(
   dat = list(ebird=ebird_spatial, 
                bbs=bbs_spatial, grid=grid, dirs=dirs),
-  dir.out = args$dir.jags,
+  dir.out = dir.jags,
   overwrite = overwrite.jdat,
   max.C.ebird = max.C.ebird,
   scale.vars = TRUE,
