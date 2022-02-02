@@ -1,10 +1,10 @@
 Package: dubcorms
-Title: Unified, Spatially-referenced BBS and eBird Data
+Title: Unifying BBS and eBird Data
 Version: 0.0.0.9000
 Authors@R: 
     person("Jessica", "Burnett", , "jburnett@usgs.gov", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: Imports, munges and integrates eBird and BBS data and applies them to a spatial sampling grid. This package also outputs data in various forms for use in JAGS, {\codemcgv::jagam()}
 License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -52,4 +52,3 @@ VignetteBuilder: knitr
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth
-Config/testthat/edition: 3
