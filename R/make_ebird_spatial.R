@@ -17,10 +17,9 @@ make_ebird_spatial <- function(df, crs.target, dir.out=NULL, grid = NULL, overwr
     return(ebird_spatial)
   }
 
-  ## need to add messages for when following assers fail
-  assertthat::assert_that(is.numeric(crs.target)) ||
-    assertthat::assert_that(is.integer(crs.target))
-  assertthat::assert_that(any(c("tbl_df", "tbl", "data.frame") %in% class(df)))
+  # ## need to add messages for when following  fail
+  # stopifnot(any(is.numeric(crs.target)), is.integer(crs.target))
+  # stopifnot(any(c("tbl_df", "tbl", "data.frame") %in% class(df)))
 
   # convert ebird data frame to spatial object
   cat("assigning coordinates to `df`. takes a  minute for a few states' worth of ebird data.\n")

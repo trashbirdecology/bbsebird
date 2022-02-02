@@ -6,15 +6,17 @@
 \usage{
 make_array(
   df = bbs,
+  val,
   row = c("rteno", "checklist_id"),
   col = "year",
   slice = "gridcellid",
-  val,
   drop.na.rows = FALSE
 )
 }
 \arguments{
 \item{df}{Data frame with three or more columns}
+
+\item{val}{target value to populate the matri(ces)}
 
 \item{row}{target rownames}
 
@@ -22,9 +24,7 @@ make_array(
 
 \item{slice}{target slice-by values}
 
-\item{val}{target value to populate the matri(ces)}
-
-\item{include.na.vals}{TRUE default. If FALSE will drop the values of arg "val" where is NA.}
+\item{drop.na.rows}{logical if TRUE will drop the values of arg "val" where is NA.}
 }
 \description{
 Cast Data to Array or Matrix for Use in JAGS

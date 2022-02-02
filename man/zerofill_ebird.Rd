@@ -5,7 +5,7 @@
 \title{Create a Zero-filled Data Object for eBird Observations}
 \usage{
 zerofill_ebird(
-  myList,
+  list,
   overwrite = FALSE,
   cols.remove = c("SUBSPECIES_COMMON NAME", "TAXONOMIC_ORDER", "LAST_EDITED_DATE",
     "CATEGORY", "APPROVED", "REVIEWED", "SPECIES_COMMENTS", "...48", "HAS_MEDIA",
@@ -13,7 +13,7 @@ zerofill_ebird(
 )
 }
 \arguments{
-\item{myList}{A list containing two named data frames, c("observations", "sampling"). This object is the result of \code{filter_ebird_data()}.}
+\item{list}{A list containing two named data frames, c("observations", "sampling"). This object is the result of \code{filter_ebird_data()}.}
 
 \item{cols.remove}{A vector of column names to be excluded from the output file.}
 

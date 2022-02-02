@@ -44,10 +44,16 @@ set_args <- function(
 
   ## check args
   temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
-  for(i in seq_along(temp))assertthat::assert_that(is.logical(eval(parse(text=temp[i]))), msg = paste("argument ", temp[i],"must be a logical."))
+
+  for(i in seq_along(temp)){
+    stopifnot(is.logical(eval(parse(text=temp[i]))), msg = paste("argument ", temp[i],"must be a logical."))
+  }
+
+
   temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
          "grid.size", "crs.target","year.range")
-  for(i in seq_along(temp)){assertthat::assert_that(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"),
+
+  for(i in seq_along(temp)){stopifnot(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"),
                                                     msg = paste("argument ", temp[i], "must be a logical."))}
   rm(temp)
 
