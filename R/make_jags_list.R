@@ -17,16 +17,16 @@ make_jags_list <-
            dir.out,
            overwrite=FALSE,
            fn.out = "jdat") {
+
+    ## create output filename
     fn = tolower(paste0(paste0(dir.out, "/", fn.out, ".RDS")))
-
-
+    ### make/check fn
     if(file.exists(fn) & !overwrite){
       cat("File ", fn," exists and `overwrite`== FALSE. Importing from file. \n")
       jdat <- readRDS(fn)
       return(jdat)}
 
-
-    # Force object(s) in dat to a list, despite length
+    # force object(s) in dat to a list, despite length
     stopifnot(all(c("bs","k","family","sp.prior","diagonalize") %in% names(jagam.args)))
 
     if (!is.list(dat)){dat <- list(dat)}
@@ -34,413 +34,297 @@ make_jags_list <-
     cat("creating a list of objects for use in JAGS...this will take a few to many minutes\n")
     # Name the list objects
     dat.names<-NA
-      for (i in 1:length(dat)) {
-        ind <-  names(dat[[i]])
-        if ("checklist_id" %in% ind){dat.names[i] <- "ebird"; next()}
-        if ("rteno" %in% ind){dat.names[i] <- "bbs"; next()}
-        if (!("rteno" %in% ind) &
-            !("checklist_id" %in% ind) &
-            !any(stringr::str_detect(ind,  "dir."))){
-          dat.names[i] <- "grid"
-          next()
-        }
-        if(any(stringr::str_detect(ind,  "dir."))){dat.names[i]  = "dirs"; next()}
-      }#end naming for loop
+    for (i in 1:length(dat)) {
+      ind <-  names(dat[[i]])
+      if ("checklist_id" %in% ind){dat.names[i] <- "ebird"; next()}
+      if ("rteno" %in% ind){dat.names[i] <- "bbs"; next()}
+      if (!("rteno" %in% ind) &
+          !("checklist_id" %in% ind) &
+          !any(stringr::str_detect(ind,  "dir."))){
+        dat.names[i] <- "grid"
+        next()
+      }
+      if(any(stringr::str_detect(ind,  "dir."))){dat.names[i]  = "dirs"; next()}
+    }#end naming for loop
     names(dat) <- dat.names
+    stopifnot(all(c("grid", "bbs","ebird") %in% names(dat)))
 
-    # initialize am empty obj to store max values of C for use in jagam data
-    maxN <- data.frame()
+    #Rearrange the list elements
+    dat <- list(grid  = dat$grid,
+                bbs   = dat$bbs,
+                ebird = dat$ebird)
+
 
     # specify all the possible objects to go into a single list of listout
     objs <-
       c(
-        "C", # observec counts
-        "Xg", # grid cell level covariates (area, proportion route in cell)
+        "C", # observed counts
         "Xp", # site-level detection covariates
-        "indexing",
-        "XY", # centroid coords for grid cell
-        "area" # area of the grid cell (m^2 unless shapefiles changed..)
-      )
-# Munge Data --------------------------------------------------------------
-    for (i in seq_along(dat)) {
+        "indexing" # indexes for where data exists.
+       )
+
+# YEARS -------------------------------------------------------------------
+    ## create index for all years across data
+    year.index <-
+      data.frame(year.id = sort(unique(c(
+        unique(dat$bbs$year), unique(dat$ebird$year)
+      )))) %>%
+      mutate(year.ind = 1:n())
+
+# GRID -----------------------------------------------------
+    ### create list of shit for GRID
+    grid.list <- NULL
+    grid.index <- dat$grid   %>%
+      sf::st_drop_geometry() %>%
+      units::drop_units() %>%
+      arrange(gridcellid) %>%
+      filter(!is.na(gridcellid)) %>%  # just to be safe.
+      rename(grid.id = gridcellid,
+             X=cell.lon.centroid,
+             Y=cell.lat.centroid) %>%
+      mutate(grid.ind  = 1:nrow(dat$grid))
+    grid.list$index <- grid.index %>% dplyr::select(grid.id, grid.ind)
+    grid.list$XY    <- grid.index %>% dplyr::select(X, Y)
+    grid.list$area  <- grid.index %>% dplyr::select(area)
+
+# BBS AND EBIRD --------------------------------------
+# intialize mpty maxN
+for (i in seq_along(dat)) {
+if(i==1) maxN <- NULL
       ind <-
         names(dat)[i] # make lazy indicator for which data we are munging
+      if(!ind %in% c("ebird", "bbs"))next()
+      cat("building ", ind, " objects..\n")
+      ## grab data frame
+      df <- dat[[i]]
+      names(df) <- tolower(names(df))
 
-# EBIRD LOOP --------------------------------------------------------------
-    if (ind == "ebird") {
-          cat("building ebird objects..\n")
-          ebird <- dat[[i]]
-          names(ebird) <- tolower(names(ebird))
+      ## Do some light munging
+      if ("sf" %in% class(df)) {
+        df <- df %>% sf::st_drop_geometry()
+      }
 
-          if("observation_count" %in% names(ebird)) ebird <- ebird %>% dplyr::rename(c = observation_count)
-
-          if ("sf" %in% class(ebird)){ebird <- ebird %>% sf::st_drop_geometry()}
-          ebird <- ebird %>%
-            filter(c <= max.C.ebird)  %>%
-            # Drop unused variables
-            select(-all_species_reported, -group_identifier) %>%
-            arrange(gridcellid, checklist_id, year)
-          rownames(ebird) <- NULL
-          ## Observed counts as 2D matrix (dims: checklist_id by year)
-          C   <-
-            make_mat(
-              ebird %>%
-                # since we dont use grid cells here, drop where checklist_id==NA
-                distinct(checklist_id, year, c) %>% filter(!is.na(checklist_id)),
-              row = "checklist_id",
-              col = "year",
-              val = "c"
-            )
-          nobs      <-
-            make_mat(
-              ebird %>% distinct(checklist_id, year, number_observers),
-              row = "checklist_id",
-              col = "year",
-              val = "number_observers"
-            )
-          nmins     <-
-            make_mat(
-              ebird %>% distinct(checklist_id, year, duration_minutes),
-              row = "checklist_id",
-              col = "year",
-              val = "duration_minutes"
-            )
-          doy       <-
-            make_mat(
-              ebird %>% distinct(checklist_id, year, yday),
-              row = "checklist_id",
-              col = "year",
-              val = "yday"
-            )
-          effort_ha <-
-            make_mat(
-              ebird %>% distinct(checklist_id, year, effort_area_ha),
-              row = "checklist_id",
-              col = "year",
-              val = "effort_area_ha"
-            )
-          start_time <-
-            make_mat(
-              ebird %>% distinct(checklist_id, year, time_observations_started),
-              row = "checklist_id",
-              col = "year",
-              val = "time_observations_started"
-            )
-
-          start_time[start_time=="<NA>"] <- NA
-          obs_id <-
-            make_mat(
-              ebird %>% distinct(checklist_id, year, observer_id),
-              row = "checklist_id",
-              col = "year",
-              val = "observer_id"
-            )
-
-          # Package all detection covariates
-          Xp <- list(nobs=nobs,
-                     nmins=nmins,
-                     doy=doy, # day of year
-                     effort_ha=effort_ha,
-                     obs_id = obs_id
-
-          )
-          for(j in seq_along(Xp)){
-            Xp[[j]][Xp[[j]] == "NULL"] <- NA}
-
-          # Grid-level covariates(2D, since grid/route locations don't change over time.)
-          grid.ebird <-
-            ebird %>%
-            distinct(gridcellid, checklist_id, .keep_all = TRUE)  %>%
-            units::drop_units()
-          ## remove rownames
-          rownames(grid.ebird) <- NULL # need to remove for Xg.XY creation below
-
-          ## scale area if necessary
-          if (scale.vars){grid.ebird$area <- scale(grid.ebird$area)}
-
-          ## grab area
-          Xg.area <-
-            make_mat(grid.ebird, val = "area", replace.na = TRUE, row="checklist_id")
-          Xg.area[is.na(Xg.area)] <- 0
-
-          Xg.XY <- grid.ebird %>%
-            distinct(gridcellid, cell.lon.centroid, cell.lat.centroid) %>%
-            arrange(gridcellid) %>%
-            tibble::column_to_rownames("gridcellid")
-          names(Xg.XY) <- c("X","Y")
-
-          Xg <- list(area=Xg.area, XY=Xg.XY)
-
-        # Loop indexes for JAGS
-        indexing <- make_indexing_df(X = C, Y = Xg.area)
-
-        ### IDENTIFY DESIRED ebird OBJS AS CHARACTER STRING ###
-          ## Grab max values for ebird in each grid cell for use in JAGAM
-         maxN <- rbind(ebird %>%
-            group_by(gridcellid) %>%
-              filter(!is.na(c)) %>%
-            summarise(N.max = max(c, na.rm=TRUE)), maxN)
-
-         ## create the list of ebird elements
-         objs.in <- objs[objs %in% ls()] %>% as.vector()
-         list.out <- vector(mode='list', length=length(objs.in))
-         names(list.out) <- objs.in
-           for (z in seq_along(objs.in)) {
-             new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
-             list.out[[objs.in[z]]] <- new
-           }
-           ebird.list <- list.out
-           #remove all objects to be sure they arent put into other lists
-           suppressWarnings(rm(list=objs))
-      }#end ebird i loopf
-
-# BBS LOOP --------------------------------------------------------------------
-if (ind == "bbs") {
-        cat("building bbs objects..\n")
-        bbs <- dat[[i]] %>%
-          # units::drop_units() %>%
-          arrange(gridcellid, rteno, year)
-        if ("sf" %in% class(bbs)){bbs <- bbs %>% sf::st_drop_geometry()}
-        names(bbs) <- tolower(names(bbs))
-        ## Observed counts as 2D matrix (dims: rteno by year)
-        C   <-
-          make_mat(
-            bbs %>% distinct(year, rteno,c) %>%
-              filter(!is.na(rteno)),
-            row = "rteno",
-            col = "year",
-            val = "c"
-          )
-
-        # Calculate mean values for detection covariates (some were already done elsewhere -- need to add these to that location at some point)
-        bbs <- bbs %>%
-          group_by(rteno, year) %>%
+      rownames(df) <- NULL
+      df <- df %>%
+        ### add year index
+        rename(year.id = year) %>%
+        left_join(year.index)
+      ### add grid index
+      df <- df %>%
+        rename(grid.id = gridcellid) %>%
+        left_join(grid.index %>% dplyr::select(grid.id, grid.ind))
+      ### calculate mean det covs for bbs
+      if (ind == "bbs") {
+        df <- df %>% dplyr::rename(site.id = rteno) %>%
           mutate(windmean = abs(startwind - endwind) / 2) %>%
           mutate(skymean = abs(startsky - endsky) / 2)
-        # Scale detection covariates if specified
-        if (scale.vars) {
-          bbs <- bbs %>%
-            ### create a variable for the wind "average"
-            group_by(rteno, year) %>%
-            mutate(windmean = abs(startwind - endwind) / 2) %>%
-            ungroup() %>%
-            ### z-scale covariates
-            mutate(
-              windmean  = (windmean - mean(windmean, na.rm = TRUE)) / sd(windmean, na.rm =
-                                                                           TRUE),
-              noisemean = (noisemean - mean(noisemean, na.rm = TRUE)) /
-                sd(noisemean, na.rm = TRUE),
-              # skymean   = (skymean - mean(skymean, na.rm=TRUE))/sd(skymean, na.rm=TRUE),
-              carmean   = (carmean - mean(carmean, na.rm = TRUE)) / sd(carmean, na.rm =
-                                                                         TRUE)
-            )
-        }#end scale.vars bbs
+      }
 
-        wind      <-
-          make_mat(
-            bbs %>% distinct(rteno, year, windmean),
-            row = "rteno",
-            col = "year",
-            val = "windmean"
-          )
-        car       <-
-          make_mat(
-            bbs %>% distinct(rteno, year, carmean),
-            row = "rteno",
-            col = "year",
-            val = "carmean"
-          )
-        noise     <-
-          make_mat(
-            bbs %>% distinct(rteno, year, noisemean),
-            row = "rteno",
-            col = "year",
-            val = "noisemean"
-          )
-        fyrbbs    <-
-          make_mat(
-            bbs %>% distinct(rteno, year, obsfirstyearbbs),
-            row = "rteno",
-            col = "year",
-            val = "obsfirstyearbbs"
-          )
-        fyrroute  <-
-          make_mat(
-            bbs %>% distinct(rteno, year, obsfirstyearroute),
-            row = "rteno",
-            col = "year",
-            val = "obsfirstyearroute"
-          )
-        assistant <-
-          make_mat(
-            bbs %>% distinct(rteno, year, assistant),
-            row = "rteno",
-            col = "year",
-            val = "assistant"
-          )
-        # Package all detection covariates
-        Xp <- list(assistant=assistant,
-                   fyrroute=fyrroute,
-                   fyrbbs = fyrbbs,
-                   noise=noise,
-                   car=car,
-                   wind=wind
+      ### filter out max C if ebird
+      if (ind == "ebird") {
+        df <- df %>%
+          dplyr::rename(site.id = checklist_id)
+        # replace the max values with NA rather tahn remove the rows entirely beucase we want to keep all the sites/grids combinations here
+        df$c[df$c > max.C.ebird] <- NA
+      }
+
+      ## Site index -----------------------------------------------
+      ## create some indexes and IDS to ensure all matrices are properly sorted.
+      site.index <- df %>%
+        dplyr::distinct(site.id) %>%
+        filter(!is.na(site.id)) %>%
+        arrange(site.id) %>%
+        mutate(site.ind = 1:n())
+
+      ## add the grid and site site.ind to the data frame
+      df <- df %>% left_join(site.index)
+
+      ## ensure all grid cells are represented in the dataset for creating even matrices
+      df <- df %>% full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
+
+
+## C: Count Matrix ------------------------------------------------------------
+  ## make a matrix of observed counts
+      C   <-
+        make_mat(
+          df %>%
+            distinct(year.ind, site.ind, c) %>%
+            filter(!is.na(site.ind)), # be sure to remove na sites
+          row = "site.ind",
+          col = "year.ind",
+          val = "c"
         )
-        for(j in seq_along(Xp)){
-          Xp[[j]][Xp[[j]] == "NULL"] <- NA}
+      stopifnot(as.integer(rownames(C))==sort(as.integer(rownames(C))))
 
+##XP: det. covs --------------------------------------------------
+  ## Specify all the possble varibles (and desired names) to be used as detection covariates in model
+  Xp.val       = c("number_observers",
+                       "duration_minutes",
+                       "effort_area_ha",
+                       "time_observations_started",
+                       "observer_id",
+                       "c",
+                       "carmean",
+                       "windmean",
+                       "noisemean",
+                       "obsfirstyearbbs",
+                       "obsfirstyearroute",
+                       "assistant"
+      )
+  Xp.names     = c("nobs",
+                       "nmins",
+                       "effort_ha",
+                       "start_time",
+                       "obs_id",
+                       "C",
+                       "car",
+                       "wind",
+                       "mean",
+                       "fyrbbs",
+                       "fyrroute",
+                       "assistant"
+      )
 
-        # Grid-level covariates(2D, since grid/route locations don't change over time.)
-        grid.bbs <-
-          bbs %>%
-          distinct(gridcellid, rteno, .keep_all = TRUE)  %>%
-          units::drop_units()
-        ## scale area if necessary
-        if (scale.vars){grid.bbs$area <- scale(grid.bbs$area)}
+  ## make the detection covariates matrices (with dimensiosn site by)
+  Xp <- list()
+  for(j in seq_along(Xp.val)){
+    cols <- c("site.ind", "year.ind", Xp.val[j])
+    if(!all(cols %in% names(df))){next()}
+    xpdf <- df %>%
+      dplyr::select(!!!cols) %>%
+      dplyr::filter(!is.na(site.ind)) %>% ## must remove NA site.ind
+      distinct() %>%
+      rename(val=cols[3]) %>%
+      arrange(site.ind, year.ind)
+    list.number  = length(Xp)+1
+    Xp[[list.number]] <-
+      make_mat(df.in=xpdf,
+               row="site.ind",
+               col="year.ind",
+               val="val")
+    ##test rownames
+    names(Xp)[list.number] <- Xp.names[j]
+  }#end Xp j-loop
 
-        ## grab area
-        Xg.area <-
-          make_mat(grid.bbs, val = "area", replace.na = TRUE)
-        Xg.area[is.na(Xg.area)] <- 0
+  stopifnot(all(as.integer(rownames(Xp[[list.number]]))==sort(site.index$site.ind)))
+  stopifnot(all(as.integer(colnames(Xp[[list.number]]))==sort(year.index$year.ind)))
+  stopifnot(dim(Xp[[1]])[1]==dim(C)[1])
 
-        Xg.XY <- grid.bbs %>%
-          distinct(gridcellid, cell.lon.centroid, cell.lat.centroid) %>%
-          arrange(gridcellid) %>%
-          tibble::column_to_rownames("gridcellid")
-        names(Xg.XY) <- c("X","Y")
+## Max N for JAGAM ---------------------------------------------------------
+maxN <- rbind(maxN,
+              rbind(df %>%
+                group_by(grid.ind) %>%
+                filter(!is.na(c)) %>%
+                summarise(N.max = max(c, na.rm=TRUE)), maxN)
+         )
+## Indexing: Make list of indexes ------------------------------------------
+# Loop indexes for JAGS
+indexing <- make_indexing_df(X=df)
 
-        ## grab the  ortion of rteno in cell
-        Xg.prop <-
-          make_mat(grid.bbs, val = "proprouteincell", replace.na = TRUE)
-        Xg.prop[is.na(Xg.prop)] <-
-          0 # these must be zero for jags model
+## BBS specific matrices -------------------------------------------------------
+if(ind == "bbs"){
+  temp.bbs <-
+    df %>% filter(!is.na(c)) # to ensure we remove the NA rteno
 
-        Xg <- list(prop=Xg.prop, area=Xg.area, XY=Xg.XY)
-
-        # Loop indexes for JAGS
-        indexing <- make_indexing_df(X = C, Y = Xg.area)
-
-        temp.bbs <-
-          bbs %>% filter(!is.na(c)) # to ensure we remove the NA rteno
-
-        nGridsBySiteByYear <- temp.bbs %>%
-          group_by(rteno, year) %>%
-          mutate(n=n_distinct(gridcellid)) %>%
-          distinct(n, year, rteno) %>%
+  nGridsBySiteByYear <- temp.bbs %>%
+          group_by(site.ind, year.ind) %>%
+          mutate(n=n_distinct(grid.ind)) %>%
+          distinct(n, year.ind, site.ind) %>%
           reshape2::acast(
-            rteno~year, value.var = "n")
-        nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
+            site.ind~year.ind, value.var = "n")
+  nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
 
-        #create an array with dimensions [nRoutes by nYears by nMaxNumberGridsASingleRteFallsInto (nMaxGrid)]
-        nMaxGrid <-max((temp.bbs %>%
-                          distinct(gridcellid, rteno, year) %>%
-                          group_by(rteno, year) %>%
-                          summarise(n=n_distinct(gridcellid)))["n"]) # index used in JAGS
-        idsGridsbySiteYear <- temp.bbs %>%
-          distinct(gridcellid, rteno, year) %>%
-          group_by(rteno, year) %>%
-          mutate(ng = 1:n()) %>%
-          arrange(gridcellid) %>%
-          reshape2::acast(rteno~year~ng, value.var = "gridcellid")
+  #create an array with dimensions [nRoutes by nYears by nMaxNumberGridsASingleRteFallsInto (nMaxGrid)]
+  nMaxGrid <- max((temp.bbs %>%
+                      distinct(grid.ind, site.ind, year.ind) %>%
+                      group_by(site.ind, year.ind) %>%
+                      summarise(n=n_distinct(grid.ind)))["n"], na.rm=TRUE) # index used in JAGS
+  idsGridsbySiteYear <- temp.bbs %>%
+      distinct(grid.ind, site.ind, year.ind) %>%
+      group_by(site.ind, year.ind) %>%
+      mutate(ng = 1:n()) %>%
+      arrange(grid.ind) %>%
+      reshape2::acast(site.ind~year.ind~nMaxGrid, value.var = "grid.ind")
 
-        ## Grab max values for BBS in each grid cell for use in JAGAM
-        maxN <- rbind(bbs %>%
-                        group_by(gridcellid) %>%
+  ## Grab max values for BBS in each grid cell for use in JAGAM
+    maxN <- rbind(df %>%
+                        group_by(grid.ind) %>%
                         filter(!is.na(c)) %>%
                         summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
-        ## add these indexes to bbs$indexing
-        # indexing$maxn <- maxN
-        indexing$gridsiteyear.id <- idsGridsbySiteYear
-        indexing$ngridsiteyear <- nGridsBySiteByYear
-        indexing$nmaxgrids <- nMaxGrid
 
-        # create the list of bbs elements
-        objs.in <- objs[objs %in% ls()] %>% as.vector()
-        list.out <- vector(mode='list', length=length(objs.in))
-        names(list.out) <- objs.in
-        for (z in seq_along(objs.in)) {
-          new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
-          list.out[[objs.in[z]]] <- new
-        }
-        bbs.list <- list.out
-        #remove all objects to be sure they arent put into other lists
-        suppressWarnings(rm(list=objs))
-}#end bbs loop
+    ## add these indexes to bbs$indexing
+    # indexing$maxn <- maxN
+    indexing$gridsiteyear.id <- idsGridsbySiteYear
+    indexing$ngridsiteyear <- nGridsBySiteByYear
+    indexing$nmaxgrids <- nMaxGrid
 
 
-# GRID LOOP ---------------------------------------------------------------
-      if (ind == "grid") {
-        grid <- dat[[i]] %>%
-          # units::drop_units() %>%
-          arrange(gridcellid) %>%
-          distinct(gridcellid, .keep_all = TRUE)
+} # end if BBS
 
-        if ("sf" %in% class(grid)){grid <- grid %>% sf::st_drop_geometry()  %>%
-            units::drop_units()}
-        cat("building grid objects..\n")
 
-        names(grid) <- tolower(names(grid))
-        nGrids <- length(unique(grid$gridcellid))
-        XY <- data.frame(X=grid$cell.lon.centroid, Y=grid$cell.lat.centroid)
-        area <- grid$area
+# LOOP OUTPUT ------------------------------------------------------------------
+## create the list of elements
+objs.in <- objs[objs %in% ls()] %>% as.vector()
+list.out <- vector(mode='list', length=length(objs.in))
+names(list.out) <- objs.in
+for (z in seq_along(objs.in)) {
+  new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
+  list.out[[objs.in[z]]] <- new
+}
+if(ind=="ebird") ebird.list <- list.out
+if(ind=="bbs")   bbs.list <- list.out
+if(ind=="grid")  grid.list <- list.out
+#remove all objects to be sure they arent put into other lists
+suppressWarnings(rm(list=c(objs)))
+rm(list.out)
+} # END EBIRD AND BBS LOOPS
 
-        ## create the list of grid elements
-        objs.in <- objs[objs %in% ls()] %>% as.vector()
-        list.out <- vector(mode='list', length=length(objs.in))
-        names(list.out) <- objs.in
-        for (z in seq_along(objs.in)) {
-          new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
-          list.out[[objs.in[z]]] <- new
-        }
-        grid.list <- list.out
-        #remove all objects to be sure they arent put into other lists
-      suppressWarnings(rm(list=objs))
-
-    }#end grid loop
-}#end i loop for munging `dat`
 
 # Create JAGAM Data ---------------------------------------------------
 # grab max values of N across ebird and bbs for each grid cell
-maxN <- maxN %>% filter(N.max >= 0) %>%
-            full_join(data.frame(gridcellid = grid$gridcellid, N.max = 0)) %>% # ensure all grid cells are represented
-            group_by(gridcellid) %>%
-            summarise(N.max = max(N.max, na.rm=TRUE)) %>%
-            distinct() %>%
-            arrange(gridcellid)
+    maxN.all <- maxN %>%
+      dplyr::group_by(grid.ind) %>%
+      dplyr::filter(N.max == max(N.max, na.rm = TRUE)) %>%
+      dplyr::distinct() %>%
+      dplyr::ungroup()
+    maxN.all <- rbind(maxN.all, cbind(
+      N.max = 0,
+      grid.ind = setdiff(grid.index$grid.ind, maxN.all$grid.ind)
+    )) %>%
+      dplyr::arrange(grid.ind)
 
-if(exists("grid.list")){
-jagam.data <- data.frame(
-  X=grid.list$XY$X,
-  Y=grid.list$XY$Y,
-  N=maxN$N.max
-  # N.test=dpois(1:length(grid.list$XY$Y), lambda=0.5)
-)
+## just to ensure its sorted
+temp=grid.index %>%
+  dplyr::arrange(grid.ind)
+
+## bundle data for use in jagam
+jagam.data <- data.frame(X = temp$X,
+                         Y = temp$Y,
+                         N = maxN.all$N.max)
+
 # ensure k < num grid cells
 stopifnot(jagam.args[['k']] < nrow(jagam.data))
-
 gam.fn <- paste0(dir.out, "/jagam_UNEDITED.jags")
 gam.list <-
-  mgcv::jagam(
-    formula = N ~ s(X, Y,
-                    bs=jagam.args[['bs']],
-                    k=as.integer(jagam.args[['k']])
-                    ),
-    file = gam.fn,
-    sp.prior = jagam.args[['sp.prior']],
-    data = jagam.data,
-    diagonalize = jagam.args[['diagonalize']],
-    family=tolower(tolower(jagam.args[['family']]))
-  )
+mgcv::jagam(
+  formula = N ~ s(X, Y,
+                  bs=jagam.args[['bs']],
+                  k=as.integer(jagam.args[['k']])
+                  ),
+file = gam.fn,
+sp.prior = jagam.args[['sp.prior']],
+data = jagam.data,
+diagonalize = jagam.args[['diagonalize']],
+family=tolower(tolower(jagam.args[['family']]))
+)
 
 gam.list$jags.fn <-  gam.fn
-
 cat("GAM jags model specification saved:\n\t", gam.fn,"\n\n")
-}else{cat("grid data not provided. currently functionality of `make_jags_list()` requires this to be provided. \nfuture functionality will allow option to infer grid information from BBS or eBird data inuputs.","\n\n")}
 
 # Create Return Object ----------------------------------------------------
 objs.out <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
-names <- c("ebird", "bbs", "grid", "gam")
+names    <- c("ebird",      "bbs",      "grid",      "gam")
 for (i in seq_along(objs.out)) {
   if (i == 1) {
     list.out <- list()

@@ -2,16 +2,14 @@
 % Please edit documentation in R/make_indexing_df.R
 \name{make_indexing_df}
 \alias{make_indexing_df}
-\title{Make 2-D array (Matrix for JAGS)}
+\title{Make 2-D array for Indexing Purposes}
 \usage{
 make_indexing_df(X, Y)
 }
 \arguments{
-\item{X}{a data frame with dimensions site by year}
-
-\item{Y}{a data frame with dimensions grid by site}
+\item{X}{a data frame with variables site.id, site.ind, grid.id, grid.ind, year.id, year.ind}
 }
 \description{
-Make 2-D array (Matrix for JAGS)
+Make 2-D array for Indexing Purposes
 }
 \keyword{internal}

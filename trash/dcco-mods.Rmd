@@ -253,7 +253,6 @@ mod.fns <- setdiff(mod.fns, gam.mod.fns) # remove jags fns
 for(i in seq_along(mod.fns)) {
   mod.fn   <- mod.fns[i]
   mod.name <- mod.names[i]
-  fn.out <- paste0(dir.models, "/", mod.name, ".rds")
   mods.out <- if(i==1){fn.out}else{c(mods.out, fn.out)}
   
   if (file.exists(fn.out) &
@@ -262,6 +261,7 @@ for(i in seq_along(mod.fns)) {
   jags.data$area <- as.vector(scale(jags.data$area, center = TRUE))
   # names(jdat)
   tictoc::tic()
+  fn.out <- paste0(dir.models, "/", mod.name, ".rds")
   out <- jagsUI::jags(
     data  = jags.data,
     model.file = mod.fn,

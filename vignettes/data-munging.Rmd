@@ -88,7 +88,6 @@ if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
     species = species,
     zero.fill = TRUE,
     observations.output = 'df',
-    # do not change!
     year.range = year.range
   )
   bbs_obs <-
@@ -143,11 +142,11 @@ ebird_spatial <- make_ebird_spatial(df=ebird,
                    dir.out=dir.spatial.out
                    )
 ```
-## Step 4: Bundle data for Use in JAGS/Elsewhere
+# Step 4: Bundle data for Use in JAGS/Elsewhere
 ```{r jdat}
 jdat <- make_jags_list(
   dat = list(ebird=ebird_spatial, 
-               bbs=bbs_spatial, grid=grid, dirs=dirs),
+               bbs=bbs_spatial, grid=grid),
   dir.out = dir.jags,
   overwrite = overwrite.jdat,
   max.C.ebird = max.C.ebird,
@@ -160,4 +159,4 @@ jdat <- make_jags_list(
     diagonalize = TRUE)
 )
 ```
-
+<!-- END RUN -->

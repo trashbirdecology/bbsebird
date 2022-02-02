@@ -4,10 +4,10 @@
 \alias{make_mat}
 \title{Make 2-D array (Matrix for JAGS)}
 \usage{
-make_mat(df, row = "rteno", col = "gridcellid", val, replace.na = FALSE)
+make_mat(df.in, row = "site.ind", col = "year.ind", val, replace.na = FALSE)
 }
 \arguments{
-\item{df}{Data frame}
+\item{df.in}{Data frame}
 
 \item{row}{Variable in df containing target row names}
 
