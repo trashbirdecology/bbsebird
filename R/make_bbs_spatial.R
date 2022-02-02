@@ -108,19 +108,6 @@ make_bbs_spatial <- function(df,
     )
   cws_routes <- bbsAssistant::make.rteno(cws_routes)
 
-
-  ## Keep routes if provided to save time on the intersection.
-  if (!is.null(routes.keep)) {
-    if (!class(cws_routes$rteno) == class(routes.keep)) {
-      stop("Classes of cws routes rteno don't match. Fix in munge_bbs_shapefiles.R pls")
-    }
-    cws_routes <- cws_routes %>% dplyr::filter(rteno %in% routes.keep)
-    if (!class(usgs_routes$rteno) == class(routes.keep)) {
-      stop("Classes of cws routes rteno don't match. Fix in munge_bbs_shapefiles.R pls")
-    }
-    usgs_routes <- usgs_routes %>% dplyr::filter(rteno %in% routes.keep)
-  }
-
   # merge the CA and USA data
   ## keep just a few of same cols-we can delete this but theyre not too useful.
   keep <-
@@ -136,6 +123,7 @@ make_bbs_spatial <- function(df,
       ## 1. RouteName: they don't always match the published observations data
       ## 2. ShapeLength or variations thereof: we need to calc route/line length within our desired projections.
     dplyr::select(rteno, geometry) %>%
+    #### sometimes when I get to this poitnt when running within a notebook/rmd i get this error: https://github.com/rstudio/rstudio/issues/6260
     ## calculate lengths of lines (may be multiples for one rteno)
     dplyr::mutate(segmentlength = sf::st_length(.)) %>%
     group_by(rteno) %>%

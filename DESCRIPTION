@@ -46,6 +46,7 @@ Suggests:
     learnr (>= 0.10.1),
     rmarkdown (>= 2.11),
     testthat (>= 3.1.1),
+    terra,
     mapview
 VignetteBuilder: knitr
 Remotes: 

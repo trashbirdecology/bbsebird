@@ -226,6 +226,7 @@ for(i in 1:length(x)){
 #' @param regions string of countries or states
 #' @param max.C.ebird optional NULL or integer representing max number of birds allowed on eBird data
 #' @param year.range Vector of years. will take the min and max value
+#' @export
 proj.shorthand <- function(species, regions, grid.size, year.range, max.C.ebird=NULL){
 
 ## munge the states first.
@@ -235,7 +236,7 @@ proj.shorthand <- function(species, regions, grid.size, year.range, max.C.ebird=
   regions <- gsub(x=regions,pattern=";|,|\\|,", "-")
   regions <- paste(regions, collapse = "-")
 
-  if(length(species)>1)warning("multiple species indexes supplied. please check the project directory naming to ensure it properly represents desired species.")
+  if(length(species)>1)message("multiple species indexes supplied. please check the project directory naming to ensure it properly represents desired species.")
 
   x <- paste0(
   species[nchar(species)==(max(nchar(species)))][1],#take min or max to assign species to dir name

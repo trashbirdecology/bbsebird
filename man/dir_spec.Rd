@@ -16,4 +16,3 @@ dir_spec(dir.orig.data, dir.proj = NULL, subdir.proj = NULL)
 \description{
 Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with \code{list2env()} to assign directories to desired environment (typically .GlobalEnv)
 }
-\keyword{internal}
