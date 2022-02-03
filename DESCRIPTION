@@ -30,16 +30,22 @@ Imports:
     rnaturalearth (>= 0.3.0),
     sp (>= 1.4.6),
     stringr (>= 1.4.0),
-    suncalc (>= 0.5.0),
     units (>= 0.7.2),
     sf,
     tibble,
     tidyr (>= 1.1.4),
-    vroom (>= 1.5.7)
+    vroom (>= 1.5.7),
+    base,
+    utils,
+    grDevices,
+    stats,
+    st,
+    parallel
 Suggests: 
     knitr,
     here (>= 1.0.1),
-    rmarkdown
+    rmarkdown,
+    suncalc (>= 0.5.0)
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth
