@@ -218,6 +218,7 @@ eval_params <- function(x = params) {
 #' @param grid.size size of desired grid cell
 #' @param max.C.ebird optional NULL or integer representing max number of birds allowed on eBird data
 #' @param year.range Vector of years. will take the min and max value
+#'
 #' @export proj.shorthand
 proj.shorthand <- function(species,
                            regions,
@@ -244,7 +245,7 @@ proj.shorthand <- function(species,
   regions <- paste(regions, collapse = "-")
 
   if (length(species) > 1)
-    message(
+    cat(
       "multiple species indexes supplied. please check the project directory naming to ensure it properly represents desired species."
     )
 

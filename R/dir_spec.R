@@ -8,8 +8,13 @@
 #' @export dir_spec
 
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
-# browser()
   if(is.null(dir.proj)) dir.proj <- getwd()
+  if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifying a new name for project."); subdir.proj="myproject"}
+
+
+
+
+
   # first, create the proj directory if necessary
   if(!dir.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified

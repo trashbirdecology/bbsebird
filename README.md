@@ -80,33 +80,35 @@ will create the directory for you.
 ``` r
 # REQUIRED ARGUMENTS
 dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
-# OPTIONAL ARGUMENTS
-#general arguments
+
+# Strongly suggested but optional args
+
+##general arguments
 dir.proj  = "C:/Users/jburnett/documents/github/dubcorms-dev-scene/"
-# dir.proj     = NULL # project directory. If NULL will specify and create a project directory within the current working directory. A single primary directory is made for each species within which new directories comprise combinations of years/spatial extent/etc. are housed.
 states              = c("us-co", "us-ne", "us-ks","us-wy", "us-SD", 
                         "Us-MT", "US-ND")
-species             = c("house sparrow", "passer domesticus")
-species.abbr        = c("houspa", "HOSP") # call all the variations especially those that appear int eh EBIRD dwnloaded files
-# species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
-# species.abbr        = c("DCCO", "doccor") # call all the variations especially those that appear int eh 
 countries           = c("US", "CA") ## string of  countries Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
+species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
+species.abbr        = c("doccor","dcco", "docco")
+
 year.range          = 2008:2019
 base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) # used as base date for Julian dates.
 crs.target          = 4326 #target CRS for all created spatial layers
-get.sunlight        = FALSE #TRUE will caculate sunrise/light and moonrise/light times/durations. Only specify if data is needed as it takes a bit of time to run against the eBird data.
-#GRID: arguments for creating a spatial grid
+
+##grid arguments
 grid.size           = 1.00 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
 hexagonal           = TRUE # if FALSE will produce square grid cells against CRS.target.
-overwrite.grid      = FALSE # logical FALSE will not overwrite the grid if one already exists in dir.proj
-#BBS: arguments for filtering, downloading, and munging BBS data specifcally
+overwrite.grid      = FALSE # logical FALSE will not overwrite the grid if one exists in dir.proj
+
+##bbs arguments
 usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
 cws.layer           = "ALL_ROUTES"
 overwrite.bbs       = FALSE
-#EBIRD: arguments for filtering and munging the eBird data specifically
+
+##ebird arguments
 overwrite.ebird     = FALSE
-max.C.ebird         = 100 # maximum number of birds of the select species counted in a single ebird checklist
-remove.bbs.obs      = TRUE # TRUE will attempt to remove BBS observations from the eBird database. This is currently a crude method.
+max.C.ebird         = 100 # maximum number of birds in a checklist
+remove.bbs.obs      = TRUE # TRUE will attempt to remove BBS observations from the eBird database.
 max.effort.km       = 5
 max.num.observers   = 10
 max.effort.mins     = 180
@@ -115,9 +117,11 @@ ebird.protocol      = c("Traveling", "Stationary")
 min.yday            = 91
 max.yday            = 245
 mmyyyy              = "nov-2021" # the month and year of the eBird data downloads on file
-#JAGS: arguments for customizing the resulting JAGS data list
+
+##JAGS: arguments for customizing the resulting JAGS data list
 jagam.args          = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform", diagonalize=TRUE)
 scale.vars          = TRUE # whether or not to z-scale select variables.
+
 ## Munge the states and countries indexes for use in dir/proj dir reation
 if(!exists("states")) states <- NULL
 if(!is.null(states)){regions <- states}else{regions <- countries}
@@ -141,7 +145,6 @@ directries based on teh directories supplied above.
 ``` r
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <-  proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
-if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifying a new name for project."); subdir.proj="myproject"}
 dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
 # ensure all directories exist
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
