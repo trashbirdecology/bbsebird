@@ -119,7 +119,6 @@ split_tibble <-
 
 
 #' compute standard error of a vector
-#' @examples
 #' @keywords internal
 #' @noRd
 se <- function(x) {

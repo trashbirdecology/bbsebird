@@ -60,3 +60,4 @@ inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/ebird/ebird_samp_filtere
 inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/spatial/ebird_spatial.rds
 inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/spatial/grid.rds
 inst/doc
+packrat/lib*/
