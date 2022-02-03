@@ -44,8 +44,10 @@ make_ebird_spatial <- function(df, crs.target, dir.out=NULL, grid = NULL, overwr
    cat("\t...done.\n")
   # match proj to target proj
   cat("projecting or re-projecting the eBird data to match crs.target. \ntakes ~1 minute for smaller spatial extents...\n")
+  ## set CRS
+  crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
   df <-
-    sf::st_transform(df, crs = sp::CRS(paste0("+init=epsg:", crs.target)))
+    sf::st_transform(df, crs = crs.string)
   cat("\t...done\n")
   ## Exit function if no grid is provided
   if (is.null(grid)){

@@ -39,13 +39,11 @@ make_bbs_spatial <- function(df,
   }
 
 
-
   # force colanms to lower just in case
   names(df) <- tolower(names(df))
 
-  # create as string for the crs.target
-  # crs.string=sp::CRS(paste0("+init=epsg:", crs.target))
-  crs.string = sp::CRS(paste0("+init=epsg:", crs.target))
+  ## set CRS
+  crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
 ## Import and merge CAN and USA BBS routes -------------
   cat("importing route layers")
@@ -56,6 +54,8 @@ make_bbs_spatial <- function(df,
   cws.gdb <-
     list.files(cws.routes.dir, pattern = ".gdb", full.names = TRUE) %>% stringr::str_remove(".zip") %>% unique()
   cws_routes <- rgdal::readOGR(dsn = cws.gdb, layer = cws.layer)
+
+
   # cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
   cws_routes <- sp::spTransform(cws_routes, crs.string)
   #coerce to sf

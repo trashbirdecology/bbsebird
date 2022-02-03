@@ -22,6 +22,7 @@ Imports:
     progress (>= 1.2.2),
     readr (>= 2.1.1),
     reshape2 (>= 1.4.4),
+    rgdal, 
     rjags (>= 4.12),
     rnaturalearth (>= 0.3.0),
     sp (>= 1.4.6),
@@ -31,8 +32,7 @@ Imports:
     vroom (>= 1.5.7),
     units (>= 0.7.2)
 Suggests: 
-    here (>= 1.0.1),
-    mapview
+    here (>= 1.0.1)
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth
