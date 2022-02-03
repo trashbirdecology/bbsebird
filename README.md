@@ -10,13 +10,12 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 # dubcorms
 
 The purpose of this R package (*likely to undergo a name change…*) is
-three-fold:
+to:
 
 1.  provide a (currently) faster alternative to the R package `auk` for
     importing and munging the large eBird datasets (\*see note)
 2.  integrate the BBS and eBird observation datasets for use in JAGS
     (`rjags`) and `mcgv::jagam()`
-3.  run fully Bayesian integrated population models using said data
 
 > \*[@cboettig](https://github.com/cboettig/) and
 > [@amstrimas](https://github.com/amstrimas/) are currently developing
@@ -59,13 +58,10 @@ requires two components of the EBD to be saved to local file:
 
 ``` r
 # 0:Setup -----------------------------------------------------------------
-devtools::install_github("trashbirdecology/dubcorms",
-                         force = FALSE, 
-                         dependencies = TRUE)
+# devtools::install_github("trashbirdecology/dubcorms")
 #explicitly load some packages
 pkgs <- c("dubcorms",
           "bbsAssistant",
-          # "mapview",
           "reshape2",
           "stringr",
           "dplyr",
@@ -75,6 +71,12 @@ invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
 ```
 
+If using this README, this is the only RMD chunk you shoudl have to
+edit. Most important are where the eBird data and BBS shapefiles are
+stored (dir.orig.data) and where you wish to save resulting data/models
+(dir.proj). The latter need not exist – if it does not exist the package
+will create the directory for you.
+
 ``` r
 # REQUIRED ARGUMENTS
 dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
@@ -82,19 +84,13 @@ dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-d
 #general arguments
 dir.proj  = "C:/Users/jburnett/documents/github/dubcorms-dev-scene/"
 # dir.proj     = NULL # project directory. If NULL will specify and create a project directory within the current working directory. A single primary directory is made for each species within which new directories comprise combinations of years/spatial extent/etc. are housed.
-states              = c("us-co", "us-ne", "us-wy", "us-SD")
+states              = c("us-co", "us-ne", "us-ks","us-wy", "us-SD", 
+                        "Us-MT", "US-ND")
 species             = c("house sparrow", "passer domesticus")
 species.abbr        = c("houspa", "HOSP") # call all the variations especially those that appear int eh EBIRD dwnloaded files
 # species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
 # species.abbr        = c("DCCO", "doccor") # call all the variations especially those that appear int eh 
 countries           = c("US", "CA") ## string of  countries Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
-# states  = c("us-mi",
-#             "us-oh",
-#             "us-wi",
-#             "us-il",
-#             "us-in")
-# states              = c(paste0("us-",c("nc", "mi","sc", "fl", "ga", "al","md","de","va","wv","tn","pa","ny","ms","ky","oh","in","il", "wi")), "ca-on")
-# states       = c("usfl", "us-ga" ) ## string of  states/provinces/territories. Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
 year.range          = 2008:2019
 base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) # used as base date for Julian dates.
 crs.target          = 4326 #target CRS for all created spatial layers
@@ -122,25 +118,30 @@ mmyyyy              = "nov-2021" # the month and year of the eBird data download
 #JAGS: arguments for customizing the resulting JAGS data list
 jagam.args          = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform", diagonalize=TRUE)
 scale.vars          = TRUE # whether or not to z-scale select variables.
-```
-
-``` r
-temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
-for(i in seq_along(temp))assertthat::assert_that(is.logical(eval(parse(text=temp[i]))), msg = paste("argument ", temp[i],"must be a logical."))
-temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
-       "grid.size", "crs.target","year.range")
-for(i in seq_along(temp)){assertthat::assert_that(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"),
-                                                  msg = paste("argument ", temp[i], "must be a logical."))}
-rm(temp)
 ## Munge the states and countries indexes for use in dir/proj dir reation
 if(!exists("states")) states <- NULL
 if(!is.null(states)){regions <- states}else{regions <- countries}
 ```
 
+This chunk is not required, but is recommended to check that you’ve
+correctly specified the arguments above.
+
+``` r
+temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
+for(i in seq_along(temp))stopifnot(is.logical(eval(parse(text=temp[i]))))
+temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
+       "grid.size", "crs.target","year.range")
+for(i in seq_along(temp)){stopifnot(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"))}
+rm(temp)
+```
+
+This chunk will create new environmental variables for project adn data
+directries based on teh directories supplied above.
+
 ``` r
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
-subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
-if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifing a new name for project."); subdir.proj="myproject"}
+subdir.proj <-  proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
+if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifying a new name for project."); subdir.proj="myproject"}
 dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
 # ensure all directories exist
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
@@ -148,21 +149,22 @@ suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 
 ## Step 2: Make Integrated Data
 
+### Create a spatial sampling grid
+
 ``` r
 if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
 grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           overwrite=overwrite.grid,
                           states = states.ind,
                           countries = countries,
-                          hexagonal=hexagonal,
                           crs.target=crs.target,
                           grid.size=grid.size
                           )
-# plot(grid)
-# mapview::mapview(grid)
+plot(grid)
 ```
 
-Make BBS data.
+Create the BBS data. This chunk relies heabily on R package . The
+resulting data is aligned with the spatial grid (see above).
 
 ``` r
 ## wrapper for creating all bbs dafa
@@ -185,24 +187,22 @@ if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
   saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
 }# end bbs data munging
 
-# Overlay BBS and study area/sampling grid
-  bbs_spatial <- make_bbs_spatial(bbs_obs,
-                          cws.routes.dir = dirs$cws.routes.dir,
-                          usgs.routes.dir = dirs$usgs.routes.dir,
-                          plot.dir = dirs$dir.plots,
-                          crs.target = crs.target,
-                          grid = grid,
-                          dir.out = dirs$dir.spatial.out,
-                          overwrite = overwrite.bbs
-                          )
+# Overlay BBS and study area / sampling grid
+### note, sometimes when running this in a notebook/rmd i randomly get a .rdf path error. I have no clue what this bug is. Just try running it again. See : https://github.com/rstudio/rstudio/issues/6260
+bbs_spatial <- make_bbs_spatial(df = bbs_obs,
+  cws.routes.dir = dirs$cws.routes.dir,
+  usgs.routes.dir = dirs$usgs.routes.dir,
+  plot.dir = dirs$dir.plots,
+  crs.target = crs.target,
+  grid = grid,
+  dir.out = dirs$dir.spatial.out,
+  overwrite = overwrite.bbs
+)
 ```
 
 Make eBird data,
 
 ``` r
-# fns.ebird.in <- list.files(dirs$dir.ebird.out,
-#                             full.names = TRUE,
-#                             recursive = TRUE)
 (fns.ebird    <- id_ebird_files(
                         dir.ebird.in = dirs$dir.ebird.in,
                         dir.ebird.out = dirs$dir.ebird.out,
@@ -251,4 +251,8 @@ jdat <- make_jags_list(
     sp.prior = "log.uniform",
     diagonalize = TRUE)
 )
+```
+
+``` r
+cat(names(jdat), sep="\n")
 ```
