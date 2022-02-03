@@ -336,8 +336,7 @@ ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
                        "sampling" = dplyr::as_tibble(sampling))
 
 # ZERO-FILL DATA ----------------------------------------------------------
-ebird_filtered <- zerofill_ebird(myList=ebird_filtered,
-                             overwrite=overwrite)
+ebird_filtered <- zerofill_ebird(list=ebird_filtered)
 
 # Final munging of columns  -----------------------------------------------
 ## munge column names
