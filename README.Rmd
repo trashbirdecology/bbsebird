@@ -68,15 +68,25 @@ If using this README, this is the only RMD chunk you shoudl have to edit. Most i
 # REQUIRED ARGUMENTS
 dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
 
-# Strongly suggested but optional args
+species             = c("Common raven")
+species.abbr        = c("comrav") # see ebird filename for abbreviation
+##bbs arguments
+usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
+cws.layer           = "ALL_ROUTES"
+##ebird arguments
+mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
 
+# Strongly suggested but optional args
 ##general arguments
 dir.proj  = "C:/Users/jburnett/documents/github/dubcorms-dev-scene/"
+
+
+### see bbsAssistant::region_codes
 states              = c("us-co", "us-ne", "us-ks","us-wy", "us-SD", 
                         "Us-MT", "US-ND")
 countries           = c("US", "CA") ## string of  countries Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
-species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
-species.abbr        = c("doccor","dcco", "docco")
+# species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
+# species.abbr        = c("doccor","dcco", "docco")
 
 year.range          = 2008:2019
 base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) # used as base date for Julian dates.
@@ -84,34 +94,19 @@ crs.target          = 4326 #target CRS for all created spatial layers
 
 ##grid arguments
 grid.size           = 1.00 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
-hexagonal           = TRUE # if FALSE will produce square grid cells against CRS.target.
-overwrite.grid      = FALSE # logical FALSE will not overwrite the grid if one exists in dir.proj
-
-##bbs arguments
-usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
-cws.layer           = "ALL_ROUTES"
-overwrite.bbs       = FALSE
 
 ##ebird arguments
-overwrite.ebird     = FALSE
-max.C.ebird         = 100 # maximum number of birds in a checklist
-remove.bbs.obs      = TRUE # TRUE will attempt to remove BBS observations from the eBird database.
-max.effort.km       = 5
-max.num.observers   = 10
-max.effort.mins     = 180
-complete.checklists.only = TRUE
-ebird.protocol      = c("Traveling", "Stationary")
 min.yday            = 91
 max.yday            = 245
-mmyyyy              = "nov-2021" # the month and year of the eBird data downloads on file
 
 ##JAGS: arguments for customizing the resulting JAGS data list
 jagam.args          = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform", diagonalize=TRUE)
-scale.vars          = TRUE # whether or not to z-scale select variables.
 
 ## Munge the states and countries indexes for use in dir/proj dir reation
 if(!exists("states")) states <- NULL
 if(!is.null(states)){regions <- states}else{regions <- countries}
+stopifnot(all(tolower(states) %in% tolower(bbsAssistant::region_codes$iso_3166_2)))
+
 ```
 
 This chunk is not required, but is recommended to check that you've correctly specified the arguments above. 
@@ -127,7 +122,7 @@ This chunk is not required, but is recommended to check that you've correctly sp
 This chunk will create new environmental variables for project adn data directries based on teh directories supplied above.
 ```{r dirs-set}
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
-subdir.proj <-  proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
+subdir.proj <-  proj.shorthand(species.abbr, regions, grid.size, year.range)
 dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
 # ensure all directories exist
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
@@ -163,15 +158,11 @@ if (length(fns.bbs.in) > 0 &
     !overwrite.bbs) {
   bbs_obs <- readRDS(fns.bbs.in)
 } else{
-  bbs_orig <- grab_bbs_data(overwrite = overwrite.bbs,
-                            bbs_dir = dirs$dir.bbs.out)
+  bbs_orig <- grab_bbs_data(bbs_dir = dirs$dir.bbs.out)
   bbs_obs  <- munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
     species = species,
-    zero.fill = TRUE,
-    observations.output = 'df',
-    # do not change!
     year.range = year.range
   )
   bbs_obs <-
@@ -188,8 +179,7 @@ bbs_spatial <- make_bbs_spatial(
   plot.dir = dirs$dir.plots,
   crs.target = crs.target,
   grid = grid,
-  dir.out = dirs$dir.spatial.out,
-  overwrite = overwrite.bbs
+  dir.out = dirs$dir.spatial.out
 )
 ```
  Make eBird data,
@@ -207,13 +197,9 @@ stopifnot(length(fns.ebird) > 1)
 ebird <- munge_ebird_data(
   fns.ebird = fns.ebird,
   species = c(species, species.abbr),
-  overwrite = overwrite.ebird,
   dir.ebird.out = dirs$dir.ebird.out,
   countries = countries,
   states = states,
-  protocol = ebird.protocol,
-  max.num.observers = max.num.observers,
-  complete.only = complete.checklists.only,
   years = year.range
 )
 
@@ -222,7 +208,6 @@ ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
   grid = grid,
-  overwrite = overwrite.ebird,
   dir.out = dirs$dir.spatial.out
 )
 ```
@@ -237,8 +222,6 @@ jdat <- make_jags_list(
     dirs = dirs
   ),
   dir.out = dirs$dir.jags,
-  max.C.ebird = max.C.ebird,
-  scale.vars = TRUE,
   jagam.args = list(
     bs = "ds",
     k = 20,

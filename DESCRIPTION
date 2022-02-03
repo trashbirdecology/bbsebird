@@ -39,7 +39,6 @@ Imports:
     utils,
     grDevices,
     stats,
-    st,
     parallel
 Suggests: 
     knitr,
