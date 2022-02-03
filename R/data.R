@@ -12,13 +12,20 @@
 
 # JDAT CONTENTS -----------------------------------------------------------
 #' Descriptions of JDAT Contents
+#'
+#' A simple lookup table for
 #' @format A data frame
 #' \describe{
-#'   \item{name}{object name}
-#'   \item{description}{informal description of item}
-#'   \item{note}{supplementary information}
+#'   \item{level.1.name}{name of the top level list element}
+#'   \item{level.2.name}{name of the second-level list element}
+#'   \item{level.1.description}{description of the top level list element}
+#'   \item{level.2.description}{description of the second-level list element}
 #'   \item{class}{expected class of object}
-#'   \item{dims}{expected dimensions of object, relative to parent list. Not provided for objects of class list or single}
+#'   \item{notes}{supplementary information}
+#'   \item{length}{if lowest level object is a vector, length of object}
+#'   \item{rows}{if object is array, number of rows}
+#'   \item{c}{if object is array, number of cols}
+#'   \item{s}{if object is 3-D array, number of slices}
 #' }
 jdat.contents <-
   structure(
@@ -432,14 +439,10 @@ jdat.contents <-
   )
 usethis::use_data(jdat.contents, internal = FALSE, overwrite=TRUE)
 
-#' # REGION CODES ------------------------------------------------------------
-#' #' Lookup Table for ISO Codes
-#' #'
-#' #'
-#' #' @importFrom stringr str_detect
-#' #' @importFrom dplyr select filter
-#' #' @format A data frame
-#' library(dplyr)
+#' #' # REGION CODES ------------------------------------------------------------
+#' #' #' Lookup Table for ISO Codes
+#' #' #'
+#' #' #'
 #'
 #' # grab ebird region codes
 #' ebird.codes <- auk::ebird_states %>%
@@ -448,24 +451,20 @@ usethis::use_data(jdat.contents, internal = FALSE, overwrite=TRUE)
 #' # grab bbs region codes
 #' bbs.codes <- bbsAssistant::region_codes %>%
 #'   dplyr::filter(!stringr::str_detect())
+#'
 #' setdiff(tolower(bbs.codes$State),toupper(iso.codes$name))
 #'
 #' iso.codes <- rnaturalearth::ne_states() %>%
 #'   as.data.frame() %>%
 #'   # tibble::column_to_rownames(name_en) %>%
 #'   dplyr::select(name_en, iso_3166_2, iso_a2, , name_fr, name_es)
-#' str(iso.codes$iso_3166_2)
-#' str(iso.codes$iso_a2)
-#' str(auk::ebird_states$country_code)
+#'
 #' # Add a column for eBird file identification
-
-
-
-
-# Add a column for BBS data subsetting
-# region.codes <- iso.codes
-
-# usethis::use_data(region.codes, internal = FALSE, overwrite=TRUE)
+#'
+#' # Add a column for BBS data subsetting
+#' region.codes <- iso.codes
+#'
+#' usethis::use_data(region.codes, internal = FALSE, overwrite=TRUE)
 # END DATA ----------------------------------------------------------------
 
 

@@ -7,17 +7,25 @@
 #' @param dir.ebird.out Location of where to save and/or find the filtered/subsetted eBird data.
 #' @param f_obs_out  Filename for saving the filtered eBird observations data
 #' @param f_samp_out Filename for saving the filtered eBird sampling data
-#'
-#' @export
+#' @param countries ...
+#' @param states ...
+#' @param complete.only logical if TRUE will remove incomplete checklists
+#' @param protocol which eBird protocol to include
+#' @param species species for filtering eBird data
+#' @param remove.bbs.obs logical if TRUe will use crude and untested method for removing BBS data from eBird data (see function for detials)
+#' @param years years to include in data
+#' @param mat.effort.km maximum distance (kilometers) of birding events to include
+#' @param max.effort.minds maximum number of minutes of birding events to include
+#' @export munge_ebird_data
 munge_ebird_data <-
   function(fns.ebird,
            dir.ebird.out,
+           overwrite = FALSE,
            countries = NULL,
            states = NULL,
            complete.only = TRUE,
            protocol = c("Traveling", "Stationary"),
            species = "Double-crested Cormorant",
-           overwrite = FALSE,
            remove.bbs.obs = TRUE,
            years = NULL,
            max.effort.km = NULL,

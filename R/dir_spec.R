@@ -5,7 +5,7 @@
 #' @param dir.proj Project directory. Assumes current working directory. This is where the directories and output files will be stored.
 #' @param subdir.proj The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using `dubcorms::proj.shorthand()`
 #' @importFrom stringr str_replace str_detect
-#' @export
+#' @export dir_spec
 
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 # browser()

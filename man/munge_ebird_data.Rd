@@ -7,12 +7,12 @@
 munge_ebird_data(
   fns.ebird,
   dir.ebird.out,
+  overwrite = FALSE,
   countries = NULL,
   states = NULL,
   complete.only = TRUE,
   protocol = c("Traveling", "Stationary"),
   species = "Double-crested Cormorant",
-  overwrite = FALSE,
   remove.bbs.obs = TRUE,
   years = NULL,
   max.effort.km = NULL,
@@ -29,9 +29,27 @@ munge_ebird_data(
 
 \item{overwrite}{logical If true will overwrite existing filtered data objects in directory \code{dir.ebird.out}}
 
+\item{countries}{...}
+
+\item{states}{...}
+
+\item{complete.only}{logical if TRUE will remove incomplete checklists}
+
+\item{protocol}{which eBird protocol to include}
+
+\item{species}{species for filtering eBird data}
+
+\item{remove.bbs.obs}{logical if TRUe will use crude and untested method for removing BBS data from eBird data (see function for detials)}
+
+\item{years}{years to include in data}
+
 \item{f_obs_out}{Filename for saving the filtered eBird observations data}
 
 \item{f_samp_out}{Filename for saving the filtered eBird sampling data}
+
+\item{mat.effort.km}{maximum distance (kilometers) of birding events to include}
+
+\item{max.effort.minds}{maximum number of minutes of birding events to include}
 }
 \description{
 Filter the eBird data and sampling events using R package AUK.

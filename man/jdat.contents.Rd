@@ -7,11 +7,16 @@
 \format{
 A data frame
 \describe{
-\item{name}{object name}
-\item{description}{informal description of item}
-\item{note}{supplementary information}
+\item{level.1.name}{name of the top level list element}
+\item{level.2.name}{name of the second-level list element}
+\item{level.1.description}{description of the top level list element}
+\item{level.2.description}{description of the second-level list element}
 \item{class}{expected class of object}
-\item{dims}{expected dimensions of object, relative to parent list. Not provided for objects of class list or single}
+\item{notes}{supplementary information}
+\item{length}{if lowest level object is a vector, length of object}
+\item{rows}{if object is array, number of rows}
+\item{c}{if object is array, number of cols}
+\item{s}{if object is 3-D array, number of slices}
 }
 }
 \usage{
@@ -24,5 +29,7 @@ jdat.contents
 }
 \details{
 Descriptions of JDAT Contents
+
+A simple lookup table for
 }
 \keyword{datasets}

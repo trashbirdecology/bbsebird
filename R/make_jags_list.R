@@ -15,6 +15,7 @@ make_jags_list <-
            max.C.ebird=100,
            scale.vars = TRUE,
            dir.out,
+           dir.models,
            overwrite=FALSE,
            fn.out = "jdat") {
 

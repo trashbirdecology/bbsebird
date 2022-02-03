@@ -1,18 +1,17 @@
 #' Specify Arguments and Directories
 #'
 #' Function to specify arugments and create/point to directories based on those arguments.
-#' @importFrom assertthat assert_that
 #' @importFrom stringr str_replace
 #' @export set_args
-set_args <- function(
-  # general args
+#' @noRd
+set_args <- function(# general args
   dir.orig.data,
   dir.proj,
   species,
   species.abbr,
-  states=NULL,
-  countries=NULL,
-  year.range=2008:2019,
+  states = NULL,
+  countries = NULL,
+  year.range = 2008:2019,
   crs.target = 4326,
   get.sunlight = FALSE,
   base.julian.date = (paste0(min(year.range), c("-01-01"))),
@@ -38,33 +37,68 @@ set_args <- function(
   mmyyyy              = "nov-2021",
   #JAGS: arguments for customizing the resulting JAGS data list
   overwrite.jdat      = FALSE,
-  jagam.args          = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform", diagonalize=TRUE),
-  scale.vars          = TRUE
-){
-
+  jagam.args          = list(
+    bs = "ds",
+    k = 20,
+    family = "poisson",
+    sp.prior = "log.uniform",
+    diagonalize = TRUE
+  ),
+  scale.vars          = TRUE) {
   ## check args
-  temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
+  temp = c(
+    "complete.checklists.only",
+    "scale.vars",
+    'overwrite.ebird',
+    "remove.bbs.obs" ,
+    "overwrite.bbs",
+    "hexagonal",
+    "get.sunlight"
+  )
 
-  for(i in seq_along(temp)){
-    stopifnot(is.logical(eval(parse(text=temp[i]))), msg = paste("argument ", temp[i],"must be a logical."))
+  for (i in seq_along(temp)) {
+    stopifnot(is.logical(eval(parse(text = temp[i]))),
+              msg = paste("argument ", temp[i], "must be a logical."))
   }
 
 
-  temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
-         "grid.size", "crs.target","year.range")
+  temp = c(
+    "min.yday",
+    "max.yday",
+    "max.effort.km",
+    "max.effort.mins",
+    "max.C.ebird",
+    "grid.size",
+    "crs.target",
+    "year.range"
+  )
 
-  for(i in seq_along(temp)){stopifnot(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"),
-                                                    msg = paste("argument ", temp[i], "must be a logical."))}
+  for (i in seq_along(temp)) {
+    stopifnot(
+      class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"),
+      msg = paste("argument ", temp[i], "must be a logical.")
+    )
+  }
   rm(temp)
 
   ## munge the states and countries indexes for use in dir/proj dir reation
-  if(!exists("states")) states <- NULL
-  if(!is.null(states)){regions <- states}else{regions <- countries}
+  if (!exists("states"))
+    states <- NULL
+  if (!is.null(states)) {
+    regions <- states
+  } else{
+    regions <- countries
+  }
 
   ## proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
-  subdir.proj <-  dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
-  if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifing a new name for project."); subdir.proj="myproject"}
-  dirs        <-  dubcorms:::dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
+  subdir.proj <-
+    dubcorms:::proj.shorthand(species.abbr, regions, grid.size, year.range, max.C.ebird)
+  if (nchar(subdir.proj) > 100) {
+    cat("subdir.proj is very long. specifing a new name for project.")
+    subdir.proj = "myproject"
+  }
+  dirs        <-
+    dubcorms:::dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
 
   # ensure all directories exist
   suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
@@ -116,16 +150,16 @@ set_args <- function(
     )
 
   ## create the list of ebird elements
-  list.out <-NULL
+  list.out <- NULL
   for (z in seq_along(args)) {
     new = eval(parse(text = args[z]))# this is necessary for some reason idk why
     list.out[[args[z]]] <- new
   }
   ## list names
-  names=NULL
-  for(i in seq_along(args)){
+  names = NULL
+  for (i in seq_along(args)) {
     names[i] <-
-      stringr::str_replace(args[i], pattern="dirs\\$", replacement="")
+      stringr::str_replace(args[i], pattern = "dirs\\$", replacement = "")
   }
 
   names(list.out) <- names

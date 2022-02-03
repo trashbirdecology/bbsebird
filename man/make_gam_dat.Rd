@@ -4,22 +4,16 @@
 \alias{make_gam_dat}
 \title{Munge and Output a Single or List of Data Frames for Use in mgcv::jagam}
 \usage{
-make_gam_dat(
-  dat,
-  drop.nas = FALSE,
-  dir.out,
-  fn.out = "jagamdat",
-  method = "maxc"
-)
+make_gam_dat(dat, drop.nas = FALSE, dir.out, fn.out = "jagamdat")
 }
 \arguments{
 \item{dat}{a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS}
 
+\item{drop.nas}{logical if FALSE will not remove sites/grid cells where no data exists.}
+
 \item{dir.out}{Directory within which the output list will be saved  as "jdat"}
 
 \item{fn.out}{Filename  of the object output as a .RDS file}
-
-\item{dat.names}{character string or vector of strings for names of input data objects. If not supplied, the function will guess whether the data is ebird, bbs, or grid.}
 }
 \description{
 Munge and Output a Single or List of Data Frames for Use in mgcv::jagam

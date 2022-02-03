@@ -9,7 +9,6 @@ make_spatial_grid(
   overwrite = TRUE,
   countries = c("US", "CA"),
   states = NULL,
-  map.view = c("static", "interactive"),
   crs.target = 4326,
   hexagonal = TRUE,
   grid.size
@@ -23,6 +22,12 @@ make_spatial_grid(
 \item{countries}{Vector of countries. Defaults to a base map of USA and CAN, unless arg \code{states} is provided. If arg \code{states} is provided, this argument will be ignored. Must be specified using ISO-A2}
 
 \item{states}{Vector of states to which the spatial grid will be clipped. Must be specified using ISO 3166-2 (see \url{https://en.wikipedia.org/wiki/ISO_3166-2})}
+
+\item{crs.target}{Target CRS number for spatial grid.}
+
+\item{hexagonal}{logical if TRUE will produce a spatial grid with hexagonal, as opposed to rectangular, cells}
+
+\item{grid.size}{numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km}
 }
 \description{
 Create a Spatial Sampling Grid

@@ -4,13 +4,14 @@
 #' @param overwrite TRUE will overwrite existing `grid.rds` in `dir.out`
 #' @param countries Vector of countries. Defaults to a base map of USA and CAN, unless arg `states` is provided. If arg `states` is provided, this argument will be ignored. Must be specified using ISO-A2
 #' @param states Vector of states to which the spatial grid will be clipped. Must be specified using ISO 3166-2 (see \url{https://en.wikipedia.org/wiki/ISO_3166-2})
-#'
-#' @export
+#' @param crs.target Target CRS number for spatial grid.
+#' @param hexagonal logical if TRUE will produce a spatial grid with hexagonal, as opposed to rectangular, cells
+#' @param grid.size numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km
+#' @export make_spatial_grid
 make_spatial_grid <- function(dir.out,
                               overwrite = TRUE,
                               countries = c("US", "CA"),
                               states    = NULL,
-                              map.view = c("static", "interactive"),
                               crs.target = 4326,
                               hexagonal=TRUE,
                               grid.size
@@ -74,10 +75,6 @@ fn <- stringr::str_replace(fn, "//", "/")
 cat("Saving spatial grid as .RDS to file: ", fn)
 saveRDS(grid, file = fn)
 
-
-# Visualize to check map ## cant get these to display when called interactively
-if(any(map.view == "static"))       tmap::qtm(grid)
-if(any(map.view == "interactive"))  mapview::mapview(grid) # interactive, openstreetmap
 
 
 

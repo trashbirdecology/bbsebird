@@ -5,7 +5,6 @@ Authors@R:
     person("Jessica", "Burnett", , "jburnett@usgs.gov", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: Imports, munges and integrates eBird and BBS data and applies them to a spatial sampling grid. This package also outputs data in various forms for use in JAGS, {\codemcgv::jagam()}
-License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
@@ -14,36 +13,27 @@ Depends:
 LazyData: true
 Imports: 
     bbsAssistant (>= 2.0.0),
+    countrycode (>= 1.3.0),
     dplyr (>= 1.0.7),
+    foreach (>= 1.5.1),
+    lubridate (>= 1.8.0),
+    magrittr, 
+    mgcv,
+    progress (>= 1.2.2),
+    readr (>= 2.1.1),
+    reshape2 (>= 1.4.4),
+    rjags (>= 4.12),
+    rnaturalearth (>= 0.3.0),
+    sp (>= 1.4.6),
     stringr (>= 1.4.0),
     tidyr (>= 1.1.4),
-    sp (>= 1.4.6),
-    rjags (>= 4.12),
-    countrycode (>= 1.3.0),
-    magrittr (>= 2.0.2),
-    progress (>= 1.2.2),
-    vroom (>= 1.5.7),
-    fs (>= 1.5.2),
-    reshape2 (>= 1.4.4),
-    stringr (>= 1.4.0),
     suncalc (>= 0.5.0),
-    readr (>= 2.1.1),
-    lubridate (>= 1.8.0),
-    parallel,
-    rnaturalearth (>= 0.3.0),
-    glue (>= 1.6.1),
-    purrr (>= 0.3.4),
-    knitr (>= 1.37),
-    units (>= 0.7.2),
-    bit (>= 4.0.4),
-    foreach (>= 1.5.1),
-    mgcv
+    vroom (>= 1.5.7),
+    units (>= 0.7.2)
 Suggests: 
     here (>= 1.0.1),
-    assertthat (>= 0.2.1),
-    learnr (>= 0.10.1),
     mapview
-VignetteBuilder: knitr
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth
+License: CC0 + file LICENSE

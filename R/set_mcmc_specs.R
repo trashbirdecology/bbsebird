@@ -7,7 +7,7 @@
 #' @param ncores number of cores to run model in parallel
 #' @param ni number of iterations per chain
 #' @param nt thinning rate (every nth iteration removed)
-#' @export
+#' @export set_mcmc_specs
 set_mcmc_specs <- function(na=1000,
                       nb=5000,
                       nc=3,

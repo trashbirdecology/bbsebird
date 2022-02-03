@@ -6,7 +6,6 @@
 \usage{
 zerofill_ebird(
   list,
-  overwrite = FALSE,
   cols.remove = c("SUBSPECIES_COMMON NAME", "TAXONOMIC_ORDER", "LAST_EDITED_DATE",
     "CATEGORY", "APPROVED", "REVIEWED", "SPECIES_COMMENTS", "...48", "HAS_MEDIA",
     "REASON", "TRIP_COMMENTS")
@@ -16,8 +15,6 @@ zerofill_ebird(
 \item{list}{A list containing two named data frames, c("observations", "sampling"). This object is the result of \code{filter_ebird_data()}.}
 
 \item{cols.remove}{A vector of column names to be excluded from the output file.}
-
-\item{cols.to.lowercase}{Logical. If TRUE will export a data frame where all colnames are in lowercase. Capitalization does not matter.}
 }
 \description{
 Creates a zero-filled data object comprising the eBird observations and sampling events data supplied.

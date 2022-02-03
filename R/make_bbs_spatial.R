@@ -8,10 +8,11 @@
 #' @param cws.routes.dir Directory for where the CWS (Canadian BBS) shapefiles are stored.
 #' @param cws.layer Name of the layer to import. Defaults to "ALL_ROUTES"
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
+#' @param dir.plot Directory path for where to save the resultng exploratory pdf (if print.plots==TRUE)
 #' @param print.plots logical if TRUE will print exploratory figures to device
 #' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.
-#' @export
+#' @export make_bbs_spatial
 make_bbs_spatial <- function(df,
                              ## observations data frame. must contain at least var rteno
                              cws.routes.dir,

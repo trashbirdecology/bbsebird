@@ -10,6 +10,7 @@ make_jags_list(
   max.C.ebird = 100,
   scale.vars = TRUE,
   dir.out,
+  dir.models,
   overwrite = FALSE,
   fn.out = "jdat"
 )
@@ -25,11 +26,11 @@ make_jags_list(
 
 \item{dir.out}{Directory within which the output list will be saved  as "jdat"}
 
+\item{dir.models}{Location for where to store the GAM portion of the JAGS model}
+
 \item{overwrite}{if FALSE will not overwrite file if it exists at location \code{fn.out}}
 
 \item{fn.out}{Filename of the list object output as a .RDS file}
-
-\item{dir.models}{Location for where to store the GAM portion of the JAGS model}
 }
 \description{
 Munge and Output a List or List of Lists for Use in JAGS

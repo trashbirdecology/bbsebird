@@ -41,6 +41,8 @@ make_bbs_spatial(
 \item{overwrite}{logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out}
 
 \item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
+
+\item{dir.plot}{Directory path for where to save the resultng exploratory pdf (if print.plots==TRUE)}
 }
 \description{
 This function is meant to intake two shapefiles, one per cws and usgs munges them such that they conform to the USGS data release for BBS observations and route metadata.
