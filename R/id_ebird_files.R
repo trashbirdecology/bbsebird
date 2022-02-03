@@ -5,7 +5,9 @@
 #' @param get.full.data Logical if TRUE will retrieve the filenames for the ENTIRE database, thereby ignoring the species and e.regions
 #' @param dir.ebird.out Location of where to search for existing, created .rds files
 #' @param states.ind one or more two-letter state codes
-#' @importFrom stringr "str_detect"
+#' @importFrom stringr str_detect
+#' @importFrom bbsAssistant region_codes
+#' @importFrom utils untar
 #' @export
 id_ebird_files <- function(dir.ebird.in,
                            dir.ebird.out = NULL,
@@ -13,7 +15,6 @@ id_ebird_files <- function(dir.ebird.in,
                            species.abbr = "doccor",
                            get.full.data = FALSE,
                            states.ind = NULL) {
-
   ### NEED TO ADD A MENU FOR WHEN NOT ALL STATES.IND ARE IN THE IDENTIFIED
   ### THEN IT JUST GRABS ALL THE SPECIES-COUNTRY COMBNATONS AND UOTPUTS FOR OBS FILES.
 
@@ -28,7 +29,7 @@ id_ebird_files <- function(dir.ebird.in,
     gsub(x = tolower(states.ind),
          pattern = "-",
          replacement = "")
-  states.ind <- rc[which(rc.temp %in% states.ind), ]$iso_3166_2
+  states.ind <- rc[which(rc.temp %in% states.ind),]$iso_3166_2
 
   # Simple Tests and Create Simple Indexes
   if (!str_detect(mmyyyy, "-"))
@@ -87,22 +88,28 @@ id_ebird_files <- function(dir.ebird.in,
     fns_obs.zip <-
       temp[grepl(temp, pattern = region)]# possibles for the region
     ### if no files found then grab the country-level ones
-    if(length(fns_obs.zip)==0){ fns_obs.zip <-
-      temp[grepl(temp, pattern = country.spp)] }
+    if (length(fns_obs.zip) == 0) {
+      fns_obs.zip <-
+        temp[grepl(temp, pattern = country.spp)]
+    }
 
     f_obs <- NULL
 
     ### keep only those with the sp.abbreviation
     for (i in seq_along(fns_obs.zip)) {
       if (i == 1)
-      f_obs <- NULL
+        f_obs <- NULL
       f_zip <- paste0(dir.ebird.in, "/", fns_obs.zip[i])
-      temp  <- tolower(unzip(f_zip, list = TRUE)[, 1])# grab file names
+      temp  <-
+        tolower(unzip(f_zip, list = TRUE)[, 1])# grab file names
       f_txt <- temp[grepl(temp, pattern = region)]
-      if(length(f_txt)==0) f_txt <- temp[grepl(temp, pattern = country.spp)]
+      if (length(f_txt) == 0)
+        f_txt <- temp[grepl(temp, pattern = country.spp)]
       f_txt <-
         f_txt[grepl(f_txt, pattern = ".txt")]# yes i need to keep both greps here
-      if (length(f_txt) == 0){next()}
+      if (length(f_txt) == 0) {
+        next()
+      }
       f_txt.full <- paste0(dir.ebird.in, "/", f_txt)
       ind   <- file.exists(f_txt.full)
       if (!ind)

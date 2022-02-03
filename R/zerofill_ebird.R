@@ -4,6 +4,9 @@
 #'
 #' @param list A list containing two named data frames, c("observations", "sampling"). This object is the result of \code{filter_ebird_data()}.
 #' @param cols.remove A vector of column names to be excluded from the output file.
+#' @importFrom stringr str_replace_all
+#' @importFrom dplyr filter bind_rows
+#' @importFrom auk auk_unique
 #' @export zerofill_ebird
 zerofill_ebird <-
   function(list,
@@ -48,13 +51,13 @@ zerofill_ebird <-
     list$sampling <- list$sampling %>%
       dplyr::filter(sampling_event_identifier %in% events.zeroes.to.add)
     ## This should already be done in filter_ebird_data()--fpr some reason time wasn't working but needs to be double checked
-    list$observations <- dubcorms:::convert_cols(list$observations)
-    list$sampling     <- dubcorms:::convert_cols(list$sampling)
+    list$observations <- convert_cols(list$observations)
+    list$sampling     <- convert_cols(list$sampling)
     gc()
     # Full join the filtered sampling events to species observations
     cat("joining observations and sampling data frames. takes a few minutes...\n")
     ebird_zf <-
-      bind_rows(list$observations, list$sampling) # seems to be the quickest.
+      dplyr::bind_rows(list$observations, list$sampling) # seems to be the quickest.
     gc()
     #### full join needs to be double-checked... havent tested to ensure its not missing or falsely capturing non-detection and detection events.
     ### this check should include a review of filter_ebird_data and zerofill-ebird.

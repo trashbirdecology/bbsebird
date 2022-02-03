@@ -2,6 +2,11 @@
 #' @param dat data set with at least the column `date` and of class "date"
 #' @param min.yday minimum day of the year to include in resulting dataset
 #' @param max.yday maximum day of the year to include in resulting dataset
+#' @importFrom lubridate as_date yday
+#' @importFrom hms as_hms
+#' @importFrom dplyr filter select mutate bind_rows
+#' @importFrom parallel splitIndices
+#' @importFrom suncalc getSunlightTimes
 #' @param sunlight logical If TRUE will calculate all sunlight, moonlight, rise and set times. This is computationally demanding for the eBird data, so do not set to TRUE unless needed.
 #' @param base.date character or date string (YYYY-MM-DD) to use as the origin date for calculating Julian date.
 #' @export munge_date_time
@@ -17,7 +22,7 @@ munge_date_time <- function(dat, base.date, min.yday=0, max.yday=365, sunlight=F
     dat$yday   <- lubridate::yday(dat$date)
     dat$julian <- julian(dat$date, origin = lubridate::as_date(base.date))
     ## filter on the ydays (if provided)
-    dat <- dat %>% filter((yday >= min.yday & yday <= max.yday)|is.na(yday)) ## keep the NA values.
+    dat <- dat %>% dplyr::filter((yday >= min.yday & yday <= max.yday)|is.na(yday)) ## keep the NA values.
     } # end dates munging
 
   # bbs data has starttime and endtime
@@ -69,8 +74,8 @@ cat("Calculating astronomical statistics for each observation. This may take a f
 
 } # END SUNLIGHT
 
-  
-  
+
+
 return(dat)
 
 }

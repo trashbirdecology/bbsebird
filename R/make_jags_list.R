@@ -8,6 +8,12 @@
 #' @param jagam.args List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)
 #' @param dir.models Location for where to store the GAM portion of the JAGS model
 #' @param overwrite if FALSE will not overwrite file if it exists at location `fn.out`
+#' @importFrom mgcv jagam
+#' @importFrom dplyr group_by filter summarise distinct ungroup arrange mutate rename select
+#' @importFrom stringr str_detect
+#' @importFrom units drop_units
+#' @importFrom sf st_drop_geometry
+#' @importFrom reshape2 acast
 #' @export make_jags_list
 make_jags_list <-
   function(dat,
@@ -70,7 +76,7 @@ make_jags_list <-
       data.frame(year.id = sort(unique(c(
         unique(dat$bbs$year), unique(dat$ebird$year)
       )))) %>%
-      mutate(year.ind = 1:n())
+      dplyr::mutate(year.ind = 1:n())
 
 # GRID -----------------------------------------------------
     ### create list of shit for GRID
@@ -78,12 +84,12 @@ make_jags_list <-
     grid.index <- dat$grid   %>%
       sf::st_drop_geometry() %>%
       units::drop_units() %>%
-      arrange(gridcellid) %>%
-      filter(!is.na(gridcellid)) %>%  # just to be safe.
-      rename(grid.id = gridcellid,
+      dplyr::arrange(gridcellid) %>%
+      dplyr::filter(!is.na(gridcellid)) %>%  # just to be safe.
+      dplyr::rename(grid.id = gridcellid,
              X=cell.lon.centroid,
              Y=cell.lat.centroid) %>%
-      mutate(grid.ind  = 1:nrow(dat$grid))
+      dplyr::mutate(grid.ind  = 1:nrow(dat$grid))
     grid.list$index <- grid.index %>% dplyr::select(grid.id, grid.ind)
     grid.list$XY    <- grid.index %>% dplyr::select(X, Y)
     grid.list$area  <- grid.index %>% dplyr::select(area)
@@ -133,15 +139,15 @@ if(i==1) maxN <- NULL
       ## create some indexes and IDS to ensure all matrices are properly sorted.
       site.index <- df %>%
         dplyr::distinct(site.id) %>%
-        filter(!is.na(site.id)) %>%
-        arrange(site.id) %>%
-        mutate(site.ind = 1:n())
+        dplyr::filter(!is.na(site.id)) %>%
+        dplyr::arrange(site.id) %>%
+        dplyr::mutate(site.ind = 1:n())
 
       ## add the grid and site site.ind to the data frame
-      df <- df %>% left_join(site.index)
+      df <- df %>% dplyr::left_join(site.index)
 
       ## ensure all grid cells are represented in the dataset for creating even matrices
-      df <- df %>% full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
+      df <- df %>% dplyr::full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
 
 
 ## C: Count Matrix ------------------------------------------------------------
@@ -149,8 +155,8 @@ if(i==1) maxN <- NULL
       C   <-
         make_mat(
           df %>%
-            distinct(year.ind, site.ind, c) %>%
-            filter(!is.na(site.ind)), # be sure to remove na sites
+            dplyr::distinct(year.ind, site.ind, c) %>%
+            dplyr::filter(!is.na(site.ind)), # be sure to remove na sites
           row = "site.ind",
           col = "year.ind",
           val = "c"
@@ -194,9 +200,9 @@ if(i==1) maxN <- NULL
     xpdf <- df %>%
       dplyr::select(!!!cols) %>%
       dplyr::filter(!is.na(site.ind)) %>% ## must remove NA site.ind
-      distinct() %>%
-      rename(val=cols[3]) %>%
-      arrange(site.ind, year.ind)
+      dplyr::distinct() %>%
+      dplyr::rename(val=cols[3]) %>%
+      dplyr::arrange(site.ind, year.ind)
     list.number  = length(Xp)+1
     Xp[[list.number]] <-
       make_mat(df.in=xpdf,
@@ -214,9 +220,9 @@ if(i==1) maxN <- NULL
 ## Max N for JAGAM ---------------------------------------------------------
 maxN <- rbind(maxN,
               rbind(df %>%
-                group_by(grid.ind) %>%
-                filter(!is.na(c)) %>%
-                summarise(N.max = max(c, na.rm=TRUE)), maxN)
+                      dplyr::group_by(grid.ind) %>%
+                      dplyr::filter(!is.na(c)) %>%
+                      dplyr::summarise(N.max = max(c, na.rm=TRUE)), maxN)
          )
 ## Indexing: Make list of indexes ------------------------------------------
 # Loop indexes for JAGS
@@ -228,10 +234,10 @@ if(ind == "bbs"){
     df %>% filter(!is.na(c)) # to ensure we remove the NA rteno
 
   nGridsBySiteByYear <- temp.bbs %>%
-          group_by(site.ind, year.ind) %>%
-          mutate(n=n_distinct(grid.ind)) %>%
-          distinct(n, year.ind, site.ind) %>%
-          reshape2::acast(
+    dplyr::group_by(site.ind, year.ind) %>%
+    dplyr::mutate(n=n_distinct(grid.ind)) %>%
+    dplyr::distinct(n, year.ind, site.ind) %>%
+          s(
             site.ind~year.ind, value.var = "n")
   nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
 
@@ -249,9 +255,9 @@ if(ind == "bbs"){
 
   ## Grab max values for BBS in each grid cell for use in JAGAM
     maxN <- rbind(df %>%
-                        group_by(grid.ind) %>%
-                        filter(!is.na(c)) %>%
-                        summarise(N.max = max(c, na.rm=TRUE)), maxN)
+                       dplyr::group_by(grid.ind) %>%
+                        dplyr::filter(!is.na(c)) %>%
+                        dplyr::summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
 
     ## add these indexes to bbs$indexing
@@ -342,7 +348,7 @@ names(list.out) <- names[keep]
 list.out <- list.out[!sapply(list.out, is.null)]
 
 # Add metadata to list
-list.out$metadata <- dubcorms:::jdat.contents
+list.out$metadata <- jdat.contents
 
 # Export to file ----------------------------------------------------------
 cat("Saving output to file. This may take a minute or two depending on size of eBird data:\n\t", fn)

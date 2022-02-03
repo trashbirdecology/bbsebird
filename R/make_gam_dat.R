@@ -3,6 +3,8 @@
 #' @param dir.out Directory within which the output list will be saved  as "jdat"
 #' @param drop.nas logical if FALSE will not remove sites/grid cells where no data exists.
 #' @param fn.out Filename  of the object output as a .RDS file
+#' @importFrom sf st_drop_geometry
+#' @importFrom dplyr distinct group_by summarise
 #' @export make_gam_dat
 make_gam_dat <-
   function(dat,
@@ -34,9 +36,9 @@ make_gam_dat <-
         colnames(dat[[i]]) <- tolower(colnames(dat[[i]]))
         suppressWarnings(
           output[[i]] <- dat[[i]] %>%
-            distinct(gridcellid, cell.lat.centroid, cell.lon.centroid, c) %>%
-            group_by(gridcellid) %>%
-            summarise(
+            dplyr::distinct(gridcellid, cell.lat.centroid, cell.lon.centroid, c) %>%
+            dplyr::group_by(gridcellid) %>%
+            dplyr::summarise(
               Cmax = max(c, na.rm = TRUE),
               x = max(cell.lon.centroid),
               y = max(cell.lat.centroid) # doing max lat lon here b/c im lazy

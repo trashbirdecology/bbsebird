@@ -1,5 +1,6 @@
 #' @param ebd_zf The zero-filled ebird data object (flat)
 #' @keywords internal
+#' @importFrom lubridate year yday
 #' @noRd
 clean_ebird_colnames <- function(df) {
   clean_df <- df %>%
@@ -128,6 +129,7 @@ se <- function(x) {
 #' Force a AOU Numbers into Integer
 #' Used very specifically as an internal function when munging BBS data.
 #' @keywords internal
+#' @param dplyr pull
 #' @noRd
 make.integer <- function(x, var = c("AOU", "aou")) {
   for (i in seq_along(var)) {
@@ -160,6 +162,7 @@ junk_it <- function(args.save, new.args.save = NULL) {
 #'
 #' @param x The parameter object from YAML `params`
 #' @keywords internal
+#' @importFrom stringr str_detect
 #' @export eval_params
 eval_params <- function(x = params) {
   y <- list() #make empty list to store new objects
@@ -292,7 +295,10 @@ make_inits_list <- function(inits, nc = 3) {
 #' @param row Variable in df containing target row names
 #' @param col Variable in df containig target column names
 #' @param val Variable containing the target cell contents
+#' @importFrom tidyr pivot_wider
+#' @importFrom tibble column_to_rownames
 #' @param replace.na Whether to replace NA values with zero.
+#' @importFrom dplyr select
 #' @export make_mat
 
 make_mat <-
@@ -304,7 +310,7 @@ make_mat <-
     # names <- names(df)
     ## will make row and col NULL and then add a thing for when they are NULL for ebird and bbs
     # e.g. if(is.null(row) & "rteno" %in% names) row <- "rteno"
-    mat <- tidyr::pivot_wider(
+    mat <- pivot_wider(
       df.in,
       id_cols = row,
       names_from = col,
@@ -350,6 +356,11 @@ make_mat <-
 #' @param max.yday maximum day of the year to include in resulting dataset
 #' @param sunlight logical If TRUE will calculate all sunlight, moonlight, rise and set times. This is computationally demanding for the eBird data, so do not set to TRUE unless needed.
 #' @param base.date character or date string (YYYY-MM-DD) to use as the origin date for calculating Julian date.
+#' @importFrom lubridate as_date yday
+#' @importFrom hms as_hms
+#' @importFrom suncalc  getSunlightTimes
+#' @importFrom dplyr bind_rows across left_join
+#' @importFrom parallel splitIndices
 #' @export munge_date_time
 
 munge_date_time <- function(dat, base.date, min.yday=0, max.yday=365, sunlight=FALSE){

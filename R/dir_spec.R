@@ -13,8 +13,6 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
 
 
-
-
   # first, create the proj directory if necessary
   if(!dir.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified

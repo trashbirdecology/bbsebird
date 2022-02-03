@@ -12,6 +12,10 @@
 #' @param print.plots logical if TRUE will print exploratory figures to device
 #' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.
+#' @importFrom sp CRS spTransform
+#' @importFrom tidyr expand separate
+#' @importFrom sf st_as_sf st_drop_geometry st_transform
+#' @importFrom dplyr mutate full_join select mutate group_by
 #' @export make_bbs_spatial
 make_bbs_spatial <- function(df,
                              ## observations data frame. must contain at least var rteno
@@ -101,7 +105,7 @@ make_bbs_spatial <- function(df,
 
   # Deal with Canadian shapefile (shared by V. Aponte)
   cws_routes <- cws_routes %>%
-    mutate(
+    dplyr::mutate(
       CountryNum = 124,
       StateNum = stringr::str_sub(ProvRoute, start = 1, end = 2),
       Route = stringr::str_sub(ProvRoute, start = 3, end = 5),
@@ -118,7 +122,7 @@ make_bbs_spatial <- function(df,
     usgs_routes[, tolower(names(usgs_routes)) %in% keep]
 
   ### join CWS and USGS routes
-  bbs_routes <- bind_rows(usgs_routes, cws_routes) %>%
+  bbs_routes <- dplyr::bind_rows(usgs_routes, cws_routes) %>%
     # Keep only the necessary information.
     # We definitely wnat to remove the following before proceeding:
       ## 1. RouteName: they don't always match the published observations data
@@ -127,9 +131,9 @@ make_bbs_spatial <- function(df,
     #### sometimes when I get to this poitnt when running within a notebook/rmd i get this error: https://github.com/rstudio/rstudio/issues/6260
     ## calculate lengths of lines (may be multiples for one rteno)
     dplyr::mutate(segmentlength = sf::st_length(.)) %>%
-    group_by(rteno) %>%
-    mutate(routelength = sum(segmentlength)) %>%
-    ungroup() %>%
+    dplyr::group_by(rteno) %>%
+    dplyr::mutate(routelength = sum(segmentlength)) %>%
+    dplyr::ungroup() %>%
     dplyr::select(-segmentlength) # we don't really gaf about these lines, they're just segments because of the drawings
 
 
@@ -153,12 +157,12 @@ bbs.grid.lines <- sf::st_intersection(grid, bbs_routes) # this produces a sf as 
 # Calculate total lengths of routes within a grid cell. -------------------
 bbs.grid.lines.df <- bbs.grid.lines %>%
   # This calculate line segments for each row (segment)
-  mutate(segmentlength = st_length(.)) %>%
+  dplyr::mutate(segmentlength = st_length(.)) %>%
   # Calculate the total length of the entire route (regardless of whether the rteno is clipped by the study area..)
-  group_by(rteno) %>%
-  mutate(totalroutelength = sum(segmentlength)) %>%
+  dplyr::group_by(rteno) %>%
+  dplyr::mutate(totalroutelength = sum(segmentlength)) %>%
   ## calc proportion as total segment lengths over total route length (within the study area)
-  group_by(gridcellid, rteno) %>%
+  dplyr::group_by(gridcellid, rteno) %>%
   dplyr::mutate(proprouteincell = sum(segmentlength) / totalroutelength) %>%
   dplyr::ungroup()
 
@@ -176,7 +180,7 @@ grid.expanded <- grid %>%
   ## add years to the grid layer
   tidyr::expand(year = unique(df$year), gridcellid) %>%
 # add these to grid attributes attributes
-  full_join(grid) %>%
+  dplyr::full_join(grid) %>%
   sf::st_as_sf()
 
 

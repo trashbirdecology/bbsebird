@@ -16,6 +16,15 @@
 #' @param years years to include in data
 #' @param max.effort.km maximum distance (kilometers) of birding events to include
 #' @param max.effort.mins maximum number of minutes of birding events to include
+#' @importFrom dplyr filter select mutate bind_rows distinct mutate if_else as_tibble
+#' @importFrom auk auk_unique
+#' @importFrom stringr str_replace_all str_detect
+#' @importFrom parallel detectCore
+#' @importFrom vroom vroom
+#' @importFrom readr col_character col_time col_date col_double
+#' @importFrom bbsAssistant region_codes
+#' @importFrom lubridate year
+#' @importFrom data.table fread fwrite
 #' @param max.num.observers maximum number of observers delcared at a birding event to include
 #' @export munge_ebird_data
 munge_ebird_data <-
@@ -163,18 +172,14 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
       cat("Importing the sampling events dataset. This file should take ~2 mins to import\n\n")
-      tictoc::tic()
       sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
-      tictoc::toc()
 
     ### The sampling df is large so this script tries to prioritize commands that
     ### will remove the most data to the least.
     ### Try to keep the filtering/subsetting in that order..need to run tests to ensure most efficient order...
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
-      cat("Filtering the sampling events. Takes a few more minutes, depending on size of desired data (i.e., spatial, temporal extents and number of species..\n")
-      tictoc::tic()
-      ## force column names to lower and replace spaces with underscore (_) for my sanity
+      cat("Filtering the sampling events. Takes a few more minutes, depending on size of desired data (i.e., spatial, temporal extents and number of species..\n")      ## force column names to lower and replace spaces with underscore (_) for my sanity
       colnames(sampling) <-
         stringr::str_replace_all(tolower(colnames(sampling)),
                         pattern = " ",
@@ -235,8 +240,7 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       ## unlist the list
       sampling <- dplyr::bind_rows(mylist)
       # ensure consistency in col types
-      sampling <- dubcorms:::convert_cols(sampling)
-      tictoc::toc()
+      sampling <- convert_cols(sampling)
 
       ## save the filtered sampling data (fwrite is superior to vrooom for writing (and reading usually))
       cat("Writing the filtered sampling data to: ", f_samp_out, "...\n")
@@ -322,7 +326,7 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
         effort_distance_km = dplyr::if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
                                      0, effort_distance_km)
       )
-      observations <- dubcorms:::convert_cols(observations)
+      observations <- convert_cols(observations)
 
       # save to file
       ## write the filtered sampling data
@@ -340,7 +344,7 @@ ebird_filtered <- zerofill_ebird(list=ebird_filtered)
 
 # Final munging of columns  -----------------------------------------------
 ## munge column names
-ebird_filtered <- dubcorms:::clean_ebird_colnames(df=ebird_filtered)
+ebird_filtered <- clean_ebird_colnames(df=ebird_filtered)
 
 
 # SAVE TO FILE ------------------------------------------------------------

@@ -2,6 +2,7 @@
 #'
 #' @param X a data frame with variables site.id, site.ind, grid.id, grid.ind, year.id, year.ind
 #' @keywords internal
+#' @importFrom dplyr select
 make_indexing_df <- function(X, Y) {
 ## use the C matrix for site by year indexing
 ## use Xg.area where cell >0 for grid by site indexing

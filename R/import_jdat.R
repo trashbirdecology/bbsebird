@@ -1,6 +1,7 @@
 #' Import the Prepared RDS Data For Use in JAGS
 #' @param dir.jags Path name to where the jags data files (.rds) are stored
 #' @param filename Name of the file to import.
+#' @importFrom stringr str_detect
 #' @export import_jdat
 import_jdat <- function(dir.jags, filename="jdat.rds") {
 fns <- tolower(list.files(path=dir.jags, full.names=TRUE))

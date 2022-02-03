@@ -7,6 +7,10 @@
 #' @param crs.target Target CRS number for spatial grid.
 #' @param hexagonal logical if TRUE will produce a spatial grid with hexagonal, as opposed to rectangular, cells
 #' @param grid.size numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km
+#' @importFrom rnaturalearth ne_states
+#' @importFrom sf st_transform st_intersecton st_make_grid
+#' @importFrom dplyr mutate
+#' @importFrom stringr str_replace
 #' @export make_spatial_grid
 make_spatial_grid <- function(dir.out,
                               overwrite = TRUE,
@@ -59,7 +63,7 @@ grid <- study.area %>%
   sf::st_intersection(study.area) %>%
   # st_cast("MULTIPOLYGON") %>%
   sf::st_sf() %>%
-  mutate(gridcellid = row_number()) %>%
+  dplyr::mutate(gridcellid = row_number()) %>%
   sf::st_transform(crs = crs.target)
 
 # Calculate and add the grid cell centroid to the sf
