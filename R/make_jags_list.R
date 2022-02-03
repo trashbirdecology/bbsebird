@@ -237,7 +237,7 @@ if(ind == "bbs"){
     dplyr::group_by(site.ind, year.ind) %>%
     dplyr::mutate(n=n_distinct(grid.ind)) %>%
     dplyr::distinct(n, year.ind, site.ind) %>%
-          s(
+          reshape2::acast(
             site.ind~year.ind, value.var = "n")
   nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
 
