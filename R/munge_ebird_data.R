@@ -14,8 +14,8 @@
 #' @param species species for filtering eBird data
 #' @param remove.bbs.obs logical if TRUe will use crude and untested method for removing BBS data from eBird data (see function for detials)
 #' @param years years to include in data
-#' @param mat.effort.km maximum distance (kilometers) of birding events to include
-#' @param max.effort.minds maximum number of minutes of birding events to include
+#' @param max.effort.km maximum distance (kilometers) of birding events to include
+#' @param max.effort.mins maximum number of minutes of birding events to include
 #' @export munge_ebird_data
 munge_ebird_data <-
   function(fns.ebird,

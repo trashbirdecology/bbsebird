@@ -111,21 +111,15 @@ convert_cols <- function(x) {
 
 #' split_table internal function
 #'
-#' @param tibble the flat data object
-#' @param col the name(s) of the column(s) used to splice the table into a list
 #' @noRd
+#' @keywords internal
 split_tibble <-
   function(tibble, col = 'col')
     tibble %>% split(., .[, col])
 
 
-#' Standard Error
-#'
-#' Computes standard error of a vector
-#' @param x Numeric vector
+#' compute standard error of a vector
 #' @examples
-#' x <- rnorm(100)
-#' se(x)
 #' @keywords internal
 #' @noRd
 se <- function(x) {

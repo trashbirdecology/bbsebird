@@ -43,13 +43,13 @@ munge_ebird_data(
 
 \item{years}{years to include in data}
 
+\item{max.effort.km}{maximum distance (kilometers) of birding events to include}
+
+\item{max.effort.mins}{maximum number of minutes of birding events to include}
+
 \item{f_obs_out}{Filename for saving the filtered eBird observations data}
 
 \item{f_samp_out}{Filename for saving the filtered eBird sampling data}
-
-\item{mat.effort.km}{maximum distance (kilometers) of birding events to include}
-
-\item{max.effort.minds}{maximum number of minutes of birding events to include}
 }
 \description{
 Filter the eBird data and sampling events using R package AUK.
