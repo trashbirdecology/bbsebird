@@ -2,13 +2,13 @@
 #' @param dat data set with at least the column `date` and of class "date"
 #' @param min.yday minimum day of the year to include in resulting dataset
 #' @param max.yday maximum day of the year to include in resulting dataset
+#' @param sunlight logical If TRUE will calculate all sunlight, moonlight, rise and set times. This is computationally demanding for the eBird data, so do not set to TRUE unless needed.
+#' @param base.date character or date string (YYYY-MM-DD) to use as the origin date for calculating Julian date.
 #' @importFrom lubridate as_date yday
 #' @importFrom hms as_hms
 #' @importFrom dplyr filter select mutate bind_rows
 #' @importFrom parallel splitIndices
 #' @importFrom suncalc getSunlightTimes
-#' @param sunlight logical If TRUE will calculate all sunlight, moonlight, rise and set times. This is computationally demanding for the eBird data, so do not set to TRUE unless needed.
-#' @param base.date character or date string (YYYY-MM-DD) to use as the origin date for calculating Julian date.
 #' @export munge_date_time
 
 munge_date_time <- function(dat, base.date, min.yday=0, max.yday=365, sunlight=FALSE){

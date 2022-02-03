@@ -19,10 +19,9 @@
 #' @importFrom dplyr filter select mutate bind_rows distinct mutate if_else as_tibble
 #' @importFrom auk auk_unique
 #' @importFrom stringr str_replace_all str_detect
-#' @importFrom parallel detectCore
+#' @importFrom parallel detectCores
 #' @importFrom vroom vroom
 #' @importFrom readr col_character col_time col_date col_double
-#' @importFrom bbsAssistant region_codes
 #' @importFrom lubridate year
 #' @importFrom data.table fread fwrite
 #' @param max.num.observers maximum number of observers delcared at a birding event to include

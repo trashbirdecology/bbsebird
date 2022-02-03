@@ -17,12 +17,12 @@ Imports:
     dplyr (>= 1.0.7),
     foreach (>= 1.5.1),
     lubridate (>= 1.8.0),
-    magrittr, 
+    magrittr,
     mgcv,
     progress (>= 1.2.2),
     readr (>= 2.1.1),
     reshape2 (>= 1.4.4),
-    rgdal, 
+    rgdal,
     rjags (>= 4.12),
     rnaturalearth (>= 0.3.0),
     sp (>= 1.4.6),
@@ -30,7 +30,12 @@ Imports:
     tidyr (>= 1.1.4),
     suncalc (>= 0.5.0),
     vroom (>= 1.5.7),
-    units (>= 0.7.2)
+    units (>= 0.7.2),
+    auk,
+    data.table,
+    hms,
+    sf,
+    tibble
 Suggests: 
     here (>= 1.0.1)
 Remotes: 

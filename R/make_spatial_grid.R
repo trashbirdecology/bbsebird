@@ -8,7 +8,7 @@
 #' @param hexagonal logical if TRUE will produce a spatial grid with hexagonal, as opposed to rectangular, cells
 #' @param grid.size numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km
 #' @importFrom rnaturalearth ne_states
-#' @importFrom sf st_transform st_intersecton st_make_grid
+#' @importFrom sf st_transform st_make_grid
 #' @importFrom dplyr mutate
 #' @importFrom stringr str_replace
 #' @export make_spatial_grid

@@ -6,7 +6,6 @@
 #' @param dir.ebird.out Location of where to search for existing, created .rds files
 #' @param states.ind one or more two-letter state codes
 #' @importFrom stringr str_detect
-#' @importFrom bbsAssistant region_codes
 #' @importFrom utils untar
 #' @export
 id_ebird_files <- function(dir.ebird.in,
