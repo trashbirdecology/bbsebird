@@ -16,6 +16,7 @@
 #' @param years years to include in data
 #' @param max.effort.km maximum distance (kilometers) of birding events to include
 #' @param max.effort.mins maximum number of minutes of birding events to include
+#' @param max.num.observers maximum number of observers delcared at a birding event to include
 #' @export munge_ebird_data
 munge_ebird_data <-
   function(fns.ebird,
@@ -183,7 +184,7 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       ## do some serious filtering. there's def a cleaner way to write this up but is low priority and would need benefit from some benchmarking
       ## since we specific rc and rc should always be populated regardless of whether staties or countries is specified, the filter on ISO_3166-2 is FINE for both state and country fitler
       if(!is.null(countries) | !is.null(states)){sampling <- sampling %>%
-        filter(state_code %in% rc$iso_3166_2)}
+        dplyr::filter(state_code %in% rc$iso_3166_2)}
       if(complete.only) sampling <- sampling %>%
         dplyr::filter(all_species_reported %in% c("TRUE", "True", 1))
       if(!is.null(protocol)) sampling <- sampling %>%
@@ -276,7 +277,7 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       ## begin the filtering by params
       ## since we specific rc and rc should always be populated regardless of whether staties or countries is specified, the filter on ISO_3166-2 is FINE for both state and country fitler
       if(!is.null(countries) | !is.null(states)){observations <- observations %>%
-        filter(state_code %in% rc$iso_3166_2)}
+        dplyr::filter(state_code %in% rc$iso_3166_2)}
       if(complete.only) observations <- observations %>%
         dplyr::filter(all_species_reported %in% c("TRUE", "True", 1))
 

@@ -1,15 +1,3 @@
-# SPECIES LIST ------------------------------------------------------------
-#' Species Lookup Table for BBS and eBird Data
-#'
-#' \describe{
-#'   \item{}{}
-#' }
-#'
-
-# b.spp <- bbsAssistant::species_list
-# e.spp <- auk::ebird_species(x=unique(species_lookup$English_Common_Name))
-# auk:::auk_species()
-
 # JDAT CONTENTS -----------------------------------------------------------
 #' Descriptions of JDAT Contents
 #'

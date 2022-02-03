@@ -47,6 +47,8 @@ munge_ebird_data(
 
 \item{max.effort.mins}{maximum number of minutes of birding events to include}
 
+\item{max.num.observers}{maximum number of observers delcared at a birding event to include}
+
 \item{f_obs_out}{Filename for saving the filtered eBird observations data}
 
 \item{f_samp_out}{Filename for saving the filtered eBird sampling data}

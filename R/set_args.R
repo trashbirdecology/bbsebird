@@ -2,7 +2,6 @@
 #'
 #' Function to specify arugments and create/point to directories based on those arguments.
 #' @importFrom stringr str_replace
-#' @export set_args
 #' @noRd
 set_args <- function(# general args
   dir.orig.data,
