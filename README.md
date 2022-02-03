@@ -13,9 +13,10 @@ The purpose of this R package (*likely to undergo a name change…*) is
 to:
 
 1.  provide a (currently) faster alternative to the R package `auk` for
-    importing and munging the large eBird datasets (\*see note)
+    importing and munging the large eBird datasets\*
 2.  integrate the BBS and eBird observation datasets for use in JAGS
-    (`rjags`) and `mcgv::jagam()`
+    (`rjags`) and `mcgv::jagam()` by binding data to a common, spatial
+    sampling grid
 
 > \*[@cboettig](https://github.com/cboettig/) and
 > [@amstrimas](https://github.com/amstrimas/) are currently developing
@@ -58,7 +59,8 @@ requires two components of the EBD to be saved to local file:
 
 ``` r
 # 0:Setup -----------------------------------------------------------------
-# devtools::install_github("trashbirdecology/dubcorms")
+# install.packages("devtools")
+devtools::install_github("trashbirdecology/dubcorms")
 #explicitly load some packages
 pkgs <- c("dubcorms",
           "bbsAssistant",
@@ -131,12 +133,12 @@ This chunk is not required, but is recommended to check that you’ve
 correctly specified the arguments above.
 
 ``` r
-temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
-for(i in seq_along(temp))stopifnot(is.logical(eval(parse(text=temp[i]))))
-temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
-       "grid.size", "crs.target","year.range")
-for(i in seq_along(temp)){stopifnot(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"))}
-rm(temp)
+# temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
+# for(i in seq_along(temp))stopifnot(is.logical(eval(parse(text=temp[i]))))
+# temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
+#        "grid.size", "crs.target","year.range")
+# for(i in seq_along(temp)){stopifnot(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"))}
+# rm(temp)
 ```
 
 This chunk will create new environmental variables for project adn data
@@ -157,11 +159,11 @@ suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 ``` r
 if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
 grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
-                          overwrite=overwrite.grid,
+                          # overwrite=overwrite.grid,
                           states = states.ind,
                           countries = countries,
-                          crs.target=crs.target,
-                          grid.size=grid.size
+                          crs.target = crs.target,
+                          grid.size = grid.size
                           )
 plot(grid)
 ```
@@ -172,8 +174,17 @@ resulting data is aligned with the spatial grid (see above).
 ``` r
 ## wrapper for creating all bbs dafa
 # bbs <- make_bbs_data()
-fns.bbs.in <-  list.files(dirs$dir.bbs.out, pattern = "bbs_obs.rds",recursive = TRUE, full.names = TRUE)
-if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
+fns.bbs.in <-
+  list.files(
+    dirs$dir.bbs.out,
+    pattern = "bbs_obs.rds",
+    recursive = TRUE,
+    full.names = TRUE
+  )
+if (length(fns.bbs.in) > 0 &
+    !overwrite.bbs) {
+  bbs_obs <- readRDS(fns.bbs.in)
+} else{
   bbs_orig <- grab_bbs_data(overwrite = overwrite.bbs,
                             bbs_dir = dirs$dir.bbs.out)
   bbs_obs  <- munge_bbs_data(
@@ -192,7 +203,8 @@ if(length(fns.bbs.in)>0 & !overwrite.bbs){bbs_obs <- readRDS(fns.bbs.in)}else{
 
 # Overlay BBS and study area / sampling grid
 ### note, sometimes when running this in a notebook/rmd i randomly get a .rdf path error. I have no clue what this bug is. Just try running it again. See : https://github.com/rstudio/rstudio/issues/6260
-bbs_spatial <- make_bbs_spatial(df = bbs_obs,
+bbs_spatial <- make_bbs_spatial(
+  df = bbs_obs,
   cws.routes.dir = dirs$cws.routes.dir,
   usgs.routes.dir = dirs$usgs.routes.dir,
   plot.dir = dirs$dir.plots,
@@ -207,13 +219,13 @@ Make eBird data,
 
 ``` r
 (fns.ebird    <- id_ebird_files(
-                        dir.ebird.in = dirs$dir.ebird.in,
-                        dir.ebird.out = dirs$dir.ebird.out,
-                        mmyyyy = mmyyyy,
-                        species = species.abbr,
-                        states.ind = states
+  dir.ebird.in = dirs$dir.ebird.in,
+  dir.ebird.out = dirs$dir.ebird.out,
+  mmyyyy = mmyyyy,
+  species = species.abbr,
+  states.ind = states
 ))
-stopifnot(length(fns.ebird)>1)
+stopifnot(length(fns.ebird) > 1)
 
 # Import and munge the desired files..
 ebird <- munge_ebird_data(
@@ -230,20 +242,25 @@ ebird <- munge_ebird_data(
 )
 
 # Create spatial ebird
-ebird_spatial <- make_ebird_spatial(df=ebird,
-                   crs.target = crs.target,
-                   grid=grid,
-                   overwrite=overwrite.ebird,
-                   dir.out=dirs$dir.spatial.out
-                   )
+ebird_spatial <- make_ebird_spatial(
+  df = ebird,
+  crs.target = crs.target,
+  grid = grid,
+  overwrite = overwrite.ebird,
+  dir.out = dirs$dir.spatial.out
+)
 ```
 
 ## Step 3: Bundle Data for Use in JAGS/Elsewhere
 
 ``` r
 jdat <- make_jags_list(
-  dat = list(ebird=ebird_spatial, 
-               bbs=bbs_spatial, grid=grid, dirs=dirs),
+  dat = list(
+    ebird = ebird_spatial,
+    bbs = bbs_spatial,
+    grid = grid,
+    dirs = dirs
+  ),
   dir.out = dirs$dir.jags,
   max.C.ebird = max.C.ebird,
   scale.vars = TRUE,
@@ -252,10 +269,11 @@ jdat <- make_jags_list(
     k = 20,
     family = "poisson",
     sp.prior = "log.uniform",
-    diagonalize = TRUE)
+    diagonalize = TRUE
+  )
 )
 ```
 
 ``` r
-cat(names(jdat), sep="\n")
+names(jdat)
 ```
