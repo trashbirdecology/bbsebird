@@ -229,7 +229,8 @@ maxN <- rbind(maxN,
                       dplyr::group_by(grid.ind) %>%
                       dplyr::filter(!is.na(c)) %>%
                       dplyr::summarise(N.max = max(c, na.rm=TRUE)), maxN)
-         )
+         ) %>%
+    as.data.frame()
 ## Indexing: Make list of indexes ------------------------------------------
 # Loop indexes for JAGS
 indexing <- do_indexing(X=df)

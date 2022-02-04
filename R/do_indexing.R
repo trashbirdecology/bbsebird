@@ -17,19 +17,21 @@ sy.lookup <- Y %>% dplyr::distinct(year.ind, year.id, site.ind, site.id)
 
 samples <- Y %>% dplyr::distinct(year.ind, site.ind, grid.ind)
 
-for(h in 1:nrow(samples)){stopifnot(C[samples$site.ind[h], samples$year.ind[h]] == Y$c[h])}
+# for(h in 1:nrow(samples)){stopifnot(C[samples$site.ind[h], samples$year.ind[h]] == Y$c[h])}
 
 # LOCATION OF CELLS WITH DATA in BBS/EBIRD MATRICES
 ## indexing data frame for site-by-year matirces
 sy <- samples %>% distinct(site.ind, year.ind) %>%
   arrange(site.ind, year.ind) %>%
-  dplyr::select(site.ind, year.ind)
+  dplyr::select(site.ind, year.ind)%>%
+  as.data.frame()
 nsy <- nrow(sy)
 ## indexing data frame for site-by-grid matrices
-sg <- jdat$bbs$indexing$samples %>%
+sg <- samples %>%
           distinct(site.ind, grid.ind) %>%
           arrange(site.ind, grid.ind) %>%
-          dplyr::select(site.ind, grid.ind)
+          dplyr::select(site.ind, grid.ind) %>%
+  as.data.frame()
 nsg <- nrow(sg)
 
 ## Unique sites, grids, years
@@ -44,7 +46,8 @@ ngrids <- length(g.ind)
 ## if data is BBS, need to collect information on proportion of routes in cells
 if(any(tolower(names(X)) %in% c("proprouteincell", "rteno", "routenum"))){
   prop <- X %>% dplyr::distinct(proprouteincell,
-                              site.ind, grid.ind)
+                              site.ind, grid.ind)%>%
+    as.data.frame()
   prop$proprouteincell[is.na(prop$proprouteincell)] <- 0 # yes, do this twice. too lazy to figure out why though.
   prop.sg <- reshape2::acast(data = prop,
                   formula = site.ind~grid.ind,
@@ -61,7 +64,7 @@ objs.index <- c(
   "sg", "nsg", "sy", "nsy",
   "nsites", "ngrids", "nyears",
   "sy.lookup", "sg.lookup",
-  "prop.sg"
+  "prop.sg", "samples"
 )
 
 

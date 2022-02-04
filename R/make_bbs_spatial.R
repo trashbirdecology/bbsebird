@@ -31,7 +31,7 @@ make_bbs_spatial <- function(df,
                              print.plots = TRUE,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL,
-                             overwrite = TRUE,
+                             overwrite = FALSE,
                              dir.out=NULL
                              ) {
   # first, if overwrite is false and this file exists. import and return asap.
