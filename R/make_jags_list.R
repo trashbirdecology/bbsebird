@@ -134,6 +134,12 @@ for (i in seq_along(dat)) {
         df$c[df$c > max.C.ebird] <- NA
       }
 
+
+# Ensure no duplicates exist in data --------------------------------------
+df <- df %>% distinct(site.id, year.id, grid.id, .keep_all = TRUE)
+
+
+
       ## Site index -----------------------------------------------
       ## create some indexes and IDS to ensure all matrices are properly sorted.
       site.index <- df %>%
@@ -148,19 +154,18 @@ for (i in seq_along(dat)) {
       ## ensure all grid cells are represented in the dataset for creating even matrices
       df <- df %>% dplyr::full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
 
-
 ## C: Count Matrix ------------------------------------------------------------
-  ## make a matrix of observed counts
-      C   <-
-        make_mat(
-          df %>%
-            dplyr::distinct(year.ind, site.ind, c) %>%
-            dplyr::filter(!is.na(site.ind)), # be sure to remove na sites
-          row = "site.ind",
-          col = "year.ind",
-          val = "c"
-        )
-      stopifnot(as.integer(rownames(C))==sort(as.integer(rownames(C))))
+## make a matrix of observed counts
+  C   <-
+    make_mat(
+      df %>%
+        dplyr::distinct(year.ind, site.ind, c) %>%
+        dplyr::filter(!is.na(site.ind)), # be sure to remove na sites
+      row = "site.ind",
+      col = "year.ind",
+      val = "c"
+    )
+  stopifnot(as.integer(rownames(C))==sort(as.integer(rownames(C))))
 
 ##XP: det. covs --------------------------------------------------
   ## Specify all the possble varibles (and desired names) to be used as detection covariates in model
@@ -217,7 +222,6 @@ for (i in seq_along(dat)) {
   stopifnot(dim(Xp[[1]])[1]==dim(C)[1])
 
 ## Max N for JAGAM ---------------------------------------------------------
-
 maxN <- rbind(maxN,
               rbind(df %>%
                       dplyr::group_by(grid.ind) %>%

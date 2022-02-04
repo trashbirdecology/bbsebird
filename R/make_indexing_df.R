@@ -13,17 +13,19 @@ Y <- X %>%
   na.omit(c)
 
 
+samples <- Y %>% dplyr::select(year.ind, site.ind, grid.ind)
+
+for(h in 1:nrow(samples)){stopifnot(C[samples$site.ind[h], samples$year.ind[h]] == Y$c[h])}
+
+
 # Create Indices for Output Object
 sampled.sites.ind <- sort(unique(Y$site.ind))
-sampled.sites.id  <- sort(unique(Y$site.id))
 n.sampled.sites   <- length(sampled.sites.ind)
 
 sampled.grids.ind <- sort(unique(Y$grid.ind))
-sampled.grids.id  <- sort(unique(Y$grid.id))
 n.sampled.grids   <- length(sampled.grids.id)
 
 sampled.years.ind <- sort(unique(Y$year.ind))
-sampled.years.id  <- sort(unique(Y$year.id))
 n.sampled.years   <- length(sampled.years.ind)
 
 # output list
@@ -36,7 +38,8 @@ index.out <- list(
   nsites     = n.sampled.sites,
   year.id    = sampled.years.id,
   year.ind   = sampled.years.ind,
-  nyears     = n.sampled.years
+  nyears     = n.sampled.years,
+  samples    = samples
 )
 
 # return object
