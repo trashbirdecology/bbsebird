@@ -255,7 +255,7 @@ names(usgs_routes) <- tolower(names(usgs_routes))
                            max(totalspp, na.rm=TRUE)) %>%
         dplyr::ungroup() %>%
         dplyr::select(x),
-      main="max # species detected in single route"
+      main=cat("max # species ", na.omit(unique(bbs_spatial$aou)), " detected in single route")
     ))
     plot((
       bbs_spatial %>% dplyr::group_by(gridcellid) %>%

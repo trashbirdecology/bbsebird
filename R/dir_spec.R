@@ -8,8 +8,11 @@
 #' @export dir_spec
 
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
+
   if(is.null(dir.proj)) dir.proj <- getwd()
-  if(nchar(subdir.proj)>100){cat("subdir.proj is very long. specifying a new name for project."); subdir.proj="myproject"}
+
+
+  if(!is.null(subdir.proj) & nchar(subdir.proj)>100){cat("subdir.proj is very long. specifying a new name for project."); subdir.proj="myproject"}
 
 
 

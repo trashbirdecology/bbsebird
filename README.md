@@ -93,7 +93,7 @@ mmyyyy              = "dec-2021" # the month and year of the eBird data download
 
 # Strongly suggested but optional args
 ##general arguments
-dir.proj  = "C:/Users/jburnett/documents/github/dubcorms-dev-scene/"
+# dir.proj  = "C:/Users/jburnett/desktop/testing/"
 
 
 ### see bbsAssistant::region_codes
@@ -141,7 +141,7 @@ directries based on teh directories supplied above.
 ``` r
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <-  proj.shorthand(species.abbr, regions, grid.size, year.range)
-dirs        <-  dir_spec(dir.orig.data, dir.proj, subdir.proj) # create and/or specify directories for later use.
+dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  subdir.proj = subdir.proj) # create and/or specify directories for later use.
 # ensure all directories exist
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 ```
@@ -175,10 +175,6 @@ fns.bbs.in <-
     recursive = TRUE,
     full.names = TRUE
   )
-if (length(fns.bbs.in) > 0 &
-    !overwrite.bbs) {
-  bbs_obs <- readRDS(fns.bbs.in)
-} else{
   bbs_orig <- grab_bbs_data(bbs_dir = dirs$dir.bbs.out)
   bbs_obs  <- munge_bbs_data(
     bbs_list = bbs_orig,
@@ -189,7 +185,6 @@ if (length(fns.bbs.in) > 0 &
   bbs_obs <-
     dubcorms:::match_col_names(bbs_obs) # munge column names to mesh with eBird
   saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
-}# end bbs data munging
 
 # Overlay BBS and study area / sampling grid
 ### note, sometimes when running this in a notebook/rmd i randomly get a .rdf path error. I have no clue what this bug is. Just try running it again. See : https://github.com/rstudio/rstudio/issues/6260
