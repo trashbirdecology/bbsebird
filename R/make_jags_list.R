@@ -104,6 +104,9 @@ for (i in seq_along(dat)) {
       ## grab data frame
       df <- dat[[i]]
       names(df) <- tolower(names(df))
+      ## drop units
+      df <- units::drop_units(df)
+
 
       ## Do some light munging
       if ("sf" %in% class(df)) {
@@ -139,20 +142,19 @@ for (i in seq_along(dat)) {
 df <- df %>% distinct(site.id, year.id, grid.id, .keep_all = TRUE)
 
 
+  ## Site index -----------------------------------------------
+  ## create indexes and IDS to ensure all matrices are properly sorted and can be later tied back to original data/sites
+  site.index <- df %>%
+    dplyr::distinct(site.id) %>%
+    dplyr::filter(!is.na(site.id)) %>%
+    dplyr::arrange(site.id) %>%
+    dplyr::mutate(site.ind = 1:n())
 
-      ## Site index -----------------------------------------------
-      ## create some indexes and IDS to ensure all matrices are properly sorted.
-      site.index <- df %>%
-        dplyr::distinct(site.id) %>%
-        dplyr::filter(!is.na(site.id)) %>%
-        dplyr::arrange(site.id) %>%
-        dplyr::mutate(site.ind = 1:n())
+  ## add the grid and site site.ind to the data frame
+  df <- df %>% dplyr::left_join(site.index)
 
-      ## add the grid and site site.ind to the data frame
-      df <- df %>% dplyr::left_join(site.index)
-
-      ## ensure all grid cells are represented in the dataset for creating even matrices
-      df <- df %>% dplyr::full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
+  ## ensure all grid cells are represented in the dataset for creating even matrices
+  df <- df %>% dplyr::full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
 
 ## C: Count Matrix ------------------------------------------------------------
 ## make a matrix of observed counts
@@ -230,7 +232,7 @@ maxN <- rbind(maxN,
          )
 ## Indexing: Make list of indexes ------------------------------------------
 # Loop indexes for JAGS
-indexing <- make_indexing_df(X=df)
+indexing <- do_indexing(X=df)
 
 ## BBS specific matrices -------------------------------------------------------
 if(ind == "bbs"){
@@ -250,12 +252,18 @@ if(ind == "bbs"){
                       distinct(grid.ind, site.ind, year.ind) %>%
                       group_by(site.ind, year.ind) %>%
                       summarise(n=n_distinct(grid.ind)))["n"], na.rm=TRUE) # index used in JAGS
-  idsGridsbySiteYear <- temp.bbs %>%
-      distinct(grid.ind, site.ind, year.ind) %>%
-      group_by(site.ind, year.ind) %>%
-      mutate(ng = 1:n()) %>%
-      arrange(grid.ind) %>%
-      reshape2::acast(site.ind~year.ind~nMaxGrid, value.var = "grid.ind")
+  # idsGridsbySiteYear <- temp.bbs %>%
+  #     distinct(grid.ind, site.ind, year.ind) %>%
+  #     group_by(site.ind, year.ind) %>%
+  #     mutate(ng = 1:n()) %>%
+  #     # arrange(grid.ind) %>%
+  #     reshape2::acast(site.ind~year.ind~nMaxGrid, value.var = "grid.ind")
+
+    ## add these indexes to bbs$indexing
+    # indexing$maxn <- maxN
+    # indexing$gridsiteyear.id <- idsGridsbySiteYear
+    # indexing$ngridsiteyear <- nGridsBySiteByYear
+    indexing$nmaxgrids <- nMaxGrid
 
   ## Grab max values for BBS in each grid cell for use in JAGAM
     maxN <- rbind(df %>%
@@ -263,12 +271,6 @@ if(ind == "bbs"){
                         dplyr::filter(!is.na(c)) %>%
                         dplyr::summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
-
-    ## add these indexes to bbs$indexing
-    # indexing$maxn <- maxN
-    indexing$gridsiteyear.id <- idsGridsbySiteYear
-    indexing$ngridsiteyear <- nGridsBySiteByYear
-    indexing$nmaxgrids <- nMaxGrid
 
 
 } # end if BBS
@@ -306,12 +308,12 @@ rm(list.out)
       dplyr::arrange(grid.ind)
 
 ## just to ensure its sorted
-temp=grid.index %>%
+grid.ind <- grid.index %>%
   dplyr::arrange(grid.ind)
 
 ## bundle data for use in jagam
-jagam.data <- data.frame(X = temp$X,
-                         Y = temp$Y,
+jagam.data <- data.frame(X = grid.ind$X,
+                         Y = grid.ind$Y,
                          N = maxN.all$N.max)
 
 # ensure k < num grid cells
@@ -361,7 +363,5 @@ cat("\t....done saving\n")
 # export obj from function
 return(list.out)
 
-
 # END FUN -----------------------------------------------------------------
-
 } # END FUN
