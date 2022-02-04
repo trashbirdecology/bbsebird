@@ -6,11 +6,11 @@
 \usage{
 make_jags_list(
   dat,
+  dir.models,
+  dir.out,
   jagam.args,
   max.C.ebird = 100,
   scale.vars = TRUE,
-  dir.out,
-  dir.models,
   overwrite = FALSE,
   fn.out = "jdat"
 )
@@ -18,15 +18,15 @@ make_jags_list(
 \arguments{
 \item{dat}{a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS}
 
+\item{dir.models}{Location for where to store the GAM portion of the JAGS model}
+
+\item{dir.out}{Directory within which the output list will be saved  as "jdat"}
+
 \item{jagam.args}{List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)}
 
 \item{max.C.ebird}{if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.}
 
 \item{scale.vars}{Logical If TRUE will scale variables. This needs to be improved/checked.}
-
-\item{dir.out}{Directory within which the output list will be saved  as "jdat"}
-
-\item{dir.models}{Location for where to store the GAM portion of the JAGS model}
 
 \item{overwrite}{if FALSE will not overwrite file if it exists at location \code{fn.out}}
 

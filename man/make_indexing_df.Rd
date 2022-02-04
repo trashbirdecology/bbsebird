@@ -4,10 +4,10 @@
 \alias{make_indexing_df}
 \title{Make 2-D array for Indexing Purposes}
 \usage{
-make_indexing_df(X, Y)
+make_indexing_df(X)
 }
 \arguments{
-\item{X}{a data frame with variables site.id, site.ind, grid.id, grid.ind, year.id, year.ind}
+\item{X}{a data frame with variables site.id, site.ind, grid.id, grid.ind, year.id, year.ind, and "c"}
 }
 \description{
 Make 2-D array for Indexing Purposes
