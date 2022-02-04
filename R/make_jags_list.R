@@ -17,11 +17,11 @@
 #' @export make_jags_list
 make_jags_list <-
   function(dat,
+           dir.models,
+           dir.out,
            jagam.args,
            max.C.ebird=100,
            scale.vars = TRUE,
-           dir.out,
-           dir.models,
            overwrite=FALSE,
            fn.out = "jdat") {
 
@@ -61,13 +61,12 @@ make_jags_list <-
                 bbs   = dat$bbs,
                 ebird = dat$ebird)
 
-
     # specify all the possible objects to go into a single list of listout
     objs <-
       c(
         "C", # observed counts
         "Xp", # site-level detection covariates
-        "indexing" # indexes for where data exists.
+        "indexing" # indexes for where and how much data exists within each dataset
        )
 
 # YEARS -------------------------------------------------------------------
@@ -96,8 +95,8 @@ make_jags_list <-
 
 # BBS AND EBIRD --------------------------------------
 # intialize mpty maxN
+maxN <- NULL
 for (i in seq_along(dat)) {
-if(i==1) maxN <- NULL
       ind <-
         names(dat)[i] # make lazy indicator for which data we are munging
       if(!ind %in% c("ebird", "bbs"))next()
@@ -218,6 +217,7 @@ if(i==1) maxN <- NULL
   stopifnot(dim(Xp[[1]])[1]==dim(C)[1])
 
 ## Max N for JAGAM ---------------------------------------------------------
+
 maxN <- rbind(maxN,
               rbind(df %>%
                       dplyr::group_by(grid.ind) %>%
