@@ -15,7 +15,7 @@ make_bbs_spatial(
   print.plots = TRUE,
   keep.empty.cells = TRUE,
   plot.dir = NULL,
-  overwrite = TRUE,
+  overwrite = FALSE,
   dir.out = NULL
 )
 }

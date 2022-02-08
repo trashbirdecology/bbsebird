@@ -75,8 +75,6 @@ for (z in seq_along(objs.in)) {
   new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
   index.out[[objs.in[z]]] <- new
 }
-#remove all objects to be sure they arent put into other lists
-suppressWarnings(rm(list=c(objs)))
 
 # return object
 return(index.out)

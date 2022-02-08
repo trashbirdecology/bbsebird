@@ -233,7 +233,7 @@ maxN <- rbind(maxN,
     as.data.frame()
 ## Indexing: Make list of indexes ------------------------------------------
 # Loop indexes for JAGS
-indexing <- do_indexing(X=df)
+indexing <- dubcorms:::do_indexing(X=df)##notice internal function call
 
 ## BBS specific matrices -------------------------------------------------------
 if(ind == "bbs"){
@@ -290,7 +290,7 @@ if(ind=="ebird") ebird.list <- list.out
 if(ind=="bbs")   bbs.list <- list.out
 if(ind=="grid")  grid.list <- list.out
 #remove all objects to be sure they arent put into other lists
-suppressWarnings(rm(list=c(objs)))
+# suppressWarnings(rm(list=c(objs)))
 rm(list.out)
 } # END EBIRD AND BBS LOOPS
 

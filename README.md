@@ -31,6 +31,7 @@ Download development version from GitHub with:
 
 ``` r
 # install.packages("devtools")
+devtools::install_github("trashbirdecology/bbsassistant")
 devtools::install_github("trashbirdecology/dubcorms")
 ```
 
@@ -82,7 +83,7 @@ will create the directory for you.
 ``` r
 # REQUIRED ARGUMENTS
 dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
-
+dir.proj       = "C:/users/jburnett/OneDrive - DOI/research/cormorants/COMMON_RAVEN/"
 species             = c("Common raven")
 species.abbr        = c("comrav") # see ebird filename for abbreviation
 ##bbs arguments
@@ -141,7 +142,9 @@ directries based on teh directories supplied above.
 ``` r
 # proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <-  proj.shorthand(species.abbr, regions, grid.size, year.range)
-dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  subdir.proj = subdir.proj) # create and/or specify directories for later use.
+dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
+                         dir.proj = dir.proj,
+                         subdir.proj = subdir.proj) # create and/or specify directories for later use.
 # ensure all directories exist
 suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 ```
@@ -166,7 +169,7 @@ Create the BBS data. This chunk relies heabily on R package . The
 resulting data is aligned with the spatial grid (see above).
 
 ``` r
-## wrapper for creating all bbs dafa
+## wrapper for creating all bbs data--debating making this an exported function. for now, DNE
 # bbs <- make_bbs_data()
 fns.bbs.in <-
   list.files(
@@ -175,11 +178,11 @@ fns.bbs.in <-
     recursive = TRUE,
     full.names = TRUE
   )
-  bbs_orig <- grab_bbs_data(bbs_dir = dirs$dir.bbs.out)
+  bbs_orig <- grab_bbs_data(bbs_dir = dirs$dir.bbs.out) ## need to add grab_bbs_data into munge_bbs_data and include an option for where to save that data. 
   bbs_obs  <- munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
-    species = species,
+    species = species, 
     year.range = year.range
   )
   bbs_obs <-
@@ -240,6 +243,8 @@ jdat <- make_jags_list(
     grid = grid,
     dirs = dirs
   ),
+  overwrite = TRUE,
+  dir.models = dirs$dir.models,
   dir.out = dirs$dir.jags,
   jagam.args = list(
     bs = "ds",
@@ -251,6 +256,4 @@ jdat <- make_jags_list(
 )
 ```
 
-``` r
-names(jdat)
-```
+<!-- # End Run -->
