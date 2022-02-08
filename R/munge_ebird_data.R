@@ -80,7 +80,7 @@ if(length(ind)>=1){
   if(overwrite){fns.ebird <- setdiff(fns.ebird, ind)}
   #import data and exist functio nif no overwrite specified
   if(!overwrite){
-    cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in my_big_fkn_fun().\n")
+    cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in `munge_ebird_data()`.\n")
     output <- readRDS(ind)
      return(output)
     }

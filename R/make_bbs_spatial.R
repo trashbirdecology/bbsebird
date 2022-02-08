@@ -18,6 +18,7 @@
 #' @importFrom dplyr mutate full_join select mutate group_by
 #' @export make_bbs_spatial
 make_bbs_spatial <- function(df,
+                             grid,
                              ## observations data frame. must contain at least var rteno
                              cws.routes.dir,
                              usgs.routes.dir,
@@ -27,7 +28,6 @@ make_bbs_spatial <- function(df,
                              # this was gift by Dave and Danny-DO NT SHARE WITHOUT PERMISSION
                              usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
                              crs.target = 4326,
-                             grid = NULL,
                              print.plots = TRUE,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL,
@@ -137,17 +137,9 @@ make_bbs_spatial <- function(df,
     dplyr::select(-segmentlength) # we don't really gaf about these lines, they're just segments because of the drawings
 
 
-## Export combined routes layer if no grid is provided...-------------
-  # stop here if no grid was provided...
-  if (is.null(grid)) {
-    return(bbs_routes)
-  }
-
-
 # Project/reproject grid to match bbs_routes layer --------------------------------
 # match grid projection/crs to target
 grid <- sf::st_transform(grid, crs = crs.string)
-
 
 # Clip bbs_routes to grid extend ------------------------------------------
 # append original (projected) grid to bbs_routes spatial lines layer
@@ -172,9 +164,8 @@ route.line.geometry <- bbs.grid.lines %>%
   mutate(route.geometry=geometry) %>%
   st_drop_geometry()
 
-
 # Expand the grid/study area to include all years and cell combos  -------------
-  # expand the grid to include all years and  grid cell ids
+  # expand the grid to include all years and grid cell ids
 grid.expanded <- grid %>%
   as.data.frame() %>%
   ## add years to the grid layer
@@ -182,7 +173,6 @@ grid.expanded <- grid %>%
 # add these to grid attributes attributes
   dplyr::full_join(grid) %>%
   sf::st_as_sf()
-
 
 # Create BBS Routes as GRIDDED object (not lines) -------------------------
 # Join the expanded grid with the BBS routes information
@@ -195,23 +185,19 @@ bbs.temp <- bbs.grid.lines.df %>%
 ## overlay the bbs routes to the grid
 bbs.grid  <- left_join(grid.expanded, bbs.temp)
 
-
 # Add attributes and obs to BBS gridded layer -----------------------------
 ## append the route line geometry
 bbs.grid <- left_join(bbs.grid, route.line.geometry)
 ## add the BBS observations to the BBS spatial object
 bbs_spatial <- left_join(bbs.grid, df)
 
-
 # if empty cells not desired, will remove them.
 if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(rteno))}
-
 
 
 ### return dfs with lowerase
 names(cws_routes) <- tolower(names(cws_routes))
 names(usgs_routes) <- tolower(names(usgs_routes))
-
 
 
 # plot if wanted
@@ -278,6 +264,7 @@ if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungr
 # remove rownames
 rownames(bbs_spatial) <- NULL
 
+if(nrow(bbs_spatial %>% distinct(year, gridcellid, rteno, c)) != nrow(bbs_spatial)) message("FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists.")
 
 
 # Outputs -----------------------------------------------------------------
