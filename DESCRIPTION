@@ -39,12 +39,12 @@ Imports:
     utils,
     grDevices,
     stats,
-    parallel
+    parallel,
+    suncalc
 Suggests: 
     knitr,
     here (>= 1.0.1),
-    rmarkdown,
-    suncalc (>= 0.5.0)
+    rmarkdown
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth
