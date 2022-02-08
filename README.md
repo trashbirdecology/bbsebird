@@ -83,9 +83,9 @@ will create the directory for you.
 ``` r
 # REQUIRED ARGUMENTS
 dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
-dir.proj       = "C:/users/jburnett/OneDrive - DOI/research/cormorants/COMMON_RAVEN/"
-species             = c("Common raven")
-species.abbr        = c("comrav") # see ebird filename for abbreviation
+dir.proj       = "C:/users/jburnett/OneDrive - DOI/research/cormorants/House_Sparrow/"
+species             = c("House Sparrow") ## eventually need to add alookup table to ensure species.abbr and speices align.
+species.abbr        = c("houspa") # see ebird filename for abbreviation
 ##bbs arguments
 usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
 cws.layer           = "ALL_ROUTES"
@@ -98,9 +98,8 @@ mmyyyy              = "dec-2021" # the month and year of the eBird data download
 
 
 ### see bbsAssistant::region_codes
-states              = c("us-co", "us-ne", "us-ks","us-wy", "us-SD", 
-                        "Us-MT", "US-ND")
-countries           = c("US", "CA") ## string of  countries Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
+states              = c("us-fl")
+countries           = c("US") ## string of  countries Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
 # species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
 # species.abbr        = c("doccor","dcco", "docco")
 
@@ -236,6 +235,8 @@ ebird_spatial <- make_ebird_spatial(
 ## Step 3: Bundle Data for Use in JAGS/Elsewhere
 
 ``` r
+tictoc::toc()#~9 minutes to this point without package install for HOSP in Florida on a machine with 65G ram, 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz   2.61 GHz 64bit
+tictoc::tic()
 jdat <- make_jags_list(
   dat = list(
     ebird = ebird_spatial,
@@ -254,6 +255,7 @@ jdat <- make_jags_list(
     diagonalize = TRUE
   )
 )
+tictoc::toc() # ~125 seconds 
 ```
 
 <!-- # End Run -->
