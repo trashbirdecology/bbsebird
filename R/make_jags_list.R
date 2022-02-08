@@ -14,8 +14,8 @@
 #' @importFrom units drop_units
 #' @importFrom sf st_drop_geometry
 #' @importFrom reshape2 acast
-#' @export make_jags_list
-make_jags_list <-
+#' @export bundle_data
+bundle_data <-
   function(dat,
            dir.models,
            dir.out,
