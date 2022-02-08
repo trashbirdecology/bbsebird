@@ -273,21 +273,6 @@ proj.shorthand <- function(species,
   return(x)
 }
 
-#' Create a List of Repeated Initial Values for each Chain
-#'
-#' @param inits a list of initial values which will be repeated according to arg `nc`
-#' @param nc number of chains (number of times the inits will be repeated)
-#' @export make_inits_list
-make_inits_list <- function(inits, nc = 3) {
-  inits.out <- list()
-  for (i in 1:nc) {
-    inits.out[[i]] <- inits
-  }
-  stopifnot(length(inits.out) == nc)
-  return(inits.out)
-
-}
-
 
 #' Make 2-D array (Matrix for JAGS)
 #'
@@ -307,7 +292,12 @@ make_mat <-
            col = "year.ind",
            val,
            replace.na = FALSE) {
-    # names <- names(df)
+    # ensure no duplicates of the row and col identifiers exist.
+    df.in <- df.in %>%
+      filter(!is.na(eval(parse(text=row))) &
+               !is.na(eval(parse(text=col)))) %>%
+      distinct(eval(parse(text=row)), eval(parse(text=col)), .keep_all = TRUE)
+
     ## will make row and col NULL and then add a thing for when they are NULL for ebird and bbs
     # e.g. if(is.null(row) & "rteno" %in% names) row <- "rteno"
     mat <- pivot_wider(
@@ -318,7 +308,6 @@ make_mat <-
     ) %>%
       as.data.frame() ## add this instead of matrix otherwise numeric cell values --> character
     # make first col the rownames
-
     # remove missing values in first column, which will be the rteno/checklist_id
     mat <- mat[!is.na(mat[, 1]), ]
 
@@ -339,7 +328,7 @@ make_mat <-
       mat %>% dplyr::select(order(as.integer(colnames(mat))))#cols
 
     #### crude tests
-    # stopifnot(rownames(mat)==sort(as.integer(rownames(df.in))))
+    stopifnot(rownames(mat)==sort(unique(df.in$site.ind)))
     # stopifnot(colnames(mat)==sort(unique(df.in$year.ind)))
 
     # return object

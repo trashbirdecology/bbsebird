@@ -23,7 +23,7 @@ bundle_data <-
            max.C.ebird=100,
            scale.vars = TRUE,
            overwrite=FALSE,
-           fn.out = "jdat") {
+           fn.out = "bundled_dat") {
 
     ## create output filename
     fn = tolower(paste0(paste0(dir.out, "/", fn.out, ".RDS")))
@@ -91,7 +91,8 @@ bundle_data <-
       dplyr::mutate(grid.ind  = 1:nrow(dat$grid))
     grid.list$index <- grid.index %>% dplyr::select(grid.id, grid.ind)
     grid.list$XY    <- grid.index %>% dplyr::select(X, Y)
-    grid.list$area  <- grid.index %>% dplyr::select(area)
+      area.temp  <- grid.index %>% dplyr::select(area)
+      grid.list$area   <- area.temp[,1] # do this to frce to a vector. annoying? yes
 
 # BBS AND EBIRD --------------------------------------
 # intialize mpty maxN
@@ -118,6 +119,7 @@ for (i in seq_along(dat)) {
         ### add year index
         rename(year.id = year) %>%
         left_join(year.index)
+
       ### add grid index
       df <- df %>%
         rename(grid.id = gridcellid) %>%
@@ -141,33 +143,34 @@ for (i in seq_along(dat)) {
 # Ensure no duplicates exist in data --------------------------------------
 df <- df %>% distinct(site.id, year.id, grid.id, .keep_all = TRUE)
 
+# Ensure no no-data routes are included -----------------------------------
+## this culd happen because (a) the route was in teh spatial routes shapefile(s) and there were no observations over the time frame
+df <- df %>% filter(!is.na(c)) %>%  # be sure to remove na sites
+      dplyr::distinct(year.id, site.id, grid.ind , c, .keep_all=TRUE)
 
-  ## Site index -----------------------------------------------
-  ## create indexes and IDS to ensure all matrices are properly sorted and can be later tied back to original data/sites
+## Site index -----------------------------------------------
+## create indexes and IDS to ensure all matrices are properly sorted and can be later tied back to original data/sites
   site.index <- df %>%
+    dplyr::filter(!is.na(c)) %>%
     dplyr::distinct(site.id) %>%
-    dplyr::filter(!is.na(site.id)) %>%
     dplyr::arrange(site.id) %>%
     dplyr::mutate(site.ind = 1:n())
 
   ## add the grid and site site.ind to the data frame
   df <- df %>% dplyr::left_join(site.index)
 
-  ## ensure all grid cells are represented in the dataset for creating even matrices
+  ## ensure ALL grid cells are represented in the dataset for creating even matrices
   df <- df %>% dplyr::full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
+
 
 ## C: Count Matrix ------------------------------------------------------------
 ## make a matrix of observed counts
   C   <-
-    make_mat(
-      df %>%
-        dplyr::distinct(year.ind, site.ind, c) %>%
-        dplyr::filter(!is.na(site.ind)), # be sure to remove na sites
+    make_mat(df.in = df,
       row = "site.ind",
       col = "year.ind",
       val = "c"
     )
-  stopifnot(as.integer(rownames(C))==sort(as.integer(rownames(C))))
 
 ##XP: det. covs --------------------------------------------------
   ## Specify all the possble varibles (and desired names) to be used as detection covariates in model
