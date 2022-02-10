@@ -1,7 +1,8 @@
 #' Munge and Output a List or List of Lists for Use in JAGS
 #'
+#' Returns a list of lists of wide-format objects to be used in JAGS or elsewhere. Future development includes providing option to output vectorized data.
 #' @param dat a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS
-#' @param scale.vars Logical If TRUE will scale variables. This needs to be improved/checked.
+#' @param scale.covs Logical If TRUE will z-scale and center variables. This needs to be added and checkedchecked.
 #' @param dir.out Directory within which the output list will be saved  as "jdat"
 #' @param max.C.ebird if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.
 #' @param fn.out Filename of the list object output as a .RDS file
@@ -21,7 +22,7 @@ bundle_data <-
            dir.out,
            jagam.args,
            max.C.ebird=100,
-           scale.vars = TRUE,
+           scale.covs = TRUE,
            overwrite=FALSE,
            fn.out = "bundled_dat") {
 
@@ -86,13 +87,15 @@ bundle_data <-
       dplyr::arrange(gridcellid) %>%
       dplyr::filter(!is.na(gridcellid)) %>%  # just to be safe.
       dplyr::rename(grid.id = gridcellid,
-             X=cell.lon.centroid,
-             Y=cell.lat.centroid) %>%
+                    X = cell.lon.centroid,
+                    Y = cell.lat.centroid) %>%
       dplyr::mutate(grid.ind  = 1:nrow(dat$grid))
-    grid.list$index <- grid.index %>% dplyr::select(grid.id, grid.ind)
+    grid.list$index <-
+      grid.index %>% dplyr::select(grid.id, grid.ind)
     grid.list$XY    <- grid.index %>% dplyr::select(X, Y)
-      area.temp  <- grid.index %>% dplyr::select(area)
-      grid.list$area   <- area.temp[,1] # do this to frce to a vector. annoying? yes
+    area.temp  <- grid.index %>% dplyr::select(area)
+    grid.list$area   <-
+      area.temp[, 1] # do this to frce to a vector. annoying? yes
 
 # BBS AND EBIRD --------------------------------------
 # intialize mpty maxN
@@ -107,7 +110,6 @@ for (i in seq_along(dat)) {
       names(df) <- tolower(names(df))
       ## drop units
       df <- units::drop_units(df)
-
 
       ## Do some light munging
       if ("sf" %in% class(df)) {
@@ -139,7 +141,6 @@ for (i in seq_along(dat)) {
         df$c[df$c > max.C.ebird] <- NA
       }
 
-
 # Ensure no duplicates exist in data --------------------------------------
 df <- df %>% distinct(site.id, year.id, grid.id, .keep_all = TRUE)
 
@@ -165,41 +166,46 @@ df <- df %>% filter(!is.na(c)) %>%  # be sure to remove na sites
 
 ## C: Count Matrix ------------------------------------------------------------
 ## make a matrix of observed counts
-  C   <-
+  C <-
     make_mat(df.in = df,
       row = "site.ind",
       col = "year.ind",
       val = "c"
     )
 
+
 ##XP: det. covs --------------------------------------------------
-  ## Specify all the possble varibles (and desired names) to be used as detection covariates in model
-  Xp.val       = c("number_observers",
-                       "duration_minutes",
-                       "effort_area_ha",
-                       "time_observations_started",
-                       "observer_id",
-                       "c",
-                       "carmean",
-                       "windmean",
-                       "noisemean",
-                       "obsfirstyearbbs",
-                       "obsfirstyearroute",
-                       "assistant"
+  ## Specify all the possible variables (and desired names) to be used as detection covariates in model
+  Xp.val       = c(
+    # cols associated with ebird only
+    "number_observers",
+    "duration_minutes",
+    "effort_area_ha",
+    "time_observations_started",
+    "observer_id",
+    # cols associated with bbs only
+    "carmean",
+    "windmean",
+    "noisemean",
+    "obsfirstyearbbs",
+    "obsfirstyearroute",
+    "assistant"
       )
-  Xp.names     = c("nobs",
-                       "nmins",
-                       "effort_ha",
-                       "start_time",
-                       "obs_id",
-                       "C",
-                       "car",
-                       "wind",
-                       "mean",
-                       "fyrbbs",
-                       "fyrroute",
-                       "assistant"
-      )
+  Xp.names     = c(
+    # cols associated with ebird only
+    "nobs",
+    "nmins",
+    "effort_ha",
+    "start_time",
+    "obs_id",
+    # cols associated with bbs only
+    "car",
+    "wind",
+    "noise",
+    "fyrbbs",
+    "fyrroute",
+    "assistant"
+    )
 
   ## make the detection covariates matrices (with dimensiosn site by)
   Xp <- list()
@@ -212,12 +218,18 @@ df <- df %>% filter(!is.na(c)) %>%  # be sure to remove na sites
       dplyr::distinct() %>%
       dplyr::rename(val=cols[3]) %>%
       dplyr::arrange(site.ind, year.ind)
+    ### ensure "NULL" values are changed to NA to avoid character matrices (this happens on the BBS assistant covariate)
+    xpdf$val[xpdf$val=="NULL"] <- NA
+    xpdf$val <- as.integer(xpdf$val)
+
+    ## add to the list of covariate matrices
     list.number  = length(Xp)+1
     Xp[[list.number]] <-
       make_mat(df.in=xpdf,
                row="site.ind",
                col="year.ind",
                val="val")
+    # str(Xp[[list.number]])
     ##test rownames
     names(Xp)[list.number] <- Xp.names[j]
   }#end Xp j-loop
@@ -225,6 +237,7 @@ df <- df %>% filter(!is.na(c)) %>%  # be sure to remove na sites
   stopifnot(all(as.integer(rownames(Xp[[list.number]]))==sort(site.index$site.ind)))
   stopifnot(all(as.integer(colnames(Xp[[list.number]]))==sort(year.index$year.ind)))
   stopifnot(dim(Xp[[1]])[1]==dim(C)[1])
+
 
 ## Max N for JAGAM ---------------------------------------------------------
 maxN <- rbind(maxN,
