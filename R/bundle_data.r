@@ -331,7 +331,7 @@ bundle_data <-
                              N = maxN.all$N.max)
 
     # ensure k < num grid cells
-    stopifnot(jagam.args[['k']] < nrow(jagam.data))
+    # stopifnot(jagam.args[['k']] < nrow(jagam.data))
     gam.fn <- paste0(dir.out, "/jagam_UNEDITED.jags")
     gam.list <-
       mgcv::jagam(
