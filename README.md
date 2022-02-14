@@ -152,6 +152,9 @@ suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 
 ### Create a spatial sampling grid
 
+The following chunk creates a spatial sampling grid of size grid.size
+with units defaulting to the units of crs.target.
+
 ``` r
 if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
 grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
@@ -201,7 +204,7 @@ bbs_spatial <- make_bbs_spatial(
 )
 ```
 
-Make eBird data,
+Munge the eBird data already on file:
 
 ``` r
 (fns.ebird    <- id_ebird_files(
@@ -294,16 +297,13 @@ mcmc <- set_mcmc_specs() # default values
 ## initial values
 myinits <- list(
   # alpha_pb  = rnorm(1, 0, 0.01),
-  alpha_g   = rnorm(1, 0, 0.01),
-  beta_g    = rnorm(1, 0, 0.01)
-  # beta_pb   = rnorm(1, 0,  0.01),
-  # beta_pw   = rnorm(1, 0,  0.01),
-  # beta_pf   = rnorm(1, 0,  0.01)
+  alpha   = rnorm(1, 0, 0.01),
+  alpha1   = rnorm(1, 0, 0.01)
 )
 inits <- make_inits_list(myinits, nc = mcmc$nc)
 
 ## parameters to monitor
-params.monitor <- c("lambda_sb", "nu",  "Nb") 
+params.monitor <- c("lanbda", "nu",  "Nb") 
 ```
 
 Write the model as a .jags or .txt file.
@@ -316,25 +316,24 @@ Write the model as a .jags or .txt file.
 ####################################################
 for(t in 1:tb){
   for(s in 1:sb){
-    Cb[s,t] ~ dpois(lambda_sb[s])
+    Cb[s,t] ~ dpois(lanbda[s])
   } # end bbs data model s
 } # end bbs data model t
 
-# using nsgb and sg because we need to account for fact that not all grid cells have bbs data
 for(s in 1:sb){ 
-  lambda_sb[s]  = inprod(nu[], prop[s,])  # expected count at route-level 
+  lambda[s]  = inprod(nu[], prop[s,])  # expected count at route-level 
 }
 
-for(g in 1:G){     # G = ALL POSSIBLE GRID CELLS, even where count data DNE
-  log(nu[g]) = alpha_g + area[g]*beta_g        # 
+for(g in 1:G){     # G = ALL POSSIBLE GRID CELLS in study area
+  log(nu[g]) = alpha + area[g]*alpha1
 } # end g (nu)
 
 ####################################################
 ####################################################
 # Priors
 ####################################################
-beta_g    ~ dnorm(0,0.01)
-alpha_g   ~ dnorm(0,0.01)
+alpha    ~ dnorm(0,0.01)
+alpha1   ~ dnorm(0,0.01)
 ####################################################
 ####################################################
 # Derived
@@ -374,7 +373,6 @@ jags.data <- list(
 )
 # free some mem
 rm(bbs_spatial, ebird_spatial, grid)
-save.image("grr.rdata")
 ```
 
 # Step 5: Run Model

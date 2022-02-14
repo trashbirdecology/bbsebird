@@ -68,9 +68,9 @@ bundle_data <-
         "C", # observed counts
         "Xp", # site-level detection covariates
         "indexing" # indexes for where and how much data exists within each dataset
-       )
+      )
 
-# YEARS -------------------------------------------------------------------
+    # YEARS -------------------------------------------------------------------
     ## create index for all years across data
     year.index <-
       data.frame(year.id = sort(unique(c(
@@ -78,7 +78,7 @@ bundle_data <-
       )))) %>%
       dplyr::mutate(year.ind = 1:n())
 
-# GRID -----------------------------------------------------
+    # GRID -----------------------------------------------------
     ### create list of shit for GRID
     grid.list <- NULL
     grid.index <- dat$grid   %>%
@@ -97,10 +97,10 @@ bundle_data <-
     grid.list$area   <-
       area.temp[, 1] # do this to frce to a vector. annoying? yes
 
-# BBS AND EBIRD --------------------------------------
-# intialize mpty maxN
-maxN <- NULL
-for (i in seq_along(dat)) {
+    # BBS AND EBIRD --------------------------------------
+    # intialize mpty maxN
+    maxN <- NULL
+    for (i in seq_along(dat)) {
       ind <-
         names(dat)[i] # make lazy indicator for which data we are munging
       if(!ind %in% c("ebird", "bbs"))next()
@@ -133,7 +133,7 @@ for (i in seq_along(dat)) {
           mutate(skymean = abs(startsky - endsky) / 2)
       }
 
-      ### filter out max C if ebird
+      ### filter out max C (if eBird data)
       if (ind == "ebird") {
         df <- df %>%
           dplyr::rename(site.id = checklist_id)
@@ -141,178 +141,175 @@ for (i in seq_along(dat)) {
         df$c[df$c > max.C.ebird] <- NA
       }
 
-# Ensure no duplicates exist in data --------------------------------------
-df <- df %>% distinct(site.id, year.id, grid.id, .keep_all = TRUE)
+      # Ensure no duplicates exist in data --------------------------------------
+      df <- df %>% distinct(site.id, year.id, grid.id, .keep_all = TRUE)
 
-# Ensure no no-data routes are included -----------------------------------
-## this culd happen because (a) the route was in teh spatial routes shapefile(s) and there were no observations over the time frame
-df <- df %>% filter(!is.na(c)) %>%  # be sure to remove na sites
-      dplyr::distinct(year.id, site.id, grid.ind , c, .keep_all=TRUE)
+      # Ensure no no-data routes are included -----------------------------------
+      ## this could happen because (a) the route was in teh spatial routes shapefile(s) and there were no observations over the time frame
+      df <- df %>% filter(!is.na(c)) %>%  # be sure to remove na sites
+        dplyr::distinct(year.id, site.id, grid.ind , c, .keep_all=TRUE)
 
-## Site index -----------------------------------------------
-## create indexes and IDS to ensure all matrices are properly sorted and can be later tied back to original data/sites
-  site.index <- df %>%
-    dplyr::filter(!is.na(c)) %>%
-    dplyr::distinct(site.id) %>%
-    dplyr::arrange(site.id) %>%
-    dplyr::mutate(site.ind = 1:n())
+      ## Site index -----------------------------------------------
+      ## create indexes and IDS to ensure all matrices are properly sorted and can be later tied back to original data/sites
+      site.index <- df %>%
+        dplyr::filter(!is.na(c)) %>%
+        dplyr::distinct(site.id) %>%
+        dplyr::arrange(site.id) %>%
+        dplyr::mutate(site.ind = 1:n())
 
-  ## add the grid and site site.ind to the data frame
-  df <- df %>% dplyr::left_join(site.index)
+      ## add grid.ind and site site.ind to the data frame
+      df <- df %>% dplyr::left_join(site.index)
 
-  ## ensure ALL grid cells are represented in the dataset for creating even matrices
-  df <- df %>% dplyr::full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
+      ## ensure ALL grid cells are represented in the dataset for creating even matrices
+      df <- df %>% dplyr::full_join(grid.index %>% dplyr::select(grid.id, grid.ind))
+
+      ## C: Count Matrix ------------------------------------------------------------
+      ## make a matrix of observed counts
+      C <-
+        make_mat(df.in = df,
+                 row = "site.ind",
+                 col = "year.ind",
+                 val = "c"
+        )
 
 
-## C: Count Matrix ------------------------------------------------------------
-## make a matrix of observed counts
-  C <-
-    make_mat(df.in = df,
-      row = "site.ind",
-      col = "year.ind",
-      val = "c"
-    )
-
-
-##XP: det. covs --------------------------------------------------
-  ## Specify all the possible variables (and desired names) to be used as detection covariates in model
-  Xp.val       = c(
-    # cols associated with ebird only
-    "number_observers",
-    "duration_minutes",
-    "effort_area_ha",
-    "time_observations_started",
-    "observer_id",
-    # cols associated with bbs only
-    "carmean",
-    "windmean",
-    "noisemean",
-    "obsfirstyearbbs",
-    "obsfirstyearroute",
-    "assistant"
+      ##XP: det. covs --------------------------------------------------
+      ## Specify all the possible variables (and desired names) to be used as detection covariates in model
+      Xp.val       = c(
+        # cols associated with ebird only
+        "number_observers",
+        "duration_minutes",
+        "effort_area_ha",
+        "time_observations_started",
+        "observer_id",
+        # cols associated with bbs only
+        "carmean",
+        "windmean",
+        "noisemean",
+        "obsfirstyearbbs",
+        "obsfirstyearroute",
+        "assistant"
       )
-  Xp.names     = c(
-    # cols associated with ebird only
-    "nobs",
-    "nmins",
-    "effort_ha",
-    "start_time",
-    "obs_id",
-    # cols associated with bbs only
-    "car",
-    "wind",
-    "noise",
-    "fyrbbs",
-    "fyrroute",
-    "assistant"
-    )
+      Xp.names     = c(
+        # cols associated with ebird only
+        "nobs",
+        "nmins",
+        "effort_ha",
+        "start_time",
+        "obs_id",
+        # cols associated with bbs only
+        "car",
+        "wind",
+        "noise",
+        "fyrbbs",
+        "fyrroute",
+        "assistant"
+      )
 
-  ## make the detection covariates matrices (with dimensiosn site by)
-  Xp <- list()
-  for(j in seq_along(Xp.val)){
-    cols <- c("site.ind", "year.ind", Xp.val[j])
-    if(!all(cols %in% names(df))){next()}
-    xpdf <- df %>%
-      dplyr::select(!!!cols) %>%
-      dplyr::filter(!is.na(site.ind)) %>% ## must remove NA site.ind
-      dplyr::distinct() %>%
-      dplyr::rename(val=cols[3]) %>%
-      dplyr::arrange(site.ind, year.ind)
-    ### ensure "NULL" values are changed to NA to avoid character matrices (this happens on the BBS assistant covariate)
-    xpdf$val[xpdf$val=="NULL"] <- NA
-    xpdf$val <- as.integer(xpdf$val)
+      ## make the detection covariates matrices (with dimensiosn site by year)
+      Xp <- list()
+      for(j in seq_along(Xp.val)){
+        cols <- c("site.ind", "year.ind", Xp.val[j])
+        if(!all(cols %in% names(df))){next()}
+        xpdf <- df %>%
+          dplyr::select(!!!cols) %>%
+          dplyr::filter(!is.na(site.ind)) %>% ## must remove NA site.ind
+          dplyr::distinct() %>%
+          dplyr::rename(val=cols[3]) %>%
+          dplyr::arrange(site.ind, year.ind)
+        ### ensure "NULL" values are changed to NA to avoid character matrices (this happens on the BBS assistant covariate)
+        xpdf$val[xpdf$val=="NULL"] <- NA
+        xpdf$val <- as.integer(xpdf$val)
 
-    ## add to the list of covariate matrices
-    list.number  = length(Xp)+1
-    Xp[[list.number]] <-
-      make_mat(df.in=xpdf,
-               row="site.ind",
-               col="year.ind",
-               val="val")
-    # str(Xp[[list.number]])
-    ##test rownames
-    names(Xp)[list.number] <- Xp.names[j]
-  }#end Xp j-loop
+        ## add to the list of covariate matrices
+        list.number  = length(Xp)+1
+        Xp[[list.number]] <-
+          make_mat(df.in=xpdf,
+                   row="site.ind",
+                   col="year.ind",
+                   val="val")
+        names(Xp)[list.number] <- Xp.names[j]
+      }#end Xp j-loop
 
-  stopifnot(all(as.integer(rownames(Xp[[list.number]]))==sort(site.index$site.ind)))
-  stopifnot(all(as.integer(colnames(Xp[[list.number]]))==sort(year.index$year.ind)))
-  stopifnot(dim(Xp[[1]])[1]==dim(C)[1])
+      stopifnot(all(as.integer(rownames(Xp[[list.number]]))==sort(site.index$site.ind)))
+      stopifnot(all(as.integer(colnames(Xp[[list.number]]))==sort(year.index$year.ind)))
+      stopifnot(dim(Xp[[1]])[1]==dim(C)[1])
 
 
-## Max N for JAGAM ---------------------------------------------------------
-maxN <- rbind(maxN,
-              rbind(df %>%
-                      dplyr::group_by(grid.ind) %>%
-                      dplyr::filter(!is.na(c)) %>%
-                      dplyr::summarise(N.max = max(c, na.rm=TRUE)), maxN)
-         ) %>%
-    as.data.frame()
-## Indexing: Make list of indexes ------------------------------------------
-# Loop indexes for JAGS
-indexing <- dubcorms:::do_indexing(X=df)##notice internal function call
+      ## Max N for JAGAM ---------------------------------------------------------
+      maxN <- rbind(maxN,
+                    rbind(df %>%
+                            dplyr::group_by(grid.ind) %>%
+                            dplyr::filter(!is.na(c)) %>%
+                            dplyr::summarise(N.max = max(c, na.rm=TRUE)), maxN)
+      ) %>%
+        as.data.frame()
+      ## Indexing: Make list of indexes ------------------------------------------
+      # Loop indexes for JAGS
+      indexing <- dubcorms:::do_indexing(X=df)##notice internal function call
 
-## BBS specific matrices -------------------------------------------------------
-if(ind == "bbs"){
-  temp.bbs <-
-    df %>% filter(!is.na(c)) # to ensure we remove the NA rteno
+      ## BBS specific matrices -------------------------------------------------------
+      if(ind == "bbs"){
+        temp.bbs <-
+          df %>% filter(!is.na(c)) # to ensure we remove the NA rteno
 
-  nGridsBySiteByYear <- temp.bbs %>%
-    dplyr::group_by(site.ind, year.ind) %>%
-    dplyr::mutate(n=n_distinct(grid.ind)) %>%
-    dplyr::distinct(n, year.ind, site.ind) %>%
+        nGridsBySiteByYear <- temp.bbs %>%
+          dplyr::group_by(site.ind, year.ind) %>%
+          dplyr::mutate(n=n_distinct(grid.ind)) %>%
+          dplyr::distinct(n, year.ind, site.ind) %>%
           reshape2::acast(
             site.ind~year.ind, value.var = "n")
-  nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
+        nGridsBySiteByYear[is.na(nGridsBySiteByYear)] <- 0
 
-  #create an array with dimensions [nRoutes by nYears by nMaxNumberGridsASingleRteFallsInto (nMaxGrid)]
-  nMaxGrid <- max((temp.bbs %>%
-                      distinct(grid.ind, site.ind, year.ind) %>%
-                      group_by(site.ind, year.ind) %>%
-                      summarise(n=n_distinct(grid.ind)))["n"], na.rm=TRUE) # index used in JAGS
-  # idsGridsbySiteYear <- temp.bbs %>%
-  #     distinct(grid.ind, site.ind, year.ind) %>%
-  #     group_by(site.ind, year.ind) %>%
-  #     mutate(ng = 1:n()) %>%
-  #     # arrange(grid.ind) %>%
-  #     reshape2::acast(site.ind~year.ind~nMaxGrid, value.var = "grid.ind")
+        #create an array with dimensions [nRoutes by nYears by nMaxNumberGridsASingleRteFallsInto (nMaxGrid)]
+        nMaxGrid <- max((temp.bbs %>%
+                           distinct(grid.ind, site.ind, year.ind) %>%
+                           group_by(site.ind, year.ind) %>%
+                           summarise(n=n_distinct(grid.ind)))["n"], na.rm=TRUE) # index used in JAGS
+        # idsGridsbySiteYear <- temp.bbs %>%
+        #     distinct(grid.ind, site.ind, year.ind) %>%
+        #     group_by(site.ind, year.ind) %>%
+        #     mutate(ng = 1:n()) %>%
+        #     # arrange(grid.ind) %>%
+        #     reshape2::acast(site.ind~year.ind~nMaxGrid, value.var = "grid.ind")
 
-    ## add these indexes to bbs$indexing
-    # indexing$maxn <- maxN
-    # indexing$gridsiteyear.id <- idsGridsbySiteYear
-    # indexing$ngridsiteyear <- nGridsBySiteByYear
-    indexing$nmaxgrids <- nMaxGrid
+        ## add these indexes to bbs$indexing
+        # indexing$maxn <- maxN
+        # indexing$gridsiteyear.id <- idsGridsbySiteYear
+        # indexing$ngridsiteyear <- nGridsBySiteByYear
+        indexing$nmaxgrids <- nMaxGrid
 
-  ## Grab max values for BBS in each grid cell for use in JAGAM
-    maxN <- rbind(df %>%
-                       dplyr::group_by(grid.ind) %>%
+        ## Grab max values for BBS in each grid cell for use in JAGAM
+        maxN <- rbind(df %>%
+                        dplyr::group_by(grid.ind) %>%
                         dplyr::filter(!is.na(c)) %>%
                         dplyr::summarise(N.max = max(c, na.rm=TRUE)), maxN)
 
 
 
-} # end if BBS
+      } # end if BBS
 
 
-# LOOP OUTPUT ------------------------------------------------------------------
-## create the list of elements
-objs.in <- objs[objs %in% ls()] %>% as.vector()
-list.out <- vector(mode='list', length=length(objs.in))
-names(list.out) <- objs.in
-for (z in seq_along(objs.in)) {
-  new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
-  list.out[[objs.in[z]]] <- new
-}
-if(ind=="ebird") ebird.list <- list.out
-if(ind=="bbs")   bbs.list <- list.out
-if(ind=="grid")  grid.list <- list.out
-#remove all objects to be sure they arent put into other lists
-# suppressWarnings(rm(list=c(objs)))
-rm(list.out)
-} # END EBIRD AND BBS LOOPS
+      # LOOP OUTPUT ------------------------------------------------------------------
+      ## create the list of elements
+      objs.in <- objs[objs %in% ls()] %>% as.vector()
+      list.out <- vector(mode='list', length=length(objs.in))
+      names(list.out) <- objs.in
+      for (z in seq_along(objs.in)) {
+        new = eval(parse(text = objs.in[z]))# this is necessary for some reason idk why
+        list.out[[objs.in[z]]] <- new
+      }
+      if(ind=="ebird") ebird.list <- list.out
+      if(ind=="bbs")   bbs.list <- list.out
+      if(ind=="grid")  grid.list <- list.out
+      #remove all objects to be sure they arent put into other lists
+      # suppressWarnings(rm(list=c(objs)))
+      rm(list.out)
+    } # END EBIRD AND BBS LOOPS
 
 
-# Create JAGAM Data ---------------------------------------------------
-# grab max values of N across ebird and bbs for each grid cell
+    # Create JAGAM Data ---------------------------------------------------
+    # grab max values of N across ebird and bbs for each grid cell
     maxN.all <- maxN %>%
       dplyr::group_by(grid.ind) %>%
       dplyr::filter(N.max == max(N.max, na.rm = TRUE)) %>%
@@ -324,63 +321,63 @@ rm(list.out)
     )) %>%
       dplyr::arrange(grid.ind)
 
-## just to ensure its sorted
-grid.ind <- grid.index %>%
-  dplyr::arrange(grid.ind)
+    ## just to ensure its sorted
+    grid.ind <- grid.index %>%
+      dplyr::arrange(grid.ind)
 
-## bundle data for use in jagam
-jagam.data <- data.frame(X = grid.ind$X,
-                         Y = grid.ind$Y,
-                         N = maxN.all$N.max)
+    ## bundle data for use in jagam
+    jagam.data <- data.frame(X = grid.ind$X,
+                             Y = grid.ind$Y,
+                             N = maxN.all$N.max)
 
-# ensure k < num grid cells
-stopifnot(jagam.args[['k']] < nrow(jagam.data))
-gam.fn <- paste0(dir.out, "/jagam_UNEDITED.jags")
-gam.list <-
-mgcv::jagam(
-  formula = N ~ s(X, Y,
-                  bs=jagam.args[['bs']],
-                  k=as.integer(jagam.args[['k']])
-                  ),
-file = gam.fn,
-sp.prior = jagam.args[['sp.prior']],
-data = jagam.data,
-diagonalize = jagam.args[['diagonalize']],
-family=tolower(tolower(jagam.args[['family']]))
-)
+    # ensure k < num grid cells
+    stopifnot(jagam.args[['k']] < nrow(jagam.data))
+    gam.fn <- paste0(dir.out, "/jagam_UNEDITED.jags")
+    gam.list <-
+      mgcv::jagam(
+        formula = N ~ s(X, Y,
+                        bs=jagam.args[['bs']],
+                        k=as.integer(jagam.args[['k']])
+        ),
+        file = gam.fn,
+        sp.prior = jagam.args[['sp.prior']],
+        data = jagam.data,
+        diagonalize = jagam.args[['diagonalize']],
+        family=tolower(jagam.args[['family']])
+      )
 
-gam.list$jags.fn <-  gam.fn
-cat("GAM jags model specification saved:\n\t", gam.fn,"\n\n")
+    gam.list$jags.fn <-  gam.fn
+    cat("GAM jags model specification saved:\n\t", gam.fn,"\n\n")
 
-# Create Return Object ----------------------------------------------------
-objs.out <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
-names    <- c("ebird",      "bbs",      "grid",      "gam")
-for (i in seq_along(objs.out)) {
-  if (i == 1) {
-    list.out <- list()
-    keep = NULL
-  }
-  if (exists(objs.out[i])) {
-    keep <- c(keep, i)
-    list.out[[i]] <- get(objs.out[i])
-  }
-}
+    # Create Return Object ----------------------------------------------------
+    objs.out <- c("ebird.list", "bbs.list", "grid.list", "gam.list")
+    names    <- c("ebird",      "bbs",      "grid",      "gam")
+    for (i in seq_along(objs.out)) {
+      if (i == 1) {
+        list.out <- list()
+        keep = NULL
+      }
+      if (exists(objs.out[i])) {
+        keep <- c(keep, i)
+        list.out[[i]] <- get(objs.out[i])
+      }
+    }
 
-# drop empty lists
-names(list.out) <- names[keep]
-list.out <- list.out[!sapply(list.out, is.null)]
+    # drop empty lists
+    names(list.out) <- names[keep]
+    list.out <- list.out[!sapply(list.out, is.null)]
 
-# Add metadata to list
-list.out$metadata <- jdat.contents
+    # Add metadata to list
+    list.out$metadata <- jdat.contents
 
-#Export to file ----------------------------------------------------------
-cat("Saving output to file. This may take a minute or two depending on size of eBird data:\n\t", fn)
-saveRDS(list.out, file = fn)
-cat("\t....done saving\n")
-# export obj from function
-return(list.out)
+    #Export to file ----------------------------------------------------------
+    cat("Saving output to file. This may take a minute or two depending on size of eBird data:\n\t", fn)
+    saveRDS(list.out, file = fn)
+    cat("\t....done saving\n")
+    # export obj from function
+    return(list.out)
 
-} # END FUN
+  } # END FUN
 
 
 # do_indexing function ----------------------------------------------------
