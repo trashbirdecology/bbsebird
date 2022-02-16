@@ -2,7 +2,6 @@
 
 export("%>%")
 export(bundle_data)
-export(bundle_long)
 export(dir_spec)
 export(eval_params)
 export(id_ebird_files)

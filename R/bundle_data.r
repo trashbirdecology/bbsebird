@@ -1,14 +1,15 @@
 ## Comprises some functiosn for bundling data for use in JAGS. NEeds cleaning.
 
-# bundle_long -------------------------------------------------------------
+# bundle_data -------------------------------------------------------------
 #' @title Bundle Data for Use in JAGS (LONG format)
 #'
 #' @description An updated version of bundle_data, where site by year elements are provided in long format
-#' @export bundle_long
-### currently tryin to figure out how to best
-#### provide the grid indexes for bbs data.
+#' @param bbs_spatial BBS data
+#' @param ebird_spatial eBird data
+#' @param grid spatial sampling grid/study area
+#' @export bundle_data
 
-bundle_long <- function(bbs_spatial, ebird_spatial, grid){
+bundle_data <- function(bbs_spatial, ebird_spatial, grid){
   # Grid/Study Period -------------------------------------------------------
   ## GRID/STUDY AREA/PERIOD
   all.years  <- sort(unique(c(bbs_spatial$year, ebird_spatial$year), na.rm=TRUE))
@@ -211,8 +212,7 @@ bundle_long <- function(bbs_spatial, ebird_spatial, grid){
 #' @importFrom units drop_units
 #' @importFrom sf st_drop_geometry
 #' @importFrom reshape2 acast
-#' @export bundle_data
-bundle_data <-
+bundle_wide <-
   function(dat,
            dir.models,
            dir.out,

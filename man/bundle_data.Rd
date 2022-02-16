@@ -2,36 +2,17 @@
 % Please edit documentation in R/bundle_data.r
 \name{bundle_data}
 \alias{bundle_data}
-\title{Munge and Output a List or List of Lists for Use in JAGS}
+\title{Bundle Data for Use in JAGS (LONG format)}
 \usage{
-bundle_data(
-  dat,
-  dir.models,
-  dir.out,
-  jagam.args,
-  max.C.ebird = 100,
-  scale.covs = TRUE,
-  overwrite = FALSE,
-  fn.out = "bundled_dat"
-)
+bundle_data(bbs_spatial, ebird_spatial, grid)
 }
 \arguments{
-\item{dat}{a single data object or a list of multiple objects to munge and collapse into a list of data for use in JAGS}
+\item{bbs_spatial}{BBS data}
 
-\item{dir.models}{Location for where to store the GAM portion of the JAGS model}
+\item{ebird_spatial}{eBird data}
 
-\item{dir.out}{Directory within which the output list will be saved  as "jdat"}
-
-\item{jagam.args}{List of arguments used in \code{mgcv::jagam()}. Arguments include c(bs, k, family, sp.prior, m, ...)}
-
-\item{max.C.ebird}{if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.}
-
-\item{scale.covs}{Logical If TRUE will z-scale and center variables. This needs to be added and checkedchecked.}
-
-\item{overwrite}{if FALSE will not overwrite file if it exists at location \code{fn.out}}
-
-\item{fn.out}{Filename of the list object output as a .RDS file}
+\item{grid}{spatial sampling grid/study area}
 }
 \description{
-Returns a list of lists of wide-format objects to be used in JAGS or elsewhere. Future development includes providing option to output vectorized data.
+An updated version of bundle_data, where site by year elements are provided in long format
 }
