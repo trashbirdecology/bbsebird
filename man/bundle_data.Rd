@@ -10,7 +10,7 @@ bundle_data(
   dir.out,
   jagam.args,
   max.C.ebird = 100,
-  scale.vars = TRUE,
+  scale.covs = TRUE,
   overwrite = FALSE,
   fn.out = "bundled_dat"
 )
@@ -26,12 +26,12 @@ bundle_data(
 
 \item{max.C.ebird}{if TRUE will drop all checklists where number of observed birds is greater than 100. This is an arbitrary number.}
 
-\item{scale.vars}{Logical If TRUE will scale variables. This needs to be improved/checked.}
+\item{scale.covs}{Logical If TRUE will z-scale and center variables. This needs to be added and checkedchecked.}
 
 \item{overwrite}{if FALSE will not overwrite file if it exists at location \code{fn.out}}
 
 \item{fn.out}{Filename of the list object output as a .RDS file}
 }
 \description{
-Munge and Output a List or List of Lists for Use in JAGS
+Returns a list of lists of wide-format objects to be used in JAGS or elsewhere. Future development includes providing option to output vectorized data.
 }

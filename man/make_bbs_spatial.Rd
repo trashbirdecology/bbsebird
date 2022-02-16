@@ -6,12 +6,12 @@
 \usage{
 make_bbs_spatial(
   df,
+  grid,
   cws.routes.dir,
   usgs.routes.dir,
   cws.layer = "ALL_ROUTES",
   usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
   crs.target = 4326,
-  grid = NULL,
   print.plots = TRUE,
   keep.empty.cells = TRUE,
   plot.dir = NULL,
@@ -22,6 +22,8 @@ make_bbs_spatial(
 \arguments{
 \item{df}{A data frame with columns c(latitude, longitude) and optional attributes (columns).}
 
+\item{grid}{a spatial grid over which the eBird data will be overlaid.}
+
 \item{cws.routes.dir}{Directory for where the CWS (Canadian BBS) shapefiles are stored.}
 
 \item{usgs.routes.dir}{Directory for where the USGS (USA BBS) shapefiles are stored.}
@@ -31,8 +33,6 @@ make_bbs_spatial(
 \item{usgs.layer}{Name of the layer to import.}
 
 \item{crs.target}{the integer representing the target CRS.}
-
-\item{grid}{a spatial grid over which the eBird data will be overlaid.}
 
 \item{print.plots}{logical if TRUE will print exploratory figures to device}
 

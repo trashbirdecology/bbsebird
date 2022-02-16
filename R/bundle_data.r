@@ -1,3 +1,199 @@
+## Comprises some functiosn for bundling data for use in JAGS. NEeds cleaning.
+
+# bundle_long -------------------------------------------------------------
+#' @title Bundle Data for Use in JAGS (LONG format)
+#'
+#' @description An updated version of bundle_data, where site by year elements are provided in long format
+#' @export bundle_long
+### currently tryin to figure out how to best
+#### provide the grid indexes for bbs data.
+
+bundle_long <- function(bbs_spatial, ebird_spatial, grid){
+  # Grid/Study Period -------------------------------------------------------
+  ## GRID/STUDY AREA/PERIOD
+  all.years  <- sort(unique(c(bbs_spatial$year, ebird_spatial$year), na.rm=TRUE))
+  year.index <- data.frame(year=all.years, year.ind = 1:length(all.years))
+  grid.index <- grid %>%
+    units::drop_units() %>%
+    arrange(gridcellid) %>%
+    distinct(gridcellid, cell.lat.centroid, cell.lon.centroid, area) %>%
+    # create grid cell id as index and not identity (though they may be the)
+    mutate(grid.ind = 1:n()) %>%
+    mutate(area = scale(area)) %>%
+    mutate(lon  = scale(cell.lon.centroid)) %>%
+    mutate(lat  = scale(cell.lat.centroid))
+
+  # make a version of all years and grid index combinations, regardless data availability.
+  yg.index <- expand.grid(year.ind=year.index$year.ind, grid.ind=grid.index$grid.ind)
+  yg.index <- merge(yg.index, year.index)
+  yg.index <- merge(yg.index, grid.index)
+
+  # BBS ---------------------------------------------------------------
+  ## BBS DATA
+  bbs.subset <- bbs_spatial %>%
+    as.data.frame(bbs_spatial) %>%
+    units::drop_units() %>%
+    filter(!is.na(rteno),!is.na(c)) %>%
+    dplyr::select(
+      c,
+      year,
+      gridcellid,
+      rteno,
+      c,
+      windmean,
+      assistant,
+      obsfirstyearbbs,
+      obsfirstyearroute,
+      noisemean,
+      carmean,
+      proprouteincell
+    ) %>%
+    # scale numeric covariates
+    mutate(prop = scale(proprouteincell))
+  #deal with the pesky assistant variable (need to fix in bbsAssistant)
+  bbs.subset$assistant[bbs.subset$assistant=="NULL"] <- NA
+  bbs.subset$assistant <- as.integer(bbs.subset$assistant)
+
+  # create an index for the routes (sites)
+  route.index <- bbs.subset %>%
+    distinct(rteno) %>%
+    mutate(site.ind = 1:n())
+
+  ## append route index to bbs data
+  bbs.subset <- merge(bbs.subset, route.index)
+
+  ## add the year and grid indexes and grid covariates to the bbs subset dta
+  bbs.full <- full_join(bbs.subset, yg.index)
+
+  ## extract proportion of route in cell
+  ## first, assign value of zero to prop if NA
+  bbs.full$prop[which(is.na(bbs.full$prop))] <- 0
+  ### cast as a matrix with dimensions n.routes by n.grids sampled by BBS
+  prop.mat <- bbs.full %>% distinct(grid.ind, site.ind, prop)
+  prop.mat <- reshape2::acast(prop.mat, site.ind~grid.ind, value.var="prop", fill = 0)
+  #### remove the row where rownames == NA (this is a grid cell with no routes..)
+  prop.mat <- prop.mat[-which(rownames(prop.mat) %in% c(NA, "NA")),] # shoudl have dimensiosn n.routes by n.grids
+
+  ## extract the grid-route-year combinations
+  bbs.grid.index <-
+    bbs.full %>% distinct(year.ind, site.ind, grid.ind)
+
+  ## grab the observations data, ignoring grids.
+  bbs.jags.df <- bbs.full %>%
+    distinct(year.ind, site.ind, c, .keep_all=TRUE) %>%
+    filter(!is.na(c))
+
+  # eBird -------------------------------------------------------------------
+  ebird.subset = NULL
+  ebird.jags = NULL
+
+  # Bundle All Data for JAGS ------------------------------------------------
+  jags.data <- list(
+    # LOOP INDEXES
+    nobs.b    = nrow(bbs.jags.df),
+    n.routes  = length(unique(bbs.jags.df$site.ind)),
+    syg.b     = bbs.grid.index,
+    n.sgy.b   = nrow(bbs.grid.index),  ## number of unique combinatons of BBS route-year-grid
+    # nobs.e    = nrow(ebird.jags),
+    # n.chklist = length(unique(ebird.jags$checklist_id)),
+    n.grids   = nrow(grid.index),
+    n.years   = nrow(year.index),
+    year      = year.index$year, # an index (non-identity) variable
+    # GRID COVARS
+    ## create dummy var placeholder for some grid-level covariate
+    hab       = as.vector(grid.index$area),
+    XY        = data.frame(X=grid.index$lon, Y=grid.index$lat),
+    # BBS DATA
+    # bbs.df    = bbs.jags.df,
+    y.b       = bbs.jags.df$c, #obs counts
+    site.b    = bbs.jags.df$site.ind, # route index (not id)
+    year.b    = bbs.jags.df$year.ind, # route index (not id)
+    grid.b    = bbs.jags.df$grid.ind, # grid cell index (not id)
+    prop      = prop.mat, # proportion of route in grid cell
+    asst      = bbs.jags.df$assistant,
+    car       = bbs.jags.df$carmean,
+    # wind      = bbs.jags.df$windmean## something is weong wtih this -- not sure if in bbsassistant or what..just dont use for now..
+    fyr.bbs   = bbs.jags.df$obsfirstyearbbs,
+    fyr.route = bbs.jags.df$obsfirstyearroute
+  )
+
+
+  # names(jags.data)
+  # JAGAM ---------------------------------------------------------------
+  ### this section currently builds out JAGAM for includign a temporal component in building the basis functions
+  ### you can ignore this by editing what data goes into the function `mgcv::jagam()`
+  ## grab maximum observed birds within each grid cell among all data sources
+  max.e <- NULL
+  max.b <- bbs.jags.df %>%
+    group_by(grid.ind, year.ind) %>%
+    filter(c==max(c, na.rm=TRUE)) %>% ungroup() %>%
+    distinct(grid.ind, c, year.ind)
+
+  max.b <- merge(grid.index, max.b, all.x = TRUE)
+  if(is.null(max.e)) max.e <- max.b
+  # maxbirds.e <- merge(maxbirds.b, max.e, all.x = TRUE)
+  jagam.data <- merge(max.b, max.e, all.x=TRUE, all.y=TRUE) %>%
+    arrange(grid.ind)
+  ## replace NAs with zeroes -- nto sure how to handle OOS cells
+  jagam.data$c[which(is.na(jagam.data$c))] <- 0
+
+  jagam.data <- full_join(yg.index, jagam.data)
+  ## replace NA values with the overall mean maxbirds for that year
+  jagam.data %>% group_by(year.ind) %>%
+    mutate(c=ifelse(is.na(c), round(mean(c, na.rm=TRUE)), c))
+
+  K <- min(max(20, length(unique(jagam.data$grid.ind))), 150)
+
+  # Including the extra data for time wont impact the model -- just the initial values slightly
+  dat.in <- jagam.data %>% distinct(c, grid.ind, lon, lat) %>%
+    group_by(grid.ind) %>% filter(c == max(c, na.rm = TRUE)) %>% ungroup()
+
+  jagam.mod <- mgcv::jagam(c~s(lon, lat, bs="ds",
+                               k=K,
+                               by=grid.ind),
+                           file = paste0(dirs$dir.models, "/gam-notime-comp-UNEDITED.txt"),
+                           sp.prior = "log.uniform",
+                           data =dat.in,
+                           diagonalize = TRUE,
+                           family="poisson")
+
+
+# dat.in.year <- jagam.data %>%
+#   distinct(c, grid.ind, lon, lat, year.ind) %>%
+#     group_by(year.ind, grid.ind) %>%
+#   filter(c == max(c, na.rm = TRUE)) %>% ungroup()
+
+# jagam.mod.yeareff <- mgcv::jagam(c ~
+#                                    # s(lon, lat,
+#                                    #  by=grid.ind) +
+#                                    # s(year.ind) +
+#                                    ti(lon, lat, year.ind, d=c(2,1)),
+#
+#                                 file = paste0(dirs$dir.models, "/gam-wtime-comp-UNEDITED.txt"),
+#                                 sp.prior = "log.uniform",
+#                                 data =dat.in.year,
+#                                 diagonalize = TRUE,
+#                                 family="poisson")
+# jagam.mod.yeareff$jags.data$S1
+# jagam.mod.yeareff$jags.ini$b
+
+  ### OUTPUT GRAB relevant GAM stuff
+  # for JAGAM
+  jags.data$bf.coef   = jagam.mod$jags.ini$b # basis fun coefs
+  jags.data$Z   = jagam.mod$jags.data$X #??
+  jags.data$rho = jagam.mod$jags.ini$rho
+  jags.data$b   =  matrix(rep(jagam.mod$jags.ini$b,
+                              each = jags.data$n.years),
+                          ncol = jags.data$n.years, byrow = TRUE)
+  jags.data$EN  = jagam.mod$jags.data$y
+  jags.data$jagam.all <- jagam.mod # in case you need to use more information (e.g., check formula)
+
+
+  return(jags.data)
+
+} # end FUNCTON
+
+# bundle_wide -------------------------------------------------------------
 #' Munge and Output a List or List of Lists for Use in JAGS
 #'
 #' Returns a list of lists of wide-format objects to be used in JAGS or elsewhere. Future development includes providing option to output vectorized data.
