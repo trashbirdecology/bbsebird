@@ -4,7 +4,7 @@
 \alias{bundle_data}
 \title{Bundle Data for Use in JAGS (LONG format)}
 \usage{
-bundle_data(bbs_spatial, ebird_spatial, grid)
+bundle_data(bbs_spatial, ebird_spatial, grid, gam.type = "spat")
 }
 \arguments{
 \item{bbs_spatial}{BBS data}
@@ -12,6 +12,8 @@ bundle_data(bbs_spatial, ebird_spatial, grid)
 \item{ebird_spatial}{eBird data}
 
 \item{grid}{spatial sampling grid/study area}
+
+\item{gam.type}{IN DEVELOPMENT -- specification to choose which gam model to use.}
 }
 \description{
 An updated version of bundle_data, where site by year elements are provided in long format

@@ -7,9 +7,10 @@
 #' @param bbs_spatial BBS data
 #' @param ebird_spatial eBird data
 #' @param grid spatial sampling grid/study area
+#' @param gam.type IN DEVELOPMENT -- specification to choose which gam model to use.
 #' @export bundle_data
 
-bundle_data <- function(bbs_spatial, ebird_spatial, grid){
+bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
   # Grid/Study Period -------------------------------------------------------
   ## GRID/STUDY AREA/PERIOD
   all.years  <- sort(unique(c(bbs_spatial$year, ebird_spatial$year), na.rm=TRUE))
@@ -89,17 +90,28 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid){
   ebird.jags = NULL
 
   # Bundle All Data for JAGS ------------------------------------------------
+
+  ### create an index for aoll grid-year combinagtions
+  gy <- expand.grid(grid.index$grid.ind, year.index$year.ind)
+  n.gy <- nrow(gy)
+
+  sy.b <- syg.b %>% distinct(site.ind, year.ind)
+  nsy.b <- nrow(sy.b)
   jags.data <- list(
     # LOOP INDEXES
     nobs.b    = nrow(bbs.jags.df),
     n.routes  = length(unique(bbs.jags.df$site.ind)),
     syg.b     = bbs.grid.index,
+    sy.b      = sy.b,
+    nsy.b     = nsy.b,
     n.sgy.b   = nrow(bbs.grid.index),  ## number of unique combinatons of BBS route-year-grid
     # nobs.e    = nrow(ebird.jags),
     # n.chklist = length(unique(ebird.jags$checklist_id)),
     n.grids   = nrow(grid.index),
     n.years   = nrow(year.index),
     year      = year.index$year, # an index (non-identity) variable
+    gy        = gy, # all grid-year combinations
+    n.gy      = n.gy, # number of gy
     # GRID COVARS
     ## create dummy var placeholder for some grid-level covariate
     hab       = as.vector(grid.index$area),
@@ -121,9 +133,11 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid){
 
   # names(jags.data)
   # JAGAM ---------------------------------------------------------------
-  ### this section currently builds out JAGAM for includign a temporal component in building the basis functions
-  ### you can ignore this by editing what data goes into the function `mgcv::jagam()`
   ## grab maximum observed birds within each grid cell among all data sources
+  # force object(s) in dat to a list, despite length
+  #
+  # stopifnot(all(c("bs","k","family","sp.prior","diagonalize") %in% names(jagam.args)))
+
   max.e <- NULL
   max.b <- bbs.jags.df %>%
     group_by(grid.ind, year.ind) %>%
@@ -149,46 +163,74 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid){
   dat.in <- jagam.data %>% distinct(c, grid.ind, lon, lat) %>%
     group_by(grid.ind) %>% filter(c == max(c, na.rm = TRUE)) %>% ungroup()
 
-  jagam.mod <- mgcv::jagam(c~s(lon, lat, bs="ds",
-                               k=K,
-                               by=grid.ind),
-                           file = paste0(dirs$dir.models, "/gam-notime-comp-UNEDITED.txt"),
-                           sp.prior = "log.uniform",
-                           data =dat.in,
-                           diagonalize = TRUE,
-                           family="poisson")
 
+  jagam.mod <- mgcv::jagam(
+    c ~ s(
+      lon,
+      lat,
+      bs = "ds",
+      k = K,
+      m = c(1, 0.5)
+    ),
+    # not sure exactly what this is doing yet -- but def changes teh basis functions
+    file = paste0(dirs$dir.models, "/gam-UNEDITED.txt"),
+    sp.prior = "log.uniform",
+    data = dat.in,
+    diagonalize = TRUE,
+    # parallell = TRUE,
+    # modules = "glm"
+    family = "poisson"
+  )
 
-# dat.in.year <- jagam.data %>%
-#   distinct(c, grid.ind, lon, lat, year.ind) %>%
-#     group_by(year.ind, grid.ind) %>%
-#   filter(c == max(c, na.rm = TRUE)) %>% ungroup()
-
+# browseURL(list.files(dirs$dir.models, full.names=TRUE, pattern="gam-UNEDITED"))
+# temp <- jagam.mod$jags.data$X[,-1]
+# rownames(temp) <- paste0("s", 1:nrow(temp))
+# colnames(temp) <- paste0("beta_s", 1:nrow(temp))
+# y  <- jagam.mod$jags.data$y
+# tempdf <- tidyr::pivot_longer(as.data.frame(temp), cols = everything(),
+#                             # names_from=rownames(),
+#                             names_to="param",
+#                             values_to="coef")
+# tempdf$y = rep(y, nrow(tempdf)/length(y))
+# library(ggplot2)
+# ggplot(data=tempdf) +
+#   geom_point(aes(coef, y, color="param"))+
+#   geom_jitter(aes(coef, y))
+# View(tempdf)
+  ## just trying to figufr eout what the output data are from jagam ^^^
+#
+#
+# ## year effects-included
+dat.in.w.year <-
+    yg.index %>% dplyr::select(year.ind, grid.ind, lon, lat) %>%
+    left_join(jagam.data %>% select(grid.ind, year.ind, c)) %>%
+  arrange(year.ind, grid.ind)
+dat.in.w.year[is.na(dat.in.w.year)] <- 0
+#
 # jagam.mod.yeareff <- mgcv::jagam(c ~
-#                                    # s(lon, lat,
-#                                    #  by=grid.ind) +
-#                                    # s(year.ind) +
-#                                    ti(lon, lat, year.ind, d=c(2,1)),
+#                                    # s(lon, lat, ),
+#                                    s(lon, lat, year.ind, d=c(2,1)),
 #
 #                                 file = paste0(dirs$dir.models, "/gam-wtime-comp-UNEDITED.txt"),
 #                                 sp.prior = "log.uniform",
 #                                 data =dat.in.year,
 #                                 diagonalize = TRUE,
 #                                 family="poisson")
-# jagam.mod.yeareff$jags.data$S1
-# jagam.mod.yeareff$jags.ini$b
 
-  ### OUTPUT GRAB relevant GAM stuff
+## append the year-by-grid max counts across ebird and bbs dta to the output
+jags.data$Cmax <- dat.in.w.year %>% dplyr::select(year.ind, grid.ind, c)
+
+### OUTPUT GRAB relevant GAM stuff
+## choose which model to output
+if(tolower(gam.type) == "spattemp"){gam.out <- jagam.mod.yeareff}else{gam.out <- jagam.mod}
+
   # for JAGAM
-  jags.data$bf.coef   = jagam.mod$jags.ini$b # basis fun coefs
-  jags.data$Z   = jagam.mod$jags.data$X #??
-  jags.data$rho = jagam.mod$jags.ini$rho
-  jags.data$b   =  matrix(rep(jagam.mod$jags.ini$b,
-                              each = jags.data$n.years),
-                          ncol = jags.data$n.years, byrow = TRUE)
-  jags.data$EN  = jagam.mod$jags.data$y
-  jags.data$jagam.all <- jagam.mod # in case you need to use more information (e.g., check formula)
-
+  jags.data$n.bfs   = gam.out$jags.data$n  # number of resulting basis functions
+  jags.data$Z       = gam.out$jags.data$X  # naming this Z-matrix
+  jags.data$rho     = gam.out$jags.ini$rho
+  # jags.data$b       = gam.out$jags.ini$b
+  jags.data$EN      = gam.out$jags.data$y
+  jags.data$jagam.all = gam.out # in case you need to use more information (e.g., check formula)
 
   return(jags.data)
 
@@ -529,6 +571,10 @@ bundle_wide <-
     # ensure k < num grid cells
     # stopifnot(jagam.args[['k']] < nrow(jagam.data))
     gam.fn <- paste0(dir.out, "/jagam_UNEDITED.jags")
+    # force object(s) in dat to a list, despite length
+    stopifnot(all(c("bs","k","family","sp.prior","diagonalize") %in% names(jagam.args)))
+
+
     gam.list <-
       mgcv::jagam(
         formula = N ~ s(X, Y,
