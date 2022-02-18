@@ -10,7 +10,6 @@
 bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
   # Grid/Study Period -------------------------------------------------------
   ## GRID/STUDY AREA/PERIOD
-  year.index <- data.frame(year=all.years, year.ind = 1:length(all.years))
   grid.index <- grid %>%
     units::drop_units() %>%
     arrange(gridcellid) %>%
@@ -22,6 +21,8 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
     mutate(lat  = scale(cell.lat.centroid))
 
   # make a version of all years and grid index combinations, regardless data availability.
+  all.years <- min(c(ebird_spatial$year, bbs_spatial$year), na.rm=TRUE):max(c(ebird_spatial$year, bbs_spatial$year), na.rm=TRUE)
+  year.index <- data.frame(year=all.years, year.ind = 1:length(all.years))
   yg.index <- expand.grid(year.ind=year.index$year.ind, grid.ind=grid.index$grid.ind)
   yg.index <- merge(yg.index, year.index)
   yg.index <- merge(yg.index, grid.index)
@@ -92,7 +93,7 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
   names(gy) <- c("grid.ind", "year.ind")
   n.gy <- nrow(gy)
 
-  sy.b <- syg.b %>% distinct(site.ind, year.ind)
+  sy.b <- bbs.grid.index %>% distinct(site.ind, year.ind)
   nsy.b <- nrow(sy.b)
   jags.data <- list(
     # LOOP INDEXES
