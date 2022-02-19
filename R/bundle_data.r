@@ -4,10 +4,11 @@
 #' @param bbs_spatial BBS data
 #' @param ebird_spatial eBird data
 #' @param grid spatial sampling grid/study area
+#' @param scale.covs logical if TRUE will automatically scale the covariates
 #' @param gam.type IN DEVELOPMENT -- specification to choose which gam model to use.
 #' @export bundle_data
 
-bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
+bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat", scale.covs = TRUE){
   # Grid/Study Period -------------------------------------------------------
   ## GRID/STUDY AREA/PERIOD
   grid.index <- grid %>%
@@ -39,6 +40,7 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
       gridcellid,
       rteno,
       c,
+      obsn,
       windmean,
       assistant,
       obsfirstyearbbs,
@@ -46,20 +48,31 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
       noisemean,
       carmean,
       proprouteincell
-    ) %>%
-    # scale numeric covariates
-    mutate(prop = scale(proprouteincell))
-  #deal with the pesky assistant variable (need to fix in bbsAssistant)
-  bbs.subset$assistant[bbs.subset$assistant=="NULL"] <- NA
-  bbs.subset$assistant <- as.integer(bbs.subset$assistant)
+    )
+
+  ### scale if true
+  if(scale.covs){
+    bbs.subset <- bbs.subset  %>%
+      dplyr::mutate(windmean  = as.vector(scale(windmean))) %>%
+      dplyr::mutate(carmean   = as.vector(scale(carmean)))  %>%
+      dplyr::mutate(noisemean = as.vector(scale(noisemean))) %>%
+      dplyr::mutate(prop = scale(proprouteincell))
+  }
+  # create an index for the observers on bbs
+  obs.index <- bbs.subset %>%
+    dplyr::rename(obs.id = obsn) %>%
+    dplyr::distinct(obs.id) %>%
+    dplyr::mutate(obs.ind = 1:n())
 
   # create an index for the routes (sites)
   route.index <- bbs.subset %>%
-    distinct(rteno) %>%
-    mutate(site.ind = 1:n())
+    dplyr::distinct(rteno) %>%
+    dplyr::mutate(site.ind = 1:n())
 
   ## append route index to bbs data
   bbs.subset <- merge(bbs.subset, route.index)
+  ## append observer index to bbs data
+  bbs.subset <- merge(bbs.subset, obs.index)
 
   ## add the year and grid indexes and grid covariates to the bbs subset dta
   bbs.full <- full_join(bbs.subset, yg.index)
@@ -87,7 +100,6 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
   ebird.jags = NULL
 
   # Bundle All Data for JAGS ------------------------------------------------
-
   ### create an index for aoll grid-year combinagtions
   gy <- expand.grid(grid.index$grid.ind, year.index$year.ind)
   names(gy) <- c("grid.ind", "year.ind")
@@ -105,11 +117,11 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
     n.sgy.b   = nrow(bbs.grid.index),  ## number of unique combinatons of BBS route-year-grid
     # nobs.e    = nrow(ebird.jags),
     # n.chklist = length(unique(ebird.jags$checklist_id)),
-    n.grids   = nrow(grid.index),
+    n.grids   = length(unique(grid.index$gridcellid)),
     n.years   = nrow(year.index),
     year      = year.index$year, # an index (non-identity) variable
     gy        = gy, # all grid-year combinations
-    n.gy      = n.gy, # number of gy
+    n.gy      = n.gy, # number of grid-year combos
     # GRID COVARS
     ## create dummy var placeholder for some grid-level covariate
     hab       = as.vector(grid.index$area),
@@ -121,15 +133,15 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
     year.b    = bbs.jags.df$year.ind, # route index (not id)
     grid.b    = bbs.jags.df$grid.ind, # grid cell index (not id)
     prop      = prop.mat, # proportion of route in grid cell
-    asst      = bbs.jags.df$assistant,
-    car       = bbs.jags.df$carmean,
-    # wind      = bbs.jags.df$windmean## something is weong wtih this -- not sure if in bbsassistant or what..just dont use for now..
+    asst      = bbs.jags.df$assistant, ### NAs here are TRUE NAs (BBS supplies values as "NULL")
+    car       = bbs.jags.df$carmean, # rounded mean value...
+    wind      = bbs.jags.df$windmean, # mean value so not integers....
     fyr.bbs   = bbs.jags.df$obsfirstyearbbs,
-    fyr.route = bbs.jags.df$obsfirstyearroute
+    fyr.route = bbs.jags.df$obsfirstyearroute,
+    observ.b  = bbs.jags.df$obsn
   )
 
 
-  # names(jags.data)
   # JAGAM ---------------------------------------------------------------
   ## grab maximum observed birds within each grid cell among all data sources
   # force object(s) in dat to a list, despite length
@@ -158,8 +170,13 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
   K <- min(max(20, length(unique(jagam.data$grid.ind))), 150)
 
   # Including the extra data for time wont impact the model -- just the initial values slightly
-  dat.in <- jagam.data %>% distinct(c, grid.ind, lon, lat) %>%
-    group_by(grid.ind) %>% filter(c == max(c, na.rm = TRUE)) %>% ungroup()
+  dat.in <- jagam.data %>%
+    dplyr::distinct(c, grid.ind, lon, lat) %>%
+    dplyr::group_by(grid.ind) %>%
+    dplyr::mutate(c = max(c, na.rm = TRUE)) %>%
+    dplyr::ungroup() %>%
+    dplyr::distinct(c, grid.ind, lon, lat)
+  dat.in$c[is.na(dat.in$c)] <- 0 ## if no data is in the grid cell, replace it.
 
 
   jagam.mod <- mgcv::jagam(
@@ -225,7 +242,7 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
 
   # for JAGAM
   # jags.data$n.grids     = gam.out$jags.data$n  # number of resulting basis functions
-  jags.data$Z         = gam.out$jags.data$X  # naming this Z-matrix
+  jags.data$Z         = t(gam.out$jags.data$X)  # naming this Z-matrix (transpose such that dimensions are now <n.bfs x n.grid cells>)
   # jags.data$rho       = gam.out$jags.ini$rho
   jags.data$bf.coefs  = gam.out$jags.ini$b
   jags.data$EN        = gam.out$jags.data$y
