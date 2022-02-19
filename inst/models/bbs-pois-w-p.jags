@@ -1,54 +1,49 @@
 model {
 ####################################################
 ####################################################
-# Likelihoods
+# BBS
 ####################################################
-for(t in 1:T.bbs){
-  for(s in 1:S.bbs){
-    yBBS.site[s,t] ~ dpois(lambda[s]*pBBS[s,t])
-  } # end data model s
-} # end data model t
+# route-year loop
+for(i in 1:nobs.b){
+  y.b[i] ~ dpois(lambdaB[site.b[i]]*pB[site.b[i],year.b[i]])
 
+  logit(pB[site.b[i],year.b[i]]) <- alpha0                            +
+                                    alpha1 * fyr[site.b[i],year.b[i]] +
+                                    alpha2 * car[site.b[i],year.b[i]]
+}
 
-for(t in 1:T.bbs){
-  for(s in 1:S.bbs){
-    logit(pBBS[s,t]) <- alpha_pb + 
-      beta_pb1 * p.fyrbbs[s,t] + 
-      beta_pb2 * p.wind[s,t]
-  } # end data model s
-} # end data model t
+# route loop
+for(s in 1:n.routes){
+  lambdaB[s]  = inprod(nu[], prop[s,]) # lambdaB = exp. route N area-weighted grid-effects at route-level
+}
 
-
-for(s in 1:S.bbs){
-  lambda[s]  = inprod(nu[], prop.site.in.cell.bbs[s,])
-} # end s (lambda route)
-
-
+# grid cell loop
 for(g in 1:G){
-  log(nu[g]) = beta_g1*area[g] + alpha_pb 
-} # end g (nu)
+  log(nu[g])  <-  beta_g1*hab[g] +
+                  alpha_pb
+}
 
 ####################################################
 ####################################################
 # Priors
 ####################################################
-## Priors on BBS site(route)-level detection 
-alpha_pb   ~ dnorm(0,1) # intercept on the BBS detection model
-beta_pb1   ~ dnorm(0,1) # observer's first year (on BBS or Route)
-beta_pb2   ~ dnorm(0,1) # wind
-## Priors on BBS grid-level covariates
-alpha_g    ~ dnorm(0,1) # intercept on the grid covariates model
-beta_g1    ~ dnorm(0,1) # grid-cell area (scaled)
+## bbs observation process
+alpha0    ~ dnorm(0,1) # intercept
+alpha1    ~ dnorm(0,1) # observer's first year (on BBS or Route)
+alpha2    ~ dnorm(0,1) # cars
+## bbs grid-level covariates
+beta0    ~ dnorm(0,1) # intercept
+beta1    ~ dnorm(0,1) # made-up hab var
 
 ####################################################
 ####################################################
 # Derived
 ####################################################
-for(t in 1:T.bbs){
-  N[t] <- sum(yBBS.site[,t])
+for(t in 1:n.years){
+  N[t] <- sum(y.b[,t])
 }
 ####################################################
 ####################################################
 
 } # End model
-    
+

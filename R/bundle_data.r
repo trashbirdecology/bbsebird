@@ -224,12 +224,14 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat"){
   if(tolower(gam.type) == "spattemp"){gam.out <- jagam.mod.yeareff}else{gam.out <- jagam.mod}
 
   # for JAGAM
-  jags.data$n.bfs     = gam.out$jags.data$n  # number of resulting basis functions
+  # jags.data$n.grids     = gam.out$jags.data$n  # number of resulting basis functions
   jags.data$Z         = gam.out$jags.data$X  # naming this Z-matrix
   # jags.data$rho       = gam.out$jags.ini$rho
   jags.data$bf.coefs  = gam.out$jags.ini$b
   jags.data$EN        = gam.out$jags.data$y
   jags.data$jagam.all = gam.out # in case you need to use more information (e.g., check formula)
+  jags.data$n.bfs     = dim(gam.out$jags.data$X)[2]
+
 
   return(jags.data)
 
