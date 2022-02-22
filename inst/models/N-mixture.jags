@@ -1,6 +1,63 @@
+model{
 
-   ## Priors
+  ####################################################
+  # BBS
+  ####################################################
 
-   ## Likelihood
-   
-    
+  for(i in 1:nobs.b){
+    #site.b[i] = index for route on y.b
+    #year.b[i] = index for year  on y.b
+
+    # realized rel abundance
+    y.b[i] ~ dpois(lambda.route[site.b[i]] *
+                     pB[site.b[i], year.b[i]]
+    )
+
+
+    # observability process
+    logit(pB[site.b[i], year.b[i]])    =
+                #    alpha0              +  #
+                    alpha1  *  car[i]      +  # num cars   (scaled) -get subsetting/index error--not sure why
+                    alpha2  *  asst[i]     +  # assistant  (logical, 1=TRUE)
+                    alpha3  *  fyr[i]      +  # first year (logical, 1=TRUE)
+                    alpha4  *  observ.b[i] +  # observer identifier
+                    alpha5  *  wind[i]        # wind        (scaled)
+  }
+
+  for(s in 1:n.routes){
+    log(lambda.route[s])  = inprod(nu[], prop[s,])
+
+  }
+
+  for(g in 1:n.grids){
+    log(nu[g]) =      hab[g]*beta1  + inprod( Z[,g] , bf.coefs )
+    # Note Z is transposed in the data relative to how you probably think about it. i.e., as a regression design matrix
+  }
+
+
+
+  ####################################################
+  # Priors
+  ####################################################
+  beta0      ~  dnorm(0,0.001) ## prob too high
+  beta1      ~  dnorm(0,0.001)
+  alpha0     ~  dnorm(0,0.001)
+  alpha1     ~  dnorm(0,0.001)
+  alpha2     ~  dnorm(0,0.001)
+  alpha3     ~  dnorm(0,0.001)
+  alpha4     ~  dnorm(0,0.001)
+  alpha5     ~  dnorm(0,0.001)
+
+  # GAM Priors
+  ### smooothing parameter prior
+  for (i in 1:1) { rho[i] ~ dunif( -12, 12 ) # a and b suggested by `mgcv::jagam`
+  lambda[i] <- exp(rho[i])
+  }
+  ### parametric effect priors CHECK tau=1/25^2 is appropriate!
+  for (i in 1:1) { bf.coefs[i] ~ dnorm(0,0.0016) } # tau suggested by `mgcv::jagam`
+  ## prior for s(lon,lat)...
+  for (i in c(2:n.bfs)) { bf.coefs[i] ~ dnorm(0, lambda[1]) }
+
+  ####################################################
+
+}
