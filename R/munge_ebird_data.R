@@ -114,7 +114,6 @@ if(length(ind)>=1){
         "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. \n\nIf `filter_ebird_data` takes longer than 20 minutes and your spatial extent <~5 u.s. states, something is probably wrong.\n\n"
       )
 
-
 # MUNGE ARGS --------------------------------------------------------------
     #specifying the column types helps with vroom::vroom(f_samp_in), which takes a couple of minutes...
     cols_samp <- list(
@@ -162,6 +161,7 @@ if(!is.null(states)){
   rm(s, rc.i)
   }
 if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain elements witin bbsAssistant::region_codes. See ?filter_ebird_data for further instruction.")
+
 # SAMPLING EVENTS DATASETS ------------------------------------------------------------
     ## Read in / filter sampling data frame
     ### IMPORTANT: importing the sampling.txt.gz file for nov2021 takes about
@@ -261,9 +261,9 @@ if (file.exists(f_obs_out) & !overwrite) {
 
 # observations <- vroom::vroom(f_obs_out, col_types = cols_obs)
 observations <- data.table::fread(f_obs_out) # no huge difference when files are small.
-
     } else{
-      cat("Loading the original eBird observations. Ignore parsing warnings plz.\n\n")
+#    browser()
+      cat("Loading the original eBird observations. Please ignore parsing warnings.\n\n")
       # use vroom because its more elegant when reading multiple files at once
       observations <- vroom::vroom(f_obs_in, col_types = cols_obs)
 
@@ -288,7 +288,7 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       species = tolower(species)
       if(!is.null(species)) observations <- observations %>%
         dplyr::filter(tolower(common_name) %in% species)
-      stopifnot(nrow(observations)>0)
+      stopifnot("no species in arg `species` found in observations data"=nrow(observations)>0)
       # create and then filter by year/date
       observations <- observations %>%
         dplyr::mutate(year = lubridate::year(observation_date))
