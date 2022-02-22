@@ -9,14 +9,13 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Depends: 
-    R (>= 3.50)
-LazyData: true
+    R (>= 3.50), 
+    bbsAssistant (>= 2.0.0),
+    dplyr
 Imports: 
     auk,
-    bbsAssistant (>= 2.0.0),
     countrycode (>= 1.3.0),
     data.table,
-    dplyr (>= 1.0.7),
     foreach (>= 1.5.1),
     hms,
     lubridate (>= 1.8.0),
@@ -47,6 +46,7 @@ Suggests:
     here (>= 1.0.1),
     rmarkdown,
     spelling
+LazyData: true
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth

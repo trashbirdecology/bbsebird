@@ -48,9 +48,10 @@ When your account is approved, you will gain access to the [eBird Basic Database
 
 # Runthrough
 ## Step 1: Setup
-```{r}
+```{r setup}
 # 0:Setup -----------------------------------------------------------------
 # install.packages("devtools")
+devtools::install_github("trashbirdecology/bbsAssistant")
 devtools::install_github("trashbirdecology/bbsebird")
 #explicitly load some packages
 pkgs <- c("bbsebird",
@@ -67,8 +68,8 @@ rm(pkgs)
 If using this README, this is the only RMD chunk you shoudl have to edit. Most important are where the eBird data and BBS shapefiles are stored (dir.orig.data) and where you wish to save resulting data/models (dir.proj). The latter need not exist -- if it does not exist the package will create the directory for you. 
 ```{r required-args}
 # REQUIRED ARGUMENTS
-dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
-dir.proj       = "C:/users/jburnett/OneDrive - DOI/research/cormorants/House_Sparrow/"
+dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/bbsebird-testing/"
+dir.proj       = "C:/users/jburnett/OneDrive - DOI/bbsebird-testing/House_Sparrow/"
 species             = c("House Sparrow") ## eventually need to add alookup table to ensure species.abbr and speices align.
 species.abbr        = c("houspa") # see ebird filename for abbreviation
 ##bbs arguments

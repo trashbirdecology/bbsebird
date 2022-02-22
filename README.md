@@ -4,10 +4,10 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![R-CMD-check](https://github.com/trashbirdecology/dubcorms/workflows/R-CMD-check/badge.svg)](https://github.com/trashbirdecology/dubcorms/actions)
+[![R-CMD-check](https://github.com/trashbirdecology/bbsebird/workflows/R-CMD-check/badge.svg)](https://github.com/trashbirdecology/bbsebird/actions)
 <!-- badges: end -->
 
-# dubcorms
+# bbsebird
 
 The purpose of this R package (*likely to undergo a name change…*) is
 to:
@@ -32,7 +32,7 @@ Download development version from GitHub with:
 ``` r
 # install.packages("devtools")
 devtools::install_github("trashbirdecology/bbsassistant")
-devtools::install_github("trashbirdecology/dubcorms")
+devtools::install_github("trashbirdecology/bbsebird")
 ```
 
 ## eBird Data Requirements
@@ -61,9 +61,9 @@ requires two components of the EBD to be saved to local file:
 ``` r
 # 0:Setup -----------------------------------------------------------------
 # install.packages("devtools")
-devtools::install_github("trashbirdecology/dubcorms")
+devtools::install_github("trashbirdecology/bbsebird")
 #explicitly load some packages
-pkgs <- c("dubcorms",
+pkgs <- c("bbsebird",
           "bbsAssistant",
           "reshape2",
           "stringr",
@@ -82,8 +82,8 @@ will create the directory for you.
 
 ``` r
 # REQUIRED ARGUMENTS
-dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/"
-dir.proj       = "C:/users/jburnett/OneDrive - DOI/research/cormorants/House_Sparrow/"
+dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/bbsebird-testing/"
+dir.proj       = "C:/users/jburnett/OneDrive - DOI/bbsebird-testing/House_Sparrow/"
 species             = c("House Sparrow") ## eventually need to add alookup table to ensure species.abbr and speices align.
 species.abbr        = c("houspa") # see ebird filename for abbreviation
 ##bbs arguments
@@ -99,7 +99,7 @@ mmyyyy              = "dec-2021" # the month and year of the eBird data download
 
 ### see bbsAssistant::region_codes
 states              = c("us-fl")
-countries           = c("US") ## string of  countries Call \code{dubcorms::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
+countries           = c("US") ## string of  countries Call \code{bbsebird::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
 # species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
 # species.abbr        = c("doccor","dcco", "docco")
 
@@ -139,8 +139,8 @@ This chunk will create new environmental variables for project adn data
 directries based on teh directories supplied above.
 
 ``` r
-# proj.shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
-subdir.proj <-  proj.shorthand(species.abbr, regions, grid.size, year.range)
+# set_proj_shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
+subdir.proj <-  set_proj_shorthand(species.abbr, regions, grid.size, year.range)
 dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
                          dir.proj = dir.proj,
                          subdir.proj = subdir.proj) # create and/or specify directories for later use.
@@ -188,7 +188,7 @@ fns.bbs.in <-
     year.range = year.range
   )
   bbs_obs <-
-    dubcorms:::match_col_names(bbs_obs) # munge column names to mesh with eBird
+    bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
   saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
 
 # Overlay BBS and study area / sampling grid

@@ -6,7 +6,7 @@
 #' @param subdir.proj The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using `dubcorms::set_proj_shorthand()`
 #' @importFrom stringr str_replace str_detect
 #' @export dir_spec
-
+#
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
   if(is.null(dir.proj)) dir.proj <- getwd()
