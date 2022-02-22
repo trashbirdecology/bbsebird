@@ -2,7 +2,7 @@
 #'
 #' Checks for existing files to import to avoid length data munging processes.
 #'
-#' @param scan.for which types of files to scan for. Must be one or more of c("jags","ebird_filtered", "bbs_obs", "grid", "bbs_spatial", "ebird_spatial", "ebird_zf"). If multiples are provided and found, the returned objct will be a named list of those imported files.
+#' @param scan.for which types of files to scan for. Must be one or more of c("jags","ebird_filtered", "bbs_obs", "grid", "bbs_spatial", "ebird_spatial", "ebird_zf"). If multiples are provided and found, the returned object will be a named list of those imported files.
 #' @param dir.proj project directory, within which first level subdirectories may include c(jags, ebird, bbs, spatial)
 #' @export scan_files
 

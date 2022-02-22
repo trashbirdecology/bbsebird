@@ -38,9 +38,9 @@ make_bbs_spatial(
 
 \item{keep.empty.cells}{logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.}
 
-\item{plot.dir}{Directory path for where to save the resultng exploratory pdf (if print.plots==TRUE)}
+\item{plot.dir}{Directory path for where to save the resulting exploratory pdf (if print.plots==TRUE)}
 
-\item{overwrite}{logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out}
+\item{overwrite}{logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out}
 
 \item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
 }

@@ -1,10 +1,10 @@
-Package: dubcorms
+Package: bbsebird
 Title: Unifying BBS and eBird Data
 Version: 0.0.0.9000
 Authors@R: 
     person("Jessica", "Burnett", , "jburnett@usgs.gov", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: Imports, munges and integrates eBird and BBS data and applies them to a spatial sampling grid. This package also outputs data in various forms for use in JAGS, {\codemcgv::jagam()}
+           comment = c(ORCID = "0000-0002-0896-5099"))
+Description: Imports, munges and aligns eBird and BBS data to a spatial sampling grid. This package also outputs data in various forms for use in JAGS. 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
@@ -40,13 +40,16 @@ Imports:
     grDevices,
     stats,
     parallel,
-    suncalc
+    suncalc,
+    bit
 Suggests: 
     knitr,
     here (>= 1.0.1),
-    rmarkdown
+    rmarkdown,
+    spelling
 Remotes: 
     github::trashbirdecology/bbsAssistant,
     github::ropensci/rnaturalearth
-License: CC0 + file LICENSE
+License: CC0
 VignetteBuilder: knitr
+Language: en-US

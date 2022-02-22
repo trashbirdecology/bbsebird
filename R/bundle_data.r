@@ -6,7 +6,7 @@
 #' @param grid spatial sampling grid/study area
 #' @param scale.covs logical if TRUE will automatically scale the covariates
 #' @param gam.type IN DEVELOPMENT -- specification to choose which gam model to use.
-#' @param overwrite the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly.
+#' @param K the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.
 #' @export bundle_data
 
 bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat", scale.covs = TRUE, K=NULL){
@@ -177,6 +177,7 @@ bundle_data <- function(bbs_spatial, ebird_spatial, grid, gam.type="spat", scale
   jagam.data <- jagam.data %>% group_by(year.ind) %>%
     mutate(c=ifelse(is.na(c), round(mean(c, na.rm=TRUE)), c))
 
+  # if not specified, K is defined as:
   if(is.null(K)) K <- min(max(20, length(unique(jagam.data$grid.ind))), 150)
 
   # Including the extra data for time wont impact the model -- just the initial values slightly

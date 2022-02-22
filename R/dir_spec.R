@@ -3,7 +3,7 @@
 #' @description  Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with `list2env()` to assign directories to desired environment (typically .GlobalEnv)
 #' @param dir.orig.data Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.
 #' @param dir.proj Project directory. Assumes current working directory. This is where the directories and output files will be stored.
-#' @param subdir.proj The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using `dubcorms::proj.shorthand()`
+#' @param subdir.proj The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using `dubcorms::set_proj_shorthand()`
 #' @importFrom stringr str_replace str_detect
 #' @export dir_spec
 

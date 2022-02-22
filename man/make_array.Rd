@@ -16,7 +16,7 @@ make_array(
 \arguments{
 \item{df}{Data frame with three or more columns}
 
-\item{val}{target value to populate the matri(ces)}
+\item{val}{target value to populate the matrix or array matrices}
 
 \item{row}{target rownames}
 

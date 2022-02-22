@@ -4,11 +4,11 @@
 #' @param crs.target the integer representing the target CRS.
 #' @param grid  a spatial grid over which the eBird data will be overlaid.
 #' @param dir.out path to where the resulting spatial data frame will be saved. If NULL will not save to file.
-#' @param overwrite logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out
+#' @param overwrite logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out
 #' @param cws.routes.dir Directory for where the CWS (Canadian BBS) shapefiles are stored.
 #' @param cws.layer Name of the layer to import. Defaults to "ALL_ROUTES"
 #' @param usgs.routes.dir Directory for where the USGS (USA BBS) shapefiles are stored.
-#' @param plot.dir Directory path for where to save the resultng exploratory pdf (if print.plots==TRUE)
+#' @param plot.dir Directory path for where to save the resulting exploratory pdf (if print.plots==TRUE)
 #' @param print.plots logical if TRUE will print exploratory figures to device
 #' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.

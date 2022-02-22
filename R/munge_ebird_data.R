@@ -12,7 +12,7 @@
 #' @param complete.only logical if TRUE will remove incomplete checklists
 #' @param protocol which eBird protocol to include
 #' @param species species for filtering eBird data
-#' @param remove.bbs.obs logical if TRUe will use crude and untested method for removing BBS data from eBird data (see function for detials)
+#' @param remove.bbs.obs logical if TRUE will use crude and untested method for removing BBS data from eBird data (see function for details)
 #' @param years years to include in data
 #' @param max.effort.km maximum distance (kilometers) of birding events to include
 #' @param max.effort.mins maximum number of minutes of birding events to include
@@ -21,10 +21,11 @@
 #' @importFrom stringr str_replace_all str_detect
 #' @importFrom parallel detectCores
 #' @importFrom vroom vroom
+#' @importFrom bit chunk
 #' @importFrom readr col_character col_time col_date col_double
 #' @importFrom lubridate year
 #' @importFrom data.table fread fwrite
-#' @param max.num.observers maximum number of observers delcared at a birding event to include
+#' @param max.num.observers maximum number of observers declared at a birding event to include
 #' @export munge_ebird_data
 munge_ebird_data <-
   function(fns.ebird,

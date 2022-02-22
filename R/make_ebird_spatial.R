@@ -5,7 +5,7 @@
 #' @param crs.target the integer representing the target CRS.
 #' @param grid  a spatial grid over which the eBird data will be overlaid.
 #' @param dir.out path to where the resulting spatial data frame will be saved. If NULL will not save to file.
-#' @param overwrite logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out
+#' @param overwrite logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out
 #' @importFrom sp CRS coordinates proj4string
 #' @importFrom sf st_as_sf st_transform
 #' @importFrom dplyr mutate

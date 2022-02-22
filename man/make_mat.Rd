@@ -11,7 +11,7 @@ make_mat(df.in, row = "site.ind", col = "year.ind", val, replace.na = FALSE)
 
 \item{row}{Variable in df containing target row names}
 
-\item{col}{Variable in df containig target column names}
+\item{col}{Variable in df containing target column names}
 
 \item{val}{Variable containing the target cell contents}
 

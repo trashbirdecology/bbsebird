@@ -21,7 +21,7 @@ make_ebird_spatial(
 
 \item{grid}{a spatial grid over which the eBird data will be overlaid.}
 
-\item{overwrite}{logical if TRUE will overwrite any exsiting file named "ebird_spatial.rds" in path dir.out}
+\item{overwrite}{logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out}
 }
 \description{
 Converts eBird (preferably zero-filled data) into a simple features spatial object.

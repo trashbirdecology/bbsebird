@@ -3,7 +3,7 @@
 #' @param row target rownames
 #' @param col target colnames
 #' @param slice target slice-by values
-#' @param val target value to populate the matri(ces)
+#' @param val target value to populate the matrix or array matrices
 #' @param drop.na.rows logical if TRUE will drop the values of arg "val" where is NA.
 #' @importFrom dplyr distinct
 #' @importFrom reshape2 acast

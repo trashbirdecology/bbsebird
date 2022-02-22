@@ -39,7 +39,7 @@ munge_ebird_data(
 
 \item{species}{species for filtering eBird data}
 
-\item{remove.bbs.obs}{logical if TRUe will use crude and untested method for removing BBS data from eBird data (see function for detials)}
+\item{remove.bbs.obs}{logical if TRUE will use crude and untested method for removing BBS data from eBird data (see function for details)}
 
 \item{years}{years to include in data}
 
@@ -47,7 +47,7 @@ munge_ebird_data(
 
 \item{max.effort.mins}{maximum number of minutes of birding events to include}
 
-\item{max.num.observers}{maximum number of observers delcared at a birding event to include}
+\item{max.num.observers}{maximum number of observers declared at a birding event to include}
 
 \item{f_obs_out}{Filename for saving the filtered eBird observations data}
 

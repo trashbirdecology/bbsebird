@@ -4,7 +4,14 @@
 \alias{bundle_data}
 \title{Bundle Data for Use in JAGS (LONG format)}
 \usage{
-bundle_data(bbs_spatial, ebird_spatial, grid, gam.type = "spat")
+bundle_data(
+  bbs_spatial,
+  ebird_spatial,
+  grid,
+  gam.type = "spat",
+  scale.covs = TRUE,
+  K = NULL
+)
 }
 \arguments{
 \item{bbs_spatial}{BBS data}
@@ -14,6 +21,10 @@ bundle_data(bbs_spatial, ebird_spatial, grid, gam.type = "spat")
 \item{grid}{spatial sampling grid/study area}
 
 \item{gam.type}{IN DEVELOPMENT -- specification to choose which gam model to use.}
+
+\item{scale.covs}{logical if TRUE will automatically scale the covariates}
+
+\item{K}{the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.}
 }
 \description{
 An updated version of bundle_data, where site by year elements are provided in long format
