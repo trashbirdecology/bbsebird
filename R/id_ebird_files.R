@@ -19,8 +19,6 @@ id_ebird_files <- function(dir.ebird.in,
 
   ### ALSO NEED TOE NSURE A COUNTRY-ONLY ARGUMENT
 
-
-
   rc <- bbsAssistant::region_codes
   rc.temp <-
     tolower(x = gsub(rc$iso_3166_2, pattern = "-", replacement = ""))
@@ -55,6 +53,13 @@ id_ebird_files <- function(dir.ebird.in,
   stopifnot(length(fns.all) >= 1)
   # Step 1: Identify the sampling events data filename
   fns_samp     <- fns.all[grepl(fns.all, pattern = "ebd_sampling")]
+
+  ## if the file is already unpacked, skip the step for stepping into it.
+  f_samp <-
+    paste0(dir.ebird.in, "/", fns_samp[grepl(fns_samp, pattern = ".txt.gz")])
+  while (!file.exists(f_samp)) {
+    ## using while because sometimes it fails for no apparent reason. however, this is not good because it will inifinitely loop if the .tar DNE
+    message("attempting to unpack ", f_samp, "\n")
   fns_samp.tar <-
     paste0(dir.ebird.in, "/", fns_samp[grepl(fns_samp, pattern = ".tar")])
   fns_samp.tar.contents <-
@@ -62,12 +67,12 @@ id_ebird_files <- function(dir.ebird.in,
   f_samp <-
     paste0(dir.ebird.in, "/", fns_samp.tar.contents[grepl(fns_samp.tar.contents, pattern =
                                                             ".gz")]) # get the name of the .txt.gz filwithin the tarball that is our target.
-  while (!file.exists(f_samp)) {
-    cat("Unpacking ", fns_samp.tar, "\n")
-    untar(tarfile = fns_samp.tar,
+
+    # cat("Unpacking ", fns_samp.tar, "\n")
+  untar(tarfile = fns_samp.tar,
           list = FALSE,
           exdir = dir.ebird.in)
-  } # unpack it if it DNE...
+  } # identify and unpack it if it DNE...
 
 
   # Step 3: Identify the observations data filename(s)
@@ -151,7 +156,6 @@ id_ebird_files <- function(dir.ebird.in,
   } # end get.full.data
   f_rds <-
     list.files(dir.ebird.out, full.names = TRUE, pattern = ".rds")
-
 
   # Step 4: Return object
   output <- c(f_samp, f_obs, f_rds)

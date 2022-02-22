@@ -162,12 +162,12 @@ fns.bbs.in <-
     bbs_list = bbs_orig,
     states   = states,
     species = species, 
-    year.range = year.range
-  )
+    year.range = year.range)
   bbs_obs <-
     bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
   saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
 
+  names(bbs_obs)
 # Overlay BBS and study area / sampling grid
 ### note, sometimes when running this in a notebook/rmd i randomly get a .rdf path error. I have no clue what this bug is. Just try running it again. See : https://github.com/rstudio/rstudio/issues/6260
 bbs_spatial <- make_bbs_spatial(
@@ -177,10 +177,11 @@ bbs_spatial <- make_bbs_spatial(
   plot.dir = dirs$dir.plots,
   crs.target = crs.target,
   grid = grid,
-  dir.out = dirs$dir.spatial.out
+  dir.out = dirs$dir.spatial.out, 
+  overwrite=FALSE
 )
 ```
-Munge the eBird data already on file:
+Munge the eBird data (must be saved to file):
 ```{r ebird-data}
 (fns.ebird    <- id_ebird_files(
   dir.ebird.in = dirs$dir.ebird.in,
