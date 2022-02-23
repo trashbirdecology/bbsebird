@@ -61,6 +61,7 @@ requires two components of the EBD to be saved to local file:
 ``` r
 # 0:Setup -----------------------------------------------------------------
 # install.packages("devtools")
+devtools::install_github("trashbirdecology/bbsAssistant")
 devtools::install_github("trashbirdecology/bbsebird")
 #explicitly load some packages
 pkgs <- c("bbsebird",
@@ -82,10 +83,11 @@ will create the directory for you.
 
 ``` r
 # REQUIRED ARGUMENTS
-dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/bbsebird-testing/"
+dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/bbsebird-testing/" # this will be improved to be more intuitive re: what data? 
 dir.proj       = "C:/users/jburnett/OneDrive - DOI/bbsebird-testing/House_Sparrow/"
 species             = c("House Sparrow") ## eventually need to add alookup table to ensure species.abbr and speices align.
 species.abbr        = c("houspa") # see ebird filename for abbreviation
+### this needs improvement as well...e.g. a species lookup table to link common-speci-abbrev across BBS and eBird data...
 ##bbs arguments
 usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
 cws.layer           = "ALL_ROUTES"
@@ -156,6 +158,7 @@ The following chunk creates a spatial sampling grid of size grid.size
 with units defaulting to the units of crs.target.
 
 ``` r
+tictoc::tic() # start timer to see how long it takes to create the ebird and bbs spatial files
 if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
 grid <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           # overwrite=overwrite.grid,
@@ -185,12 +188,12 @@ fns.bbs.in <-
     bbs_list = bbs_orig,
     states   = states,
     species = species, 
-    year.range = year.range
-  )
+    year.range = year.range)
   bbs_obs <-
     bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
   saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
 
+  names(bbs_obs)
 # Overlay BBS and study area / sampling grid
 ### note, sometimes when running this in a notebook/rmd i randomly get a .rdf path error. I have no clue what this bug is. Just try running it again. See : https://github.com/rstudio/rstudio/issues/6260
 bbs_spatial <- make_bbs_spatial(
@@ -200,11 +203,12 @@ bbs_spatial <- make_bbs_spatial(
   plot.dir = dirs$dir.plots,
   crs.target = crs.target,
   grid = grid,
-  dir.out = dirs$dir.spatial.out
+  dir.out = dirs$dir.spatial.out, 
+  overwrite=FALSE
 )
 ```
 
-Munge the eBird data already on file:
+Munge the eBird data (must be saved to file):
 
 ``` r
 (fns.ebird    <- id_ebird_files(
@@ -216,7 +220,7 @@ Munge the eBird data already on file:
 ))
 stopifnot(length(fns.ebird) > 1)
 
-# Import and munge the desired files..
+# Import and munge the desired files
 ebird <- munge_ebird_data(
   fns.ebird = fns.ebird,
   species = c(species, species.abbr),
@@ -233,6 +237,7 @@ ebird_spatial <- make_ebird_spatial(
   grid = grid,
   dir.out = dirs$dir.spatial.out
 )
+tictoc::toc()#~9 minutes to this point without package install for HOSP in Florida on a machine with 65G ram, 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz   2.61 GHz 64bit
 ```
 
 ## Step 3: Bundle Data for Use in JAGS/Elsewhere
@@ -242,160 +247,125 @@ suggest creating a list using `make_jags_list` and subsequently
 subsetting the data from there.
 
 ``` r
-tictoc::toc()#~9 minutes to this point without package install for HOSP in Florida on a machine with 65G ram, 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz   2.61 GHz 64bit
 tictoc::tic()
-bundle <- bundle_data(
-  dat = list(
-    ebird = ebird_spatial,
-    bbs = bbs_spatial,
-    grid = grid,
-    dirs = dirs
-  ),
-  overwrite = FALSE, # be sure to overwrite if you tweak arguments above beyond species, species abbr, year, or grid size
-  dir.models = dirs$dir.models,
-  dir.out = dirs$dir.jags,
-  jagam.args = list(
-    bs = "ds",
-    k = 20,
-    family = "poisson",
-    sp.prior = "log.uniform",
-    diagonalize = TRUE
-  )
-)
-tictoc::toc() # ~120 seconds 
+### bundle_data function needs to be cleaned up
+jdat <- bundle_data(bbs_spatial = bbs_spatial,
+              ebird_spatial = ebird_spatial,
+              grid = grid, 
+              # K=10, ## specify  K for dev purposes/override here otherwise bundle_data will create a K based on data dimensions.
+              scale.covs = TRUE)
+### munge the covariates a little...
+# choose which first year to use (first year on bbs and/or first year on the route)
+jdat$fyr = jdat$fyr.bbs
+jdat$year.ref = round(median(1:jdat$n.years))                    
+jdat$asst[is.na(jdat$asst)] <- 0 ### should we assume observer had no assistant if value was NULL? For now, assume zero
+# extract the jagam object from list because JAGS no like
+jagam.out <- jdat[which(names(jdat)=='jagam.all')]
+# remove useless stuff
+
+jdat      <- jdat[-which(names(jdat) %in% c('jagam.all','fyr.route', 'fyr.bbs'))] # remove it
+tictoc::toc()
 ```
 
-The function, `make_jags_list` produces a list of lists, where the
-second-level lists comprise objects with similar names. E.g., call:
+<!-- Note: if the eventual goal fo the package is to use bundle_data to produce an analysis-ready list, we can consider having the user specify in an argument (a) whether they want a list of all possible things or (b) whether they want analysis-ready data for a particular packaged model and if so, which model.  -->
+<!-- # Step 4: Model and Computational Specifications -->
+<!-- Specifications for MCMC and parameters to monitor: -->
+<!-- ```{r specs} -->
+<!-- ## mcmc specs -->
+<!-- mcmc <- set_mcmc_specs() # default values -->
+<!-- ## initial values -->
+<!-- myinits <- list( -->
+<!--   # alpha_pb  = rnorm(1, 0, 0.01), -->
+<!--   alpha   = rnorm(1, 0, 0.01), -->
+<!--   alpha1   = rnorm(1, 0, 0.01) -->
+<!-- ) -->
+<!-- inits <- make_inits_list(myinits, nc = mcmc$nc) -->
+<!-- ## parameters to monitor -->
+<!-- params.monitor <- c("lanbda", "nu",  "Nb")  -->
+<!-- ``` -->
+<!-- Write the model as a .jags or .txt file.  -->
+<!-- ```{r model} -->
+<!-- {mod <- "model{ -->
+<!-- #################################################### -->
+<!-- #################################################### -->
+<!-- # Likelihoods -->
+<!-- #################################################### -->
+<!-- for(t in 1:tb){ -->
+<!--   for(s in 1:sb){ -->
+<!--     Cb[s,t] ~ dpois(lanbda[s]) -->
+<!--   } # end bbs data model s -->
+<!-- } # end bbs data model t -->
+<!-- for(s in 1:sb){  -->
+<!--   lambda[s]  = inprod(nu[], prop[s,])  # expected count at route-level  -->
+<!-- } -->
+<!-- for(g in 1:G){     # G = ALL POSSIBLE GRID CELLS in study area -->
+<!--   log(nu[g]) = alpha + area[g]*alpha1 -->
+<!-- } # end g (nu) -->
+<!-- #################################################### -->
+<!-- #################################################### -->
+<!-- # Priors -->
+<!-- #################################################### -->
+<!-- alpha    ~ dnorm(0,0.01) -->
+<!-- alpha1   ~ dnorm(0,0.01) -->
+<!-- #################################################### -->
+<!-- #################################################### -->
+<!-- # Derived -->
+<!-- #################################################### -->
+<!-- for(t in 1:tb){ -->
+<!--   Nb[t] <- sum(Cb[,t]) -->
+<!-- } -->
+<!-- #################################################### -->
+<!-- #################################################### -->
+<!-- }"} -->
+<!-- # export model -->
+<!-- name <- paste0(dirs$dir.models,"/bbs-base") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there. -->
+<!-- fn   <- paste0(name, ".txt") # we want to name it now so we can call in jags functions -->
+<!-- sink(fn) -->
+<!-- cat(mod) -->
+<!-- sink() -->
+<!-- # browseURL(fn) # check file if you please -->
+<!-- ``` -->
+<!-- Grab necessary data only from the bundled lists -->
+<!-- ```{r jags-data} -->
+<!-- jags.data <- list( -->
+<!--   # BBS DATA -->
+<!--   ## Observed Counts -->
+<!--   Cb     = bundle$bbs$C,  -->
+<!--   ## bbs indexes -->
+<!--   sb     = bundle$bbs$indexing$nsites,  -->
+<!--   tb     = bundle$bbs$indexing$nyears,  -->
+<!--   # sgb    = bundle$bbs$indexing$sg,  # col1 == site index (row) col2 == grid ind (col) -->
+<!--   # nsgb   = bundle$bbs$indexing$nsg,  # col1 == site index (row) col2 == grid ind (col) -->
+<!--   ## proportion route in grid -->
+<!--   prop   = bundle$bbs$indexing$prop.sg,  -->
+<!--   # GRID DATA -->
+<!--   area   = scale(bundle$grid$area),  -->
+<!--   G      = nrow(bundle$grid$XY) -->
+<!-- ) -->
+<!-- # free some mem -->
+<!-- rm(bbs_spatial, ebird_spatial, grid) -->
+<!-- ``` -->
+<!-- # Step 5: Run Model -->
+<!-- ```{r run-jags} -->
+<!-- # browseURL(fn) -->
+<!--  tictoc::tic() -->
+<!--   fn.out <- paste0(dirs$dir.models, name, ".rds") -->
+<!--   out <- jagsUI::jags( -->
+<!--     data  = jags.data, -->
+<!--     model.file = fn, -->
+<!--     inits = inits, -->
+<!--     parameters.to.save = params.monitor, -->
+<!--     n.chains = mcmc$nc, -->
+<!--     n.thin = mcmc$nt, -->
+<!--     n.iter = mcmc$ni, -->
+<!--     n.burnin = mcmc$nb -->
+<!--   ) -->
+<!--   x = tictoc::toc() -->
+<!--   mod.time <- paste0(round(x$toc - x$tic, 2), " seconds") -->
+<!--   out$tictoc.allchains <- mod.time -->
+<!--   # save model outputs -->
+<!--   saveRDS(out, file = fn.out) -->
+<!-- ``` -->
+<!-- <!-- # End Run -->
 
-``` r
-names(bundle) # top-level lists
-names(bundle$bbs) # second-level lists within the BBS list
-str(bundle$bbs$C) # count matrix (site by year)
-names(bundle$bbs$Xp) # effects on detection / observer effects
-names(bundle$bbs$indexing) # various indexes for use in JAGS loops
-View(bundle$metadata) # 'meta' data table for the list resulting from `make_jags_list`
-head(bundle$grid$XY) # grd cell centroid coords
-head(bundle$grid$area) 
-str(bundle$gam) # output from `mgcv::jagam()`
-```
-
-Note: if the eventual goal fo the package is to use bundle_data to
-produce an analysis-ready list, we can consider having the user specify
-in an argument (a) whether they want a list of all possible things or
-(b) whether they want analysis-ready data for a particular packaged
-model and if so, which model.
-
-# Step 4: Model and Computational Specifications
-
-Specifications for MCMC and parameters to monitor:
-
-``` r
-## mcmc specs
-mcmc <- set_mcmc_specs() # default values
-
-## initial values
-myinits <- list(
-  # alpha_pb  = rnorm(1, 0, 0.01),
-  alpha   = rnorm(1, 0, 0.01),
-  alpha1   = rnorm(1, 0, 0.01)
-)
-inits <- make_inits_list(myinits, nc = mcmc$nc)
-
-## parameters to monitor
-params.monitor <- c("lanbda", "nu",  "Nb") 
-```
-
-Write the model as a .jags or .txt file.
-
-``` r
-{mod <- "model{
-####################################################
-####################################################
-# Likelihoods
-####################################################
-for(t in 1:tb){
-  for(s in 1:sb){
-    Cb[s,t] ~ dpois(lanbda[s])
-  } # end bbs data model s
-} # end bbs data model t
-
-for(s in 1:sb){ 
-  lambda[s]  = inprod(nu[], prop[s,])  # expected count at route-level 
-}
-
-for(g in 1:G){     # G = ALL POSSIBLE GRID CELLS in study area
-  log(nu[g]) = alpha + area[g]*alpha1
-} # end g (nu)
-
-####################################################
-####################################################
-# Priors
-####################################################
-alpha    ~ dnorm(0,0.01)
-alpha1   ~ dnorm(0,0.01)
-####################################################
-####################################################
-# Derived
-####################################################
-for(t in 1:tb){
-  Nb[t] <- sum(Cb[,t])
-}
-####################################################
-####################################################
-}"}
-# export model
-name <- paste0(dirs$dir.models,"/bbs-base") ## not sure why but when i knit the chunks outside this one it doesn't keep the params, so having trouble putting it up there.
-fn   <- paste0(name, ".txt") # we want to name it now so we can call in jags functions
-sink(fn)
-cat(mod)
-sink()
-# browseURL(fn) # check file if you please
-```
-
-Grab necessary data only from the bundled lists
-
-``` r
-jags.data <- list(
-  # BBS DATA
-  ## Observed Counts
-  Cb     = bundle$bbs$C, 
-  ## bbs indexes
-  sb     = bundle$bbs$indexing$nsites, 
-  tb     = bundle$bbs$indexing$nyears, 
-  # sgb    = bundle$bbs$indexing$sg,  # col1 == site index (row) col2 == grid ind (col)
-  # nsgb   = bundle$bbs$indexing$nsg,  # col1 == site index (row) col2 == grid ind (col)
-  ## proportion route in grid
-  prop   = bundle$bbs$indexing$prop.sg, 
-  # GRID DATA
-  area   = scale(bundle$grid$area), 
-  G      = nrow(bundle$grid$XY)
-)
-# free some mem
-rm(bbs_spatial, ebird_spatial, grid)
-```
-
-# Step 5: Run Model
-
-``` r
-# browseURL(fn)
- tictoc::tic()
-  fn.out <- paste0(dirs$dir.models, name, ".rds")
-  out <- jagsUI::jags(
-    data  = jags.data,
-    model.file = fn,
-    inits = inits,
-    parameters.to.save = params.monitor,
-    n.chains = mcmc$nc,
-    n.thin = mcmc$nt,
-    n.iter = mcmc$ni,
-    n.burnin = mcmc$nb
-  )
-  x = tictoc::toc()
-  mod.time <- paste0(round(x$toc - x$tic, 2), " seconds")
-  out$tictoc.allchains <- mod.time
-  # save model outputs
-  saveRDS(out, file = fn.out)
-```
-
-<!-- # End Run -->
+–>

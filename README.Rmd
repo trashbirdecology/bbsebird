@@ -68,10 +68,11 @@ rm(pkgs)
 If using this README, this is the only RMD chunk you shoudl have to edit. Most important are where the eBird data and BBS shapefiles are stored (dir.orig.data) and where you wish to save resulting data/models (dir.proj). The latter need not exist -- if it does not exist the package will create the directory for you. 
 ```{r required-args}
 # REQUIRED ARGUMENTS
-dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/bbsebird-testing/"
+dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/bbsebird-testing/" # this will be improved to be more intuitive re: what data? 
 dir.proj       = "C:/users/jburnett/OneDrive - DOI/bbsebird-testing/House_Sparrow/"
 species             = c("House Sparrow") ## eventually need to add alookup table to ensure species.abbr and speices align.
 species.abbr        = c("houspa") # see ebird filename for abbreviation
+### this needs improvement as well...e.g. a species lookup table to link common-speci-abbrev across BBS and eBird data...
 ##bbs arguments
 usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
 cws.layer           = "ALL_ROUTES"
