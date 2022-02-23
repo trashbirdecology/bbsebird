@@ -21,11 +21,9 @@ Imports:
     lubridate (>= 1.8.0),
     magrittr,
     mgcv,
-    progress (>= 1.2.2),
     readr (>= 2.1.1),
     reshape2 (>= 1.4.4),
     rgdal,
-    rjags (>= 4.12),
     rnaturalearth (>= 0.3.0),
     sp (>= 1.4.6),
     stringr (>= 1.4.0),
@@ -44,6 +42,8 @@ Imports:
 Suggests: 
     knitr,
     here (>= 1.0.1),
+    dclone, 
+    rjags (>= 4.12),
     rmarkdown,
     spelling
 LazyData: true

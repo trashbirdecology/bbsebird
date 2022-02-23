@@ -237,6 +237,9 @@ jdat      <- jdat[-which(names(jdat) %in% c('jagam.all','fyr.route', 'fyr.bbs'))
 tictoc::toc()
 ```
 
+
+
+
 <!-- Note: if the eventual goal fo the package is to use bundle_data to produce an analysis-ready list, we can consider having the user specify in an argument (a) whether they want a list of all possible things or (b) whether they want analysis-ready data for a particular packaged model and if so, which model.  -->
 
 <!-- # Step 4: Model and Computational Specifications -->
