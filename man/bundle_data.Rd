@@ -5,24 +5,35 @@
 \title{Bundle Data for Use in JAGS (LONG format)}
 \usage{
 bundle_data(
-  bbs_spatial,
-  ebird_spatial,
+  bbs,
+  ebird,
   grid,
-  gam.type = "spat",
   scale.covs = TRUE,
+  X = "cell.lon.centroid",
+  Y = "cell.lat.centroid",
+  cell.id = "gridcellid",
+  year.id = "year",
+  site.id = c("checklist_id", "rteno"),
+  obs.id = c("obsn", "observer_id"),
+  cell.covs = c("area"),
+  site.covs = c("wind", "noise", "cars", "observ", "minute", "assistant",
+    "obsfirstyearbbs", "obsfirstyearroute", "duration_minutes", "effort_distance_km",
+    "effort_area_ha", "number_observers"),
   K = NULL
 )
 }
 \arguments{
-\item{bbs_spatial}{BBS data}
+\item{bbs}{BBS data}
 
-\item{ebird_spatial}{eBird data}
+\item{ebird}{eBird data}
 
 \item{grid}{spatial sampling grid/study area}
 
-\item{gam.type}{IN DEVELOPMENT -- specification to choose which gam model to use.}
-
 \item{scale.covs}{logical if TRUE will automatically scale the covariates}
+
+\item{X}{variable name associated with the x-coordinate (e.g., long, longitude, Easting, X) across 'grid', 'bbs', and 'ebird'}
+
+\item{Y}{variable name associated with the x-coordinate (e.g., latitude, Northing, Y) across 'grid', 'bbs', and 'ebird'}
 
 \item{K}{the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.}
 }
