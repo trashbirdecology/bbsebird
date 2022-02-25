@@ -16,7 +16,7 @@
 #' @importFrom stringr str_sub
 #' @importFrom tidyr expand separate
 #' @importFrom sf st_as_sf st_drop_geometry st_transform st_length st_area st_read
-#' @importFrom dplyr mutate full_join select mutate group_by
+#' @importFrom dplyr mutate full_join select mutate group_by ungroup distinct rename left_join summarise filter
 #' @export make_bbs_spatial
 make_bbs_spatial <- function(df,
                              grid,
@@ -162,8 +162,8 @@ bbs.grid.lines.df <- bbs.grid.lines %>%
 # create an object describing the rtenos as lines if we want to plot later on
 route.line.geometry <- bbs.grid.lines %>%
   dplyr::select(rteno, geometry) %>%
-  mutate(route.geometry=geometry) %>%
-  st_drop_geometry()
+  dplyr::mutate(route.geometry=geometry) %>%
+  sf::st_drop_geometry()
 
 # Expand the grid/study area to include all years and cell combos  -------------
   # expand the grid to include all years and grid cell ids
@@ -179,25 +179,25 @@ grid.expanded <- grid %>%
 # Join the expanded grid with the BBS routes information
 ## first, let's remove redundant information (we don't care about the segment lengths../)
 bbs.temp <- bbs.grid.lines.df %>%
-  st_drop_geometry() %>%
-  select(-segmentlength) %>%
-  distinct(rteno, gridcellid, proprouteincell, totalroutelength, routelength)
+  sf::st_drop_geometry() %>%
+  dplyr::select(-segmentlength) %>%
+  dplyr::distinct(rteno, gridcellid, proprouteincell, totalroutelength, routelength)
 
 ## overlay the bbs routes to the grid
-bbs.grid  <- left_join(grid.expanded, bbs.temp)
+bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp)
 
 # Add attributes and obs to BBS gridded layer -----------------------------
 ## append the route line geometry
-bbs.grid <- left_join(bbs.grid, route.line.geometry)
+bbs.grid <- dplyr::left_join(bbs.grid, route.line.geometry)
 ## add the BBS observations to the BBS spatial object
 bbs_spatial <- left_join(bbs.grid, df)
 
 # if empty cells not desired, will remove them.
-if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% filter(!is.na(rteno))}
+if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% dplyr::filter(!is.na(rteno))}
 
 
 ### return dfs with lowerase
-names(cws_routes) <- tolower(names(cws_routes))
+names(cws_routes)  <- tolower(names(cws_routes))
 names(usgs_routes) <- tolower(names(usgs_routes))
 
 
@@ -228,12 +228,7 @@ names(usgs_routes) <- tolower(names(usgs_routes))
         dplyr::select(x),
       main="total # unique observers in cell"
     )
-    plot(
-      bbs_spatial  %>% group_by(gridcellid) %>%
-        dplyr::summarise(x=
-                           dplyr::n_distinct(rteno, na.rm = TRUE)) %>%
-        dplyr::select(x), main="# routes in datasets"
-    )
+
 
    suppressWarnings(plot(
       bbs_spatial  %>%
@@ -265,7 +260,7 @@ if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungr
 # remove rownames
 rownames(bbs_spatial) <- NULL
 
-if(nrow(bbs_spatial %>% distinct(year, gridcellid, rteno, c)) != nrow(bbs_spatial)) message("FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists.")
+if(nrow(bbs_spatial %>% dplyr::distinct(year, gridcellid, rteno, c)) != nrow(bbs_spatial)) message("FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists.")
 
 
 # Outputs -----------------------------------------------------------------

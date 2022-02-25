@@ -30,6 +30,8 @@ gridsize
 inits
 jagam
 jdat
+easting
+northing
 magrittr
 mgcv
 munge

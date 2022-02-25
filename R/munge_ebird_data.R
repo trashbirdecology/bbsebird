@@ -44,7 +44,7 @@ munge_ebird_data <-
            # how to read in sampling data ... vroom often crashes
            f_obs_out = paste0(dir.ebird.out, 'ebird_obs_filtered.txt'),
            f_samp_out  = paste0(dir.ebird.out, 'ebird_samp_filtered.txt')
-           ) {
+  ) {
 
     cols.keep =
       c(
@@ -73,21 +73,21 @@ munge_ebird_data <-
         "time_observations_started"
       )
 
-# CHECK / IMPORT FILTERED DATA --------------------------------------------
-# First, check the filepaths for the munged and filtered data. If overwrite is FALSE and exists, will just import that and clal it a day.
-ind <- fns.ebird[str_detect(pattern="ebird_filtered.rds", fns.ebird)]
-if(length(ind)>=1){
-  # if overwriting the data, remove this from filelist to be safe..
-  if(overwrite){fns.ebird <- setdiff(fns.ebird, ind)}
-  #import data and exist functio nif no overwrite specified
-  if(!overwrite){
-    cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in `munge_ebird_data()`.\n")
-    output <- readRDS(ind)
-     return(output)
+    # CHECK / IMPORT FILTERED DATA --------------------------------------------
+    # First, check the filepaths for the munged and filtered data. If overwrite is FALSE and exists, will just import that and clal it a day.
+    ind <- fns.ebird[stringr::str_detect(pattern="ebird_filtered.rds", fns.ebird)]
+    if(length(ind)>=1){
+      # if overwriting the data, remove this from filelist to be safe..
+      if(overwrite){fns.ebird <- setdiff(fns.ebird, ind)}
+      #import data and exist functio nif no overwrite specified
+      if(!overwrite){
+        cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in `munge_ebird_data()`.\n")
+        output <- readRDS(ind)
+        return(output)
+      }
     }
-}
 
-# CHECK ARGS AND FILES ----------------------------------------------------
+    # CHECK ARGS AND FILES ----------------------------------------------------
     # must have at least two files in here
     if(length(fns.ebird) < 2)stop("check arg `fns.ebird`: must have at least two files (one for sampling events, one for observations.")
     if(!any(file.exists(fns.ebird))) stop("One or more files specified in `fns.ebird` does not exist")
@@ -96,25 +96,18 @@ if(length(ind)>=1){
     f_samp_in <- fns.ebird[stringr::str_detect(fns.ebird, "sampling_rel")]
     f_obs_in  <- setdiff(fns.ebird, f_samp_in)
     if (!length(f_samp_in) > 0)
-      stop(paste0("No sampling file identified. "))
+      stop(paste0("No sampling file identified. \n"))
     if (!length(f_obs_in) > 0)
-      stop(paste0("No ebd file identified. "))
+      stop(paste0("No ebd file identified.\n"))
 
-# MEMORY CHECKS  -----------------------------------------------------------
+    # MEMORY CHECKS  -----------------------------------------------------------
     # warn about potential memory issues
     if (parallel::detectCores() <= 4 |
         memory.limit() < 25000)
       warning(
         "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. \n\nIf `filter_ebird_data` takes longer than 20 minutes and your spatial extent <~5 u.s. states, something is probably wrong.\n\n"
       )
-    ## if full.data
-    if (parallel::detectCores() <= 4 |
-        memory.limit() < 25000)
-      warning(
-        "You probably don't have enough RAM and/or CPU to munge the eBird data. Don't blame me if your machine crashes. \n\nIf `filter_ebird_data` takes longer than 20 minutes and your spatial extent <~5 u.s. states, something is probably wrong.\n\n"
-      )
-
-# MUNGE ARGS --------------------------------------------------------------
+    # MUNGE ARGS --------------------------------------------------------------
     #specifying the column types helps with vroom::vroom(f_samp_in), which takes a couple of minutes...
     cols_samp <- list(
       `LAST EDITED DATE` = readr::col_datetime(),
@@ -149,20 +142,20 @@ if(length(ind)>=1){
       `TRIP COMMENTS` = readr::col_character()
     )
 
-## We need to borrow region codes from bbsassistant again to match country names in ebird
-rc <- bbsAssistant::region_codes
-## if countries index is specified, filter by that
-if(!is.null(countries)){rc <- rc[tolower(rc$iso_a2) %in% tolower(countries),]}
-## if states index is specified, filter by that
-if(!is.null(states)){
-  s=paste(gsub(x=tolower(states), pattern="-", replacement=""), collapse="|")
-  rc.i=gsub(x=tolower(rc$iso_3166_2), pattern="-", replacement="")
-  rc <- rc[which(grepl(s, rc.i)),]
-  rm(s, rc.i)
-  }
-if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain elements witin bbsAssistant::region_codes. See ?filter_ebird_data for further instruction.")
+    ## We need to borrow region codes from bbsassistant again to match country names in ebird
+    rc <- bbsAssistant::region_codes
+    ## if countries index is specified, filter by that
+    if(!is.null(countries)){rc <- rc[tolower(rc$iso_a2) %in% tolower(countries),]}
+    ## if states index is specified, filter by that
+    if(!is.null(states)){
+      s=paste(gsub(x=tolower(states), pattern="-", replacement=""), collapse="|")
+      rc.i=gsub(x=tolower(rc$iso_3166_2), pattern="-", replacement="")
+      rc <- rc[which(grepl(s, rc.i)),]
+      rm(s, rc.i)
+    }
+    if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain elements witin bbsAssistant::region_codes. See ?filter_ebird_data for further instruction.")
 
-# SAMPLING EVENTS DATASETS ------------------------------------------------------------
+    # SAMPLING EVENTS DATASETS ------------------------------------------------------------
     ## Read in / filter sampling data frame
     ### IMPORTANT: importing the sampling.txt.gz file for nov2021 takes about
     #### 2.2 minutes with vroom::vroom and XX minutes with data.table::fread!!!!
@@ -174,16 +167,16 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       cat("Importing the sampling events dataset. This file should take ~2 mins to import\n\n")
       sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
 
-    ### The sampling df is large so this script tries to prioritize commands that
-    ### will remove the most data to the least.
-    ### Try to keep the filtering/subsetting in that order..need to run tests to ensure most efficient order...
+      ### The sampling df is large so this script tries to prioritize commands that
+      ### will remove the most data to the least.
+      ### Try to keep the filtering/subsetting in that order..need to run tests to ensure most efficient order...
 
       # trying to keep in order of largest cut to smaller to help with memory issues.
       cat("Filtering the sampling events. Takes a few more minutes, depending on size of desired data (i.e., spatial, temporal extents and number of species..\n")      ## force column names to lower and replace spaces with underscore (_) for my sanity
       colnames(sampling) <-
         stringr::str_replace_all(tolower(colnames(sampling)),
-                        pattern = " ",
-                        replacement = "_")
+                                 pattern = " ",
+                                 replacement = "_")
       ## remove useless (to us) columns to help with memory issues.
       sampling <- sampling[names(sampling) %in% cols.keep]#keep only useful columns
       ## do some serious filtering. there's def a cleaner way to write this up but is low priority and would need benefit from some benchmarking
@@ -201,7 +194,7 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       if(!is.null(max.effort.mins)) sampling <- sampling %>%
         dplyr::filter(duration_minutes<=max.effort.mins)
 
-     # munge the year variable to ensure proper filtering, then filter
+      # munge the year variable to ensure proper filtering, then filter
       sampling <- sampling %>%
         dplyr::mutate(year = lubridate::year(observation_date))
       if(!all(years %in% unique(sampling$year)))warning("Note that not all years in arg `years` were found in the sampling events dataset.\n")
@@ -213,9 +206,9 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       ### in fact, i've got some checklists i need to cross-check against the BBS obserfvations data to see if this correctly removes them all.....
       if (remove.bbs.obs){
         sampling <- sampling %>%
-        dplyr::filter(protocol_type != "Stationary" &
-                 duration_minutes != 3)
-        }
+          dplyr::filter(protocol_type != "Stationary" &
+                          duration_minutes != 3)
+      }
 
       # for good measure..
       cat("Taking out the garbage because this data can be massive.....\n")
@@ -229,40 +222,40 @@ if(nrow(rc)<1)stop("Please ensure arguments `states` and `countries` contain ele
       date.chunk <- names(bit::chunk(dates, by=100))
       for(i in seq_along(date.chunk)){
         # print(i)
-      if(i==1) mylist <- list()
-      d.ind <- as.integer(unlist(date.chunk[i] %>% str_split(pattern=":")))
-      d.min <- dates[min(d.ind)]
-      d.max <- dates[max(d.ind)]
-      tempdat <- sampling[sampling$observation_date >= d.min & sampling$observation_date <= d.max, ]
-      mylist[[i]] <- auk::auk_unique(tempdat, checklists_only = TRUE)
-      rm(tempdat, d.min, d.ind, d.max)
-    }
+        if(i==1) mylist <- list()
+        d.ind <- as.integer(unlist(date.chunk[i] %>% stringr::str_split(pattern=":")))
+        d.min <- dates[min(d.ind)]
+        d.max <- dates[max(d.ind)]
+        tempdat <- sampling[sampling$observation_date >= d.min & sampling$observation_date <= d.max, ]
+        mylist[[i]] <- auk::auk_unique(tempdat, checklists_only = TRUE)
+        rm(tempdat, d.min, d.ind, d.max)
+      }
       ## unlist the list
       sampling <- dplyr::bind_rows(mylist)
       # ensure consistency in col types
-      sampling <- convert_cols(sampling)
+      sampling <- bbsebird:::convert_cols(sampling)
 
       ## save the filtered sampling data (fwrite is superior to vrooom for writing (and reading usually))
       cat("Writing the filtered sampling data to: ", f_samp_out, "...\n")
       data.table::fwrite(x=sampling,file=f_samp_out)
       gc()
-  } # end sampling events data import/munging
+    } # end sampling events data import/munging
 
-# OBSERVATIONS DATA SETS -------------------------------------------------
-# Read in or create, and filter observations data frame
-  ##fix the col types for observations df
-cols_obs <- cols_samp[!names(cols_samp) %in% c("country", "sampling event identifier","protocol type", "duration minutes")]
-if (file.exists(f_obs_out) & !overwrite) {
-    ### i can't figure out how to silence vroom import warning re: parsing colnames
-    #### (which is a result of not all names in cols_samp are in this file)
-    ### consequently, I would like to remove the nusance names frm cols_samp here..
-    cat("Overwrite is FALSE and filtered observations data already exists. Importing from file (",
-        f_obs_out,")\n")
+    # OBSERVATIONS DATA SETS -------------------------------------------------
+    # Read in or create, and filter observations data frame
+    ##fix the col types for observations df
+    cols_obs <- cols_samp[!names(cols_samp) %in% c("country", "sampling event identifier","protocol type", "duration minutes")]
+    if (file.exists(f_obs_out) & !overwrite) {
+      ### i can't figure out how to silence vroom import warning re: parsing colnames
+      #### (which is a result of not all names in cols_samp are in this file)
+      ### consequently, I would like to remove the nusance names frm cols_samp here..
+      cat("Overwrite is FALSE and filtered observations data already exists. Importing from file (",
+          f_obs_out,")\n")
 
-# observations <- vroom::vroom(f_obs_out, col_types = cols_obs)
-observations <- data.table::fread(f_obs_out) # no huge difference when files are small.
+      # observations <- vroom::vroom(f_obs_out, col_types = cols_obs)
+      observations <- data.table::fread(f_obs_out) # no huge difference when files are small.
     } else{
-#    browser()
+      #    browser()
       cat("Loading the original eBird observations. Please ignore parsing warnings.\n\n")
       # use vroom because its more elegant when reading multiple files at once
       observations <- vroom::vroom(f_obs_in, col_types = cols_obs)
@@ -271,8 +264,8 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       cat("Munging observations data\n\n")
       colnames(observations) <-
         stringr::str_replace_all(tolower(colnames(observations)),
-                        pattern = " ",
-                        replacement = "_")
+                                 pattern = " ",
+                                 replacement = "_")
       # trying to keep in order of largest cut to smaller to help with memory issues.
       ## keep only useful columns
       observations <-
@@ -305,7 +298,7 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       if (remove.bbs.obs) {
         observations <- observations %>%
           dplyr::filter(protocol_type != "Stationary" &
-                   duration_minutes != 3)
+                          duration_minutes != 3)
       }
 
       ## since we dropped group id, there may be duplicates to remove
@@ -317,42 +310,41 @@ observations <- data.table::fread(f_obs_out) # no huge difference when files are
       # observations <- auk_unique(observations)
       ## this function will add variable "checklist_id"
 
-    #####NEED TO CHEcK ABOUT X....does this mean they didn't count the number, or does it mean NO DATA?!!?!?
+      #####NEED TO CHEcK ABOUT X....does this mean they didn't count the number, or does it mean NO DATA?!!?!?
       observations <- observations %>% dplyr::mutate(
         # convert X to NA
         observation_count = dplyr::if_else(observation_count == "X",
-                                    NA_character_, observation_count), # must use NA_character_ instead of NA!
+                                           NA_character_, observation_count), # must use NA_character_ instead of NA!
         # effort_distance_km to 0 for non-travelling counts
         effort_distance_km = dplyr::if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
-                                     0, effort_distance_km)
+                                            0, effort_distance_km)
       )
-      observations <- convert_cols(observations)
+      observations <- bbsebird:::convert_cols(observations)
 
       # save to file
       ## write the filtered sampling data
       cat("Writing the filtered observations data to:", f_obs_out,"...\n\n")
-        data.table::fwrite(observations, f_obs_out)
+      data.table::fwrite(observations, f_obs_out)
     }
 
-# COMBINE -----------------------------------------------------------------
-# create the list output file as a list of sam,pling events and observations
-ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
-                       "sampling" = dplyr::as_tibble(sampling))
+    # COMBINE -----------------------------------------------------------------
+    # create the list output file as a list of sam,pling events and observations
+    ebird_filtered <- list("observations" = dplyr::as_tibble(observations),
+                           "sampling" = dplyr::as_tibble(sampling))
 
-# ZERO-FILL DATA ----------------------------------------------------------
-ebird_filtered <- zerofill_ebird(list=ebird_filtered)
+    # ZERO-FILL DATA ----------------------------------------------------------
+    ebird_filtered <- zerofill_ebird(list=ebird_filtered)
 
-# Final munging of columns  -----------------------------------------------
-## munge column names
-ebird_filtered <- clean_ebird_colnames(df=ebird_filtered)
+    # Final munging of columns  -----------------------------------------------
+    ## munge column names
+    ebird_filtered <- clean_ebird_colnames(df=ebird_filtered)
 
+    # SAVE TO FILE ------------------------------------------------------------
+    f.out =  paste0(dir.ebird.out, "ebird_filtered.rds")
+    cat("Writing the filtered and zero-filled eBird data to:", f.out, "...\n\n")
+    saveRDS(ebird_filtered, f.out)
 
-# SAVE TO FILE ------------------------------------------------------------
-f.out =  paste0(dir.ebird.out, "ebird_filtered.rds")
-cat("Writing the filtered and zero-filled eBird data to:", f.out, "...\n\n")
-saveRDS(ebird_filtered, f.out)
+    # RETURNED OBJECT ---------------------------------------------------------
+    return(ebird_filtered)
 
-# RETURNED OBJECT ---------------------------------------------------------
-return(ebird_filtered)
-
-} # END FUNCTION
+  } # END FUNCTION

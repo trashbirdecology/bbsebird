@@ -3,24 +3,29 @@
 #' @importFrom lubridate year yday
 #' @noRd
 clean_ebird_colnames <- function(df) {
+
+  if("observation_count" %in% colnames(df)){
+    df <- df %>% dplyr::rename(c=observation_count)
+  }
+
   clean_df <- df %>%
     mutate(
       # convert X to NA
-      observation_count = as.integer(observation_count),
+      c = as.integer(c),
       # effort_distance_km to 0 for non-travelling counts
       effort_distance_km = if_else(protocol_type != "Traveling",
                                    0, effort_distance_km)
-    ) %>%
-    rename(c = observation_count)
+    )
 
-  clean_df <- clean_df %>% mutate(
-    # convert time to decimal hours since midnight
-    time_observations_started_hsm = lubridate::hms(time_observations_started),
-    # split date into year and day of year
-    year = lubridate::year(observation_date),
-    yday = lubridate::yday(observation_date)
-  )
-
+  suppressWarnings(
+    clean_df <- clean_df %>% dplyr::mutate(
+      # convert time to decimal hours since midnight
+      time_observations_started_hsm = lubridate::hms(time_observations_started),
+      # split date into year and day of year
+      year = lubridate::year(observation_date),
+      yday = lubridate::yday(observation_date)
+    )
+  )## may get useless warnings re: NA values in the time_observations_started
   return(clean_df)
 
 }
