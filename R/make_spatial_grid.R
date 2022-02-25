@@ -8,7 +8,7 @@
 #' @param hexagonal logical if TRUE will produce a spatial grid with hexagonal, as opposed to rectangular, cells
 #' @param grid.size numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km
 #' @importFrom rnaturalearth ne_states
-#' @importFrom sf st_transform st_make_grid
+#' @importFrom sf st_transform st_make_grid st_area st_make_grid
 #' @importFrom dplyr mutate
 #' @importFrom stringr str_replace
 #' @export make_spatial_grid
@@ -71,7 +71,7 @@ suppressWarnings(centroid.coords <- sf::st_coordinates(sf::st_geometry(sf::st_ce
 ### This warning is supposed to be regarding calculating centroids on a LAT LON CRS, but I've tried with both PCRS and UNProj-CRS and sitll get the warning..
 grid$cell.lon.centroid <- centroid.coords[,1]
 grid$cell.lat.centroid <- centroid.coords[,2]
-grid$area <- st_area(grid)
+grid$area <- sf::st_area(grid)
 
 # Export Data
 fn <- paste0(dir.out, "/", "grid.rds")
