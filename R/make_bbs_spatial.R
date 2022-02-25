@@ -13,8 +13,9 @@
 #' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.
 #' @importFrom sp CRS spTransform
+#' @importFrom stringr str_sub
 #' @importFrom tidyr expand separate
-#' @importFrom sf st_as_sf st_drop_geometry st_transform
+#' @importFrom sf st_as_sf st_drop_geometry st_transform st_length st_area st_read
 #' @importFrom dplyr mutate full_join select mutate group_by
 #' @export make_bbs_spatial
 make_bbs_spatial <- function(df,
@@ -149,7 +150,7 @@ bbs.grid.lines <- sf::st_intersection(grid, bbs_routes) # this produces a sf as 
 # Calculate total lengths of routes within a grid cell. -------------------
 bbs.grid.lines.df <- bbs.grid.lines %>%
   # This calculate line segments for each row (segment)
-  dplyr::mutate(segmentlength = st_length(.)) %>%
+  dplyr::mutate(segmentlength = sf::st_length(.)) %>%
   # Calculate the total length of the entire route (regardless of whether the rteno is clipped by the study area..)
   dplyr::group_by(rteno) %>%
   dplyr::mutate(totalroutelength = sum(segmentlength)) %>%
