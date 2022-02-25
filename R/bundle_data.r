@@ -8,6 +8,13 @@
 #' @param K the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.
 #' @param X variable name associated with the x-coordinate (e.g., long, longitude, Easting, X) across 'grid', 'bbs', and 'ebird'
 #' @param Y variable name associated with the x-coordinate (e.g., latitude, Northing, Y) across 'grid', 'bbs', and 'ebird'
+#' @param cell.id column name(s) of the grid cell identifier
+#' @param site.id column name(s) of the site  identifier (e.g., BBS route, eBird checklists)
+#' @param year.id column name of the temporal identifier
+#' @param obs.id  column name(s) of the observer identifier
+#' @param cell.covs column name(s) of the grid-level covariates
+#' @param site.covs column name(s) of the site-level covariates
+#' @importFrom dplyr group_by mutate select distinct arrange filter
 #'
 #' @export bundle_data
 

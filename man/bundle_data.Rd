@@ -35,6 +35,18 @@ bundle_data(
 
 \item{Y}{variable name associated with the x-coordinate (e.g., latitude, Northing, Y) across 'grid', 'bbs', and 'ebird'}
 
+\item{cell.id}{column name(s) of the grid cell identifier}
+
+\item{year.id}{column name of the temporal identifier}
+
+\item{site.id}{column name(s) of the site  identifier (e.g., BBS route, eBird checklists)}
+
+\item{obs.id}{column name(s) of the observer identifier}
+
+\item{cell.covs}{column name(s) of the grid-level covariates}
+
+\item{site.covs}{column name(s) of the site-level covariates}
+
 \item{K}{the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.}
 }
 \description{
