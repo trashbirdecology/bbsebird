@@ -9,7 +9,7 @@
 #' @param X variable name associated with the x-coordinate (e.g., long, longitude, Easting, X) across 'grid', 'bbs', and 'ebird'
 #' @param Y variable name associated with the x-coordinate (e.g., latitude, Northing, Y) across 'grid', 'bbs', and 'ebird'
 #'
-#' @eXsiteort bundle_data
+#' @export bundle_data
 
 bundle_data <-
   function(bbs,
