@@ -4,7 +4,7 @@
 #' @param bbs BBS data
 #' @param ebird eBird data
 #' @param grid spatial sampling grid/study area
-#' @param scale.covs logical if TRUE will automatically scale the covariates
+#' @param scale.covs logical if TRUE will automatically scale the numeric/integer covariates.
 #' @param K the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.
 #' @param X variable name associated with the x-coordinate (e.g., long, longitude, Easting, X) across 'grid', 'bbs', and 'ebird'
 #' @param Y variable name associated with the x-coordinate (e.g., latitude, Northing, Y) across 'grid', 'bbs', and 'ebird'
@@ -165,7 +165,11 @@ for(i in seq_along(LL)){
                             LL[[i]]["year.ind"])
     ## scale the covariate if scale.covs==TRUE
     names(cov.dat)[1] <- "cov"
-    if (scale.covs) {cov.dat$cov <- standardize(cov.dat$cov)}
+
+    is.binary <- if(max(cov.dat$cov, na.rm=TRUE) > 1){FALSE}else{TRUE
+      cat("site-level covariate '",cov.name,"' is binary and was not standardized.", sep = "")
+      }
+    if (scale.covs & !is.binary) {cov.dat$cov <- standardize(cov.dat$cov)}
     cov.mat  <-  reshape2::acast(cov.dat,
                                  site.ind ~ year.ind,
                                  value.var = "cov",
