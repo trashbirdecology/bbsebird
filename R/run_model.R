@@ -79,7 +79,7 @@ return(out)
 
 # INITS -------------------------------------------------------------------
 # repeat inits
-inits <- make_inits_list(inits, nc = mcmc.specs$nc)
+if(!is.null(inits)) inits <- make_inits_list(inits, nc = mcmc.specs$nc)
 
 # RUN MODEL ---------------------------------------------------------------
 tictoc::tic()
@@ -90,10 +90,10 @@ out <- jagsUI::jags(
   model.file = mod.fn,
   inits = inits,
   parameters.to.save = params.monitor,
-  n.chains = mcmc$nc,
-  n.thin = mcmc$nt,
-  n.iter = mcmc$ni,
-  n.burnin = mcmc$nb
+  n.chains = mcmc.specs$nc,
+  n.thin = mcmc.specs$nt,
+  n.iter = mcmc.specs$ni,
+  n.burnin = mcmc.specs$nb
   )
   x = tictoc::toc()
   cat("runtime: ", (mod.time <- paste0(round(x$toc - x$tic, 2), " seconds")))
@@ -109,11 +109,11 @@ if(use.dclone){
     # can this be a file or must it be char?
     inits = inits,
     params = params.monitor,
-    n.chains = mcmc$nc,
-    n.iter = mcmc$ni,
-    n.ipdate = mcmc$nb,
-    n.adapt = mcmc$na,
-    thin = mcmc$nt
+    n.chains = mcmc.specs$nc,
+    n.iter = mcmc.specs$ni,
+    n.ipdate = mcmc.specs$nb,
+    n.adapt = mcmc.specs$na,
+    thin = mcmc.specs$nt
   )
 
   x = tictoc::toc()
@@ -133,7 +133,7 @@ tp.fn <-
       plot.dir,
       modname,
       "_trace_",
-      mcmc$ni,
+      mcmc.specs$ni,
       "iters_",
       Sys.Date(),
       ".pdf"
