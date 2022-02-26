@@ -45,6 +45,8 @@ bbs   <- as.data.frame(bbs)
 ebird <- as.data.frame(ebird)
 grid  <- as.data.frame(grid)
 
+
+
 # RENAME VARS FOR CONSISTENT OUTPUT ----------------------------------------------------
 L <- list(bbs=bbs, ebird=ebird, grid=grid)
 for(i in seq_along(L)){
@@ -71,6 +73,11 @@ bbs   <- L$bbs
 ebird <- L$ebird
 grid  <- L$grid
 rm(L)
+
+
+# Ensure no duplicates exist ----------------------------------------------
+bbs   <- bbs %>% distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
+ebird <- ebird %>% distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
 
 # GLOBAL INDEXES -----------------------------------------------------------------
 ## STUDY AREA GRID CELL INDEX
@@ -130,6 +137,7 @@ bbs   <- LL$bbs
 ebird <- LL$ebird
 rm(LL)
 
+
 # BBS-SPECIFIC DATA CREATE MATRIX PROP (% site.ind in cell.ind) ----------------------------------------------------
 stopifnot(nrow(bbs %>% distinct(site.ind, cell.ind, proprouteincell))==nrow(bbs %>% distinct(site.ind, cell.ind)))
 ## grab all cell ids and site inds
@@ -166,9 +174,8 @@ for(i in seq_along(LL)){
     ## scale the covariate if scale.covs==TRUE
     names(cov.dat)[1] <- "cov"
 
-    is.binary <- if(max(cov.dat$cov, na.rm=TRUE) > 1){FALSE}else{TRUE
-      cat("site-level covariate '",cov.name,"' is binary and was not standardized.", sep = "")
-      }
+    is.binary <- ifelse(max(cov.dat$cov, na.rm=TRUE) > 1, FALSE, TRUE)
+    if(is.binary)cat("site-level covariate '",cov.name,"' is binary and was not standardized.", sep = "")
     if (scale.covs & !is.binary) {cov.dat$cov <- standardize(cov.dat$cov)}
     cov.mat  <-  reshape2::acast(cov.dat,
                                  site.ind ~ year.ind,
@@ -200,7 +207,6 @@ if(!is.null(cell.covs)){
 
 # JAGAM -------------------------------------------------------------
 # create basis functions and data for GAM model components
-
 ## first, we need to grab the maximum number of birds per grid cell/year across both ebird and bbs datasets
 cmax <- rbind(
   ebird %>% dplyr::distinct(cell.ind, year.ind, c),
@@ -215,7 +221,6 @@ gy.all <- expand.grid(cell.ind=cell.index$cell.ind,
                       year.ind=year.index$year.ind)
 cmax <- full_join(gy.all, cmax)
 cmax$c[is.na(cmax$c)] <- round(mean(cmax$c, na.rm=TRUE), 0)
-
 
 # if not specified, K is defined as:
 if (is.null(K))
@@ -248,12 +253,20 @@ jagam.mod <- mgcv::jagam(
 
 jagam.mod$fn <- jagam.fn
 
+## make a matrix of cmax for use in JAGS model as Exp. num in grid
+cmax.mat =  reshape2::acast(jagam.in,
+                            cell.ind ~ year.ind,
+                            value.var = "c",
+                            fill = 0)
+
 # BUNDLE DATA -------------------------------------------------------------
 jdat <- list(
   # "all" data
-  bbs.df     = bbs,
-  ebird.df   = ebird,
+  bbs.df     = bbs %>% distinct(year.ind, site.ind, .keep_all=TRUE) %>% dplyr::select(-cell.ind),
+  ebird.df   = ebird %>% distinct(year.ind, site.ind, .keep_all=TRUE) %>% dplyr::select(-cell.ind),
   grid.df    = grid,
+  # max C per grid per year  (zero-filled)
+  Cmax       = cmax.mat,
   # covariates
   Xsite      = Xsite,
   Xgrid      = Xgrid,
@@ -266,6 +279,8 @@ jdat <- list(
   G          = length(unique(cell.index$cell.id)),  # number of grid cells in study area
   Mb         = length(unique(bbs$site.id)),         # number of routes bbs
   Me         = length(unique(ebird$site.id)),       # number of checklists bbs
+  gy         = gy.all,
+  ngy        = nrow(gy.all),
   ## more indexes
   GTb        = bbs   %>% dplyr::distinct(cell.ind, year.ind) %>% dplyr::arrange(cell.ind, year.ind), # grid-years sampled bbs
   GTe        = ebird %>% dplyr::distinct(cell.ind, year.ind) %>% dplyr::arrange(cell.ind, year.ind), # grid-years sampled ebird

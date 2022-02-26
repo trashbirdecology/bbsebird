@@ -1,0 +1,134 @@
+#' @title Run JAGS Model
+#'
+#'
+#' @param jdat Data input to JAGS
+#' @param mcmc.specs Specifications for MCMC chains. Should be created using bbsebird::set_mcmc_species. If  not provided will default to default values of bbsebird::set_mcmc_specs
+#' @param inits Initial values for a single chain. If initial values are not provided for all chains, this function will repeat the intiial values provided .
+#' @param mod.fn Local file path for JAGS model file.
+#' @param params.monitor Vector List of parameters to monitor
+#' @param dir.files.out Directory for where to save model outputs (model RDS, plots)
+#' @param plot logical If TRUE will produce default traceplots of model output
+#' @param use.dclone logical If TRUE will use dclone::jags.parfit to fit model in JAGS. See package dclone for more details.
+#' @param view.plot logical IF TRUE will open the plot saved to file
+#' @export run_model
+
+run_model <- function(
+  jdat,
+  mod.fn,
+  mod.name         = "mymodel",
+  model.out.dir    = NULL,
+  inits            = NULL,
+  mcmc.specs       = set_mcmc_specs(),
+  use.dclone       = TRUE,
+  params.monitor   = NULL,
+  plot             = TRUE,
+  plot.dir         = NULL,
+  view.plot        = TRUE,
+  overwrite        = FALSE
+){
+# Arg check
+## jags model exists?
+stopifnot(file.exists(mod.fn))
+## all mcmc specs specified?
+stopifnot(all(c("na", "nb", "nc", "ni", "nt", "ncores") %in% names(mcmc.specs)))
+## dclone
+if(use.dclone){
+  if(!"dclone" %in% .packages(all.available = TRUE)){
+    choice <- menu(title = "Package 'dclone' is required when 'use.dclone'==TRUE.\n
+                   Would you like to install dclone?\n",
+                   choices = c("yes, install package","no, do not use dclone."))
+   if(choice==1){install.packages("dclone")}
+    if(choice==2){message("dclone not installed but 'use.dclone' == TRUE. To avoid this message, please use 'use.dclone=FALSE' or install dclone package.");
+      use.dclone=FALSE}
+    } # end check dclone edxists.
+} # end use.dclone arg check
+## directories
+if(!is.null(plot.dir))      dir.create(plot.dir, showWarnings = FALSE)
+if(!is.null(model.out.dir)) dir.create(model.out.dir, showWarnings = FALSE)
+
+# check if model file(s) already exist.
+modoutfn <- paste0(model.out.dir,mod.name ,".rds")
+if (file.exists(modoutfn) & !overwrite) {
+    choice.runmod <-
+      menu(
+        title = paste0(
+          "file ",
+          fn,
+          " exists. Do you wish to overwrite (this may take hours..)?\n"
+        ),
+        choices = c(
+          "Yes, re-run model (not in parallel!) and overwrite existing file",
+          "No, definitely not!"
+        )
+      )
+  } else{
+    choice.runmod = 1
+  }
+
+if(choice==2){out <- message("importing the previously-saved model from file: ", modfn)
+return(out)
+}
+
+# RUN MODEL ---------------------------------------------------------------
+tictoc::tic()
+
+if(!use.dclone){
+out <- jagsUI::jags(
+  data  = jdat,
+  model.file = mod.fn,
+  inits = inits,
+  parameters.to.save = params.monitor,
+  n.chains = mcmc$nc,
+  n.thin = mcmc$nt,
+  n.iter = mcmc$ni,
+  n.burnin = mcmc$nb
+  )
+  x = tictoc::toc()
+  cat("runtime: ", (mod.time <- paste0(round(x$toc - x$tic, 2), " seconds")))
+  out$tictoc.allchains <- mod.time # do not add this line to jags.parfit out object -- complicates plotting functions
+
+} #end regular jags fit
+if(use.dclone){
+  cl <- makePSOCKcluster(3)
+  parfit <- jags.parfit(
+    cl = cl,
+    data = jdat,
+    model = mod.fn,
+    # can this be a file or must it be char?
+    inits = inits,
+    params = params.monitor,
+    n.chains = mcmc$nc,
+    n.iter = mcmc$ni,
+    n.ipdate = mcmc$nb,
+    n.adapt = mcmc$na,
+    thin = mcmc$nt
+  )
+
+  x = tictoc::toc()
+  cat("runtime: ", (mod.time <- paste0(round(x$toc - x$tic, 2), " seconds")))
+} #end parfit
+
+
+# save model output
+message("saving model to file: ", modoutfn)
+saveRDS(out, file=modoutfn)
+
+# PLOTS -------------------------------------------------------------------
+tp.fn <-
+    paste0(
+      plot.dir,
+      modname,
+      "_trace_",
+      mcmc$ni,
+      "iters_",
+      Sys.Date(),
+      ".pdf"
+    )
+pdf(tp.fn)
+if(use.dclone){plot(out$samples)}else{plot(out)}
+dev.off()
+
+if(view.plot) browseURL(tp.fn)
+
+} # END FUNCTION
+

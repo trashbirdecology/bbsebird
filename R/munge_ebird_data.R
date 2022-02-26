@@ -233,7 +233,7 @@ munge_ebird_data <-
       ## unlist the list
       sampling <- dplyr::bind_rows(mylist)
       # ensure consistency in col types
-      sampling <- bbsebird:::convert_cols(sampling)
+      sampling <- convert_cols(sampling)
 
       ## save the filtered sampling data (fwrite is superior to vrooom for writing (and reading usually))
       cat("Writing the filtered sampling data to: ", f_samp_out, "...\n")
@@ -319,7 +319,7 @@ munge_ebird_data <-
         effort_distance_km = dplyr::if_else(protocol_type %in% c("stationary", "Stationary", "STATIONARY"),
                                             0, effort_distance_km)
       )
-      observations <- bbsebird:::convert_cols(observations)
+      observations <- convert_cols(observations)
 
       # save to file
       ## write the filtered sampling data
