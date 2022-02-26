@@ -175,7 +175,7 @@ for(i in seq_along(LL)){
     names(cov.dat)[1] <- "cov"
 
     is.binary <- ifelse(max(cov.dat$cov, na.rm=TRUE) > 1, FALSE, TRUE)
-    if(is.binary)cat("site-level covariate '",cov.name,"' is binary and was not standardized.", sep = "")
+    if(is.binary)cat("site-level covariate '",cov.name,"' is binary and was not standardized.\n\n", sep = "")
     if (scale.covs & !is.binary) {cov.dat$cov <- standardize(cov.dat$cov)}
     cov.mat  <-  reshape2::acast(cov.dat,
                                  site.ind ~ year.ind,

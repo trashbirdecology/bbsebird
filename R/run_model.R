@@ -44,7 +44,7 @@ if(use.dclone){
                    Would you like to install dclone?\n",
                    choices = c("yes, install package","no, do not use dclone."))
    if(choice==1){install.packages("dclone")}
-    if(choice==2){message("dclone not installed but 'use.dclone' == TRUE. To avoid this message, please use 'use.dclone=FALSE' or install dclone package.");
+   if(choice==2){message("dclone not installed but 'use.dclone' == TRUE. To avoid this message, please use 'use.dclone=FALSE' or install dclone package.");
       use.dclone=FALSE}
     } # end check dclone edxists.
 } # end use.dclone arg check
@@ -71,9 +71,14 @@ if (file.exists(modoutfn) & !overwrite) {
     choice.runmod = 1
   }
 
-if(choice==2){out <- message("importing the previously-saved model from file: ", modfn)
+if(choice.runmod==2){out <- message("importing the previously-saved model from file: ", modfn)
 return(out)
 }
+
+
+# INITS -------------------------------------------------------------------
+# repeat inits
+inits <- make_inits_list(inits, nc = mcmc.specs$nc)
 
 # RUN MODEL ---------------------------------------------------------------
 tictoc::tic()
@@ -95,8 +100,8 @@ out <- jagsUI::jags(
 
 } #end regular jags fit
 if(use.dclone){
-  cl <- makePSOCKcluster(3)
-  parfit <- jags.parfit(
+  cl <- parallel::makePSOCKcluster(3)
+  parfit <- dclone::jags.parfit(
     cl = cl,
     data = jdat,
     model = mod.fn,
