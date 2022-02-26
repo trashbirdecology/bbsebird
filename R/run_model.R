@@ -39,7 +39,8 @@ stopifnot(file.exists(mod.fn))
 stopifnot(all(c("na", "nb", "nc", "ni", "nt", "ncores") %in% names(mcmc.specs)))
 ## dclone
 if(use.dclone){
-  if(!"dclone" %in% .packages(all.available = TRUE)){
+  if(!nzchar(system.file(package = "dclone"))){
+  # if(!"dclone" %in% .packages(all.available = TRUE)){ # this doesn't function as expected.
     choice <- menu(title = "Package 'dclone' is required when 'use.dclone'==TRUE.\n
                    Would you like to install dclone?\n",
                    choices = c("yes, install package","no, do not use dclone."))
