@@ -291,7 +291,12 @@ jdat <- list(
 )
 
 
+
+
 # RETURNED OBJECT ---------------------------------------------------------
+stopifnot(!any(is.na(jdat$bbs.df$c)))
+stopifnot(!any(is.na(jdat$ebird.df$c)))
+
 return(jdat)
 
 } # end function
