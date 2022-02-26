@@ -5,11 +5,17 @@
 #' @param mcmc.specs Specifications for MCMC chains. Should be created using bbsebird::set_mcmc_species. If  not provided will default to default values of bbsebird::set_mcmc_specs
 #' @param inits Initial values for a single chain. If initial values are not provided for all chains, this function will repeat the intiial values provided .
 #' @param mod.fn Local file path for JAGS model file.
-#' @param params.monitor Vector List of parameters to monitor
-#' @param dir.files.out Directory for where to save model outputs (model RDS, plots)
+#' @param mod.name Model name. Used to name output files.
+#' @param model.out.dir Directory path where to save output files (e.g., mod.name.RDS)
+#' @param plot.dir Directory path where to save output figures.
+#' @param params.monitor Vector List of parameters to monitor.
 #' @param plot logical If TRUE will produce default traceplots of model output
 #' @param use.dclone logical If TRUE will use dclone::jags.parfit to fit model in JAGS. See package dclone for more details.
 #' @param view.plot logical IF TRUE will open the plot saved to file
+#' @param overwrite logical If FALSE and mod.name.RDS already exists in model.out.dir, will prompt user to confirm whether they wish to import existing model outputs or overwrite.
+#' @importFrom tictoc tic toc
+#' @importFrom jagsUI jags traceplot
+#' @importFrom parallel makePSOCKcluster
 #' @export run_model
 
 run_model <- function(

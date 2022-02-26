@@ -29,21 +29,19 @@ Imports:
     stringr (>= 1.4.0),
     units (>= 0.7.2),
     sf,
+    jagsUI, 
     tibble,
     tidyr (>= 1.1.4),
     vroom (>= 1.5.7),
-    base,
-    utils,
+    parallel, 
+    tictoc,
     grDevices,
     stats,
-    parallel,
     suncalc,
     bit
 Suggests: 
     knitr,
-    here (>= 1.0.1),
     dclone, 
-    rjags (>= 4.12),
     rmarkdown,
     spelling
 LazyData: true
