@@ -126,6 +126,8 @@ message("saving model to file: ", modoutfn)
 saveRDS(out, file=modoutfn)
 
 # PLOTS -------------------------------------------------------------------
+# save plots only after model was saved in case fails.
+## need to add tryCatch here to ensure function completes.
 tp.fn <-
     paste0(
       plot.dir,
