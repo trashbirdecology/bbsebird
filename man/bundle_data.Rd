@@ -29,7 +29,7 @@ bundle_data(
 
 \item{grid}{spatial sampling grid/study area}
 
-\item{scale.covs}{logical if TRUE will automatically scale the covariates}
+\item{scale.covs}{logical if TRUE will automatically scale the numeric/integer covariates.}
 
 \item{X}{variable name associated with the x-coordinate (e.g., long, longitude, Easting, X) across 'grid', 'bbs', and 'ebird'}
 
