@@ -83,7 +83,7 @@ if(!is.null(inits)) inits <- make_inits_list(inits, nc = mcmc.specs$nc)
 
 # RUN MODEL ---------------------------------------------------------------
 tictoc::tic()
-
+# browseURL()
 if(!use.dclone){
 out <- jagsUI::jags(
   data  = jdat,

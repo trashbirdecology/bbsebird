@@ -262,8 +262,8 @@ cmax.mat =  reshape2::acast(jagam.in,
 # BUNDLE DATA -------------------------------------------------------------
 jdat <- list(
   # "all" data
-  bbs.df     = bbs %>% distinct(year.ind, site.ind, .keep_all=TRUE) %>% dplyr::select(-cell.ind),
-  ebird.df   = ebird %>% distinct(year.ind, site.ind, .keep_all=TRUE) %>% dplyr::select(-cell.ind),
+  bbs.df     = bbs %>% distinct(year.ind, site.ind, .keep_all=TRUE),
+  ebird.df   = ebird %>% distinct(year.ind, site.ind, .keep_all=TRUE),
   grid.df    = grid,
   # max C per grid per year  (zero-filled)
   Cmax       = cmax.mat,
