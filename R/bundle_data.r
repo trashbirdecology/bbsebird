@@ -12,7 +12,9 @@
 #' @param site.id column name(s) of the site  identifier (e.g., BBS route, eBird checklists)
 #' @param year.id column name of the temporal identifier
 #' @param obs.id  column name(s) of the observer identifier
+#' @param use.ebird.in.gam logical if TRUE will use data across both eBird and BBS observations to create basis functions.
 #' @param cell.covs column name(s) of the grid-level covariates
+#' @param ENgrid.arg if "max" will use the maximum value of observed birds at each grid cell. Alternatives include "min", "mean".
 #' @param site.covs column name(s) of the site-level covariates
 #' @importFrom dplyr group_by mutate select distinct arrange filter
 #'
@@ -23,6 +25,8 @@ bundle_data <-
            ebird,
            grid,
            scale.covs = TRUE,
+           use.ebird.in.gam = TRUE,
+           ENgrid.arg    = "max",
            X           = "cell.lon.centroid",
            Y           = "cell.lat.centroid",
            cell.id     = "gridcellid",
@@ -45,6 +49,10 @@ bbs   <- as.data.frame(bbs)
 ebird <- as.data.frame(ebird)
 grid  <- as.data.frame(grid)
 
+
+# ARG CHECK ---------------------------------------------------------------
+ENgrid.arg <- tolower(ENgrid.arg)
+stopifnot(ENgrid.arg %in% c("mean", "max", "min"))
 
 
 # RENAME VARS FOR CONSISTENT OUTPUT ----------------------------------------------------
@@ -207,29 +215,49 @@ if(!is.null(cell.covs)){
 
 # JAGAM -------------------------------------------------------------
 # create basis functions and data for GAM model components
-## first, we need to grab the maximum number of birds per grid cell/year across both ebird and bbs datasets
-cmax <- rbind(
-  ebird %>% dplyr::distinct(cell.ind, year.ind, c),
-  bbs %>% dplyr::distinct(cell.ind, year.ind, c)
-) %>%
+## first, we need to grab the maximum number of birds per grid cell/year
+## argument use.ebird.in.gam lets user ignore the eBird data when producing the GAM data
+## this is important when modeling only the BBS data, as eBird observations
+## are typically >>> BBS observations for some (many?) species.
+if(use.ebird.in.gam){
+  ENgrid <- rbind(
+    bbs %>% dplyr::distinct(cell.ind, year.ind, c),
+    ebird %>% dplyr::distinct(cell.ind, year.ind, c))
+}else{
+  ENgrid <-  bbs %>% dplyr::distinct(cell.ind, year.ind, c)
+
+}
+# evaluate according to specified argument.
+if(ENgrid.arg == "max"){ENgrid <- ENgrid %>%
   dplyr::group_by(cell.ind, year.ind) %>%
-  dplyr::filter(c == max(c, na.rm = TRUE)) %>%
+  dplyr::filter(c == max(c, na.rm=TRUE)) %>%
   dplyr::ungroup()
+}
+if(ENgrid.arg == "mean"){ENgrid <- ENgrid %>%
+  dplyr::group_by(cell.ind, year.ind) %>%
+  dplyr::filter(c == mean(c, na.rm=TRUE)) %>%
+  dplyr::ungroup()
+}
+if(ENgrid.arg == "min"){ENgrid <- ENgrid %>%
+  dplyr::group_by(cell.ind, year.ind) %>%
+  dplyr::filter(c == min(c, na.rm=TRUE)) %>%
+  dplyr::ungroup()
+}
 
 ## next, add the missing grid cells and fill in with grand MEAN
 gy.all <- expand.grid(cell.ind=cell.index$cell.ind,
                       year.ind=year.index$year.ind)
-cmax <- full_join(gy.all, cmax)
-cmax$c[is.na(cmax$c)] <- round(mean(cmax$c, na.rm=TRUE), 0)
+ENgrid <- full_join(gy.all, ENgrid)
+ENgrid$c[is.na(ENgrid$c)] <- round(mean(ENgrid$c, na.rm=TRUE), 0)
 
 # if not specified, K is defined as:
 if (is.null(K))
   K <- min(max(20, length(unique(
-    cmax$cell.ind
+    ENgrid$cell.ind
   ))), 150)
 
 # create data for use in jagam
-jagam.in <- data.frame(merge(cmax, cell.index))
+jagam.in <- data.frame(merge(ENgrid, cell.index))
 jagam.in <- jagam.in %>% group_by(cell.ind) %>% filter(c==max(c, na.rm=TRUE)) %>% ungroup() %>%
   distinct(cell.ind, .keep_all = TRUE)
 
@@ -253,8 +281,8 @@ jagam.mod <- mgcv::jagam(
 
 jagam.mod$fn <- jagam.fn
 
-## make a matrix of cmax for use in JAGS model as Exp. num in grid
-cmax.mat =  reshape2::acast(jagam.in,
+## make a matrix of ENgrid for use in JAGS model as Exp. num in grid
+ENgrid.mat =  reshape2::acast(jagam.in,
                             cell.ind ~ year.ind,
                             value.var = "c",
                             fill = 0)
@@ -266,7 +294,7 @@ jdat <- list(
   ebird.df   = ebird %>% distinct(year.ind, site.ind, .keep_all=TRUE),
   grid.df    = grid,
   # max C per grid per year  (zero-filled)
-  Cmax       = cmax.mat,
+  ENgrid       = ENgrid.mat,
   # covariates
   Xsite      = Xsite,
   Xgrid      = Xgrid,
