@@ -27,9 +27,9 @@ run_model <- function(
   mcmc.specs       = set_mcmc_specs(),
   use.dclone       = TRUE,
   params.monitor   = NULL,
-  plot             = TRUE,
+  make.plot        = FALSE,
   plot.dir         = NULL,
-  view.plot        = TRUE,
+  view.plot        = FALSE,
   overwrite        = FALSE
   # saveoutput       = FALSE
 ){
@@ -122,17 +122,18 @@ if(use.dclone){
 } #end parfit
 
 #
-# # save model output
+# save model output
 # message("saving model to file: ", modoutfn)
 # tryCatch(saveRDS(out, file=modoutfn))
 
 # PLOTS -------------------------------------------------------------------
 # save plots only after model was saved in case fails.
 ## need to add tryCatch here to ensure function completes.
+if(make.plot){
 tp.fn <-
     paste0(
       plot.dir,
-      modname,
+      mod.name,
       "_trace_",
       mcmc.specs$ni,
       "iters_",
@@ -142,8 +143,8 @@ tp.fn <-
 pdf(tp.fn)
 if(use.dclone){plot(out$samples)}else{plot(out)}
 dev.off()
-
-if(view.plot) browseURL(tp.fn)
+}
+if(make.plot & view.plot & file.exists(tp.fn)) browseURL(tp.fn)
 
 
 # RETURN ------------------------------------------------------------------
