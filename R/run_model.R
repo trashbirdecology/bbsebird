@@ -31,7 +31,6 @@ run_model <- function(
   plot.dir         = NULL,
   view.plot        = FALSE,
   overwrite        = FALSE
-  # saveoutput       = FALSE
 ){
 # Arg check
 ## jags model exists?
