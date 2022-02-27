@@ -102,7 +102,7 @@ out <- jagsUI::jags(
 } #end regular jags fit
 if(use.dclone){
   cl <- parallel::makePSOCKcluster(3)
-  parfit <- dclone::jags.parfit(
+  out <- dclone::jags.parfit(
     cl = cl,
     data = jdat,
     model = mod.fn,
@@ -120,16 +120,16 @@ if(use.dclone){
   cat("runtime: ", (mod.time <- paste0(round(x$toc - x$tic, 2), " seconds")))
 } #end parfit
 
+# #
+# # save model output
+# model.saved <- FALSE
+# tryCatch( {
+#   message("attempting to save model to file: ", modoutfn); saveRDS(out, file=modoutfn)
+#   }, error = function(e) {model.saved <<- TRUE})
+# print(ifelse(model.saved, cat("model saved to ", modoutfn),
+#              cat("unable to save model to file.")
 #
-# save model output
-model.saved <- FALSE
-tryCatch( {
-  message("attempting to save model to file: ", modoutfn); saveRDS(out, file=modoutfn)
-  }, error = function(e) {model.saved <<- TRUE})
-print(ifelse(model.saved, cat("model saved to ", modoutfn),
-             cat("unable to save model to file.")
-
-             ))
+#              ))
 
 # PLOTS -------------------------------------------------------------------
 # save plots only after model was saved in case fails.
