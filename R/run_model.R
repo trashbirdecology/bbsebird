@@ -123,8 +123,14 @@ if(use.dclone){
 
 #
 # save model output
-# message("saving model to file: ", modoutfn)
-# tryCatch(saveRDS(out, file=modoutfn))
+model.saved <- FALSE
+tryCatch( {
+  message("attempting to save model to file: ", modoutfn); saveRDS(out, file=modoutfn)
+  }, error = function(e) {model.saved <<- TRUE})
+print(ifelse(model.saved, cat("model saved to ", modoutfn),
+             cat("unable to save model to file.")
+
+             ))
 
 # PLOTS -------------------------------------------------------------------
 # save plots only after model was saved in case fails.
