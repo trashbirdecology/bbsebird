@@ -31,6 +31,7 @@ run_model <- function(
   plot.dir         = NULL,
   view.plot        = TRUE,
   overwrite        = FALSE
+  # saveoutput       = FALSE
 ){
 # Arg check
 ## jags model exists?
@@ -120,10 +121,10 @@ if(use.dclone){
   cat("runtime: ", (mod.time <- paste0(round(x$toc - x$tic, 2), " seconds")))
 } #end parfit
 
-
-# save model output
-message("saving model to file: ", modoutfn)
-saveRDS(out, file=modoutfn)
+#
+# # save model output
+# message("saving model to file: ", modoutfn)
+# tryCatch(saveRDS(out, file=modoutfn))
 
 # PLOTS -------------------------------------------------------------------
 # save plots only after model was saved in case fails.
