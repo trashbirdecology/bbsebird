@@ -145,5 +145,10 @@ dev.off()
 
 if(view.plot) browseURL(tp.fn)
 
+
+# RETURN ------------------------------------------------------------------
+
+return(out)
+
 } # END FUNCTION
 
