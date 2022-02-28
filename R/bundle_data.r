@@ -228,6 +228,12 @@ if(use.ebird.in.gam){
 
 }
 # evaluate according to specified argument.
+### id prefer to just evaluate the argument inside the
+### the filter call, but not sure rn how to do that.
+### using filter(c==eval(parse(text=paste0(ENgrid.arg,"(c,na.rm=TRUE)")))))
+### did not work. Nor does bang bang !!ENgrid.arg(c,na.rm=TRUE)
+### have yet to test out !!rlang::sym(Engrid.arg)(c,na.rm=TRUE)..
+
 if(ENgrid.arg == "max"){ENgrid <- ENgrid %>%
   dplyr::group_by(cell.ind, year.ind) %>%
   dplyr::filter(c == max(c, na.rm=TRUE)) %>%
@@ -294,7 +300,8 @@ jdat <- list(
   ebird.df   = ebird %>% distinct(year.ind, site.ind, .keep_all=TRUE),
   grid.df    = grid,
   # max C per grid per year  (zero-filled)
-  ENgrid       = ENgrid.mat,
+  ENgrid       = ENgrid,
+  ENgrid.mat   = ENgrid.mat,
   # covariates
   Xsite      = Xsite,
   Xgrid      = Xgrid,
