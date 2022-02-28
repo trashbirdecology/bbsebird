@@ -49,11 +49,9 @@ bbs   <- as.data.frame(bbs)
 ebird <- as.data.frame(ebird)
 grid  <- as.data.frame(grid)
 
-
 # ARG CHECK ---------------------------------------------------------------
 ENgrid.arg <- tolower(ENgrid.arg)
 stopifnot(ENgrid.arg %in% c("mean", "max", "min"))
-
 
 # RENAME VARS FOR CONSISTENT OUTPUT ----------------------------------------------------
 L <- list(bbs=bbs, ebird=ebird, grid=grid)
@@ -225,8 +223,8 @@ if(use.ebird.in.gam){
     ebird %>% dplyr::distinct(cell.ind, year.ind, c))
 }else{
   ENgrid <-  bbs %>% dplyr::distinct(cell.ind, year.ind, c)
-
 }
+
 # evaluate according to specified argument.
 ### id prefer to just evaluate the argument inside the
 ### the filter call, but not sure rn how to do that.
@@ -288,10 +286,10 @@ jagam.mod <- mgcv::jagam(
 jagam.mod$fn <- jagam.fn
 
 ## make a matrix of ENgrid for use in JAGS model as Exp. num in grid
-ENgrid.mat =  reshape2::acast(jagam.in,
+ENgrid.mat   <-  reshape2::acast(ENgrid,
                             cell.ind ~ year.ind,
                             value.var = "c",
-                            fill = 0)
+                            fill = mean(ENgrid$c, na.rm=TRUE))
 
 # BUNDLE DATA -------------------------------------------------------------
 jdat <- list(
