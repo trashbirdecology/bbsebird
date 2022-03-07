@@ -177,7 +177,8 @@ for(i in seq_along(LL)){
     cov.dat   <- data.frame(as.vector(LL[[i]][cov.name]),
                             LL[[i]]["site.ind"],
                             LL[[i]]["year.ind"])
-    ## scale the covariate if scale.covs==TRUE
+    ## scale the covariate if scale.covs==TRUE'###
+    #### NEED TO ADD OPTION TO OUTPUT COV>DAT IN LONG FORM (PERHAPS JUST APPEND AS SCALED VERSIONS TO EBIRd/BBS.DF..)
     names(cov.dat)[1] <- "cov"
 
     is.binary <- ifelse(max(cov.dat$cov, na.rm=TRUE) > 1, FALSE, TRUE)

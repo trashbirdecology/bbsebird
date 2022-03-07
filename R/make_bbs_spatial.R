@@ -29,7 +29,7 @@ make_bbs_spatial <- function(df,
                              # this was gift by Dave and Danny-DO NT SHARE WITHOUT PERMISSION
                              usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
                              crs.target = 4326,
-                             print.plots = TRUE,
+                             print.plots = FALSE,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL,
                              overwrite = FALSE,
@@ -260,8 +260,11 @@ if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungr
 # remove rownames
 rownames(bbs_spatial) <- NULL
 
-if(nrow(bbs_spatial %>% dplyr::distinct(year, gridcellid, rteno, c)) != nrow(bbs_spatial)) message("FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists.")
 
+if (nrow(bbs_spatial %>% dplyr::distinct(year, gridcellid, rteno, c)) != nrow(bbs_spatial))
+  message(
+    "FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists."
+  )
 
 # Outputs -----------------------------------------------------------------
 cat("Writing to file: ", f, "\n")
