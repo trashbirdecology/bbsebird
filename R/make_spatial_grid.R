@@ -16,9 +16,9 @@ make_spatial_grid <- function(dir.out,
                               overwrite = TRUE,
                               countries = c("US", "CA"),
                               states    = NULL,
-                              crs.target = 4326,
-                              hexagonal=TRUE,
-                              grid.size
+                              crs.target= 4326,
+                              hexagonal = TRUE,
+                              grid.size = 1.00
                               ){
 # check arguments
 if(is.null(countries)){   countries <- c("US", "CA")
