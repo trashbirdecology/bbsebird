@@ -59,7 +59,6 @@ bundle_data <-
     ebird <- as.data.frame(ebird)
     grid  <- as.data.frame(grid)
 
-
     # COLS TO LOWER -----------------------------------------------------------
     # bbs=bbs_spatial; ebird=ebird_spatial; grid=study_area ## FOR DEV
     names(bbs)   <- tolower(names(bbs))
@@ -98,7 +97,9 @@ bundle_data <-
     ebird <- ebird %>% distinct(year.id, site.id, cell.id, c, .keep_all = TRUE) ## this is a prtoblem (duplicates in ebird, though it might be because we have multiple observers. huge amoutn of excess data..)
 
 # SUBSET FOR dev.mode -----------------------------------------------------
+  # browser()
 if(dev.mode){
+  message(paste0("dev.mode=TRUE; output object will be a subset of original data.\n"))
   # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
   # keep 3 years
   T.keep <- max(unique(bbs$year.id),na.rm=TRUE)
@@ -107,10 +108,15 @@ if(dev.mode){
   ## keep max 10 grid cells
   grid <- grid[grid$cell.id %in% G.keep, ]
 
-  bbs    <- bbs[bbs$cell.id %in% G.keep &
-                       bbs$year.id %in% T.keep, ]
-  ebird  <- ebird[ebird$cell.id %in% G.keep &
-                    ebird$year.id %in% T.keep, ]
+  bbs  <-   bbs %>% filter(cell.id %in% G.keep &
+                           year.id %in% T.keep)
+  ebird  <- ebird %>% filter(cell.id %in% G.keep &
+                           year.id %in% T.keep)
+  # bbs    <- bbs[bbs$cell.id %in% G.keep &
+  #                      bbs$year.id %in% T.keep, ]
+  #
+  # ebird  <- ebird[ebird$cell.id %in% G.keep & ### this is inferior to above, it hink. doesnt wanna run
+  #                   ebird$year.id %in% T.keep, ]
 
   ## keep random sample of 10 routes or checklists per grid cell
   ### this will likely not reduce bbs by much (possible zero reduction)
@@ -120,8 +126,10 @@ if(dev.mode){
   bbs <-
     bbs %>% dplyr::group_by(year.id, cell.id) %>%
     dplyr::slice_sample(n = 10) %>% ungroup()
+  rm(T.keep, G.keep)
 }
 # GLOBAL INDEXES -----------------------------------------------------------------
+    cat("creating global indexes")
     ## STUDY AREA GRID CELL INDEX
     cell.index <- grid %>%
       units::drop_units() %>%
@@ -159,6 +167,7 @@ if(dev.mode){
     # BBS-EBIRD INDEXES ---------------------------------------------------------------
     ## for bbs and ebird data, create site (route, checklist_id) and observer indexes
     LL <- list(bbs=bbs, ebird=ebird)
+    cat("creating indexes for sampling events and sites")
     for(i in seq_along(LL)){
       ## first, drop grid-level covariates and metadata since it iwll be stored there
       LL[[i]] <- LL[[i]][!names(LL[[i]]) %in% c("X", "Y", cell.covs)]
@@ -176,15 +185,24 @@ if(dev.mode){
         mutate(year.id = as.integer(year.id),
                cell.id = as.integer(cell.id))
 
-      LL[[i]] <- left_join(LL[[i]], yg.index %>% dplyr::select(cell.ind, cell.id), by="cell.id")
-      LL[[i]] <- left_join(LL[[i]], yg.index %>% dplyr::select(year.ind, year.id), by="year.id")
+      ## this is a shitty workaround, but currently (other than using data.table)
+      ## is the only tractable way I know for dealing with the large eBird data tables...
+      ## using a direct left join or a merge is not possible, even on my 60+GB RAM machine..
+      ## very happy to receive changes
+      #### extract the columsn on which to join
+      LL.sub <- LL[[i]] %>% dplyr::select(cell.id, year.id)
+      LL.sub <- LL.sub %>% left_join(yg.index, by=c("cell.id", "year.id"))
+      stopifnot(nrow(LL.sub)==nrow(LL[[i]]))
+      ### remove from the LL.sub extracted columns from data and then append new (four ) columns
+      LL[[i]] <- LL[[i]] %>% dplyr::select(-cell.id, -year.id)
+      LL[[i]] <- LL[[i]] %>%  dplyr::bind_cols(LL.sub)
       stopifnot(!any(is.na(LL[[i]]$cell.ind)))
       stopifnot(!any(is.na(LL[[i]]$year.ind)))
 
-            ## finally, drop the NA observations on bbs and ebird..
+      ## finally, drop the NA observations on bbs and ebird..
       LL[[i]] <-     LL[[i]][!is.na(LL[[i]]$site.ind),]
     } # end LL loop
-
+# browser()
     ##extract from list
     bbs   <- LL$bbs
     ebird <- LL$ebird
@@ -218,7 +236,7 @@ if(dev.mode){
       temp <- site.covs[site.covs %in% names(LL[[i]])]
       if(length(temp)==0) next()
       # remove the extra data (for routes w/>1 grid cell)
-      LL[[i]] <- LL[[i]] %>% distinct(site.ind, year.ind, .keep_all = TRUE)
+      LL[[i]] <- LL[[i]] %>% dplyr::distinct(site.ind, year.ind, .keep_all = TRUE)
       for(j in seq_along(temp)){
         cov.name  <- temp[j]
 
@@ -284,6 +302,7 @@ if(dev.mode){
     ## argument use.ebird.in.ENgrid lets user ignore the eBird data when producing the GAM data
     ## this is important when modeling only the BBS data, as eBird observations
     ## are typically >>> BBS observations for some (many?) species.
+    # cat("creating basisi functions")
     if(use.ebird.in.ENgrid){
       ENgrid <- rbind(
         bbs %>% dplyr::distinct(cell.ind, year.ind, c),
