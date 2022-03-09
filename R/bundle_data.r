@@ -28,7 +28,7 @@ bundle_data <-
     ebird,
     grid,
     scale.covs  = TRUE,
-    fill.cov.nas = NULL, 
+    fill.cov.nas = NULL,
     bf.method   = "cubic2D",
     use.ebird.in.ENgrid = TRUE,
     ENgrid.arg    = "max",
@@ -40,9 +40,9 @@ bundle_data <-
     obs.id      = c("obsn", "observer_id"),
     cell.covs   = c("area"),
     site.covs   = c("wind", "noise", "cars", "observ", "minute", "assistant",
-                    "obsfirstyearbbs", "obsfirstyearroute",
+                    "obsfirsFtyearbbs", "obsfirstyearroute",
                     "duration_minutes", "effort_distance_km", "effort_area_ha", "number_observers"),
-    K = NULL, 
+    K = NULL,
     dev.mode    = FALSE
   ){
     # ARG CHECK AND MUNGE ---------------------------------------------------------------
@@ -53,19 +53,19 @@ bundle_data <-
     stopifnot(is.logical(use.ebird.in.ENgrid))
     stopifnot(is.logical(scale.covs))
     stopifnot(bf.method %in% c("mgcv", "jagam", "cubic2d"))
-    
+
     # Drop Spatial Geometry ---------------------------------------------------
     bbs   <- as.data.frame(bbs)
     ebird <- as.data.frame(ebird)
     grid  <- as.data.frame(grid)
-    
-    
+
+
     # COLS TO LOWER -----------------------------------------------------------
     # bbs=bbs_spatial; ebird=ebird_spatial; grid=study_area ## FOR DEV
     names(bbs)   <- tolower(names(bbs))
     names(ebird) <- tolower(names(ebird))
     names(grid)  <- tolower(names(grid))
-    
+
     # RENAME VARS FOR CONSISTENT OUTPUT ----------------------------------------------------
     L <- list(bbs=bbs, ebird=ebird, grid=grid)
     for(i in seq_along(L)){
@@ -78,7 +78,7 @@ bundle_data <-
       if(any(cell.id %in% n))     nc <- data.frame(old = n[n %in% c(cell.id)], new = "cell.id")
       if(any(X %in% n))           nx <- data.frame(old = n[n %in% c(X)], new = "X")
       if(any(Y %in% n))           ny <- data.frame(old = n[n %in% c(Y)], new = "Y")
-      
+
       nn <- rbind(nt, ns, nc, nx, ny, no)
       if(is.null(nn))next()
       # if(!any(n %in% nn$old))next()
@@ -87,12 +87,12 @@ bundle_data <-
         names(L[[i]])[colind] <- nn$new[j]
       }
     }#end L loop
-    
+
     bbs   <- L$bbs
     ebird <- L$ebird
     grid  <- L$grid
     rm(L)
-    
+
     # Ensure no duplicates exist ----------------------------------------------
     bbs   <- bbs %>% distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
     ebird <- ebird %>% distinct(year.id, site.id, cell.id, c, .keep_all = TRUE) ## this is a prtoblem (duplicates in ebird, though it might be because we have multiple observers. huge amoutn of excess data..)
@@ -102,16 +102,16 @@ if(dev.mode){
   # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
   # keep 3 years
   T.keep <- max(unique(bbs$year.id),na.rm=TRUE)
-  T.keep <- (T.keep-2):T.keep
+  T.keep <- (T.keep-10):T.keep
   G.keep <- sample(unique(grid$cell.id), 10)
-  ## keep max 10 grid cells 
+  ## keep max 10 grid cells
   grid <- grid[grid$cell.id %in% G.keep, ]
-  
+
   bbs    <- bbs[bbs$cell.id %in% G.keep &
                        bbs$year.id %in% T.keep, ]
   ebird  <- ebird[ebird$cell.id %in% G.keep &
                     ebird$year.id %in% T.keep, ]
-  
+
   ## keep random sample of 10 routes or checklists per grid cell
   ### this will likely not reduce bbs by much (possible zero reduction)
   ebird <-
@@ -138,7 +138,7 @@ if(dev.mode){
         mutate(X  = standardize(X)) %>%
         mutate(Y  = standardize(Y))
     }
-    
+
     ## YEAR INDEX
     year.index <-
       data.frame(year.id = min(c(ebird$year.id, bbs$year.id), na.rm = TRUE):max(c(ebird$year.id, bbs$year.id), na.rm =
@@ -155,7 +155,7 @@ if(dev.mode){
     # yg.index$cell.id <- as.integer(yg.index$cell.id)
     # yg.index$year.id <- as.integer(yg.index$year.id)
 
-        
+
     # BBS-EBIRD INDEXES ---------------------------------------------------------------
     ## for bbs and ebird data, create site (route, checklist_id) and observer indexes
     LL <- list(bbs=bbs, ebird=ebird)
@@ -172,10 +172,10 @@ if(dev.mode){
         mutate(obs.ind  = obs.id  %>% as.factor() %>% as.integer()) %>%
         mutate(site.ind = site.id %>% as.factor() %>% as.integer())
       ## just to be safe, ensure all join by vars are same type
-      LL[[i]] <- LL[[i]] %>% 
-        mutate(year.id = as.integer(year.id), 
+      LL[[i]] <- LL[[i]] %>%
+        mutate(year.id = as.integer(year.id),
                cell.id = as.integer(cell.id))
-      
+
       LL[[i]] <- left_join(LL[[i]], yg.index %>% dplyr::select(cell.ind, cell.id), by="cell.id")
       LL[[i]] <- left_join(LL[[i]], yg.index %>% dplyr::select(year.ind, year.id), by="year.id")
       stopifnot(!any(is.na(LL[[i]]$cell.ind)))
@@ -184,12 +184,12 @@ if(dev.mode){
             ## finally, drop the NA observations on bbs and ebird..
       LL[[i]] <-     LL[[i]][!is.na(LL[[i]]$site.ind),]
     } # end LL loop
-    
+
     ##extract from list
     bbs   <- LL$bbs
     ebird <- LL$ebird
     rm(LL)
-    
+
     # BBS-SPECIFIC DATA CREATE MATRIX PROP (% site.ind in cell.ind) ----------------------------------------------------
     stopifnot(nrow(bbs %>% distinct(site.ind, cell.ind, proprouteincell))==nrow(bbs %>% distinct(site.ind, cell.ind)))
     ## grab all cell ids and site inds
@@ -207,7 +207,7 @@ if(dev.mode){
     prop <-
       prop[-which(rownames(prop) %in% c(NA, "NA")), ]
     }
-    
+
     # COVARIATES --------------------------------------------------------------
     ## create arrays for covariates
     ### dimensions are n.sites by n.years
@@ -221,7 +221,7 @@ if(dev.mode){
       LL[[i]] <- LL[[i]] %>% distinct(site.ind, year.ind, .keep_all = TRUE)
       for(j in seq_along(temp)){
         cov.name  <- temp[j]
-        
+
         cov.dat   <- data.frame(as.vector(LL[[i]][cov.name]),
                                 LL[[i]]["site.ind"],
                                 LL[[i]]["year.ind"])
@@ -239,11 +239,11 @@ if(dev.mode){
         ## to ensure rownames and colnames match the indexes..
         stopifnot(all(as.integer(rownames(cov.mat))==as.integer(sort(unique(cov.dat$site.ind)))))
         stopifnot(all(as.integer(colnames(cov.mat))==as.integer(sort(unique(cov.dat$year.ind)))))
-        
+
         ## if specified, fill in the NA covariate values.
         if(!is.null(fill.cov.nas)){
               fill.ind <- tolower(fill.cov.nas) # lazy indexing
-          ## evaluate the pasted function here 
+          ## evaluate the pasted function here
           if(fill.ind %in% c("max", "min", "mean", "mode")){
             fill.fun   <-  paste0(fill.ind, "(cov.mat, na.rm=TRUE)")
             fill.value <- eval(str2expression(fill.fun))
@@ -255,20 +255,20 @@ if(dev.mode){
           ## fill the NAs
           cov.mat[is.na(cov.mat)] <- fill.value
         }
-        
+
         Xsite[[i]][[j]] <- cov.mat
         names(Xsite[[i]])[j] <- cov.name
       } # j loop
-      
+
     }# end Xsite i loop
     cat("done building covariate matrices\n")
     rm(LL)
-    
+
     # GRID-LEVEL COVARIATES ---------------------------------------------------
     ## create arrays for grid cell-level covariates
     ### dimensions are ngrid by nyear
     Xgrid <- list(NULL)
-    
+
     cell.index <- cell.index %>% arrange(cell.ind)
     cell.covs <- cell.covs[cell.covs %in% colnames(cell.index)]
     if(!is.null(cell.covs)){
@@ -277,7 +277,7 @@ if(dev.mode){
         names(Xgrid)[i] <- cell.covs[i]
       }# end Xgrid loop
     }# end if cell.covs
-    
+
     # BASIS FUNCTIONS -------------------------------------------------------------
     # create basis functions and data for GAM model components
     ## first, we need to grab the maximum number of birds per grid cell/year
@@ -291,26 +291,26 @@ if(dev.mode){
     }else{
       ENgrid <-  bbs %>% dplyr::distinct(cell.ind, year.ind, c)
     }
-    
+
     # evaluate according to specified argument.
     ### id prefer to just evaluate the argument inside the
     ### the filter call, but not sure rn how to do that.
     ### using filter(c==eval(parse(text=paste0(ENgrid.arg,"(c,na.rm=TRUE)")))))
     ### did not work. Nor does bang bang !!ENgrid.arg(c,na.rm=TRUE)
     ### have yet to test out !!rlang::sym(Engrid.arg)(c,na.rm=TRUE)..
-    
+
     myfun=paste0("test <- ENgrid %>%\n
       dplyr::group_by(cell.ind, year.ind) %>%\n
       dplyr::filter(c ==", ENgrid.arg,"(c, na.rm=TRUE)) %>%\n
       dplyr::ungroup()\n")
     eval(str2expression(myfun))
-     
+
     ## next, add the missing grid cells and fill in with grand MEAN
     gy.all <- expand.grid(cell.ind=cell.index$cell.ind,
                           year.ind=year.index$year.ind)
     ENgrid <- full_join(gy.all, ENgrid, by=c("cell.ind", "year.ind"))
     ENgrid$c[is.na(ENgrid$c)] <- round(mean(ENgrid$c, na.rm=TRUE), 0)
-    
+
     ## make a matrix of ENgrid for use in JAGS model as the expected abundance in grid cell.
     ### for casting into a matrix, first sum C within each cell and year.
     ENgrid <- ENgrid %>% dplyr::group_by(cell.ind, year.ind) %>%
@@ -321,13 +321,12 @@ if(dev.mode){
                                      cell.ind ~ year.ind,
                                      value.var = "c",
                                      fill = mean(ENgrid$c, na.rm=TRUE))
-    
+
     # if not specified, K is defined as:
-    if (is.null(K))
-      K <- min(max(20, length(unique(
-        ENgrid$cell.ind
-      ))), 150)
-    
+    if (is.null(K)) {
+      K <- min(length(unique(ENgrid$cell.ind)), 150)
+    }
+
     # create data for use in creating spatial basis functions
     bf.in <- data.frame(merge(ENgrid, cell.index))
     bf.in <-
@@ -336,7 +335,7 @@ if(dev.mode){
       dplyr::filter(c == max(c, na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
       dplyr::distinct(cell.ind, .keep_all = TRUE)
-    
+
     ### 'scale' down the XY coordinates until max is under 10 (10 is an arbitrary choice sorta)
     while(abs(max(c(bf.in$X, bf.in$Y), na.rm=TRUE)) > 10){
       bf.in <- bf.in %>%
@@ -344,8 +343,8 @@ if(dev.mode){
           X = X/10,
           Y = Y/10)
     }
-    
-    
+
+
     ## JAGAM -------------------------------------------------------------------------
     if(bf.method %in% c("mgcv", "jagam")){
       cat("creating 2D duchon splines using `mgcv::jagam()`\n")
@@ -370,9 +369,9 @@ if(dev.mode){
       ## specify some output scalars and data
       Z.mat <- jagam.mod$jags.data$X               # dims <ncells  by nknots>
       nbfs  <- dim(jagam.mod$jags.data$X)[2]        # number of basis functions/knots
-      
+
     }else{jagam.mod<-NULL}
-    
+
     ##STREBEL ET AL METHOD --------------------------------------------------
     ### follow the methods of Strebel et al. (which follows methods of Royle and Kery AHM)
     if(bf.method %in% c("cubic2d")){
@@ -386,9 +385,9 @@ if(dev.mode){
       ##
       Z.k   <- (fields::rdist(XY.orig, XY))^3
       Z.mat <- t(solve(sqrt.omega.all, t(Z.k)))
-      nbfs  <- K
+      nbfs  <- dim(Z.mat)[2]
     }
-    
+
     # BUNDLE DATA -------------------------------------------------------------
     jdat <- list(
       # "all" data
@@ -419,12 +418,12 @@ if(dev.mode){
       Z.mat      = Z.mat,                               # dims <ncells  by nbfs/knots
       nbfs       = nbfs                                 # number of basis functions/knots
     )
-    
-    
+
+
     # RETURNED OBJECT ---------------------------------------------------------
     stopifnot(!any(is.na(jdat$bbs.df$c)))
     stopifnot(!any(is.na(jdat$ebird.df$c)))
-    
+
     return(jdat)
-    
+
   } # end function
