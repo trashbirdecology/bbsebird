@@ -341,10 +341,7 @@ if(dev.mode){
                                      value.var = "c",
                                      fill = mean(ENgrid$c, na.rm=TRUE))
 
-    # if not specified, K is defined as:
-    if (is.null(K)) {
-      K <- min(length(unique(ENgrid$cell.ind)), 150)
-    }
+
 
     # create data for use in creating spatial basis functions
     bf.in <- data.frame(merge(ENgrid, cell.index))
@@ -364,7 +361,17 @@ if(dev.mode){
     }
 
 
+    ## DEFINE K  ---------------------------------------------------------------
+    # if not specified, K is defined as:
+    ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
+    ### and anything > like 100 will crash most systems.
+    ### also need to consider compute time for use in Bayesian param estiamtion
+    if (is.null(K)) {
+      K <- min(length(unique(ENgrid$cell.ind)), 150)
+      }
+
     ## JAGAM -------------------------------------------------------------------------
+    message("K is currently set to ", K, ". If you have memory errors, try defining K in arguments as a lower value\n")
     if(bf.method %in% c("mgcv", "jagam")){
       cat("creating 2D duchon splines using `mgcv::jagam()`\n")
       jagam.fn <- paste0(dirs$dir.models, "/gam-UNEDITED.txt")
