@@ -11,7 +11,7 @@ make_spatial_grid(
   states = NULL,
   crs.target = 4326,
   hexagonal = TRUE,
-  grid.size
+  grid.size = 1
 )
 }
 \arguments{

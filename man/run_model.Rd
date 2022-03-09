@@ -13,9 +13,9 @@ run_model(
   mcmc.specs = set_mcmc_specs(),
   use.dclone = TRUE,
   params.monitor = NULL,
-  plot = TRUE,
+  make.plot = FALSE,
   plot.dir = NULL,
-  view.plot = TRUE,
+  view.plot = FALSE,
   overwrite = FALSE
 )
 }
@@ -36,13 +36,13 @@ run_model(
 
 \item{params.monitor}{Vector List of parameters to monitor.}
 
-\item{plot}{logical If TRUE will produce default traceplots of model output}
-
 \item{plot.dir}{Directory path where to save output figures.}
 
 \item{view.plot}{logical IF TRUE will open the plot saved to file}
 
 \item{overwrite}{logical If FALSE and mod.name.RDS already exists in model.out.dir, will prompt user to confirm whether they wish to import existing model outputs or overwrite.}
+
+\item{plot}{logical If TRUE will produce default traceplots of model output}
 }
 \description{
 Run JAGS Model

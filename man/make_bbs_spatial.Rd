@@ -12,7 +12,7 @@ make_bbs_spatial(
   cws.layer = "ALL_ROUTES",
   usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
   crs.target = 4326,
-  print.plots = TRUE,
+  print.plots = FALSE,
   keep.empty.cells = TRUE,
   plot.dir = NULL,
   overwrite = FALSE,
