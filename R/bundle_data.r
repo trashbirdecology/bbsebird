@@ -129,7 +129,7 @@ if(dev.mode){
   rm(T.keep, G.keep)
 }
 # GLOBAL INDEXES -----------------------------------------------------------------
-    cat("creating global indexes")
+    cat("creating global indexes\n")
     ## STUDY AREA GRID CELL INDEX
     cell.index <- grid %>%
       units::drop_units() %>%
@@ -266,12 +266,12 @@ if(dev.mode){
             fill.fun   <-  paste0(fill.ind, "(cov.mat, na.rm=TRUE)")
             fill.value <- eval(str2expression(fill.fun))
             cat("filling covariate", cov.name, " with grand", fill.ind, "\n")
-            rm(fill.fun, fill.value)
           }else{fill.value=fill.cov.nas
                 cat("filling covariate", cov.name, " with", fill.ind, "\n")
           }
           ## fill the NAs
           cov.mat[is.na(cov.mat)] <- fill.value
+          rm(fill.fun, fill.value)
         }
 
         Xsite[[i]][[j]] <- cov.mat
@@ -401,6 +401,7 @@ if(dev.mode){
     ##STREBEL ET AL METHOD --------------------------------------------------
     ### follow the methods of Strebel et al. (which follows methods of Royle and Kery AHM)
     if(bf.method %in% c("cubic2d")){
+      # browser()
       cat("creating 2D cubic splines\n")
       XY <- bf.in[c("X","Y")] ### the "scaled down" coordinates
       XY.orig <- cell.index[c("X","Y")]

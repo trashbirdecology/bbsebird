@@ -344,6 +344,9 @@ munge_ebird_data <-
     cat("Writing the filtered and zero-filled eBird data to:", f.out, "...\n\n")
     saveRDS(ebird_filtered, f.out)
 
+
+    ###
+    message("IGNORE PARSING ERRORS")
     # RETURNED OBJECT ---------------------------------------------------------
     return(ebird_filtered)
 

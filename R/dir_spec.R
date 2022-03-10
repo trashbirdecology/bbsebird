@@ -47,8 +47,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   # trim trailing and leading forward/back slash from dir.proj
   while(startsWith(dir.proj, "/")){ dir.proj <- substr(dir.proj, 2, nchar(dir.proj))}
   # specify directories within dir.proj
-  dir.jags <- "/jags/"
-  dir.models <- paste0(dir.jags, "models/")  # save model files
+  dir.models <- "/models/"  # save model files
   dir.bbs.out <- "/bbs/"
   dir.ebird.out <- "/ebird/"
   dir.spatial.out <- "/spatial/"
