@@ -45,11 +45,17 @@ bundle_data <-
              "observ",
              "minute",
              "assistant",
-             "obsfirsFtyearbbs",
+             "obsfirstyearbbs",
+             "obsfirstyearonbbs",
              "obsfirstyearroute",
+             "obsfirstyearonroute",
+             "time_observations_started_hsm",
+             "time_observations_started"
              "duration_minutes",
              "effort_distance_km",
              "effort_area_ha",
+             "protocol_type",
+             "protocol_code",
              "number_observers"
            ),
            K = NULL,

@@ -60,15 +60,8 @@ requires two components of the EBD to be saved to local file:
 
 ``` r
 #explicitly load some packages
-pkgs <- c("bbsebird",
-          # "bbsAssistant",
-          # "reshape2",
-          # "stringr",
-          # "dplyr",
-          # "sf",
-          "dplyr"
-          )
-# install.packages("mapview")
+pkgs <- c("bbsebird")
+# install.packages("mapview") # you can use thsi package to get interactive map views..
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
 ```
@@ -113,9 +106,6 @@ grid.size           = 1.00 # size in decimal degrees (for US/CAN a good est is 1
 ##ebird arguments
 min.yday            = 91
 max.yday            = 245
-
-##JAGS: arguments for customizing the resulting JAGS data list
-jagam.args          = list(bs="ds",k=20, family="poisson", sp.prior="log.uniform", diagonalize=TRUE)
 
 ## Munge the states and countries indexes for use in dir/proj dir reation
 if(!exists("states")) states <- NULL
@@ -230,13 +220,21 @@ suggest creating a list using `bundle_data` and subsequently grabbing
 useful data from there
 
 ``` r
+message("[note] sometimes when running this chunk in notebook/rmarkdown it crashes. try restarting session or running interactively\n")
+
+## see if files already exist in desired location
+dirs$
+### make a teeny little bundle for model dev/debugging
 bundle.dev <- bundle_data(
   bbs = bbs_spatial,
   ebird = ebird_spatial,
   grid = study_area,
   dev.mode = TRUE
 )
+## recommend saving to file in case you have crashes due to memory or modeling
+saveRDS(bundle.dev, paste0(dirs$dir.proj,"/dev-bundle.rds"))
 
+### make full sized bundle
 bundle <- bundle_data(
   # data
   bbs = bbs_spatial,
@@ -245,6 +243,11 @@ bundle <- bundle_data(
   # optional args
   dev.mode = FALSE
 )
+saveRDS(bundle, paste0(dirs$dir.proj,"/bundle.rds"))
+
+# ### or read in from file...
+# (bundle.fns <- list.files(paste0(dirs$dir.proj), pattern="bundle.rds", full.names = TRUE))
+# bundle <- readRDS(bundle.fns[1])
 ```
 
 # BAYESIAN HIERARCHICAL MODELING
