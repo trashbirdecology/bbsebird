@@ -4,7 +4,6 @@
 #' Run MCMC in or Out of Parallel in nimble
 #' @param seed for internal use
 #' @param data data and constants as list
-#' @param inits list of initial values
 #' @param model filepath or nimble model object
 #' @importFrom nimble compileNimble buildMCMC readBUGSmodel runMCMC
 #' @export run_MCMC_allcode
@@ -13,7 +12,7 @@ run_MCMC_allcode <-
            data,
            model
            ) {
-    library(nimble)
+    reuire(nimble)
     myModel <-
       nimble::readBUGSmodel(model,
                             data,

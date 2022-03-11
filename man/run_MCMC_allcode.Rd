@@ -12,8 +12,6 @@ run_MCMC_allcode(seed = 1, data, model)
 \item{data}{data and constants as list}
 
 \item{model}{filepath or nimble model object}
-
-\item{inits}{list of initial values}
 }
 \description{
 Run MCMC in or Out of Parallel in nimble

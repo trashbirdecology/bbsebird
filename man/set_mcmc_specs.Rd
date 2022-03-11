@@ -10,6 +10,7 @@ set_mcmc_specs(
   nc = 3,
   ni = 20000,
   nt = 10,
+  in.parallel = FALSE,
   ncores = parallel::detectCores() - 1,
   dev.mode = FALSE
 )
@@ -24,6 +25,8 @@ set_mcmc_specs(
 \item{ni}{number of iterations per chain}
 
 \item{nt}{thinning rate (every nth iteration removed)}
+
+\item{in.parallel}{logical if TRUE will set number chains ('nc') value to 1}
 
 \item{ncores}{number of cores to run model in parallel}
 

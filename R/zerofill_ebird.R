@@ -23,6 +23,10 @@ zerofill_ebird <-
              "REASON",
              "TRIP_COMMENTS"
            )) {
+
+    ## binding vars
+    sampling_event_identifier <- NULL
+
     # Force columns to lowercase
     colnames(list$sampling) <- tolower(colnames(list$sampling))
     colnames(list$observations) <-

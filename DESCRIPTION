@@ -40,7 +40,8 @@ Imports:
     suncalc,
     bit,
     doParallel,
-    nimble
+    nimble,
+    fields
 Suggests: 
     knitr,
     dclone, 

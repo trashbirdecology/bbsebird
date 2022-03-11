@@ -4,6 +4,7 @@
 #' @param na number of adaptation iterations
 #' @param nb number of burn-in iterations per chain
 #' @param nc number of chains
+#' @param in.parallel logical if TRUE will set number chains ('nc') value to 1
 #' @param ncores number of cores to run model in parallel
 #' @param ni number of iterations per chain
 #' @param dev.mode logical if TRUE will set mcmc specs to very low values to allow for a quick test of model
