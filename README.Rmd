@@ -33,7 +33,7 @@ The purpose of this R package (*likely to undergo a name change...*) is to:
 Download development version from GitHub with:
 ```{r results=FALSE, echo=TRUE, warning=FALSE, message=FALSE, eval=FALSE}
 # install.packages("devtools")
-remotes::install_github("trashbirdecology/bbsassistant")
+remotes::install_github("trashbirdecology/bbsassistant") # to be safe
 remotes::install_github("trashbirdecology/bbsebird")
 ```
 
@@ -46,16 +46,18 @@ When your account is approved, you will gain access to the [eBird Basic Database
 1. the **sampling events** (i.e. information about the observation process)
 
 
-# Runthrough
+# DATA MUNGING
 ## Step 1: Setup
 ```{r setup}
 #explicitly load some packages
 pkgs <- c("bbsebird",
-          "bbsAssistant",
-          "reshape2",
-          "stringr",
-          "dplyr",
-          "sf")
+          # "bbsAssistant",
+          # "reshape2",
+          # "stringr",
+          # "dplyr",
+          # "sf",
+          "dplyr"
+          )
 # install.packages("mapview")
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
@@ -71,7 +73,7 @@ species.abbr        = c("houspa") # see ebird filename for abbreviation
 ### this needs improvement as well...e.g. a species lookup table to link common-speci-abbrev across BBS and eBird data...
 ##bbs arguments
 usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
-cws.layer           = "ALL_ROUTES"
+cws.layer           = "ALL_ROUTES" # name of the Canadian (CWS) BBS route shapefile.
 ##ebird arguments
 mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
 
@@ -106,32 +108,19 @@ if(!is.null(states)){regions <- states}else{regions <- countries}
 stopifnot(all(tolower(states) %in% tolower(bbsAssistant::region_codes$iso_3166_2)))
 ```
 
-This chunk is not required, but is recommended to check that you've correctly specified the arguments above. 
-```{r args-check}
-# temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
-# for(i in seq_along(temp))stopifnot(is.logical(eval(parse(text=temp[i]))))
-# temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
-#        "grid.size", "crs.target","year.range")
-# for(i in seq_along(temp)){stopifnot(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"))}
-# rm(temp)
-```
-
-This chunk will create new environmental variables for project adn data directries based on teh directories supplied above.
+This chunk will create new environmental variables for project and data directories based on the project directory and data directory specified above.
 ```{r dirs-set}
 # set_proj_shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <-  set_proj_shorthand(species.abbr, regions, grid.size, year.range)
 dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
                          dir.proj = dir.proj,
                          subdir.proj = subdir.proj) # create and/or specify directories for later use.
-# ensure all directories exist
-suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 ```
 
 ## Step 2: Make Integrated Data
 ### Create a spatial sampling grid
 The following chunk creates a spatial sampling grid of size grid.size with units defaulting to the units of crs.target.
 ```{r spatial-grid}
-tictoc::tic() # start timer to see how long it takes to create the ebird and bbs spatial files
 if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
 study_area <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           # overwrite=overwrite.grid,
@@ -143,28 +132,23 @@ study_area <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
 plot(study_area[1])
 ```
 
-Create the BBS data. This chunk relies heabily on R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
+Create the BBS data. This chunk relieson R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
 ```{r bbs-data}
-## wrapper for creating all bbs data--debating making this an exported function. for now, DNE
-fns.bbs.in <-
-  list.files(
-    dirs$dir.bbs.out,
-    pattern = "bbs_obs.rds",
-    recursive = TRUE,
-    full.names = TRUE
-  )
-bbs_orig <- grab_bbs_data(bbs_dir = dirs$dir.bbs.out) ## need to add grab_bbs_data into munge_bbs_data and include an option for where to save that data. 
-bbs_obs  <- munge_bbs_data(
+## if the files already exist, don't overwrite unless you've made changes to data specs
+if("bbs_obs.rds" %in% list.files(dirs$dir.bbs.out)){bbs_obs <- readRDS(list.files(dirs$dir.bbs.out, "bbs_obs.rds", full.names=TRUE))}else{
+bbs_orig <- bbsAssistant::grab_bbs_data(bbs_dir = dirs$dir.bbs.out) 
+bbs_obs  <- bbsAssistant::munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
     species = species, 
     year.range = year.range)
-# bbs_obs <-
-  # bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
-saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
-
+bbs_obs <- bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
+saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds")) # suggest saving data to file for easy access
+}
 # Overlay BBS and study area / sampling grid
-### note, sometimes when running this in a notebook/rmd i randomly get a .rdf path error. I have no clue what this bug is. Just try running it again. See : https://github.com/rstudio/rstudio/issues/6260
+### note, sometimes when running this in a notebook/rmd a random .rdf" path error occurs.
+#### I have no clue what this bug is. Just try running it again. See also https://github.com/rstudio/rstudio/issues/6260
+if("bbs_spatial.rds" %in% list.files(dirs$dir.bbs.out)){bbs_spatial <- readRDS(list.files(dirs$dir.bbs.out, "bbs_spatial.rds", full.names=TRUE))}else{
 bbs_spatial <- make_bbs_spatial(
   df = bbs_obs,
   cws.routes.dir = dirs$cws.routes.dir,
@@ -173,12 +157,16 @@ bbs_spatial <- make_bbs_spatial(
   crs.target = crs.target,
   grid = study_area,
   dir.out = dirs$dir.spatial.out, 
-  overwrite=FALSE
+  overwrite=TRUE
 )
+saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
+}
+## check out the bbs spatial data to ensure things look ok
+plot(bbs_spatial['area']) # cell area
 ```
 Munge the eBird data (must be saved to file):
 ```{r ebird-data}
-## check the specified ebird directory for files. 
+## check the specified ebird original data directory for files. 
 (fns.ebird    <- id_ebird_files(
   dir.ebird.in = dirs$dir.ebird.in,
   dir.ebird.out = dirs$dir.ebird.out,
@@ -195,6 +183,7 @@ ebird <- munge_ebird_data(
   dir.ebird.out = dirs$dir.ebird.out,
   countries = countries,
   states = states,
+  # overwrite = FALSE, ## this function checks for exisiting, munged files iin dir.ebird.out..
   years = year.range
 )
 
@@ -203,28 +192,38 @@ ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
   grid = study_area,
-  dir.out = dirs$dir.spatial.out
+  overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
+  dir.out = dirs$dir.spatial.out 
 )
-tictoc::toc()#~9 minutes to this point without package install for HOSP in Florida on a machine with 65G ram, 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz   2.61 GHz 64bit
 ```
 
-## Step 3: Bundle Data for Use in JAGS/Elsewhere
+## Step 3: Bundle Data for Use in BUGS
 Create a list of lists and indexes for use in JAGS or elsewhere. We suggest creating a list using `bundle_data` and subsequently grabbing useful data from there
 ```{r bundle_data}
-bundle <- bundle_data(bbs=bbs_spatial, 
-                    ebird=ebird_spatial, 
-                    grid=study_area,
-                    scale.covs = TRUE)
-# names(bundle)
-## complete data sets are stored in X.df
-## site and grid-level covariates are stored in Xgrid, Xsite
-## cell.index and year.index are lookup tables
-## G = # grid cells
-## T = # time/years
-## Mb, Me = # sites for bbs (b) and ebird (e)
-## GTb, GTe = grid-time lookup for samples in bbs and ebird
-## Z = jagam model output
-## nbfs = # of basis functions
-## prop = proportion of BBS route in grid cells (dims: G x Mb)
+bundle <- bundle_data(
+  # data
+  bbs = bbs_spatial,
+  ebird = ebird_spatial,
+  grid = study_area,
+  # optional args
+  # dev.mode = TRUE, ## NED TO FIXBUG:::TRUE creates small output of supplied data sources for rapid model dev/testing
+  bf.method = "cubic2D", # method for producing the splines for capturing spatial autocorrelation
+  scale.covs = TRUE, 
+  fill.cov.nas = 666 # fill missing covariate values (optional)
+)
 ```
+ 
+# BAYESIAN HIERARCHICAL MODELING 
+Here, we provide one approach to creating, compiling, and . Additional functionality for compiling models, MCMC samplers, and for sampling from posterior distributions can be found in the R packages nimble and jagsUI or rjags. 
+
+## Step 1: Specify Model
+To facilitate modeling using either JAGS or Nimble, we recommend first creating a text file of a standard BUGS model. However, to be compatible within Nimble, the user should not provide any empty indexes (e.g., myMatrix[,] should be myMatrix[1:N, 1:M]). 
+
+We provide some model files in the package:
+```{r view.model}
+
+```
+
+
+
 
