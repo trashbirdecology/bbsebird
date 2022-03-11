@@ -43,7 +43,7 @@ match_col_names <- function(x) {
 
   col_names <- list(
     date = c("observation_date", "date"),
-    C =    c("observation_count", "count", "routetotal"),
+    c =    c("observation_count", "count", "routetotal"),
     yday  = c("dayofyear"),
     lat  = c("lati", "latitude"),
     lon = c("longitude", "long")

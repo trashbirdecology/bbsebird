@@ -27,11 +27,11 @@ munge_ebird_data(
 
 \item{dir.ebird.out}{Location of where to save and/or find the filtered/subsetted eBird data.}
 
-\item{overwrite}{logical If true will overwrite existing filtered data objects in directory \code{dir.ebird.out}}
+\item{overwrite}{logical If true will overwrite existing filtered data objects in directory 'dir.ebird.out'}
 
-\item{countries}{...}
+\item{countries}{Character vector of country abbreviations for filtering ebird data against.}
 
-\item{states}{...}
+\item{states}{Character vector of state/province abbreviations for filtering ebird data against.}
 
 \item{complete.only}{logical if TRUE will remove incomplete checklists}
 

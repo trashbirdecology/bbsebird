@@ -3,12 +3,12 @@
 #' @description Filter the eBird data and sampling events using R package AUK.
 #'
 #' @param fns.ebird  File paths for the EBD and SamplingEvents data to import. Character vector of filenames for original files.
-#' @param overwrite  logical If true will overwrite existing filtered data objects in directory `dir.ebird.out`
+#' @param overwrite  logical If true will overwrite existing filtered data objects in directory 'dir.ebird.out'
 #' @param dir.ebird.out Location of where to save and/or find the filtered/subsetted eBird data.
 #' @param f_obs_out  Filename for saving the filtered eBird observations data
 #' @param f_samp_out Filename for saving the filtered eBird sampling data
-#' @param countries ...
-#' @param states ...
+#' @param countries Character vector of country abbreviations for filtering ebird data against.
+#' @param states Character vector of state/province abbreviations for filtering ebird data against.
 #' @param complete.only logical if TRUE will remove incomplete checklists
 #' @param protocol which eBird protocol to include
 #' @param species species for filtering eBird data
@@ -81,7 +81,7 @@ munge_ebird_data <-
       if(overwrite){fns.ebird <- setdiff(fns.ebird, ind)}
       #import data and exist functio nif no overwrite specified
       if(!overwrite){
-        cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=FALSE in `munge_ebird_data()`.\n")
+        cat("File ",ind, "exists. Importing. If you need to re-create the ebird data, specify overwrite=TRUE in `munge_ebird_data()`.\n")
         output <- readRDS(ind)
         return(output)
       }

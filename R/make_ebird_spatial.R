@@ -15,7 +15,7 @@ make_ebird_spatial <- function(df, crs.target, dir.out=NULL, grid = NULL, overwr
   # first, if overwrite is false and this file exists. import and return asap.
   f <-paste0(dir.out, "ebird_spatial.rds")
   if(file.exists(f) & !overwrite){
-    cat("File ", f," exists and overwrite.ebird = FALSE. Importing spatial ebird data.")
+    cat("File ", f," exists and overwrite.ebird = FALSE. Importing existing spatial ebird data from .RDS")
     ebird_spatial <-readRDS(f)
     return(ebird_spatial)
   }
