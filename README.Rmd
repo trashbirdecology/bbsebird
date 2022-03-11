@@ -200,19 +200,24 @@ ebird_spatial <- make_ebird_spatial(
 ## Step 3: Bundle Data for Use in BUGS
 Create a list of lists and indexes for use in JAGS or elsewhere. We suggest creating a list using `bundle_data` and subsequently grabbing useful data from there
 ```{r bundle_data}
+bundle.dev <- bundle_data(
+  bbs = bbs_spatial,
+  ebird = ebird_spatial,
+  grid = study_area,
+  dev.mode = TRUE
+)
+
 bundle <- bundle_data(
   # data
   bbs = bbs_spatial,
   ebird = ebird_spatial,
   grid = study_area,
   # optional args
-  # dev.mode = TRUE, ## NED TO FIXBUG:::TRUE creates small output of supplied data sources for rapid model dev/testing
-  bf.method = "cubic2D", # method for producing the splines for capturing spatial autocorrelation
-  scale.covs = TRUE, 
-  fill.cov.nas = 666 # fill missing covariate values (optional)
+  dev.mode = FALSE
 )
+
 ```
- 
+
 # BAYESIAN HIERARCHICAL MODELING 
 Here, we provide one approach to creating, compiling, and . Additional functionality for compiling models, MCMC samplers, and for sampling from posterior distributions can be found in the R packages nimble and jagsUI or rjags. 
 
@@ -222,7 +227,6 @@ To facilitate modeling using either JAGS or Nimble, we recommend first creating 
 <!-- We provide some model files in the package: -->
 <!-- ```{r view.model} -->
 <!-- ``` -->
-
 Specify model as a BUGS model in R:
 ```{r write-bugs-model}
 {model.base <- "model{

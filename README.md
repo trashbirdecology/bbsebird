@@ -230,16 +230,20 @@ suggest creating a list using `bundle_data` and subsequently grabbing
 useful data from there
 
 ``` r
+bundle.dev <- bundle_data(
+  bbs = bbs_spatial,
+  ebird = ebird_spatial,
+  grid = study_area,
+  dev.mode = TRUE
+)
+
 bundle <- bundle_data(
   # data
   bbs = bbs_spatial,
   ebird = ebird_spatial,
   grid = study_area,
   # optional args
-  # dev.mode = TRUE, ## NED TO FIXBUG:::TRUE creates small output of supplied data sources for rapid model dev/testing
-  bf.method = "cubic2D", # method for producing the splines for capturing spatial autocorrelation
-  scale.covs = TRUE, 
-  fill.cov.nas = 666 # fill missing covariate values (optional)
+  dev.mode = FALSE
 )
 ```
 

@@ -44,7 +44,7 @@ make_bbs_spatial <- function(df,
   }
 
 
-  # force colanms to lower just in case
+  # force colanmes to lower just in case
   names(df) <- tolower(names(df))
 
   ## set CRS

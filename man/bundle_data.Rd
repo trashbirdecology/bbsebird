@@ -9,7 +9,7 @@ bundle_data(
   ebird,
   grid,
   scale.covs = TRUE,
-  fill.cov.nas = NULL,
+  fill.cov.nas = sample(size = 1, c(-666, -6969, -999)),
   bf.method = "cubic2D",
   use.ebird.in.ENgrid = TRUE,
   ENgrid.arg = "max",
@@ -36,7 +36,7 @@ bundle_data(
 
 \item{scale.covs}{logical if TRUE will automatically scale the numeric/integer covariates.}
 
-\item{fill.cov.nas}{value (e.g., 666, 99) or function ("max", "min", "mode", "mean") with which to fill NA values on covariate data. Defaults to NULL, which does nothing.}
+\item{fill.cov.nas}{value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.}
 
 \item{bf.method}{method for developing basis functions. Defaults to creating duchon splines using mgcv::jagam().}
 
