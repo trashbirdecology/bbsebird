@@ -31,8 +31,8 @@ Download development version from GitHub with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("trashbirdecology/bbsassistant")
-devtools::install_github("trashbirdecology/bbsebird")
+remotes::install_github("trashbirdecology/bbsassistant") # to be safe
+remotes::install_github("trashbirdecology/bbsebird")
 ```
 
 ## eBird Data Requirements
@@ -54,20 +54,20 @@ requires two components of the EBD to be saved to local file:
 2.  the **sampling events** (i.e. information about the observation
     process)
 
-# Runthrough
+# DATA MUNGING
 
 ## Step 1: Setup
 
 ``` r
-# 0:Setup -----------------------------------------------------------------
-remotes::install_github("trashbirdecology/bbsebird")
 #explicitly load some packages
 pkgs <- c("bbsebird",
-          "bbsAssistant",
-          "reshape2",
-          "stringr",
-          "dplyr",
-          "sf")
+          # "bbsAssistant",
+          # "reshape2",
+          # "stringr",
+          # "dplyr",
+          # "sf",
+          "dplyr"
+          )
 # install.packages("mapview")
 invisible(lapply(pkgs, library, character.only = TRUE))
 rm(pkgs)
@@ -88,7 +88,7 @@ species.abbr        = c("houspa") # see ebird filename for abbreviation
 ### this needs improvement as well...e.g. a species lookup table to link common-speci-abbrev across BBS and eBird data...
 ##bbs arguments
 usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
-cws.layer           = "ALL_ROUTES"
+cws.layer           = "ALL_ROUTES" # name of the Canadian (CWS) BBS route shapefile.
 ##ebird arguments
 mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
 
@@ -123,20 +123,9 @@ if(!is.null(states)){regions <- states}else{regions <- countries}
 stopifnot(all(tolower(states) %in% tolower(bbsAssistant::region_codes$iso_3166_2)))
 ```
 
-This chunk is not required, but is recommended to check that you’ve
-correctly specified the arguments above.
-
-``` r
-# temp=c("complete.checklists.only", "scale.vars", 'overwrite.ebird',"remove.bbs.obs" ,"overwrite.bbs", "hexagonal", "get.sunlight")
-# for(i in seq_along(temp))stopifnot(is.logical(eval(parse(text=temp[i]))))
-# temp=c("min.yday", "max.yday", "max.effort.km", "max.effort.mins", "max.C.ebird",
-#        "grid.size", "crs.target","year.range")
-# for(i in seq_along(temp)){stopifnot(class(eval(parse(text = temp[i]))) %in% c("integer", "numeric"))}
-# rm(temp)
-```
-
-This chunk will create new environmental variables for project adn data
-directries based on teh directories supplied above.
+This chunk will create new environmental variables for project and data
+directories based on the project directory and data directory specified
+above.
 
 ``` r
 # set_proj_shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
@@ -144,8 +133,6 @@ subdir.proj <-  set_proj_shorthand(species.abbr, regions, grid.size, year.range)
 dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
                          dir.proj = dir.proj,
                          subdir.proj = subdir.proj) # create and/or specify directories for later use.
-# ensure all directories exist
-suppressWarnings(stopifnot(all(lapply(dirs, dir.exists))))
 ```
 
 ## Step 2: Make Integrated Data
@@ -156,7 +143,6 @@ The following chunk creates a spatial sampling grid of size grid.size
 with units defaulting to the units of crs.target.
 
 ``` r
-tictoc::tic() # start timer to see how long it takes to create the ebird and bbs spatial files
 if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
 study_area <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           # overwrite=overwrite.grid,
@@ -168,30 +154,25 @@ study_area <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
 plot(study_area[1])
 ```
 
-Create the BBS data. This chunk relies heabily on R package . The
-resulting data is aligned with the spatial grid (see above).
+Create the BBS data. This chunk relieson R package . The resulting data
+is aligned with the spatial grid (see above).
 
 ``` r
-## wrapper for creating all bbs data--debating making this an exported function. for now, DNE
-fns.bbs.in <-
-  list.files(
-    dirs$dir.bbs.out,
-    pattern = "bbs_obs.rds",
-    recursive = TRUE,
-    full.names = TRUE
-  )
-bbs_orig <- grab_bbs_data(bbs_dir = dirs$dir.bbs.out) ## need to add grab_bbs_data into munge_bbs_data and include an option for where to save that data. 
-bbs_obs  <- munge_bbs_data(
+## if the files already exist, don't overwrite unless you've made changes to data specs
+if("bbs_obs.rds" %in% list.files(dirs$dir.bbs.out)){bbs_obs <- readRDS(list.files(dirs$dir.bbs.out, "bbs_obs.rds", full.names=TRUE))}else{
+bbs_orig <- bbsAssistant::grab_bbs_data(bbs_dir = dirs$dir.bbs.out) 
+bbs_obs  <- bbsAssistant::munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
     species = species, 
     year.range = year.range)
-# bbs_obs <-
-  # bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
-saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds"))
-
+bbs_obs <- bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
+saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds")) # suggest saving data to file for easy access
+}
 # Overlay BBS and study area / sampling grid
-### note, sometimes when running this in a notebook/rmd i randomly get a .rdf path error. I have no clue what this bug is. Just try running it again. See : https://github.com/rstudio/rstudio/issues/6260
+### note, sometimes when running this in a notebook/rmd a random .rdf" path error occurs.
+#### I have no clue what this bug is. Just try running it again. See also https://github.com/rstudio/rstudio/issues/6260
+if("bbs_spatial.rds" %in% list.files(dirs$dir.bbs.out)){bbs_spatial <- readRDS(list.files(dirs$dir.bbs.out, "bbs_spatial.rds", full.names=TRUE))}else{
 bbs_spatial <- make_bbs_spatial(
   df = bbs_obs,
   cws.routes.dir = dirs$cws.routes.dir,
@@ -200,14 +181,18 @@ bbs_spatial <- make_bbs_spatial(
   crs.target = crs.target,
   grid = study_area,
   dir.out = dirs$dir.spatial.out, 
-  overwrite=FALSE
+  overwrite=TRUE
 )
+saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
+}
+## check out the bbs spatial data to ensure things look ok
+plot(bbs_spatial['area']) # cell area
 ```
 
 Munge the eBird data (must be saved to file):
 
 ``` r
-## check the specified ebird directory for files. 
+## check the specified ebird original data directory for files. 
 (fns.ebird    <- id_ebird_files(
   dir.ebird.in = dirs$dir.ebird.in,
   dir.ebird.out = dirs$dir.ebird.out,
@@ -224,6 +209,7 @@ ebird <- munge_ebird_data(
   dir.ebird.out = dirs$dir.ebird.out,
   countries = countries,
   states = states,
+  # overwrite = FALSE, ## this function checks for exisiting, munged files iin dir.ebird.out..
   years = year.range
 )
 
@@ -232,34 +218,313 @@ ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
   grid = study_area,
-  dir.out = dirs$dir.spatial.out
+  overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
+  dir.out = dirs$dir.spatial.out 
 )
-tictoc::toc()#~9 minutes to this point without package install for HOSP in Florida on a machine with 65G ram, 11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz   2.61 GHz 64bit
 ```
 
-## Step 3: Bundle Data for Use in JAGS/Elsewhere
+## Step 3: Bundle Data for Use in BUGS
 
 Create a list of lists and indexes for use in JAGS or elsewhere. We
 suggest creating a list using `bundle_data` and subsequently grabbing
 useful data from there
 
 ``` r
-tictoc::tic()
-bundle <- bundle_data(bbs=bbs_spatial, 
-                    ebird=ebird_spatial, 
-                    grid=study_area,
-                    scale.covs = TRUE)
-tictoc::toc()
+bundle <- bundle_data(
+  # data
+  bbs = bbs_spatial,
+  ebird = ebird_spatial,
+  grid = study_area,
+  # optional args
+  # dev.mode = TRUE, ## NED TO FIXBUG:::TRUE creates small output of supplied data sources for rapid model dev/testing
+  bf.method = "cubic2D", # method for producing the splines for capturing spatial autocorrelation
+  scale.covs = TRUE, 
+  fill.cov.nas = 666 # fill missing covariate values (optional)
+)
+```
 
-# names(bundle)
-## complete data sets are stored in X.df
-## site and grid-level covariates are stored in Xgrid, Xsite
-## cell.index and year.index are lookup tables
-## G = # grid cells
-## T = # time/years
-## Mb, Me = # sites for bbs (b) and ebird (e)
-## GTb, GTe = grid-time lookup for samples in bbs and ebird
-## Z = jagam model output
-## nbfs = # of basis functions
-## prop = proportion of BBS route in grid cells (dims: G x Mb)
+# BAYESIAN HIERARCHICAL MODELING
+
+Here, we provide one approach to creating, compiling, and . Additional
+functionality for compiling models, MCMC samplers, and for sampling from
+posterior distributions can be found in the R packages nimble and jagsUI
+or rjags.
+
+## Step 1: Specify Model
+
+To facilitate modeling using either JAGS or Nimble, we recommend first
+creating a text file of a standard BUGS model. However, to be compatible
+within Nimble, the user should not provide any empty indexes (e.g.,
+myMatrix\[,\] should be myMatrix\[1:N, 1:M\]).
+
+<!-- We provide some model files in the package: -->
+<!-- ```{r view.model} -->
+<!-- ``` -->
+
+Specify model as a BUGS model in R:
+
+``` r
+{model.base <- "model{
+  ####################################################
+  # BBS 
+  ####################################################
+  for(i in 1:nobsb){
+    Cb[i]  ~  dpois( lambda.route[siteb[i], yearb[i]] * p.b[siteb[i], yearb[i]] )
+    
+    log(p.b[siteb[i], yearb[i]])    <-   
+      alpha1  *  asst[i]                     +   # assistant    (logical, 1=TRUE)
+      alpha2  *  fyr[i]                      +   # first year   (logical, 1=TRUE)
+    obseff[obsrb[i]]                             # observer id
+    
+    log(lambda.route[siteb[i], yearb[i]]) <-  inprod(prop[siteb[i],1:G], 
+                                                    lambda.grid[1:G,yearb[i]]) +  
+      yeareff[cellb[i], yearb[i]]            +   # year effects
+      trend[cellb[i]] * (yearb[i]-ref.year)  +   # trend
+      epsb[i]                                    # gaussian noise route-yr
+  }
+  
+  ####################################################
+  # eBird
+  ####################################################
+  for(i in 1:nobse){
+    Ce[i]  ~  dpois( lambda.grid[celle[i],yeare[i]] * p.e[sitee[i], yeare[i]] )
+    log(p.e[sitee[i],yeare[i]]) <- 
+      alpha11 * nparty[i]           +  # number ppl in birding party
+      alpha22 * dist[i]             +  # distance (scaled km)
+      alpha33 * mins[i]             +  # num minutes (prob intrx with time of day)
+      #        alpha44 * effarea[i]          +  # area searched (scaled ha)
+      alpha55 * starttime[i]          # minutes after midnight 
+    ### note no offroad fixed
+  }
+  
+  ####################################################
+  # Expected and Realised Abundance at Grid-Year
+  ####################################################
+  for(i in 1:ngy){
+    log(lambda.grid[gy[i,1], gy[i,2]]) <-   
+      hab[ gy[i,1] ] * beta1                 + 
+      inprod( Z[gy[i,1], ] , b[1:G,gy[i,2]] )      # <cell by basis function> <coef by time>
+    N[gy[i,1],gy[i,2]] ~ dpois(lambda.grid[gy[i,1],gy[i,2]])         
+  }
+  
+  ####################################################
+  # Summary Stats/Derived Values
+  ####################################################
+  # derived from priors
+  sdobs     <-  1 / pow(tauobsb, 0.5) # for summary stats
+  sdyear    <-  1 / pow(tauyrb,  0.5)
+  
+  # derived
+  for(t in 1:T){
+    Ntot[t]  <- sum(N[1:G,t])
+  }
+  
+  # for(t in 1:T){ 
+  # index[t] <- Ntot[t] / Ntot[T]
+  # }
+  
+  ####################################################
+  # Priors (keep at end of model script for speed)
+  ## specifying priors helps avoid forward-sampling
+  ####################################################
+  ### BBS
+  beta1         ~  dnorm (0, 1E-3)       # made-up habitat
+  alpha1        ~  dnorm (0, 1E-3)       # assistant 
+  alpha2        ~  dnorm (0, 1E-3)       # first-year observer effect
+  tauobsb       ~  dgamma(0.001, 1E-3)   # observer hyper
+  tauepsb       ~  dgamma(0.001, 1E-3)   # bbs data model error (eps) hyper
+  #### trend
+  for(g in 1:G){
+    trend[g]     ~  dnorm(0, 1E-6)        # grid-level trend
+    exptrend[g] <-  exp(trend[g])
+    #### observer effects  
+  }
+  for(i in 1:nobsrb){
+    obseff[i] ~ dnorm (0.00, tauobsb)  # observer (id) effects
+  }
+  ##### year effects
+  for(g in 1:G){
+    for(i in 1:1){ yeareff[g,1] ~ dnorm(0, 1E-3)   }    
+    for(t in 2:T){ yeareff[g,t] ~ dnorm(0, tauyrb) }
+  }
+  log(tauyrb)    <-  logtauyrb
+  logtauyrb       ~  dnorm(mu.logtauyrb, tau.logtauyrb)
+  mu.logtauyrb    ~  dnorm(0, 0.5)
+  tau.logtauyrb   ~  dgamma(2, 0.2)
+  
+  ### eBird priors
+  alpha11  ~ dnorm(0, 0.001)
+  alpha22  ~ dnorm(0, 0.001)
+  alpha33  ~ dnorm(0, 0.001)
+  alpha55  ~ dnorm(0, 0.001)
+  
+  for(i in 1:nobsb){
+    epsb[i]   ~  dnorm(0, tauepsb)             # bbs data model error
+  }
+  
+  # priors on random effects
+  for(t in 1:T){
+    for (k in 1:nknots){ b[k,t] ~ dnorm(0, taub) 
+      # Prior on random effects hyperparameter
+    }
+  }
+  taub ~ dgamma(0.01,0.01)
+  
+  
+  ## temporal variance hypers
+  taugam     <- pow(sigmagam, -2) # check jlb 
+  sigmagam    ~ dunif(0, 10)      # check jlb # clark uses in bbs.sdm and paige in MODU ms;why 0,10?
+  ## smoothing parameter (lambda) priors check JLB
+  rho[1]       ~ dunif(-12,12)    # a and b values suggested by mgcv::jagam
+  lambda[1]   <- exp(rho[1])
+  
+  ####################################################
+  ## END MODEL
+  ####################################################
+} #### KEEP the EMPTY LINE AT ENDING!! IMPORTANT FOR IMPORTING BUGS MOD VIA NIMBLE!!!
+
+"}
+mod.fn <- paste0(dirs$dir.models, "/myBUGSmodel.txt")
+sink(mod.fn)
+cat(model.base, sep = "")
+sink()
+stopifnot(file.exists(mod.fn))
+# browseURL(mod.fn) # check out the model if you wish
+```
+
+## Step 2: bugs.data
+
+The output of `bundle_data()` will likely create more constants and data
+than the user requires. Extract what is necessary for your model here:
+
+``` r
+## see bundle$bbs.df and bundle$ebird.df for all data in a flat data object
+bugs.data          <- list(
+  ## Center the years on some reference year
+  ref.year  = round(median(1:bundle$T)),
+  nobsb     = nrow(bundle$bbs.df),             # num obs. for bbs data
+  nobse     = nrow(bundle$ebird.df),           # num obs. for ebird data
+  Cb        = bundle$bbs.df$c,                 # bbs count data
+  Ce        = bundle$ebird.df$c,               # ebird count data
+  Mb        = bundle$Mb,                       # num sites bbs data
+  Me        = bundle$Me,                       # num sites ebird data
+  G         = bundle$G,                        # num grid cells total
+  T         = bundle$T,                        # num years total
+  yearb     = bundle$bbs.df$year.ind,          # vec of year index bbs data
+  siteb     = bundle$bbs.df$site.ind,          # vec of site index bbs data
+  cellb     = bundle$bbs.df$cell.ind,          # vec of grid cell index bbs data
+  yeare     = bundle$ebird.df$year.ind,        # vec of year index ebird data
+  sitee     = bundle$ebird.df$site.ind,        # vec of site index ebird data
+  celle     = bundle$ebird.df$cell.ind,        # vec of grid cell index ebird data
+  nobsrb   = length(unique(bundle$bbs.df$obs.ind)), # num unique observers bbs
+  obsrb     = bundle$bbs.df$obs.ind,           # observer identifier bbs data
+  fyr       = bundle$bbs.df$obsfirstyearbbs,   # first-year index bbs
+  asst      = bundle$bbs.df$assistant,         # assistant index bbs
+  mins      = standardize(bundle$ebird.df$duration_minutes),   # num mins surveyed ebird
+  dist      = standardize(bundle$ebird.df$effort_distance_km), # dist (km) traveled ebird
+  nparty    = standardize(bundle$ebird.df$number_observers),   # num observers ebird
+  starttime = standardize(
+    bundle$ebird.df$time_observations_started_hsm@hour * 60 + bundle$ebird.df$time_observations_started_hsm@minute
+  ),                                           # time start ebird
+  nknots   = bundle$nbfs,                      # numb knots/basis functions
+  gy       = as.matrix(bundle$gy),             # index for all grid-year combos
+  ngy      = bundle$ngy,                       # length of grid-year combo mat (gy)
+  prop     = as.matrix(bundle$prop),           # proportion of route in grid (< G x T >)
+  hab      = sqrt(abs(bundle$Xgrid$area)),     # made-up hab varialbe (for now)
+  Z        = bundle$Z.mat                      # Z-matrix (<G x nknots>)
+)
+stopifnot(!any(duplicated(names(bugs.data))))  # a simple check
+```
+
+## Step 3: MCMC and Model Specs
+
+First, specify parameters to monitor (based on your model):
+
+``` r
+params <- c("alpha1", 
+            "alpha2", 
+            "alpha11", 
+            "alpha22", 
+            "alpha33", 
+            "alpha55", 
+            "yeareff", 
+            "obseff",
+            "Ntot" , 
+            "lambda" 
+)
+```
+
+Next, create a function for later specifying intiial values. Creating
+this as function allows us to dynamically create intiail values for
+whatever number of chains we wish to run and, importantly, creates
+unique intial values for independent MCMC chains in parallel:
+
+``` r
+set.inits <- function(n = 1, dat = bugs.data) {
+  inits.out <- list()
+  for (i in 1:n) {
+    inits.list <- list(
+      alpha2        = rnorm(1, 0, 0.001),
+      beta1         = rnorm(1, 0, 0.001),
+      alpha11       = rnorm(1, 0, 0.001),
+      alpha22       = rnorm(1, 0, 0.001),
+      alpha33       = rnorm(1, 0, 0.001),
+      alpha55       = rnorm(1, 0, 0.001),
+      yeareff       = matrix(rep(rnorm(dat$G, 0, 0.001)),
+                             nrow = dat$G,
+                             ncol = dat$T)
+      # .RNG.name = "base::Mersenne-Twister",
+      # .RNG.seed = runif(1, 1, 2000)
+    )
+    inits.out[[i]] <- inits.list
+    if (n == 1)
+      return(inits.list)
+    else{
+      next()
+    }
+  }
+  return(inits.out)
+}
+```
+
+You can set the MCMC specs now or later. The function
+`bbsebird::set_mcmc_specs()` allows user to create mcmc specification as
+a list. Use `dev.mode=TRUE` to create mcmc specifications useful for
+quickly testing/diagnosing models. This function can also be called
+directly inside the `run_in_jags()` or `run_in_nimble()` funcitons.
+
+``` r
+# mcmc.specs <- set_mcmc_specs(dev.mode=TRUE)
+```
+
+## Step 4: Run Model(s)
+
+### JAGS
+
+``` r
+myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
+results.jags <- run_in_jags(
+  bugs.data,
+  parallel = TRUE,
+  model=mod.fn,
+  inits = set.inits(n=myMCMC.specs$nc), 
+  mcmc.specs = myMCMC.specs,
+  savedir = "jagsout/",
+  monitor = params
+)
+plot(output, parameters = "Ntot")
+```
+
+### Nimble
+
+``` r
+## unlike in JAGS, there cannot be stray INITS. 
+results.nimb <- run_in_nimble(
+  myModel = mod.fn,
+  myData = bugs.data,
+  myInits = set.inits(),
+  parallel = TRUE,
+  mcmc.specs = set_mcmc_specs(dev.mode=TRUE),
+  monitor = params
+)
 ```
