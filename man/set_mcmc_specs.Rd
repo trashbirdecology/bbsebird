@@ -10,7 +10,8 @@ set_mcmc_specs(
   nc = 3,
   ni = 20000,
   nt = 10,
-  ncores = parallel::detectCores() - 1
+  ncores = parallel::detectCores() - 1,
+  dev.mode = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ set_mcmc_specs(
 \item{nt}{thinning rate (every nth iteration removed)}
 
 \item{ncores}{number of cores to run model in parallel}
+
+\item{dev.mode}{logical if TRUE will set mcmc specs to very low values to allow for a quick test of model}
 }
 \description{
 Set Specifications for MCMC

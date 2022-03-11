@@ -6,16 +6,25 @@
 #' @param nc number of chains
 #' @param ncores number of cores to run model in parallel
 #' @param ni number of iterations per chain
+#' @param dev.mode logical if TRUE will set mcmc specs to very low values to allow for a quick test of model
 #' @importFrom  parallel detectCores
 #' @param nt thinning rate (every nth iteration removed)
 #' @export set_mcmc_specs
-set_mcmc_specs <- function(na=1000,
+set_mcmc_specs <- function(
+                      na=1000,
                       nb=5000,
                       nc=3,
                       ni=20000,
                       nt=10,
-                      ncores=parallel::detectCores()-1
+                      ncores=parallel::detectCores()-1,
+                      dev.mode = FALSE
+
 ){
+
+  if(dev.mode){
+    na <- 5; ni <- 10; nb <- 5; nt <-1; nc <- 2 # quick run ## somehow took like 2 hours
+  }
+
 
   return(list(na=na, nb=nb,
               nc=nc, ni=ni,

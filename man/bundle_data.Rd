@@ -21,7 +21,7 @@ bundle_data(
   obs.id = c("obsn", "observer_id"),
   cell.covs = c("area"),
   site.covs = c("wind", "noise", "cars", "observ", "minute", "assistant",
-    "obsfirstyearbbs", "obsfirstyearroute", "duration_minutes", "effort_distance_km",
+    "obsfirsFtyearbbs", "obsfirstyearroute", "duration_minutes", "effort_distance_km",
     "effort_area_ha", "number_observers"),
   K = NULL,
   dev.mode = FALSE

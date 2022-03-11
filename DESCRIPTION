@@ -29,16 +29,18 @@ Imports:
     stringr (>= 1.4.0),
     units (>= 0.7.2),
     sf,
-    jagsUI, 
+    jagsUI,
     tibble,
     tidyr (>= 1.1.4),
     vroom (>= 1.5.7),
-    parallel, 
+    parallel,
     tictoc,
     grDevices,
     stats,
     suncalc,
-    bit
+    bit,
+    doParallel,
+    nimble
 Suggests: 
     knitr,
     dclone, 
