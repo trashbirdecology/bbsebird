@@ -16,15 +16,18 @@ set_mcmc_specs <- function(
                       nc=3,
                       ni=20000,
                       nt=10,
+                      in.parallel=FALSE,
                       ncores=parallel::detectCores()-1,
                       dev.mode = FALSE
 
 ){
 
+
   if(dev.mode){
     na <- 5; ni <- 10; nb <- 5; nt <-1; nc <- 2 # quick run ## somehow took like 2 hours
   }
 
+  if(in.parallel){nc <- 1}
 
   return(list(na=na, nb=nb,
               nc=nc, ni=ni,
