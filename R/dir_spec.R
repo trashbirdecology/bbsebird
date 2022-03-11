@@ -58,7 +58,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       dir.bbs.out,
       dir.ebird.out,
       dir.spatial.out,
-      dir.jags,
+      # dir.jags,
       dir.models,
       dir.plots
     ),
@@ -70,7 +70,8 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
 
 subset.names <- paste0("dir.",
-                         c("jags",
+                         c(
+                           # "jags",
                            "plots",
                            "models",
                            "bbs.out",

@@ -261,7 +261,7 @@ if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungr
 rownames(bbs_spatial) <- NULL
 
 
-if (nrow(bbs_spatial %>% dplyr::distinct(year, gridcellid, rteno, c)) != nrow(bbs_spatial))
+if (!nrow(bbs_spatial %>% dplyr::distinct(year, gridcellid, rteno, c)) == nrow(bbs_spatial))
   message(
     "FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists."
   )
