@@ -5,7 +5,6 @@
 #' @param seed for internal use
 #' @param data data and constants as list
 #' @param inits list of initial values
-#' @noRd
 #' @param model filepath or nimble model object
 #' @importFrom nimble compileNimble buildMCMC readBUGSmodel runMCMC
 #' @export run_MCMC_allcode
