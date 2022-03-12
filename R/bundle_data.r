@@ -50,6 +50,7 @@ bundle_data <-
              "obsfirstyearroute",
              "obsfirstyearonroute",
              "time_observations_started_hsm",
+             "time_observations_started",
              "duration_minutes",
              "effort_distance_km",
              "effort_area_ha",
@@ -73,12 +74,13 @@ bundle_data <-
     stopifnot(bf.method %in% c("mgcv", "jagam", "cubic2d"))
 
     # Drop Spatial Geometry ---------------------------------------------------
+    # bbs=bbs_spatial; ebird=ebird_spatial; grid=study_area ## FOR DEV
     bbs   <- as.data.frame(bbs)
     ebird <- as.data.frame(ebird)
     grid  <- as.data.frame(grid)
 
+
     # COLS TO LOWER -----------------------------------------------------------
-    # bbs=bbs_spatial; ebird=ebird_spatial; grid=study_area ## FOR DEV
     names(bbs)   <- tolower(names(bbs))
     names(ebird) <- tolower(names(ebird))
     names(grid)  <- tolower(names(grid))
@@ -203,9 +205,6 @@ bundle_data <-
       merge(year.index) %>%
       merge(cell.index) %>%
       dplyr::select(cell.ind, cell.id, year.ind, year.id)
-    # yg.index$cell.id <- as.integer(yg.index$cell.id)
-    # yg.index$year.id <- as.integer(yg.index$year.id)
-
 
     # BBS-EBIRD INDEXES ---------------------------------------------------------------
     ## for bbs and ebird data, create site (route, checklist_id) and observer indexes
@@ -300,9 +299,12 @@ bundle_data <-
         #### NEED TO ADD OPTION TO OUTPUT COV>DAT IN LONG FORM (PERHAPS JUST APPEND AS SCALED VERSIONS TO EBIRd/BBS.DF..)
         names(cov.dat)[1] <- "cov"
         if (all(is.na(cov.dat$cov))){next()}
-        is.binary <-
-          ifelse(max(cov.dat$cov, na.rm = TRUE) > 1, FALSE, TRUE)
-        is.factor <- is.factor(cov.dat$cov) | is.character(cov.dat$cov)
+        is.time   <- class(cov.dat$cov) %in% c("period", "time", "Period")
+        is.binary <-if(is.time){FALSE}else{
+          !(max(cov.dat$cov, na.rm = TRUE) > 1)
+        }
+        is.factor <- ifelse(is.factor(cov.dat$cov) | is.character(cov.dat$cov), TRUE, FALSE )
+        if(is.time) cov.dat$cov <- cov.dat$cov@hour*60 + cov.dat$cov@minute
         if (scale.covs &
             is.binary)
           cat("  [note] site covariate ",
@@ -316,33 +318,33 @@ bundle_data <-
           cov.dat$cov <- as.integer(as.factor(cov.dat$cov))
 
           }
+
         if (scale.covs &
             !is.binary) {
           cov.dat$cov <- standardize(cov.dat$cov)
         }
 
-
-       ### specify teh fill value
+       ### specify the fill value
        fill.value <- ifelse(!fill.cov.nas, NA, fill.cov.nas)
+
        ## create a matrix for the site covariates and add to the Xsite list
        cov.mat  <-  reshape2::acast(cov.dat,
                                      site.ind ~ year.ind,
                                      value.var = "cov",
                                      fill = fill.cov.nas)
-        ## to ensure rownames and colnames match the indexes..
-        stopifnot(all(as.integer(rownames(cov.mat)) == as.integer(sort(
-          unique(cov.dat$site.ind)
-        ))))
-        stopifnot(all(as.integer(colnames(cov.mat)) == as.integer(sort(
-          unique(cov.dat$year.ind)
-        ))))
+      ## to ensure rownames and colnames match the indexes..
+      stopifnot(all(as.integer(rownames(cov.mat)) == as.integer(sort(
+        unique(cov.dat$site.ind)
+      ))))
+      stopifnot(all(as.integer(colnames(cov.mat)) == as.integer(sort(
+        unique(cov.dat$year.ind)
+      ))))
 
-        Xsite[[i]][[j]] <- cov.mat
-        names(Xsite[[i]])[j] <- cov.name
-
-        ### finally, replace the orgiinal data with the transformed vectors.
-        cov.dat$cov[is.na(cov.dat$cov)] <- fill.value
-        LL[[i]][cov.name]  <- cov.dat$cov
+      Xsite[[i]][[j]] <- cov.mat
+      names(Xsite[[i]])[j] <- cov.name
+      ### finally, replace the orgiinal data with the transformed vectors.
+      cov.dat$cov[is.na(cov.dat$cov)] <- fill.value
+      LL[[i]][cov.name]  <- cov.dat$cov
       } # j loop
     }# end Xsite i loop
     cat("  [note] done building covariate matrices\n")

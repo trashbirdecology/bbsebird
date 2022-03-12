@@ -357,7 +357,6 @@ sink(mod.fn)
 cat(model.base, sep = "")
 sink()
 stopifnot(file.exists(mod.fn))
-# browseURL(mod.fn) # check out the model if you wish
 ```
 
 ## Step 2: bugs.data
@@ -382,16 +381,15 @@ bugs.data          = list(
   yeare     = myBundleDat$ebird.df$year.ind,        # vec of year index ebird data
   sitee     = myBundleDat$ebird.df$site.ind,        # vec of site index ebird data
   celle     = myBundleDat$ebird.df$cell.ind,        # vec of grid cell index ebird data
-  nobsrb   = length(unique(myBundleDat$bbs.df$obs.ind)), # num unique observers bbs
+  nobsrb    = length(unique(myBundleDat$bbs.df$obs.ind)), # num unique observers bbs
   obsrb     = myBundleDat$bbs.df$obs.ind,           # observer identifier bbs data
   fyr       = myBundleDat$bbs.df$obsfirstyearbbs,   # first-year index bbs
   asst      = myBundleDat$bbs.df$assistant,         # assistant index bbs
-  mins      = standardize(myBundleDat$ebird.df$duration_minutes),   # num mins surveyed ebird
-  dist      = standardize(myBundleDat$ebird.df$effort_distance_km), # dist (km) traveled ebird
-  nparty    = standardize(myBundleDat$ebird.df$number_observers),   # num observers ebird
-  starttime = standardize(
-    myBundleDat$ebird.df$time_observations_started_hsm@hour * 60 + myBundleDat$ebird.df$time_observations_started_hsm@minute
-  ),                                           # time start ebird
+  mins      = myBundleDat$ebird.df$duration_minutes,   # num mins surveyed ebird
+  dist      = myBundleDat$ebird.df$effort_distance_km, # dist (km) traveled ebird
+  effarea   = myBundleDat$ebird.df$effort_area_ha, # dist (km) traveled ebird
+  nparty    = myBundleDat$ebird.df$number_observers,   # num observers ebird
+  starttime = myBundleDat$ebird.df$time_observations_started_hsm, # time start ebird
   nknots   = myBundleDat$nbfs,                      # numb knots/basis functions
   gy       = as.matrix(myBundleDat$gy),             # index for all grid-year combos
   ngy      = myBundleDat$ngy,                       # length of grid-year combo mat (gy)
@@ -421,17 +419,24 @@ params <- c("alpha1",
 
 Next, create a function for later specifying intiial values. Creating this as  function allows us to dynamically create intiail values for whatever number of chains we wish to run and, importantly, creates unique intial values for independent MCMC chains in parallel:
 ```{r set.inits}
+##  refer to model for inits or params
+browseURL(mod.fn) # check out the model if you wish
+
 set.inits <- function(n = 1, dat = bugs.data) {
   inits.out <- list()
   for (i in 1:n) {
     inits.list <- list(
-      alpha2        = rnorm(1, 0, 0.001),
-      beta1         = rnorm(1, 0, 0.001),
-      alpha11       = rnorm(1, 0, 0.001),
-      alpha22       = rnorm(1, 0, 0.001),
-      alpha33       = rnorm(1, 0, 0.001),
-      alpha55       = rnorm(1, 0, 0.001),
-      yeareff       = matrix(rep(rnorm(dat$G, 0, 0.001)),
+      alpha1        = rnorm(1, 0, 0.001), # bbs asst
+      alpha2        = rnorm(1, 0, 0.001), # bbs fyr
+      beta1         = rnorm(1, 0, 0.001), # 
+      alpha11       = rnorm(1, 0, 0.001), # num in party ebird
+      alpha22       = rnorm(1, 0, 0.001), # dist travel ebird
+      alpha33       = rnorm(1, 0, 0.001), # duration min ebird 
+      alpha44       = rnorm(1, 0, 0.001), # eff area  ebird 
+      alpha55       = rnorm(1, 0, 0.001), # starttime
+      obseff        = matrix(rep(rnorm(dat$nobsb, 0, 0.001))),
+      trend         = matrix(rep(rnorm(dat$G,     0, 0.001))),
+      yeareff       = matrix(rep(rnorm(dat$G,     0, 0.001)),
                              nrow = dat$G,
                              ncol = dat$T)
       # .RNG.name = "base::Mersenne-Twister",
