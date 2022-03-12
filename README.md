@@ -31,7 +31,7 @@ Download development version from GitHub with:
 
 ``` r
 # install.packages("devtools")
-remotes::install_github("trashbirdecology/bbsassistant") # to be safe
+# remotes::install_github("trashbirdecology/bbsassistant") # to be safe
 remotes::install_github("trashbirdecology/bbsebird")
 ```
 
@@ -211,19 +211,22 @@ ebird_spatial <- make_ebird_spatial(
   overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
   dir.out = dirs$dir.spatial.out 
 )
+## visualizing the ebird_spatial data takes a while, do not recommend.
 ```
 
 ## Step 3: Bundle Data for Use in BUGS
 
 Create a list of lists and indexes for use in JAGS or elsewhere. We
 suggest creating a list using `bundle_data` and subsequently grabbing
-useful data from there
+useful data from there.
+
+`bundle_data` creates site-level covariates in both long (vector) and
+wide (matrix) form. Matrix form are housed inside Xsite matrix, whereas
+long-form are within bbs.df and ebird.df.
 
 ``` r
 message("[note] sometimes when running this chunk in notebook/rmarkdown it crashes. try restarting session or running interactively\n")
 
-## see if files already exist in desired location
-dirs$
 ### make a teeny little bundle for model dev/debugging
 bundle.dev <- bundle_data(
   bbs = bbs_spatial,
@@ -402,45 +405,49 @@ stopifnot(file.exists(mod.fn))
 ## Step 2: bugs.data
 
 The output of `bundle_data()` will likely create more constants and data
-than the user requires. Extract what is necessary for your model here:
+than the user requires. Extract what is necessary for your model here.
+You can unwrap this from a function, but the function makes it quicker
+to switch between the dev and full bundled datasets.
 
 ``` r
-## see bundle$bbs.df and bundle$ebird.df for all data in a flat data object
-bugs.data          <- list(
+make.bugs.data <- function(myBundleDat){
+## see myBundleDat$bbs.df and myBundleDat$ebird.df for all data in a flat data object
+bugs.data          = list(
   ## Center the years on some reference year
-  ref.year  = round(median(1:bundle$T)),
-  nobsb     = nrow(bundle$bbs.df),             # num obs. for bbs data
-  nobse     = nrow(bundle$ebird.df),           # num obs. for ebird data
-  Cb        = bundle$bbs.df$c,                 # bbs count data
-  Ce        = bundle$ebird.df$c,               # ebird count data
-  Mb        = bundle$Mb,                       # num sites bbs data
-  Me        = bundle$Me,                       # num sites ebird data
-  G         = bundle$G,                        # num grid cells total
-  T         = bundle$T,                        # num years total
-  yearb     = bundle$bbs.df$year.ind,          # vec of year index bbs data
-  siteb     = bundle$bbs.df$site.ind,          # vec of site index bbs data
-  cellb     = bundle$bbs.df$cell.ind,          # vec of grid cell index bbs data
-  yeare     = bundle$ebird.df$year.ind,        # vec of year index ebird data
-  sitee     = bundle$ebird.df$site.ind,        # vec of site index ebird data
-  celle     = bundle$ebird.df$cell.ind,        # vec of grid cell index ebird data
-  nobsrb   = length(unique(bundle$bbs.df$obs.ind)), # num unique observers bbs
-  obsrb     = bundle$bbs.df$obs.ind,           # observer identifier bbs data
-  fyr       = bundle$bbs.df$obsfirstyearbbs,   # first-year index bbs
-  asst      = bundle$bbs.df$assistant,         # assistant index bbs
-  mins      = standardize(bundle$ebird.df$duration_minutes),   # num mins surveyed ebird
-  dist      = standardize(bundle$ebird.df$effort_distance_km), # dist (km) traveled ebird
-  nparty    = standardize(bundle$ebird.df$number_observers),   # num observers ebird
+  ref.year  = round(median(1:myBundleDat$T)),
+  nobsb     = nrow(myBundleDat$bbs.df),             # num obs. for bbs data
+  nobse     = nrow(myBundleDat$ebird.df),           # num obs. for ebird data
+  Cb        = myBundleDat$bbs.df$c,                 # bbs count data
+  Ce        = myBundleDat$ebird.df$c,               # ebird count data
+  Mb        = myBundleDat$Mb,                       # num sites bbs data
+  Me        = myBundleDat$Me,                       # num sites ebird data
+  G         = myBundleDat$G,                        # num grid cells total
+  T         = myBundleDat$T,                        # num years total
+  yearb     = myBundleDat$bbs.df$year.ind,          # vec of year index bbs data
+  siteb     = myBundleDat$bbs.df$site.ind,          # vec of site index bbs data
+  cellb     = myBundleDat$bbs.df$cell.ind,          # vec of grid cell index bbs data
+  yeare     = myBundleDat$ebird.df$year.ind,        # vec of year index ebird data
+  sitee     = myBundleDat$ebird.df$site.ind,        # vec of site index ebird data
+  celle     = myBundleDat$ebird.df$cell.ind,        # vec of grid cell index ebird data
+  nobsrb   = length(unique(myBundleDat$bbs.df$obs.ind)), # num unique observers bbs
+  obsrb     = myBundleDat$bbs.df$obs.ind,           # observer identifier bbs data
+  fyr       = myBundleDat$bbs.df$obsfirstyearbbs,   # first-year index bbs
+  asst      = myBundleDat$bbs.df$assistant,         # assistant index bbs
+  mins      = standardize(myBundleDat$ebird.df$duration_minutes),   # num mins surveyed ebird
+  dist      = standardize(myBundleDat$ebird.df$effort_distance_km), # dist (km) traveled ebird
+  nparty    = standardize(myBundleDat$ebird.df$number_observers),   # num observers ebird
   starttime = standardize(
-    bundle$ebird.df$time_observations_started_hsm@hour * 60 + bundle$ebird.df$time_observations_started_hsm@minute
+    myBundleDat$ebird.df$time_observations_started_hsm@hour * 60 + myBundleDat$ebird.df$time_observations_started_hsm@minute
   ),                                           # time start ebird
-  nknots   = bundle$nbfs,                      # numb knots/basis functions
-  gy       = as.matrix(bundle$gy),             # index for all grid-year combos
-  ngy      = bundle$ngy,                       # length of grid-year combo mat (gy)
-  prop     = as.matrix(bundle$prop),           # proportion of route in grid (< G x T >)
-  hab      = sqrt(abs(bundle$Xgrid$area)),     # made-up hab varialbe (for now)
-  Z        = bundle$Z.mat                      # Z-matrix (<G x nknots>)
+  nknots   = myBundleDat$nbfs,                      # numb knots/basis functions
+  gy       = as.matrix(myBundleDat$gy),             # index for all grid-year combos
+  ngy      = myBundleDat$ngy,                       # length of grid-year combo mat (gy)
+  prop     = as.matrix(myBundleDat$prop),           # proportion of route in grid (< G x T >)
+  hab      = sqrt(abs(myBundleDat$Xgrid$area)),     # made-up hab varialbe (for now)
+  Z        = myBundleDat$Z.mat                      # Z-matrix (<G x nknots>)
 )
-stopifnot(!any(duplicated(names(bugs.data))))  # a simple check
+return(bugs.data)
+}
 ```
 
 ## Step 3: MCMC and Model Specs
@@ -509,29 +516,34 @@ directly inside the `run_in_jags()` or `run_in_nimble()` funcitons.
 ### JAGS
 
 ``` r
+tictoc::tic()
+bugs.dat  <- make.bugs.data(bundle)
 myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
-results.jags <- run_in_jags(
-  bugs.data,
+results.jags <- run_in_jags(bugs.data = bugs.dat,
   parallel = TRUE,
   model=mod.fn,
-  inits = set.inits(n=myMCMC.specs$nc), 
+  inits = set.inits(dat = bugs.dat, n=myMCMC.specs$nc), 
   mcmc.specs = myMCMC.specs,
-  savedir = "jagsout/",
-  monitor = params
+  savedir = paste0(dirs$dir.proj,"/jagsout/"),
+  monitor = params, 
+  mod.name = "run"
 )
-plot(output, parameters = "Ntot")
+plot(results.jags)
+tictoc::toc("jags runtime")
 ```
 
 ### Nimble
 
 ``` r
 ## unlike in JAGS, there cannot be stray INITS. 
+bugs.dat  <- make.bugs.data(bundle.dev)
+myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
 results.nimb <- run_in_nimble(
   myModel = mod.fn,
-  myData = bugs.data,
-  myInits = set.inits(),
+  myData = bugs.dat,
+  myInits = set.inits(dat = bugs.dat),
   parallel = TRUE,
   mcmc.specs = set_mcmc_specs(dev.mode=TRUE),
-  monitor = params
+  monitor = params, mod.name = "test"
 )
 ```
