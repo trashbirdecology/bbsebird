@@ -33,7 +33,7 @@ The purpose of this R package (*likely to undergo a name change...*) is to:
 Download development version from GitHub with:
 ```{r results=FALSE, echo=TRUE, warning=FALSE, message=FALSE, eval=FALSE}
 # install.packages("devtools")
-remotes::install_github("trashbirdecology/bbsassistant") # to be safe
+# remotes::install_github("trashbirdecology/bbsassistant") # to be safe
 remotes::install_github("trashbirdecology/bbsebird")
 ```
 
@@ -185,6 +185,7 @@ ebird_spatial <- make_ebird_spatial(
   overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
   dir.out = dirs$dir.spatial.out 
 )
+## visualizing the ebird_spatial data takes a while, do not recommend.
 ```
 
 ## Step 3: Bundle Data for Use in BUGS
@@ -455,31 +456,35 @@ You can set the MCMC specs now or later. The function `bbsebird::set_mcmc_specs(
 ## Step 4: Run Model(s)
 ### JAGS
 ```{r, eval=FALSE}
-bugs.dat  <- make.bugs.data(bundle.dev)
+tictoc::tic()
+bugs.dat  <- make.bugs.data(bundle)
 myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
-results.jags <- run_in_jags(
-  bugs.dat,
+results.jags <- run_in_jags(bugs.data = bugs.dat,
   parallel = TRUE,
   model=mod.fn,
-  inits = set.inits(n=myMCMC.specs$nc), 
+  inits = set.inits(dat = bugs.dat, n=myMCMC.specs$nc), 
   mcmc.specs = myMCMC.specs,
-  savedir = "jagsout/",
-  monitor = params
+  savedir = paste0(dirs$dir.proj,"/jagsout/"),
+  monitor = params, 
+  mod.name = "run"
 )
-plot(output, parameters = "Ntot")
+plot(results.jags)
+tictoc::toc("jags runtime")
 ```
 
 
 ### Nimble
 ```{r, eval=FALSE}
 ## unlike in JAGS, there cannot be stray INITS. 
+bugs.dat  <- make.bugs.data(bundle.dev)
+myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
 results.nimb <- run_in_nimble(
   myModel = mod.fn,
-  myData = bugs.data,
-  myInits = set.inits(),
+  myData = bugs.dat,
+  myInits = set.inits(dat = bugs.dat),
   parallel = TRUE,
   mcmc.specs = set_mcmc_specs(dev.mode=TRUE),
-  monitor = params
+  monitor = params, mod.name = "test"
 )
 
 ```
