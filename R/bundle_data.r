@@ -50,7 +50,6 @@ bundle_data <-
              "obsfirstyearroute",
              "obsfirstyearonroute",
              "time_observations_started_hsm",
-             "time_observations_started"
              "duration_minutes",
              "effort_distance_km",
              "effort_area_ha",
@@ -69,7 +68,6 @@ bundle_data <-
         is.numeric(fill.cov.nas) |
         is.double(fill.cov.nas) | !fill.cov.nas
     )
-
     stopifnot(is.logical(use.ebird.in.ENgrid))
     stopifnot(is.logical(scale.covs))
     stopifnot(bf.method %in% c("mgcv", "jagam", "cubic2d"))
@@ -304,6 +302,7 @@ bundle_data <-
         if (all(is.na(cov.dat$cov))){next()}
         is.binary <-
           ifelse(max(cov.dat$cov, na.rm = TRUE) > 1, FALSE, TRUE)
+        is.factor <- is.factor(cov.dat$cov) | is.character(cov.dat$cov)
         if (scale.covs &
             is.binary)
           cat("  [note] site covariate ",
@@ -311,10 +310,21 @@ bundle_data <-
               " is binary and was not standardized.\n",
               sep = "")
         if (scale.covs &
+            is.factor){cat("  [note] site covariate ",
+              cov.name, " is a factor and was not standardized (but was converted to integer) \n",
+              sep = "")
+          cov.dat$cov <- as.integer(as.factor(cov.dat$cov))
+
+          }
+        if (scale.covs &
             !is.binary) {
           cov.dat$cov <- standardize(cov.dat$cov)
         }
+
+
+       ### specify teh fill value
        fill.value <- ifelse(!fill.cov.nas, NA, fill.cov.nas)
+       ## create a matrix for the site covariates and add to the Xsite list
        cov.mat  <-  reshape2::acast(cov.dat,
                                      site.ind ~ year.ind,
                                      value.var = "cov",
@@ -329,11 +339,18 @@ bundle_data <-
 
         Xsite[[i]][[j]] <- cov.mat
         names(Xsite[[i]])[j] <- cov.name
-      } # j loop
 
+        ### finally, replace the orgiinal data with the transformed vectors.
+        cov.dat$cov[is.na(cov.dat$cov)] <- fill.value
+        LL[[i]][cov.name]  <- cov.dat$cov
+      } # j loop
     }# end Xsite i loop
     cat("  [note] done building covariate matrices\n")
-    rm(LL)
+
+    ## rename LL elements
+    bbs   <- LL$bbs
+    ebird <- LL$ebird
+
 
     # GRID-LEVEL COVARIATES ---------------------------------------------------
     ## create arrays for grid cell-level covariates
