@@ -51,6 +51,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   dir.bbs.out <- "/bbs/"
   dir.ebird.out <- "/ebird/"
   dir.spatial.out <- "/spatial/"
+  dir.results <- "/results/"
   dir.plots <- "/plots/"
   # add dir.proj to direcotries and dir.create them
   sapply(
@@ -58,7 +59,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       dir.bbs.out,
       dir.ebird.out,
       dir.spatial.out,
-      # dir.jags,
+      dir.results,
       dir.models,
       dir.plots
     ),
@@ -76,7 +77,8 @@ subset.names <- paste0("dir.",
                            "models",
                            "bbs.out",
                            "ebird.out",
-                           "spatial.out"
+                           "spatial.out",
+                           "results"
                          ))
 
 base.names <- c("dir.proj",

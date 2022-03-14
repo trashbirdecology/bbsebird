@@ -104,7 +104,7 @@ This chunk will create new environmental variables for project and data director
 subdir.proj <-  set_proj_shorthand(species.abbr, regions, grid.size, year.range)
 dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
                          dir.proj = dir.proj,
-                         subdir.proj = subdir.proj) # create and/or specify directories for later use.
+                         subdir.proj = subdir.proj) # create and/or specify 
 ```
 
 ## Step 2: Make Integrated Data
