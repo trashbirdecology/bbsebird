@@ -84,7 +84,6 @@ countries           = c("US") ## string of  countries Call \code{bbsebird::iso.c
 year.range          = 2008:2019
 base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) # used as base date for Julian dates.
 crs.target          = 4326 #target CRS for all created spatial layers
-
 ##grid arguments
 grid.size           = 1.00 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
 
@@ -288,10 +287,6 @@ Specify model as a BUGS model in R:
   for(t in 1:T){
     Ntot[t]  <- sum(N[1:G,t])         # N est across all grids per yr
   }
-  
-  # for(t in 1:T){ 
-  # index[t] <- Ntot[t] / Ntot[T]
-  # }
   
   ####################################################
   # Priors (keep at end of model script for speed)
@@ -601,7 +596,6 @@ You can set the MCMC specs now or later. The function `bbsebird::set_mcmc_specs(
 ## Step 4: Run Model(s)
 ### JAGS
 ```{r run-jags, eval=FALSE}
-# bugs.dat  <- make.bugs.data(bundle.dev)
 bugs.dat  <- make.bugs.data(bundle.dev)
 myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
 tictoc::tic("jags runtime")
@@ -610,7 +604,7 @@ results.jags <- run_in_jags(bugs.data = bugs.dat,
   model=mod.fn,
   inits = set.inits(dat = bugs.dat, n=myMCMC.specs$nc), 
   mcmc.specs = myMCMC.specs,
-  savedir = paste0(dirs$dir.proj,"/jagsout/"),
+  savedir = dirs$dir.results,
   monitor = params, 
   mod.name = "testrun"
 )
@@ -625,12 +619,13 @@ tictoc::toc()
 # bugs.dat  <- make.bugs.data(bundle.dev)
 # myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
 bugs.dat  <- make.bugs.data(bundle)
-myMCMC.specs <- set_mcmc_specs(nc=3)
-inits <- set.inits(n=1, dat=bugs.dat)
+myMCMC.specs <- set_mcmc_specs(nc=3, ncores = 13)
+# inits <- set.inits(n=1, dat=bugs.dat)
 results.nimb <- run_in_nimble(
   myModel = mod.fn,
   myData = bugs.dat,
-  myInits = inits,
+  myInits = set.inits(n=1, dat=bugs.dat),
+  # myInits = inits,
   parallel = TRUE,
   mcmc.specs = myMCMC.specs,  
   monitor = params, 

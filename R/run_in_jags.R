@@ -59,6 +59,26 @@ run_in_jags <- function(bugs.data,
 
   stopifnot(is.character(params))
 
+
+# Out filepath + file search ----------------------------------------------
+  if(!endsWith(savedir, "/")) savedir <- paste0(savedir, "/")
+  dir.create(savedir, showWarnings = FALSE)
+  results.out.fn <- paste0(savedir, mod.name, "-jags-",
+                           mcmc.specs$ni, "ni_",
+                           mcmc.specs$na, "na_",
+                           mcmc.specs$nt, "nt_",
+                           mcmc.specs$nb, "nb",
+                           ".RDS")
+  if(file.exists(results.out.fn)){
+    choice <- menu(title=paste0("a jags file at the following location already exists. \nAre you sure you want to re-run JAGS?"),
+                    choices = c("Yes, definitely", "No. Don't run!", "What?!"))
+      message("Great choice. Importing existing results now...\n")
+    if(choice != 1){results <- readRDS(results.out.fn)}
+      return(results)
+  }
+
+
+
   # Run JAGS ---------------------------------------------------------------
   ## if not parallel:
   message("began jags model at: ", timestamp())
@@ -100,14 +120,6 @@ run_in_jags <- function(bugs.data,
   }
 
   # Save Results to File ----------------------------------------------------------
-  if(!endsWith(savedir, "/")) savedir <- paste0(savedir, "/")
-  dir.create(savedir, showWarnings = FALSE)
-  results.out.fn <- paste0(savedir, mod.name, "-jags-",
-                           mcmc.specs$ni, "ni_",
-                           mcmc.specs$na, "na_",
-                           mcmc.specs$nt, "nt_",
-                           mcmc.specs$nb, "nb",
-                           ".RDS")
   ### need to add a tryCatch
   message("attempting to save JAGS output to file: ", results.out.fn)
   saveRDS(results, file=results.out.fn)
