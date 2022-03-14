@@ -12,7 +12,7 @@
 #' @importFrom parallel detectCores
 #' @param mod.name optional Used to save model output to file. Defaults to 'mynimbleModel'
 #' @param monitor optional Character vector of parameters to monitor.
-#' @importFrom  parallel makeCluster parLapply
+#' @importFrom  parallel makeCluster parLapply stopCluster
 #' @importFrom  doParallel registerDoParallel
 #' @importFrom foreach %dopar%
 #' @export run_in_nimble
@@ -73,6 +73,8 @@ run_in_nimble <- function(myData,
   }
 
   # RUN MODEL ---------------------------------------------------------------
+  verbose.ind<-verbose
+  specs <- mcmc.specs
   chain_output <-
     parallel::parLapply(
       cl = this_cluster,
@@ -80,10 +82,12 @@ run_in_nimble <- function(myData,
       fun = run_MCMC_allcode,
       data = myData,
       model = myModel,
-      inits = myInits
+      mcmc.specs = specs,
+      inits = myInits,
+      verbose=verbose.ind # to avoid recusive args
     )
   ## close connection
-  stopCluster(this_cluster)
+  parallel::stopCluster(this_cluster)
 
 
   # Save Results to File ----------------------------------------------------------
@@ -105,12 +109,12 @@ run_in_nimble <- function(myData,
     ".RDS"
   )
   ### need to add a tryCatch
-  message("attempting to save nimble output to file: ", results.out.fn)
+  # message("attempting to save nimble output to file: ", results.out.fn)
 
 
   # RETURN OBJ --------------------------------------------------------------
-
-  saveRDS(chain_output, file = results.out.fn)
+  message("did not save rds to file...")
+  # saveRDS(chain_output, file = results.out.fn)
   return(chain_output)
 
 }

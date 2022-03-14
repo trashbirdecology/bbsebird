@@ -10,9 +10,12 @@
 run_MCMC_allcode <-
   function(seed = 1,
            data,
-           model
+           model,
+           inits,
+           mcmc.specs,
+           verbose=FALSE
            ) {
-    reuire(nimble)
+    require(nimble)
     myModel <-
       nimble::readBUGSmodel(model,
                             data,
@@ -26,7 +29,7 @@ run_MCMC_allcode <-
         CmyMCMC,
         niter   = mcmc.specs$ni,
         setSeed = seed,
-        progressBar = parallel,
+        progressBar = TRUE,
         ## won't show if in PARALLEL
         thin = mcmc.specs$nt,
         nburnin = mcmc.specs$nb
