@@ -1,10 +1,12 @@
 Package: bbsebird
-Title: Unifying BBS and eBird Data
+Title: Unifying BBS and eBird Data for Modelers
 Version: 0.0.0.9000
 Authors@R: 
     person("Jessica", "Burnett", , "jburnett@usgs.gov", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0896-5099"))
-Description: Imports, munges and aligns eBird and BBS data to a spatial sampling grid. This package also outputs data in various forms for use in JAGS. 
+Description: Imports, munges and aligns eBird and BBS data to a spatial sampling grid of user's select size.
+    Additionally, produces bundles of data for use in JAGS, Nimble or STAN and runs select BUGS models in 
+    parallel in JAGS and Nimble via R.
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
