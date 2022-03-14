@@ -4,7 +4,7 @@
 \alias{run_MCMC_allcode}
 \title{Run MCMC in or Out of Parallel in nimble}
 \usage{
-run_MCMC_allcode(seed = 1, data, model)
+run_MCMC_allcode(seed = 1, data, model, inits, mcmc.specs, verbose = FALSE)
 }
 \arguments{
 \item{seed}{for internal use}

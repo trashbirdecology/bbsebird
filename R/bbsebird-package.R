@@ -1,7 +1,7 @@
-#' @keywords internal
-"_PACKAGE"
-
 ## usethis namespace: start
+#' @keywords internal
+#' @name bbsebird
+"_PACKAGE"
 #' @importFrom auk auk_unique
 #' @importFrom bbsAssistant munge_bbs_data
 #' @importFrom data.table fread
@@ -45,7 +45,6 @@
 #' @importFrom tidyr separate
 #' @importFrom units drop_units
 #' @importFrom vroom vroom
-#' @name bbsebird
 #' @importFrom dplyr %>%
 NULL
 
