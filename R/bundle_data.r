@@ -209,7 +209,7 @@ bundle_data <-
     # BBS-EBIRD INDEXES ---------------------------------------------------------------
     ## for bbs and ebird data, create site (route, checklist_id) and observer indexes
     LL <- list(bbs = bbs, ebird = ebird)
-    cat("  [note] creating indexes for sampling events and sites")
+    cat("  [note] creating indexes for sampling events and sites\n")
     for (i in seq_along(LL)) {
       ## first, drop grid-level covariates and metadata since it iwll be stored there
       LL[[i]] <-
@@ -257,6 +257,7 @@ bundle_data <-
     rm(LL)
 
     # BBS-SPECIFIC DATA CREATE MATRIX PROP (% site.ind in cell.ind) ----------------------------------------------------
+    cat("  [note] creating prop matrix for bbs routes/grid cells\n")
     stopifnot(nrow(bbs %>% distinct(site.ind, cell.ind, proprouteincell)) ==
                 nrow(bbs %>% distinct(site.ind, cell.ind)))
     ## grab all cell ids and site inds
@@ -451,8 +452,8 @@ bundle_data <-
     }
 
     ## JAGAM -------------------------------------------------------------------------
-    message(
-      "[FYI] K is currently set to ",
+    cat(
+      "[note] K is currently set to ",
       K,
       ". If you have memory errors, try defining K in arguments as a lower value\n"
     )
@@ -549,6 +550,7 @@ bundle_data <-
 
 
     # RETURNED OBJECT ---------------------------------------------------------
+    cat("  [note] packaging the data into a list\n")
     stopifnot(!any(is.na(bundle.out$bbs.df$c)))
     stopifnot(!any(is.na(bundle.out$ebird.df$c)))
 
