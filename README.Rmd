@@ -140,7 +140,7 @@ bbs_spatial <- make_bbs_spatial(
   df = bbs_obs,
   cws.routes.dir = dirs$cws.routes.dir,
   usgs.routes.dir = dirs$usgs.routes.dir,
-  plot.dir = dirs$dir.plots,
+  plot.dir = dirs$dir.results,
   crs.target = crs.target,
   grid = study_area,
   dir.out = dirs$dir.spatial.out, 
@@ -597,8 +597,9 @@ You can set the MCMC specs now or later. The function `bbsebird::set_mcmc_specs(
 ## Step 4: Run Model(s)
 ### JAGS
 ```{r run-jags, eval=FALSE}
-bugs.dat  <- make.bugs.data(bundle.dev)
-myMCMC.specs <- set_mcmc_specs(dev.mode=FALSE, ni=50000)
+# bugs.dat  <- make.bugs.data(bundle.dev)
+bugs.dat  <- make.bugs.data(bundle)
+myMCMC.specs <- set_mcmc_specs(dev.mode=FALSE, ni=25000)
 tictoc::tic("jags runtime")
 results.jags <- run_in_jags(
   bugs.data = bugs.dat,
@@ -608,10 +609,11 @@ results.jags <- run_in_jags(
   mcmc.specs = myMCMC.specs,
   savedir = dirs$dir.results,
   monitor = params, 
-  mod.name = "testrun2", 
-  overwrite=TRUE)
+  mod.name = "hosp-fl-run", 
+  overwrite=TRUE, 
+  traceplots=TRUE)
 tictoc::toc()
-plot(results.jags)
+# browseURL(list.files(dirs$dir.results, ".pdf", full.names=TRUE)[2])
 ```
 
 ### Nimble
@@ -619,10 +621,8 @@ plot(results.jags)
 # unlike in JAGS, there cannot be stray INITS. 
 # compiling the model takes a while in nimble...
 bugs.dat  <- make.bugs.data(bundle.dev)
-myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
 # bugs.dat  <- make.bugs.data(bundle)
-# myMCMC.specs <- set_mcmc_specs(nc=3, ncores = 13)
-# inits <- set.inits(n=1, dat=bugs.dat)
+myMCMC.specs <- set_mcmc_specs(dev.mode=FALSE, ni=50000)
 results.nimb <- run_in_nimble(
   myModel = mod.fn,
   myData = bugs.dat,

@@ -11,6 +11,7 @@
 #' @param mod.name optional Used to save model output to file. Defaults to 'myJAGSModel'
 #' @param overwrite logical If TRUE and .RDS file already exists, will prompt user with a menu to confirm model re-run. Specifying overwrite=TRUE will avoid that prompt.
 #' @param monitor optional Character vector of parameters to monitor.
+#' @param traceplots logical If TRUE will save traceplots to file
 #' @importFrom parallel detectCores
 #' @importFrom doParallel stopImplicitCluster
 #' @importFrom jagsUI jags
@@ -26,6 +27,7 @@ run_in_jags <- function(bugs.data,
                         verbose     = TRUE,
                         mod.name    = "myJAGSModel",
                         overwrite   = FALSE,
+                        traceplots  = TRUE,
                         mcmc.specs  = set_mcmc_specs()) {
   # deal with unbinded vars
 
@@ -129,14 +131,17 @@ run_in_jags <- function(bugs.data,
     print(results$runtime)
   }
 
+
+# SAVE FILES --------------------------------------------------------------
   # SAVE AND EXPORT RESULTS
-  trySave(x = results, name = "jags-samps", savedir, mcmc.specs)
+  trySave(x = results, name = "jags-samps", savedir, mcmc.specs, traceplots =FALSE)
 
-  # SAVE AND EXPORT RESULTS
-  # if(traceplots) trySave(x = "plots", name = "jags-trace", savedir, mcmc.specs)
+  # SAVE AND EXPORT PLOTS
+  if(traceplots) trySave(x = results, traceplots=TRUE, name = "jags-trace", savedir, mcmc.specs)
 
 
-  # EXPORT
+
+# RETURN ------------------------------------------------------------------
   return(results)
 
 }

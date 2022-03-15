@@ -1,14 +1,15 @@
-#' @title Try to Save Object as RDS
-#' @param x object to save to file as .RDS
+#' @title Try to Save Results or plot(results) to File
+#' @param x object to save to file as .RDS or as .PDF
 #' @param name object name (e.g., plots-nimble or jags_samples)
 #' @param savedir directory within which object will attempt to save
-#' @param mcmc.specs if provided, the MCMC specs will be used to save output files#'
+#' @param mcmc.specs if provided, the MCMC specs will be used to save output files
+#' @param traceplots logical If TRUE will save plots to PDF
 #' @export trySaveResults
 
 trySave <- function(x,
                     name,
                     savedir = "/",
-                    mcmc.specs = NULL) {
+                    mcmc.specs = NULL, traceplots=FALSE) {
   if (!endsWith(savedir, "/")) {
     savedir <- paste0(savedir, "/")
   }
@@ -34,34 +35,29 @@ trySave <- function(x,
                    "_",
                    middleparts)
 
-  # if(tolower(x)=="plots"){
-  #   ## save non plot objects
-  #   tryCatch(
-  #     {
-  #     sink(paste0(out.fn, ".pdf"))
-  #          plot(results.jags)
-  #     sink()
-  #     }
-  #     error = function(e) {
-  #       cat("failed to save traceplots to file\n")
-  #     }
-  #   )
-  #
-  #
-  # }
+  if(traceplots){
+    ## save non plot objects
+    tryCatch({pdf(paste0(out.fn,".pdf"))
+        plot(x)
+        dev.off()
+        }, error = function(e) {
+        cat("failed to save traceplots to file\n")
+      }
+    )
 
-  ## save non plot objects
-# if(tolower(x)!="plots"){
+  }
+
+if(!traceplots){
   tryCatch(
     saveRDS(x, file = paste0(out.fn, ".rds")),
     error = function(e) {
       cat("failed to save output to file. Be sure to save the output manually!\n")
     }
   )
-  # }
+  }
 
 
-
+cat("check ", out.fn, " for saved outputs.")
 
 
 
