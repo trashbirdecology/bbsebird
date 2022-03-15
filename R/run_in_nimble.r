@@ -9,11 +9,11 @@
 #' @param seed optional If specified will set a seed for random number generation.
 #' @param savedir If not specified, will save the samples resulting from nimbleUI::nimble() to current working directory
 #' @param verbose logical Argument used in nimble::compileNimble(showCompilerOutput). If TRUE will generate more messages/information during sampling phase. Note: If parallel=TRUE, messages are suppressed given behavior of parallel compute.
-#' @importFrom parallel detectCores
 #' @param mod.name optional Used to save model output to file. Defaults to 'mynimbleModel'
 #' @param monitor optional Character vector of parameters to monitor.
-#' @importFrom  parallel makeCluster parLapply stopCluster
-#' @importFrom  doParallel registerDoParallel
+#' @importFrom parallel detectCores
+#' @importFrom  parallel makeCluster parLapply
+#' @importFrom  doParallel registerDoParallel stopImplicitCluster
 #' @importFrom foreach %dopar%
 #' @export run_in_nimble
 

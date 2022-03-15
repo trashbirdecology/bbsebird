@@ -8,9 +8,11 @@
 #' @param seed optional If specified will set a seed for random number generation.
 #' @param savedir If not specified, will save the samples resulting from jagsUI::jags() to current working directory
 #' @param verbose logical Argument used in jagsUI::jags(). If TRUE will generate more messages/information during sampling phase. Note: If parallel=TRUE, messages are suppressed given behavior of parallel compute.
-#' @importFrom parallel detectCores
 #' @param mod.name optional Used to save model output to file. Defaults to 'myJAGSModel'
+#' @param overwrite logical If TRUE and .RDS file already exists, will prompt user with a menu to confirm model re-run. Specifying overwrite=TRUE will avoid that prompt.
 #' @param monitor optional Character vector of parameters to monitor.
+#' @importFrom parallel detectCores
+#' @importFrom doParallel stopImplicitCluster
 #' @importFrom jagsUI jags
 #' @export run_in_jags
 
@@ -23,6 +25,7 @@ run_in_jags <- function(bugs.data,
                         parallel    = TRUE,
                         verbose     = TRUE,
                         mod.name    = "myJAGSModel",
+                        overwrite   = FALSE,
                         mcmc.specs  = set_mcmc_specs()) {
   # deal with unbinded vars
 
@@ -69,7 +72,7 @@ run_in_jags <- function(bugs.data,
                            mcmc.specs$nt, "nt_",
                            mcmc.specs$nb, "nb",
                            ".RDS")
-  if(file.exists(results.out.fn)){
+  if(file.exists(results.out.fn) & !overwrite){
     choice <- menu(title=paste0("a jags file at the following location already exists. \nAre you sure you want to re-run JAGS?"),
                     choices = c("Yes, definitely", "No. Don't run!", "What?!"))
       message("Great choice. Importing existing results now...\n")
@@ -114,7 +117,7 @@ run_in_jags <- function(bugs.data,
   try({
     # cat("Attempting to stop cluster\n")
     doParallel::stopImplicitCluster()
-    parallel::stopCluster()
+    # parallel::stopCluster()
   })
 
   } # end run jagsUI::jags()

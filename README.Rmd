@@ -101,9 +101,7 @@ This chunk will create new environmental variables for project and data director
 ```{r dirs-set}
 # set_proj_shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 subdir.proj <-  set_proj_shorthand(species.abbr, regions, grid.size, year.range)
-dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
-                         dir.proj = dir.proj,
-                         subdir.proj = subdir.proj) # create and/or specify 
+dirs        <-  dir_spec(dir.orig.data, dir.proj,subdir.proj) # create and/or specify 
 ```
 
 ## Step 2: Make Integrated Data
@@ -118,7 +116,7 @@ study_area <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
                           crs.target = crs.target,
                           grid.size = grid.size
                           )
-plot(study_area[1])
+# plot(study_area[1])
 ```
 
 Create the BBS data. This chunk relieson R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
@@ -304,9 +302,11 @@ Specify model as a BUGS model in R:
     log(exptrend[g]) <-  trend[g]
     #### observer effects  
   }
+  
   for(i in 1:nobsrb){
     obseff[i] ~ dnorm (0.00, tauobsb)  # observer (id) effects
   }
+  
   ##### year effects
   for(g in 1:G){
     for(i in 1:1){ yeareff[g,1] ~ dnorm(0, 1E-3)   }    
@@ -485,11 +485,11 @@ stopifnot(file.exists(mod.fn))
 # } #### KEEP the EMPTY LINE AT ENDING!! IMPORTANT FOR IMPORTING BUGS MOD VIA NIMBLE!!!
 # 
 # "}
-mod.fn2 <- paste0(dirs$dir.models, "/myBUGSmodel2.txt")
-sink(mod.fn2)
-cat(model.base2, sep = "")
-sink()
-stopifnot(file.exists(mod.fn2))
+# mod.fn2 <- paste0(dirs$dir.models, "/myBUGSmodel2.txt")
+# sink(mod.fn2)
+# cat(model.base2, sep = "")
+# sink()
+# stopifnot(file.exists(mod.fn2))
 ```
 
 ## Step 2: bugs.data
@@ -539,16 +539,16 @@ First, specify parameters to monitor (based on your model):
 ```{r set-params}
 ##  refer to model for inits or params
 # browseURL(mod.fn) # check out the model if you wish
-params <- c("alpha1", #asst
-            "alpha2", #fyrobs
-            "beta1",   #hab
-            "alpha11",  #party
-            "alpha22",  #dist
-            "alpha33",  #mins
-            "alpha44",  #effarea
-            "alpha55",  #starttime
-            "yeareff", 
-            # "obseff",
+params <- c("alpha1",   #bbs asst
+            "alpha2",   #bbs fyr observer
+            "yeareff",  #bbs year effects
+            "obseff",   #bbs observer effects
+            "beta1",    #grid hab
+            "alpha11",  #ebird num in birding party
+            "alpha22",  #ebird dist
+            "alpha33",  #ebird mins
+            "alpha44",  #ebird effarea
+            "alpha55",  #ebird starttime
             "Ntot" , 
             "lambda" 
 )
@@ -571,7 +571,7 @@ set.inits <- function(n = 1, dat = bugs.data) {
       alpha44       = rnorm(1, 0, 0.001), # eff area  ebird
       alpha55       = rnorm(1, 0, 0.001), # starttime
       # mu.b          = rnorm(1, 0, 0.001), # log expected N on lambda.route
-      # obseff        = rep(rnorm(dat$nobsb, 0, 0.001)),
+      obseff        = rep(rnorm(dat$nobsrb, 0, 0.001)),
       trend         = rep(rnorm(dat$G,     0, 0.001)),
       yeareff       = matrix(rep(rnorm(dat$G,     0, 0.001)),
                              nrow = dat$G,
@@ -598,7 +598,7 @@ You can set the MCMC specs now or later. The function `bbsebird::set_mcmc_specs(
 ### JAGS
 ```{r run-jags, eval=FALSE}
 bugs.dat  <- make.bugs.data(bundle.dev)
-myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
+myMCMC.specs <- set_mcmc_specs(dev.mode=FALSE, ni=50000)
 tictoc::tic("jags runtime")
 results.jags <- run_in_jags(
   bugs.data = bugs.dat,
@@ -608,7 +608,8 @@ results.jags <- run_in_jags(
   mcmc.specs = myMCMC.specs,
   savedir = dirs$dir.results,
   monitor = params, 
-  mod.name = "testrun")
+  mod.name = "testrun2", 
+  overwrite=TRUE)
 tictoc::toc()
 plot(results.jags)
 ```
@@ -630,7 +631,8 @@ results.nimb <- run_in_nimble(
   parallel = FALSE, # suggest FALSE when debugging/dev mode
   mcmc.specs = myMCMC.specs,  
   monitor = params, 
-  mod.name = "testrun")
+  mod.name = "testrun", 
+  overwrite = TRUE)
 library(coda)
 coda.samples <- as.mcmc(results.nimb)
 ```
