@@ -53,26 +53,22 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   dir.spatial.out <- "/spatial/"
   dir.results <- "/results/"
   dir.plots <- "/plots/"
-  # add dir.proj to direcotries and dir.create them
-  sapply(
+  # add dir.proj to directories and dir.create them
+  x=
+  # sapply(
     c(
-      dir.bbs.out,
-      dir.ebird.out,
-      dir.spatial.out,
-      dir.results,
-      dir.models,
-      dir.plots
-    ),
-    FUN = function(x)
-      dir.create(paste0(dir.proj, x), showWarnings = FALSE)
-  )
-
+      'dir.bbs.out',
+      'dir.ebird.out',
+      'dir.spatial.out',
+      'dir.results',
+      'dir.models',
+      'dir.plots',
+      'dir.proj')
+  for(i in seq_along(x))dir.create(eval(parse(text=paste0("dirs$",x))), showWarnings=FALSE)
   cat("Project directory output files will go to ", dir.proj, "/n")
 
-
-subset.names <- paste0("dir.",
+  subset.names <- paste0("dir.",
                          c(
-                           # "jags",
                            "plots",
                            "models",
                            "bbs.out",

@@ -110,6 +110,12 @@ run_in_jags <- function(bugs.data,
     n.cores    = mcmc.specs$ncores,
     seed       = NULL
   )
+  try({
+    cat("Attempting to stop cluster\n")
+    doParallel::stopImplicitCluster()        # package: `doParallel`
+    doParallel::stopCluster() # package: `parallel`
+  })
+
     } # end run jagsUI::jags()
 
   message("`finish` jags model at: ", timestamp())
@@ -121,9 +127,10 @@ run_in_jags <- function(bugs.data,
 
   # Save Results to File ----------------------------------------------------------
   ### need to add a tryCatch
-  message("attempting to save JAGS output to file: ", results.out.fn)
-  saveRDS(results, file=results.out.fn)
-
+  try({
+    cat("attempting to save JAGS output to file: ", results.out.fn)
+    saveRDS(results, file=results.out.fn)
+  })
   # Return Object -----------------------------------------------------------
   return(results)
 

@@ -87,8 +87,12 @@ run_in_nimble <- function(myData,
       verbose=verbose.ind # to avoid recusive args
     )
   ## close connection
-  parallel::stopCluster(this_cluster)
 
+    try({
+      cat("Attempting to stop cluster\n")
+      stopImplicitCluster()        # package: `doParallel`
+      stopCluster(this_cluster) # package: `parallel`
+    })
 
   # Save Results to File ----------------------------------------------------------
   if (!endsWith(savedir, "/"))
@@ -109,12 +113,14 @@ run_in_nimble <- function(myData,
     ".RDS"
   )
   ### need to add a tryCatch
-  # message("attempting to save nimble output to file: ", results.out.fn)
 
 
   # RETURN OBJ --------------------------------------------------------------
-  message("did not save rds to file...")
-  # saveRDS(chain_output, file = results.out.fn)
+  try({
+    cat("attempting to save nimble output to file: ", results.out.fn)
+    saveRDS(chain_output, file = results.out.fn)
+  })
+
   return(chain_output)
 
 }
