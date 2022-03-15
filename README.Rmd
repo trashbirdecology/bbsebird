@@ -548,7 +548,7 @@ params <- c("alpha1", #asst
             "alpha44",  #effarea
             "alpha55",  #starttime
             "yeareff", 
-            "obseff",
+            # "obseff",
             "Ntot" , 
             "lambda" 
 )
@@ -570,7 +570,7 @@ set.inits <- function(n = 1, dat = bugs.data) {
       alpha33       = rnorm(1, 0, 0.001), # duration min ebird
       alpha44       = rnorm(1, 0, 0.001), # eff area  ebird
       alpha55       = rnorm(1, 0, 0.001), # starttime
-      mu.b          = rnorm(1, 0, 0.001), # log expected N on lambda.route
+      # mu.b          = rnorm(1, 0, 0.001), # log expected N on lambda.route
       obseff        = rep(rnorm(dat$nobsb, 0, 0.001)),
       trend         = rep(rnorm(dat$G,     0, 0.001)),
       yeareff       = matrix(rep(rnorm(dat$G,     0, 0.001)),
@@ -600,7 +600,8 @@ You can set the MCMC specs now or later. The function `bbsebird::set_mcmc_specs(
 bugs.dat  <- make.bugs.data(bundle.dev)
 myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
 tictoc::tic("jags runtime")
-results.jags <- run_in_jags(bugs.data = bugs.dat,
+results.jags <- run_in_jags(
+  bugs.data = bugs.dat,
   parallel = TRUE,
   model=mod.fn,
   inits = set.inits(dat = bugs.dat, n=myMCMC.specs$nc), 
@@ -610,48 +611,29 @@ results.jags <- run_in_jags(bugs.data = bugs.dat,
   mod.name = "testrun"
 )
 tictoc::toc()
-# plot(results.jags)
+plot(results.jags)
 ```
 
 ### Nimble
 ```{r run-nimble, eval=FALSE}
 # unlike in JAGS, there cannot be stray INITS. 
 # compiling the model takes a while in nimble...
-# bugs.dat  <- make.bugs.data(bundle.dev)
-# myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
-bugs.dat  <- make.bugs.data(bundle)
-myMCMC.specs <- set_mcmc_specs(nc=3, ncores = 13)
+bugs.dat  <- make.bugs.data(bundle.dev)
+myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
+# bugs.dat  <- make.bugs.data(bundle)
+# myMCMC.specs <- set_mcmc_specs(nc=3, ncores = 13)
 # inits <- set.inits(n=1, dat=bugs.dat)
 results.nimb <- run_in_nimble(
   myModel = mod.fn,
   myData = bugs.dat,
   myInits = set.inits(n=1, dat=bugs.dat),
   # myInits = inits,
-  parallel = TRUE,
+  parallel = FALSE, # suggest FALSE when debugging/dev mode
   mcmc.specs = myMCMC.specs,  
   monitor = params, 
-  mod.name = "test-nimb")
-saveRDS(
-  results.nimb,
-  paste0(
-    dirs$dir.proj,"/jagsout/",
-    Sys.Date(),
-    "run-nimble",
-    myMCMC.specs$ni,
-    "ni_",
-    myMCMC.specs$na,
-    "na_",
-    myMCMC.specs$nt,
-    "nt_",
-    myMCMC.specs$nb,
-    "nb",
-    ".RDS"
-  )
-)
-# results.nimb[[1]]
-# 
+  mod.name = "testrun")
 library(coda)
-coda.samples <- as.mcmc(samples)
+coda.samples <- as.mcmc(results.nimb)
 ```
 
 ### STAN

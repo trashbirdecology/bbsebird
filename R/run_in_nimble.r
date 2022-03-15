@@ -66,16 +66,14 @@ run_in_nimble <- function(myData,
 
   stopifnot(typeof(myModel) == "language" |  file.exists(myModel))
 
-  if (parallel) {
-    this_cluster <- this_cluster <- parallel::makeCluster(mcmc.specs$ncores)
-  } else{
-    this_cluster <- this_cluster <- parallel::makeCluster(1)
-  }
-
-  # RUN MODEL ---------------------------------------------------------------
+  ## avoid recursive arg specification in run_MCMC_allcode (need to fix later.)
   verbose.ind<-verbose
   specs <- mcmc.specs
-  chain_output <-
+
+  if (parallel) {
+    this_cluster <- this_cluster <- parallel::makeCluster(mcmc.specs$ncores)
+    # run in parallel
+  results <-
     parallel::parLapply(
       cl = this_cluster,
       X = 1:mcmc.specs$ncores,
@@ -86,13 +84,17 @@ run_in_nimble <- function(myData,
       inits = myInits,
       verbose=verbose.ind # to avoid recusive args
     )
-  ## close connection
 
-    try({
-      cat("Attempting to stop cluster\n")
-      stopImplicitCluster()        # package: `doParallel`
-      stopCluster(this_cluster) # package: `parallel`
-    })
+  try({
+    # cat("Attempting to stop cluster\n")
+    stopImplicitCluster()        # package: `doParallel`
+    stopCluster(this_cluster) # package: `parallel`
+  })
+
+  }else{
+      results <- run_MCMC_allcode(data=myData, model=myModel, inits = myInits, verbose = verbose.ind, mcmc.specs = specs)
+
+  }
 
   # Save Results to File ----------------------------------------------------------
   if (!endsWith(savedir, "/"))
@@ -116,11 +118,14 @@ run_in_nimble <- function(myData,
 
 
   # RETURN OBJ --------------------------------------------------------------
-  try({
-    cat("attempting to save nimble output to file: ", results.out.fn)
-    saveRDS(chain_output, file = results.out.fn)
-  })
+  tryCatch(
+    saveRDS(results, file = results.out.fn),
+    error = function(e) {
+      cat("failed to save Nimble output to file. Be sure to save the output manually!\n")
+    }
+  )
 
-  return(chain_output)
+
+  return(results)
 
 }

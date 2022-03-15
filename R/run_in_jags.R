@@ -73,8 +73,9 @@ run_in_jags <- function(bugs.data,
     choice <- menu(title=paste0("a jags file at the following location already exists. \nAre you sure you want to re-run JAGS?"),
                     choices = c("Yes, definitely", "No. Don't run!", "What?!"))
       message("Great choice. Importing existing results now...\n")
-    if(choice != 1){results <- readRDS(results.out.fn)}
-      return(results)
+    if(choice != 1){results <- readRDS(results.out.fn)
+    return(results)
+    }
   }
 
 
@@ -111,9 +112,9 @@ run_in_jags <- function(bugs.data,
     seed       = NULL
   )
   try({
-    cat("Attempting to stop cluster\n")
-    doParallel::stopImplicitCluster()        # package: `doParallel`
-    doParallel::stopCluster() # package: `parallel`
+    # cat("Attempting to stop cluster\n")
+    doParallel::stopImplicitCluster()
+    parallel::stopCluster()
   })
 
     } # end run jagsUI::jags()
@@ -127,10 +128,13 @@ run_in_jags <- function(bugs.data,
 
   # Save Results to File ----------------------------------------------------------
   ### need to add a tryCatch
-  try({
-    cat("attempting to save JAGS output to file: ", results.out.fn)
-    saveRDS(results, file=results.out.fn)
-  })
+  tryCatch(
+    saveRDS(results, file = results.out.fn),
+    error = function(e) {
+      cat("failed to save JAGS output to file. Be sure to save the output manually!\n")
+    }
+  )
+
   # Return Object -----------------------------------------------------------
   return(results)
 
