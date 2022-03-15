@@ -64,7 +64,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       'dir.models',
       'dir.plots',
       'dir.proj')
-  for(i in seq_along(x))dir.create(eval(parse(text=paste0("dirs$",x))), showWarnings=FALSE)
+  for(i in seq_along(x))dir.create(eval(parse(text=paste0(x))), showWarnings=FALSE)
   cat("Project directory output files will go to ", dir.proj, "/n")
 
   subset.names <- paste0("dir.",

@@ -151,7 +151,7 @@ bbs_spatial <- make_bbs_spatial(
 saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
 }
 ## check out the bbs spatial data to ensure things look ok
-plot(bbs_spatial['area']) # cell area
+# plot(bbs_spatial['area']) # cell area
 ```
 Munge the eBird data (must be saved to file):
 ```{r ebird-data}
@@ -356,6 +356,7 @@ cat(model.base, sep = "")
 sink()
 stopifnot(file.exists(mod.fn))
 ```
+
 ```{r mod-alt, eval=FALSE}
 # {model.base2 <- "model{
 #   ####################################################
