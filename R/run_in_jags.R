@@ -117,7 +117,7 @@ run_in_jags <- function(bugs.data,
     parallel::stopCluster()
   })
 
-    } # end run jagsUI::jags()
+  } # end run jagsUI::jags()
 
   message("`finish` jags model at: ", timestamp())
   (time2 <- Sys.time()-time1)
@@ -126,23 +126,14 @@ run_in_jags <- function(bugs.data,
     print(results$runtime)
   }
 
-  # Save Results to File ----------------------------------------------------------
-  ### need to add a tryCatch
-  tryCatch(
-    saveRDS(results, file = results.out.fn),
-    error = function(e) {
-      cat("failed to save JAGS output to file. Be sure to save the output manually!\n")
-    }
-  )
+  # SAVE AND EXPORT RESULTS
+  trySave(x = results, name = "jags-samps", savedir, mcmc.specs)
 
-  # Return Object -----------------------------------------------------------
-  return(results)
-
-
-
-
+  # SAVE AND EXPORT RESULTS
+  # if(traceplots) trySave(x = "plots", name = "jags-trace", savedir, mcmc.specs)
 
 
   # EXPORT
+  return(results)
 
 }

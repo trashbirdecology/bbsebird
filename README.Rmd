@@ -34,7 +34,7 @@ Download development version from GitHub with:
 ```{r results=FALSE, echo=TRUE, warning=FALSE, message=FALSE, eval=FALSE}
 # install.packages("devtools")
 # remotes::install_github("trashbirdecology/bbsassistant") # to be safe
-remotes::install_github("trashbirdecology/bbsebird")
+remotes::install_github("trashbirdecology/bbsebird") 
 ```
 
 ## eBird Data Requirements
@@ -571,7 +571,7 @@ set.inits <- function(n = 1, dat = bugs.data) {
       alpha44       = rnorm(1, 0, 0.001), # eff area  ebird
       alpha55       = rnorm(1, 0, 0.001), # starttime
       # mu.b          = rnorm(1, 0, 0.001), # log expected N on lambda.route
-      obseff        = rep(rnorm(dat$nobsb, 0, 0.001)),
+      # obseff        = rep(rnorm(dat$nobsb, 0, 0.001)),
       trend         = rep(rnorm(dat$G,     0, 0.001)),
       yeareff       = matrix(rep(rnorm(dat$G,     0, 0.001)),
                              nrow = dat$G,
@@ -608,8 +608,7 @@ results.jags <- run_in_jags(
   mcmc.specs = myMCMC.specs,
   savedir = dirs$dir.results,
   monitor = params, 
-  mod.name = "testrun"
-)
+  mod.name = "testrun")
 tictoc::toc()
 plot(results.jags)
 ```

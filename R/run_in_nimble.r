@@ -96,35 +96,8 @@ run_in_nimble <- function(myData,
 
   }
 
-  # Save Results to File ----------------------------------------------------------
-  if (!endsWith(savedir, "/"))
-    savedir <- paste0(savedir, "/")
-  dir.create(savedir, showWarnings = FALSE)
-  results.out.fn <- paste0(
-    savedir,
-    mod.name,
-    "-nimble-",
-    mcmc.specs$ni,
-    "ni_",
-    mcmc.specs$na,
-    "na_",
-    mcmc.specs$nt,
-    "nt_",
-    mcmc.specs$nb,
-    "nb",
-    ".RDS"
-  )
-  ### need to add a tryCatch
-
-
-  # RETURN OBJ --------------------------------------------------------------
-  tryCatch(
-    saveRDS(results, file = results.out.fn),
-    error = function(e) {
-      cat("failed to save Nimble output to file. Be sure to save the output manually!\n")
-    }
-  )
-
+  # SAVE AND EXPORT RESULTS
+  trySave(x = results, name = "nimble-samps", savedir, mcmc.specs)
 
   return(results)
 
