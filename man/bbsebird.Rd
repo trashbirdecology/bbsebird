@@ -4,9 +4,9 @@
 \name{bbsebird}
 \alias{bbsebird}
 \alias{bbsebird-package}
-\title{bbsebird: Unifying BBS and eBird Data}
+\title{bbsebird: Unifying BBS and eBird Data for Modelers}
 \description{
-Imports, munges and aligns eBird and BBS data to a spatial sampling grid. This package also outputs data in various forms for use in JAGS.
+Imports, munges and aligns eBird and BBS data to a spatial sampling grid of user's select size. Additionally, produces bundles of data for use in JAGS, Nimble or STAN and runs select BUGS models in parallel in JAGS and Nimble via R.
 }
 \author{
 \strong{Maintainer}: Jessica Burnett \email{jburnett@usgs.gov} (\href{https://orcid.org/0000-0002-0896-5099}{ORCID})

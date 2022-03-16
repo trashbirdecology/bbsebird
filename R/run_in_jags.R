@@ -137,7 +137,7 @@ run_in_jags <- function(bugs.data,
   trySave(x = results, name = "jags-samps", savedir, mcmc.specs, traceplots =FALSE)
 
   # SAVE AND EXPORT PLOTS
-  if(traceplots) trySave(x = results, traceplots=TRUE, name = "jags-trace", savedir, mcmc.specs)
+  if(traceplots) trySave(x = results, traceplots=TRUE, name = paste0("jags-trace_",mod.name), savedir, mcmc.specs)
 
 
 

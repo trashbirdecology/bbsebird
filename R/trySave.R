@@ -4,7 +4,7 @@
 #' @param savedir directory within which object will attempt to save
 #' @param mcmc.specs if provided, the MCMC specs will be used to save output files
 #' @param traceplots logical If TRUE will save plots to PDF
-#' @export trySaveResults
+#' @export trySave
 
 trySave <- function(x,
                     name,

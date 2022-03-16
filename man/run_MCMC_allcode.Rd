@@ -12,6 +12,12 @@ run_MCMC_allcode(seed = 1, data, model, inits, mcmc.specs, verbose = FALSE)
 \item{data}{data and constants as list}
 
 \item{model}{filepath or nimble model object}
+
+\item{inits}{list of initial values}
+
+\item{mcmc.specs}{MCMC specifications as a list; created using \code{set_mcmc_specs}}
+
+\item{verbose}{logical if TRUE and code is not running in parallel will print all output available from Nimble commands.}
 }
 \description{
 Run MCMC in or Out of Parallel in nimble

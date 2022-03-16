@@ -99,7 +99,6 @@ countries           = c("US") ## string of  countries Call \code{bbsebird::iso.c
 year.range          = 2008:2019
 base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) # used as base date for Julian dates.
 crs.target          = 4326 #target CRS for all created spatial layers
-
 ##grid arguments
 grid.size           = 1.00 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
 
@@ -122,7 +121,7 @@ above.
 subdir.proj <-  set_proj_shorthand(species.abbr, regions, grid.size, year.range)
 dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
                          dir.proj = dir.proj,
-                         subdir.proj = subdir.proj) # create and/or specify directories for later use.
+                         subdir.proj = subdir.proj) # create and/or specify 
 ```
 
 ## Step 2: Make Integrated Data
@@ -176,7 +175,7 @@ bbs_spatial <- make_bbs_spatial(
 saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
 }
 ## check out the bbs spatial data to ensure things look ok
-plot(bbs_spatial['area']) # cell area
+# plot(bbs_spatial['area']) # cell area
 ```
 
 Munge the eBird data (must be saved to file):
@@ -217,10 +216,10 @@ ebird_spatial <- make_ebird_spatial(
 ## Step 3: Bundle Data for Use in BUGS
 
 Create a list of lists and indexes for use in JAGS or elsewhere. We
-suggest creating a list using `bundle_data` and subsequently grabbing
+suggest creating a list using `make_bundle` and subsequently grabbing
 useful data from there.
 
-`bundle_data` creates site-level covariates in both long (vector) and
+`make_bundle` creates site-level covariates in both long (vector) and
 wide (matrix) form. Matrix form are housed inside Xsite matrix, whereas
 long-form are within bbs.df and ebird.df.
 
@@ -228,7 +227,7 @@ long-form are within bbs.df and ebird.df.
 message("[note] sometimes when running this chunk in notebook/rmarkdown it crashes. try restarting session or running interactively\n")
 
 ### make a teeny little bundle for model dev/debugging
-bundle.dev <- bundle_data(
+bundle.dev <- make_bundle(
   bbs = bbs_spatial,
   ebird = ebird_spatial,
   grid = study_area,
@@ -238,7 +237,7 @@ bundle.dev <- bundle_data(
 saveRDS(bundle.dev, paste0(dirs$dir.proj,"/dev-bundle.rds"))
 
 ### make full sized bundle
-bundle <- bundle_data(
+bundle <- make_bundle(
   # data
   bbs = bbs_spatial,
   ebird = ebird_spatial,
@@ -279,42 +278,44 @@ Specify model as a BUGS model in R:
   # BBS 
   ####################################################
   for(i in 1:nobsb){
-    Cb[i]  ~  dpois( lambda.route[siteb[i], yearb[i]] * p.b[siteb[i], yearb[i]] )
+    Cb[i]  ~  dpois( lambda.route[siteb[i], yearb[i]] * 
+                     p.b[siteb[i], yearb[i]] )
     
-    log(p.b[siteb[i], yearb[i]])    <-   
-      alpha1  *  asst[i]                     +   # assistant    (logical, 1=TRUE)
-      alpha2  *  fyr[i]                      +   # first year   (logical, 1=TRUE)
-    obseff[obsrb[i]]                             # observer id
-    
-    log(lambda.route[siteb[i], yearb[i]]) <-  inprod(prop[siteb[i],1:G], 
-                                                    lambda.grid[1:G,yearb[i]]) +  
-      yeareff[cellb[i], yearb[i]]            +   # year effects
-      trend[cellb[i]] * (yearb[i]-ref.year)  +   # trend
-      epsb[i]                                    # gaussian noise route-yr
+      log(lambda.route[siteb[i], yearb[i]]) <-  
+        inprod(prop[siteb[i],1:G], 
+        lambda.grid[1:G,yearb[i]])             +  
+        yeareff[cellb[i], yearb[i]]            +   # year effects
+        trend[cellb[i]] * (yearb[i]-ref.year)  +   # trend
+        epsb[i]                                    # gaussian noise route-yr
+        
+      log(p.b[siteb[i], yearb[i]])          <-   
+        alpha1  *  asst[i]                     +   # assistant    (logical, 1=TRUE)
+        alpha2  *  fyr[i]                      +   # first year   (logical, 1=TRUE)
+        obseff[obsrb[i]]                           # observer id
   }
+  
   
   ####################################################
   # eBird
   ####################################################
   for(i in 1:nobse){
     Ce[i]  ~  dpois( lambda.grid[celle[i],yeare[i]] * p.e[sitee[i], yeare[i]] )
-    log(p.e[sitee[i],yeare[i]]) <- 
-      alpha11 * nparty[i]           +  # number ppl in birding party
-      alpha22 * dist[i]             +  # distance (scaled km)
-      alpha33 * mins[i]             +  # num minutes (prob intrx with time of day)
-      #        alpha44 * effarea[i]          +  # area searched (scaled ha)
-      alpha55 * starttime[i]          # minutes after midnight 
-    ### note no offroad fixed
-  }
+      log(p.e[sitee[i],yeare[i]]) <- 
+        alpha11  *  party[i]                   +  # number ppl in birding party
+        alpha22  *  dist[i]                    +  # distance (scaled km)
+        alpha33  *  mins[i]                    +  # num minutes (prob intrx with time of day)
+        alpha44  *  effarea[i]                 +  # area searched (scaled ha)
+        alpha55  *  starttime[i]                  # minutes after midnight 
+      }                                           # note no offroad fixed
   
   ####################################################
   # Expected and Realised Abundance at Grid-Year
   ####################################################
   for(i in 1:ngy){
-    log(lambda.grid[gy[i,1], gy[i,2]]) <-   
-      hab[ gy[i,1] ] * beta1                 + 
-      inprod( Z[gy[i,1], ] , b[1:G,gy[i,2]] )      # <cell by basis function> <coef by time>
     N[gy[i,1],gy[i,2]] ~ dpois(lambda.grid[gy[i,1],gy[i,2]])         
+      log(lambda.grid[gy[i,1], gy[i,2]]) <-   
+        hab[ gy[i,1] ]  *  beta1               + 
+        inprod( Z[gy[i,1], ] , b[1:G,gy[i,2]] )   # <cell by basis function> <coef by time>
   }
   
   ####################################################
@@ -326,12 +327,8 @@ Specify model as a BUGS model in R:
   
   # derived
   for(t in 1:T){
-    Ntot[t]  <- sum(N[1:G,t])
+    Ntot[t]  <- sum(N[1:G,t])         # N est across all grids per yr
   }
-  
-  # for(t in 1:T){ 
-  # index[t] <- Ntot[t] / Ntot[T]
-  # }
   
   ####################################################
   # Priors (keep at end of model script for speed)
@@ -341,12 +338,12 @@ Specify model as a BUGS model in R:
   beta1         ~  dnorm (0, 1E-3)       # made-up habitat
   alpha1        ~  dnorm (0, 1E-3)       # assistant 
   alpha2        ~  dnorm (0, 1E-3)       # first-year observer effect
-  tauobsb       ~  dgamma(0.001, 1E-3)   # observer hyper
-  tauepsb       ~  dgamma(0.001, 1E-3)   # bbs data model error (eps) hyper
+  tauobsb       ~  dgamma(1, 1)          # observer hyper
+  tauepsb       ~  dgamma(1, 1)          # bbs data model error (eps) hyper
   #### trend
   for(g in 1:G){
     trend[g]     ~  dnorm(0, 1E-6)        # grid-level trend
-    exptrend[g] <-  exp(trend[g])
+    log(exptrend[g]) <-  trend[g]
     #### observer effects  
   }
   for(i in 1:nobsrb){
@@ -357,15 +354,16 @@ Specify model as a BUGS model in R:
     for(i in 1:1){ yeareff[g,1] ~ dnorm(0, 1E-3)   }    
     for(t in 2:T){ yeareff[g,t] ~ dnorm(0, tauyrb) }
   }
-  log(tauyrb)    <-  logtauyrb
-  logtauyrb       ~  dnorm(mu.logtauyrb, tau.logtauyrb)
-  mu.logtauyrb    ~  dnorm(0, 0.5)
-  tau.logtauyrb   ~  dgamma(2, 0.2)
-  
+    log(tauyrb)    <-  logtauyrb
+    logtauyrb       ~  dnorm(mu.logtauyrb, tau.logtauyrb)
+    mu.logtauyrb    ~  dnorm(0, 0.5)
+    tau.logtauyrb   ~  dgamma(2, 0.2)
+    
   ### eBird priors
   alpha11  ~ dnorm(0, 0.001)
   alpha22  ~ dnorm(0, 0.001)
   alpha33  ~ dnorm(0, 0.001)
+  alpha44  ~ dnorm(0, 0.001)
   alpha55  ~ dnorm(0, 0.001)
   
   for(i in 1:nobsb){
@@ -399,12 +397,146 @@ sink(mod.fn)
 cat(model.base, sep = "")
 sink()
 stopifnot(file.exists(mod.fn))
-# browseURL(mod.fn) # check out the model if you wish
+```
+
+``` r
+# {model.base2 <- "model{
+#   ####################################################
+#   # BBS 
+#   ####################################################
+#   for(i in 1:nobsb){
+#     Cb[i]  ~  dpois( lambda.route[siteb[i], yearb[i]] * 
+#                      p.b[siteb[i], yearb[i]] )
+#     
+#       log(lambda.route[siteb[i], yearb[i]]) <-  dnorm(mu[i], epsb)
+#       
+#       mu[i] <- mu.b[siteb[i], yearb[i]] *
+#                p.b[siteb[i], yearb[i]] 
+#       
+#       mu.b[siteb[i], yearb[i]] <-  
+#         inprod(prop[siteb[i],1:G], 
+#         lambda.grid[1:G,yearb[i]])             +  
+#         yeareff[cellb[i], yearb[i]]            +   # year effects
+#         trend[cellb[i]] * (yearb[i]-ref.year)  
+#         
+#       p.b[siteb[i], yearb[i]]          <-   
+#         alpha1  *  asst[i]                     +   # assistant    (logical, 1=TRUE)
+#         alpha2  *  fyr[i]                      +   # first year   (logical, 1=TRUE)
+#         obseff[obsrb[i]]                           # observer id
+#   }
+#   
+#   
+#   ####################################################
+#   # eBird
+#   ####################################################
+#   for(i in 1:nobse){
+#     Ce[i]  ~  dpois( lambda.grid[celle[i],yeare[i]] * p.e[sitee[i], yeare[i]] )
+#       log(p.e[sitee[i],yeare[i]]) <- 
+#         alpha11  *  party[i]                   +  # number ppl in birding party
+#         alpha22  *  dist[i]                    +  # distance (scaled km)
+#         alpha33  *  mins[i]                    +  # num minutes (prob intrx with time of day)
+#         alpha44  *  effarea[i]                 +  # area searched (scaled ha)
+#         alpha55  *  starttime[i]                  # minutes after midnight 
+#     }                                             # note no offroad fixed
+# 
+#   ####################################################
+#   # Expected and Realised Abundance at Grid-Year
+#   ####################################################
+#   for(i in 1:ngy){
+#     N[gy[i,1],gy[i,2]] ~ dpois(lambda.grid[gy[i,1],gy[i,2]])         
+#       log(lambda.grid[gy[i,1], gy[i,2]]) <-   
+#         hab[ gy[i,1] ]  *  beta1               + 
+#         inprod( Z[gy[i,1], ] , b[1:G,gy[i,2]] )   # <cell by basis function> <coef by time>
+#   }
+#   
+#   ####################################################
+#   # Summary Stats/Derived Values
+#   ####################################################
+#   # derived from priors
+#   sdobs     <-  1 / pow(tauobsb, 0.5) # for summary stats
+#   sdyear    <-  1 / pow(tauyrb,  0.5)
+#   
+#   # derived
+#   for(t in 1:T){
+#     Ntot[t]  <- sum(N[1:G,t])         # N est across all grids per yr
+#   }
+#   
+#   # for(t in 1:T){ 
+#   # index[t] <- Ntot[t] / Ntot[T]
+#   # }
+#   
+#   ####################################################
+#   # Priors (keep at end of model script for speed)
+#   ## specifying priors helps avoid forward-sampling
+#   ####################################################
+#   ### BBS
+#   beta1         ~  dnorm (0, 1E-3)       # made-up habitat
+#   alpha1        ~  dnorm (0, 1E-3)       # assistant 
+#   alpha2        ~  dnorm (0, 1E-3)       # first-year observer effect
+#   tauobsb       ~  dgamma(0.001, 1E-3)   # observer hyper
+#   tauepsb       ~  dgamma(0.001, 1E-3)   # bbs data model error (eps) hyper
+#   #### trend
+#   for(g in 1:G){
+#     trend[g]     ~  dnorm(0, 1E-6)        # grid-level trend
+#     exptrend[g] <-  exp(trend[g])
+#     #### observer effects  
+#   }
+#   for(i in 1:nobsrb){
+#     obseff[i] ~ dnorm (0.00, tauobsb)  # observer (id) effects
+#   }
+#   ##### year effects
+#   for(g in 1:G){
+#     for(i in 1:1){ yeareff[g,1] ~ dnorm(0, 1E-3)   }    
+#     for(t in 2:T){ yeareff[g,t] ~ dnorm(0, tauyrb) }
+#   }
+#     log(tauyrb)    <-  logtauyrb
+#     logtauyrb       ~  dnorm(mu.logtauyrb, tau.logtauyrb)
+#     mu.logtauyrb    ~  dnorm(0, 0.5)
+#     tau.logtauyrb   ~  dgamma(2, 0.2)
+#     
+#   ### eBird priors
+#   alpha11  ~ dnorm(0, 0.001)
+#   alpha22  ~ dnorm(0, 0.001)
+#   alpha33  ~ dnorm(0, 0.001)
+#   alpha44  ~ dnorm(0, 0.001)
+#   alpha55  ~ dnorm(0, 0.001)
+#   
+#   for(i in 1:nobsb){
+#     epsb[i]   ~  dnorm(0, tauepsb)             # bbs data model error
+#   }
+#   
+#   # priors on random effects
+#   for(t in 1:T){
+#     for (k in 1:nknots){ b[k,t] ~ dnorm(0, taub) 
+#       # Prior on random effects hyperparameter
+#     }
+#   }
+#   taub ~ dgamma(0.01,0.01)
+#   
+#   
+#   ## temporal variance hypers
+#   taugam     <- pow(sigmagam, -2) # check jlb 
+#   sigmagam    ~ dunif(0, 10)      # check jlb # clark uses in bbs.sdm and paige in MODU ms;why 0,10?
+#   ## smoothing parameter (lambda) priors check JLB
+#   rho[1]       ~ dunif(-12,12)    # a and b values suggested by mgcv::jagam
+#   lambda[1]   <- exp(rho[1])
+#   
+#   ####################################################
+#   ## END MODEL
+#   ####################################################
+# } #### KEEP the EMPTY LINE AT ENDING!! IMPORTANT FOR IMPORTING BUGS MOD VIA NIMBLE!!!
+# 
+# "}
+mod.fn2 <- paste0(dirs$dir.models, "/myBUGSmodel2.txt")
+sink(mod.fn2)
+cat(model.base2, sep = "")
+sink()
+stopifnot(file.exists(mod.fn2))
 ```
 
 ## Step 2: bugs.data
 
-The output of `bundle_data()` will likely create more constants and data
+The output of `make_bundle()` will likely create more constants and data
 than the user requires. Extract what is necessary for your model here.
 You can unwrap this from a function, but the function makes it quicker
 to switch between the dev and full bundled datasets.
@@ -429,22 +561,21 @@ bugs.data          = list(
   yeare     = myBundleDat$ebird.df$year.ind,        # vec of year index ebird data
   sitee     = myBundleDat$ebird.df$site.ind,        # vec of site index ebird data
   celle     = myBundleDat$ebird.df$cell.ind,        # vec of grid cell index ebird data
-  nobsrb   = length(unique(myBundleDat$bbs.df$obs.ind)), # num unique observers bbs
+  nobsrb    = length(unique(myBundleDat$bbs.df$obs.ind)), # num unique observers bbs
   obsrb     = myBundleDat$bbs.df$obs.ind,           # observer identifier bbs data
   fyr       = myBundleDat$bbs.df$obsfirstyearbbs,   # first-year index bbs
   asst      = myBundleDat$bbs.df$assistant,         # assistant index bbs
-  mins      = standardize(myBundleDat$ebird.df$duration_minutes),   # num mins surveyed ebird
-  dist      = standardize(myBundleDat$ebird.df$effort_distance_km), # dist (km) traveled ebird
-  nparty    = standardize(myBundleDat$ebird.df$number_observers),   # num observers ebird
-  starttime = standardize(
-    myBundleDat$ebird.df$time_observations_started_hsm@hour * 60 + myBundleDat$ebird.df$time_observations_started_hsm@minute
-  ),                                           # time start ebird
-  nknots   = myBundleDat$nbfs,                      # numb knots/basis functions
-  gy       = as.matrix(myBundleDat$gy),             # index for all grid-year combos
-  ngy      = myBundleDat$ngy,                       # length of grid-year combo mat (gy)
-  prop     = as.matrix(myBundleDat$prop),           # proportion of route in grid (< G x T >)
-  hab      = sqrt(abs(myBundleDat$Xgrid$area)),     # made-up hab varialbe (for now)
-  Z        = myBundleDat$Z.mat                      # Z-matrix (<G x nknots>)
+  mins      = myBundleDat$ebird.df$duration_minutes,   # num mins surveyed ebird
+  dist      = myBundleDat$ebird.df$effort_distance_km, # dist (km) traveled ebird
+  effarea   = myBundleDat$ebird.df$effort_area_ha, # dist (km) traveled ebird
+  party     = myBundleDat$ebird.df$number_observers,   # num observers ebird
+  starttime = myBundleDat$ebird.df$time_observations_started_hsm, # time start ebird
+  nknots    = myBundleDat$nbfs,                      # numb knots/basis functions
+  gy        = as.matrix(myBundleDat$gy),             # index for all grid-year combos
+  ngy       = myBundleDat$ngy,                       # length of grid-year combo mat (gy)
+  prop      = as.matrix(myBundleDat$prop),           # proportion of route in grid (< G x T >)
+  hab       = sqrt(abs(myBundleDat$Xgrid$area)),     # made-up hab variable 
+  Z         = myBundleDat$Z.mat                      # Z-matrix (<G x nknots>)
 )
 return(bugs.data)
 }
@@ -455,12 +586,16 @@ return(bugs.data)
 First, specify parameters to monitor (based on your model):
 
 ``` r
-params <- c("alpha1", 
-            "alpha2", 
-            "alpha11", 
-            "alpha22", 
-            "alpha33", 
-            "alpha55", 
+##  refer to model for inits or params
+# browseURL(mod.fn) # check out the model if you wish
+params <- c("alpha1", #asst
+            "alpha2", #fyrobs
+            "beta1",   #hab
+            "alpha11",  #party
+            "alpha22",  #dist
+            "alpha33",  #mins
+            "alpha44",  #effarea
+            "alpha55",  #starttime
             "yeareff", 
             "obseff",
             "Ntot" , 
@@ -474,17 +609,24 @@ whatever number of chains we wish to run and, importantly, creates
 unique intial values for independent MCMC chains in parallel:
 
 ``` r
+##  refer to model for inits or params
+# browseURL(mod.fn) # check out the model if you wish
 set.inits <- function(n = 1, dat = bugs.data) {
   inits.out <- list()
   for (i in 1:n) {
     inits.list <- list(
-      alpha2        = rnorm(1, 0, 0.001),
-      beta1         = rnorm(1, 0, 0.001),
-      alpha11       = rnorm(1, 0, 0.001),
-      alpha22       = rnorm(1, 0, 0.001),
-      alpha33       = rnorm(1, 0, 0.001),
-      alpha55       = rnorm(1, 0, 0.001),
-      yeareff       = matrix(rep(rnorm(dat$G, 0, 0.001)),
+      alpha1        = rnorm(1, 0, 0.001), # bbs asst
+      alpha2        = rnorm(1, 0, 0.001), # bbs fyr
+      beta1         = rnorm(1, 0, 0.001), # hab
+      alpha11       = rnorm(1, 0, 0.001), # num in party ebird
+      alpha22       = rnorm(1, 0, 0.001), # dist travel ebird
+      alpha33       = rnorm(1, 0, 0.001), # duration min ebird
+      alpha44       = rnorm(1, 0, 0.001), # eff area  ebird
+      alpha55       = rnorm(1, 0, 0.001), # starttime
+      mu.b          = rnorm(1, 0, 0.001), # log expected N on lambda.route
+      obseff        = rep(rnorm(dat$nobsb, 0, 0.001)),
+      trend         = rep(rnorm(dat$G,     0, 0.001)),
+      yeareff       = matrix(rep(rnorm(dat$G,     0, 0.001)),
                              nrow = dat$G,
                              ncol = dat$T)
       # .RNG.name = "base::Mersenne-Twister",
@@ -516,34 +658,67 @@ directly inside the `run_in_jags()` or `run_in_nimble()` funcitons.
 ### JAGS
 
 ``` r
-tictoc::tic()
-bugs.dat  <- make.bugs.data(bundle)
+bugs.dat  <- make.bugs.data(bundle.dev)
 myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
+tictoc::tic("jags runtime")
 results.jags <- run_in_jags(bugs.data = bugs.dat,
   parallel = TRUE,
   model=mod.fn,
   inits = set.inits(dat = bugs.dat, n=myMCMC.specs$nc), 
   mcmc.specs = myMCMC.specs,
-  savedir = paste0(dirs$dir.proj,"/jagsout/"),
+  savedir = dirs$dir.results,
   monitor = params, 
-  mod.name = "run"
+  mod.name = "testrun"
 )
-plot(results.jags)
-tictoc::toc("jags runtime")
+tictoc::toc()
+# plot(results.jags)
 ```
 
 ### Nimble
 
 ``` r
-## unlike in JAGS, there cannot be stray INITS. 
-bugs.dat  <- make.bugs.data(bundle.dev)
-myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
+# unlike in JAGS, there cannot be stray INITS. 
+# compiling the model takes a while in nimble...
+# bugs.dat  <- make.bugs.data(bundle.dev)
+# myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
+bugs.dat  <- make.bugs.data(bundle)
+myMCMC.specs <- set_mcmc_specs(nc=3, ncores = 13)
+# inits <- set.inits(n=1, dat=bugs.dat)
 results.nimb <- run_in_nimble(
   myModel = mod.fn,
   myData = bugs.dat,
-  myInits = set.inits(dat = bugs.dat),
+  myInits = set.inits(n=1, dat=bugs.dat),
+  # myInits = inits,
   parallel = TRUE,
-  mcmc.specs = set_mcmc_specs(dev.mode=TRUE),
-  monitor = params, mod.name = "test"
+  mcmc.specs = myMCMC.specs,  
+  monitor = params, 
+  mod.name = "test-nimb")
+saveRDS(
+  results.nimb,
+  paste0(
+    dirs$dir.proj,"/jagsout/",
+    Sys.Date(),
+    "run-nimble",
+    myMCMC.specs$ni,
+    "ni_",
+    myMCMC.specs$na,
+    "na_",
+    myMCMC.specs$nt,
+    "nt_",
+    myMCMC.specs$nb,
+    "nb",
+    ".RDS"
+  )
 )
+# results.nimb[[1]]
+# 
+library(coda)
+coda.samples <- as.mcmc(samples)
+```
+
+### STAN
+
+``` r
+# jags_to_stan # make fun to convert the JAGS to stan (prob already exists)
+# run_in_stan
 ```

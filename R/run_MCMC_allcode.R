@@ -4,6 +4,9 @@
 #' Run MCMC in or Out of Parallel in nimble
 #' @param seed for internal use
 #' @param data data and constants as list
+#' @param inits list of initial values
+#' @param verbose logical if TRUE and code is not running in parallel will print all output available from Nimble commands.
+#' @param mcmc.specs MCMC specifications as a list; created using \code{set_mcmc_specs}
 #' @param model filepath or nimble model object
 #' @importFrom nimble compileNimble buildMCMC readBUGSmodel runMCMC
 #' @export run_MCMC_allcode
@@ -21,8 +24,8 @@ run_MCMC_allcode <-
                             data,
                             inits)
     CmyModel <- nimble::compileNimble(myModel, showCompilerOutput = verbose)
-    myMCMC <- nimble::buildMCMC(CmyModel)
-    CmyMCMC <- nimble::compileNimble(myMCMC, showCompilerOutput = verbose)
+    myMCMC   <- nimble::buildMCMC(CmyModel)
+    CmyMCMC  <- nimble::compileNimble(myMCMC, showCompilerOutput = verbose)
 
     results <-
       nimble::runMCMC(

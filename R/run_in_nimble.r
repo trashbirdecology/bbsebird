@@ -97,7 +97,7 @@ run_in_nimble <- function(myData,
   }
 
   # SAVE AND EXPORT RESULTS
-  trySave(x = results, name = "nimble-samps", savedir, mcmc.specs)
+  trySave(x = results, name = paste0("nimble-samps_", mod.name), savedir, mcmc.specs)
 
   return(results)
 

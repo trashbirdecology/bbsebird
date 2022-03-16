@@ -43,7 +43,8 @@ Imports:
     bit,
     doParallel,
     nimble,
-    fields
+    fields,
+    rstan
 Suggests: 
     knitr,
     dclone, 

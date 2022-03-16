@@ -14,6 +14,8 @@ run_in_jags(
   parallel = TRUE,
   verbose = TRUE,
   mod.name = "myJAGSModel",
+  overwrite = FALSE,
+  traceplots = TRUE,
   mcmc.specs = set_mcmc_specs()
 )
 }
@@ -35,6 +37,10 @@ run_in_jags(
 \item{verbose}{logical Argument used in jagsUI::jags(). If TRUE will generate more messages/information during sampling phase. Note: If parallel=TRUE, messages are suppressed given behavior of parallel compute.}
 
 \item{mod.name}{optional Used to save model output to file. Defaults to 'myJAGSModel'}
+
+\item{overwrite}{logical If TRUE and .RDS file already exists, will prompt user with a menu to confirm model re-run. Specifying overwrite=TRUE will avoid that prompt.}
+
+\item{traceplots}{logical If TRUE will save traceplots to file}
 
 \item{mcmc.specs}{list List of specs for use in MCMC specification (e.g., n.chains, n.adapt, n.cores). If any necessary values are missing, will use set_mcmc_specs to grab a default value.}
 }
