@@ -9,19 +9,17 @@
 #
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
-  if(is.null(dir.proj)) dir.proj <- getwd()
+  if(is.null(dir.proj) | dir.proj == "") dir.proj <- getwd()
 
 
   if(!is.null(subdir.proj) & nchar(subdir.proj)>100){cat("subdir.proj is very long. specifying a new name for project."); subdir.proj="myproject"}
 
-
-
   # first, create the proj directory if necessary
-  if(!dir.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
+  dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified
   dir.proj <- paste0(dir.proj, "/", subdir.proj)
   dir.proj <- stringr::str_replace(dir.proj, "//","/")
-  if(!dir.exists(dir.proj)) dir.create(dir.proj, showWarnings = FALSE)
+  dir.create(dir.proj, showWarnings = FALSE)
 
   if (!endsWith(dir.orig.data, "/")){
     dir.orig.data <- paste0(dir.orig.data, "/")}
@@ -64,8 +62,15 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       'dir.models',
       'dir.plots',
       'dir.proj')
-  for(i in seq_along(x))dir.create(eval(parse(text=paste0(x))), showWarnings=FALSE)
-  cat("Project directory output files will go to ", dir.proj, "/n")
+  dir.create(dir.bbs.out, showWarnings = FALSE)
+  dir.create(dir.ebird.out, showWarnings = FALSE)
+  dir.create(dir.spatial.out, showWarnings = FALSE)
+  dir.create(dir.results, showWarnings = FALSE)
+  dir.create(dir.models, showWarnings = FALSE)
+  dir.create(dir.plots, showWarnings = FALSE)
+  dir.create(dir.proj, showWarnings = FALSE)
+  # for(i in seq_along(x))dir.create(eval(parse(text=paste0(x))), showWarnings=FALSE)
+  cat("Project directory output files will go to ", dir.proj)
 
   subset.names <- paste0("dir.",
                          c(
@@ -95,11 +100,13 @@ for(i in (x+1):z){
   paths[[i]] <- stringr::str_replace(eval(parse(text=base.names[j])), "//","/")
   names(paths)[i] <- base.names[j]
 }
-paths
+
+## nesure directories are created (need to fix bug in earlier part of script...not making dirs)
+for(i in seq_along(paths)){
+  if(!dir.exists(paths[[i]])) dir.create(paths[[i]], showWarnings = FALSE)
+}
 
 
-
-  return(paths)
-
+return(paths)
   }
 
