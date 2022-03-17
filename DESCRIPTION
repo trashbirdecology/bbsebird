@@ -44,7 +44,9 @@ Imports:
     doParallel,
     nimble,
     fields,
-    rstan
+    rstan,
+    coda,
+    mcmcplots
 Suggests: 
     knitr,
     dclone, 

@@ -8,6 +8,7 @@ run_in_nimble(
   myData,
   myModel,
   myInits,
+  traceplots = TRUE,
   constants = NULL,
   monitor,
   savedir = "/",
@@ -25,6 +26,8 @@ run_in_nimble(
 
 \item{myInits}{list List of initial values.}
 
+\item{traceplots}{logical If TRUE will attempt to print default traceplots for model output}
+
 \item{constants}{optional Can be provided separately from myData. If both are provided, function will combine prior to inclusion in readNimbleModel}
 
 \item{monitor}{optional Character vector of parameters to monitor.}
@@ -40,8 +43,6 @@ run_in_nimble(
 \item{mod.name}{optional Used to save model output to file. Defaults to 'mynimbleModel'}
 
 \item{mcmc.specs}{list List of specs for use in MCMC specification (e.g., n.chains, n.adapt, n.cores). If any necessary values are missing, will use set_mcmc_specs to grab a default value.}
-
-\item{traceplots}{logical If TRUE will attempt to print default traceplots for model output}
 }
 \description{
 Run BUGS Model in nimble

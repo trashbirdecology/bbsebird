@@ -11,7 +11,7 @@
 #' @param mod.name optional Used to save model output to file. Defaults to 'myJAGSModel'
 #' @param overwrite logical If TRUE and .RDS file already exists, will prompt user with a menu to confirm model re-run. Specifying overwrite=TRUE will avoid that prompt.
 #' @param monitor optional Character vector of parameters to monitor.
-#' @param traceplots logical If TRUE will save traceplots to file
+#' @param traceplots logical If TRUE will attemp to save a default traceplot to file
 #' @importFrom parallel detectCores
 #' @importFrom doParallel stopImplicitCluster
 #' @importFrom jagsUI jags

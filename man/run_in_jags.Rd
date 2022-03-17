@@ -40,7 +40,7 @@ run_in_jags(
 
 \item{overwrite}{logical If TRUE and .RDS file already exists, will prompt user with a menu to confirm model re-run. Specifying overwrite=TRUE will avoid that prompt.}
 
-\item{traceplots}{logical If TRUE will save traceplots to file}
+\item{traceplots}{logical If TRUE will attemp to save a default traceplot to file}
 
 \item{mcmc.specs}{list List of specs for use in MCMC specification (e.g., n.chains, n.adapt, n.cores). If any necessary values are missing, will use set_mcmc_specs to grab a default value.}
 }
