@@ -21,7 +21,7 @@
 
 run_in_nimble <- function(myData,
                           myModel,
-                          myInits,
+                          myInits     = NULL,
                           traceplots  = TRUE,
                           constants   = NULL,
                           monitor,
@@ -35,7 +35,7 @@ run_in_nimble <- function(myData,
   stopifnot(is.logical(parallel))
   stopifnot(is.logical(verbose))
   stopifnot(is.list(myData))
-  stopifnot(is.list(myInits))
+  stopifnot(is.list(myInits)) ### need to check about providing the same inits for each chain. I think it's OK if I am re-generating a new seed for each chain in run_MCMCalcode or whateever..
   stopifnot(is.list(mcmc.specs))
   ### check mcmc.specs and fill in any missing values.
 
@@ -75,7 +75,6 @@ run_in_nimble <- function(myData,
 
   if (parallel) {
     this_cluster <- this_cluster <- parallel::makeCluster(mcmc.specs$ncores)
-    # run in parallel
   results <-
     parallel::parLapply(
       cl = this_cluster,
@@ -90,8 +89,8 @@ run_in_nimble <- function(myData,
 
   try({
     # cat("Attempting to stop cluster\n")
-    stopImplicitCluster()        # package: `doParallel`
-    stopCluster(this_cluster) # package: `parallel`
+    doParallel::stopImplicitCluster()        # package: `doParallel`
+    parallel::stopCluster(this_cluster) # package: `parallel`
   })
 
   }else{
