@@ -12,6 +12,7 @@
 #' @param mod.name optional Used to save model output to file. Defaults to 'mynimbleModel'
 #' @param monitor optional Character vector of parameters to monitor.
 #' @importFrom parallel detectCores
+#' @param traceplots logical If TRUE will attempt to print default traceplots for model output
 #' @importFrom  parallel makeCluster parLapply
 #' @importFrom  doParallel registerDoParallel stopImplicitCluster
 #' @importFrom foreach %dopar%
@@ -96,8 +97,15 @@ run_in_nimble <- function(myData,
 
   }
 
+
+  if(traceplots){
+    trySave(results, name = paste0("nimb_", mod.name),
+            mcmc.specs = myMCMC.specs, savedir = dirs$dir.results,
+            traceplots = TRUE)
+  }
+
   # SAVE AND EXPORT RESULTS
-  trySave(x = results, name = paste0("nimble-samps_", mod.name), savedir, mcmc.specs)
+  trySave(x = results, name = paste0("nimble-samps_", mod.name), savedir, mcmc.specs, traceplots = FALSE)
 
   return(results)
 

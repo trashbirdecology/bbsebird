@@ -40,6 +40,8 @@ run_in_nimble(
 \item{mod.name}{optional Used to save model output to file. Defaults to 'mynimbleModel'}
 
 \item{mcmc.specs}{list List of specs for use in MCMC specification (e.g., n.chains, n.adapt, n.cores). If any necessary values are missing, will use set_mcmc_specs to grab a default value.}
+
+\item{traceplots}{logical If TRUE will attempt to print default traceplots for model output}
 }
 \description{
 Run BUGS Model in nimble

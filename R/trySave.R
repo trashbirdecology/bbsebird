@@ -5,6 +5,8 @@
 #' @param mcmc.specs if provided, the MCMC specs will be used to save output files
 #' @param traceplots logical If TRUE will save plots to PDF
 #' @export trySave
+#' @importFrom coda as.mcmc
+
 
 trySave <- function(x,
                     name,
@@ -36,15 +38,15 @@ trySave <- function(x,
                    middleparts)
 
   if(traceplots){
+    if("matrix" %in% class(x)){x <- coda::as.mcmc(x)}
     ## save non plot objects
-    tryCatch({pdf(paste0(out.fn,".pdf"))
+    tryCatch({pdf(paste0(out.fn,"_trace.pdf"))
         plot(x)
         dev.off()
         }, error = function(e) {
         cat("failed to save traceplots to file\n")
       }
     )
-
   }
 
 if(!traceplots){
@@ -57,7 +59,7 @@ if(!traceplots){
   }
 
 
-cat("check ", out.fn, " for saved outputs.")
+message("   [note] check ", out.fn, " for saved outputs.\n\n")
 
 
 
