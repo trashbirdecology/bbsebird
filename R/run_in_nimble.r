@@ -26,7 +26,7 @@ run_in_nimble <- function(myData,
                           traceplots  = TRUE,
                           constants   = NULL,
                           monitors     = NULL,
-                          savedir     = "/",
+                          savedir     = "outputs",
                           seed        = sample(1:111111, size = 1),
                           parallel    = TRUE,
                           verbose     = TRUE,
@@ -41,6 +41,7 @@ run_in_nimble <- function(myData,
   stopifnot(is.list(mcmc.specs))
   ### check mcmc.specs and fill in any missing values.
 
+  if(!dir.exists(savedir)) dir.create(savedir, showWarnings = FALSE)
   mcmc.missing <-
     setdiff(c("na", "nb", "nc", "ni", "nt", "ncores"), names(mcmc.specs))
 
@@ -111,7 +112,7 @@ run_in_nimble <- function(myData,
 
   if(traceplots){
     trySave(results, name = paste0("nimb_", mod.name),
-            mcmc.specs = myMCMC.specs, savedir = dirs$dir.results,
+            mcmc.specs = myMCMC.specs, savedir = savedir,
             traceplots = TRUE)
   }
 
