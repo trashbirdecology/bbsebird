@@ -12,6 +12,10 @@
 #' @param print.plots logical if TRUE will print exploratory figures to device
 #' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.
+#' @param ncores max number of cores to engage for parallel data processing. Defaults to one fewer CPUs than the machine has. Parallel processing is used only when a high number of routes and/or grid cells are in the data.
+#' @importFrom foreach %dopar%
+#' @importFrom doParallel registerDoParallel
+#' @importFrom parallel stopCluster detectCores makeCluster
 #' @importFrom sp CRS spTransform
 #' @importFrom stringr str_sub
 #' @importFrom tidyr expand separate
@@ -29,11 +33,12 @@ make_bbs_spatial <- function(df,
                              # this was gift by Dave and Danny-DO NT SHARE WITHOUT PERMISSION
                              usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
                              crs.target = 4326,
+                             ncores = parallel::detectCores()-1,
                              print.plots = FALSE,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL,
                              overwrite = FALSE,
-                             dir.out=NULL
+                             dir.out = NULL
                              ) {
   # first, if overwrite is false and this file exists. import and return asap.
   f <- paste0(dir.out, "bbs_spatial.rds")
@@ -58,8 +63,7 @@ make_bbs_spatial <- function(df,
   # because the CWS layer was created using an old geodatabase, we cannot easily use st_transform to re-project the layer.
   cws.gdb <-
     list.files(cws.routes.dir, pattern = ".gdb", full.names = TRUE) %>% stringr::str_remove(".zip") %>% unique()
-  cws_routes <- rgdal::readOGR(dsn = cws.gdb, layer = cws.layer)
-
+  suppressWarnings(cws_routes <- rgdal::readOGR(dsn = cws.gdb, layer = cws.layer, verbose = FALSE))#suppress a warning about dropping Z-dimension
 
   # cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
   cws_routes <- sp::spTransform(cws_routes, crs.string)
@@ -71,7 +75,7 @@ make_bbs_spatial <- function(df,
   ### Ex:  state 46 and route 029, rteno==46029
   # usgs_routes <- rgdal::readOGR(dsn=usgs.routes.dir,layer=usgs.layer)
   usgs_routes <- sf::st_read(dsn = usgs.routes.dir, layer = usgs.layer)
-  suppressWarnings(usgs_routes <- sf::st_transform(usgs_routes, crs = crs.string))
+  usgs_routes <- sf::st_transform(usgs_routes, crs = crs.string)
 
   # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
   # These fields are applicable only to the Sauer shapefile.
@@ -112,13 +116,16 @@ make_bbs_spatial <- function(df,
       Route = stringr::str_sub(ProvRoute, start = 3, end = 5),
       RouteName = trimws(stringr::str_replace_all(Nbr_FullNa, "[:digit:]|-", ""), "left")
     )
-  cws_routes <- bbsAssistant::make.rteno(cws_routes)
 
-  # merge the CA and USA data
+  cws_routes <- bbsAssistant::make.rteno(cws_routes)
+  names(cws_routes) <- tolower(names(cws_routes))
+  names(usgs_routes) <- tolower(names(usgs_routes))
+
+  # merge the CA and USA BBS routes
   ## keep just a few of same cols-we can delete this but theyre not too useful.
   keep <-
     intersect(tolower(names(usgs_routes)), tolower(names(cws_routes)))
-  cws_routes <- cws_routes[, tolower(names(cws_routes)) %in% keep]
+  cws_routes  <- cws_routes[, tolower(names(cws_routes)) %in% keep]
   usgs_routes <-
     usgs_routes[, tolower(names(usgs_routes)) %in% keep]
 
@@ -136,16 +143,53 @@ make_bbs_spatial <- function(df,
     dplyr::mutate(routelength = sum(segmentlength)) %>%
     dplyr::ungroup() %>%
     dplyr::select(-segmentlength) # we don't really gaf about these lines, they're just segments because of the drawings
+## Drop the z-dimension from data. Exists in USGS but not in CWS
+bbs_routes <-sf::st_zm(bbs_routes, drop = TRUE, what = "ZM")
 
 
 # Project/reproject grid to match bbs_routes layer --------------------------------
 # match grid projection/crs to target
 grid <- sf::st_transform(grid, crs = crs.string)
 
-# Clip bbs_routes to grid extend ------------------------------------------
+# Clip bbs_routes to grid extent and overlay grid cells ------------------------------------------
 # append original (projected) grid to bbs_routes spatial lines layer
-cat("overlaying bbs routes and study area grid. this may take a minute or three...\n\n")
-bbs.grid.lines <- sf::st_intersection(grid, bbs_routes) # this produces a sf as LINES with grid cell ids appended as attributes.
+cat("overlaying bbs routes and study area grid. this may take a minute or three...or ten....sorry bruh\n\n")
+
+### chunk up processing of st_intersection to speed up overlay
+# add process for:: if ngrids>X and chunks > Y then parallel, else just run straight up
+len       <- nrow(bbs_routes)
+my_vec    <- 1:len
+ngrids    <- nrow(grid)
+chunk_len <- round(len/ncores)+1 # divide equally across all available cores..
+chunks    <- split(my_vec, f=ceiling(seq_along(my_vec) / chunk_len))
+
+# this produces a sf as LINES with grid cell ids appended as attributes.
+## if parallel index is true, use parallel data processing to speed things up. This is a slow process for >>1 state and grid cells <0.50
+par.ind <- ifelse(ngrids > 200 || nrow(bbs_routes) > 300, TRUE, FALSE)
+if(par.ind){
+  cl        <- parallel::makeCluster(ncores)
+  doParallel::registerDoParallel(cl)
+  i=0
+  message("[note] using parallel processing to ~try~ to achieve this....monitor CPU/LPU usage before initiating additional processes...\n")
+  while(!exists("bbs.grid.lines") && i < 3){ # will try this 2 times.
+    i=i+1
+    # print(paste0(i, " of 2 attempts in parallel"))
+    try(bbs.grid.lines <-
+              foreach::foreach(j = 1:length(chunks), .combine = dplyr::bind_rows, .packages = "sf") %dopar%{
+                df = bbs_routes[chunks[[j]],]
+                sf::st_intersection(grid, df)
+              })
+  }
+rm(i)
+parallel::stopCluster(cl) # prob should add a tryCatch here...
+}
+rm(chunks, chunk_len, my_vec, len)
+
+
+if(!par.ind | !exists("bbs.grid.lines")){
+  message("[note] overlaying bbs route and grid (study area). This may take a few minutes depending on size of grid cells and extent of study area..\n")
+bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)}
+message("[note]...overlay was great success! jagshemash \n")
 
 # Calculate total lengths of routes within a grid cell. -------------------
 bbs.grid.lines.df <- bbs.grid.lines %>%
@@ -183,7 +227,7 @@ bbs.temp <- bbs.grid.lines.df %>%
   dplyr::select(-segmentlength) %>%
   dplyr::distinct(rteno, gridcellid, proprouteincell, totalroutelength, routelength)
 
-## overlay the bbs routes to the grid
+## overlay the bbs routes to the grid, again.
 bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp)
 
 # Add attributes and obs to BBS gridded layer -----------------------------
@@ -196,65 +240,53 @@ bbs_spatial <- left_join(bbs.grid, df)
 if (!keep.empty.cells){bbs_spatial <-  bbs_spatial %>% dplyr::filter(!is.na(rteno))}
 
 
-### return dfs with lowerase
-names(cws_routes)  <- tolower(names(cws_routes))
-names(usgs_routes) <- tolower(names(usgs_routes))
-
-
 # plot if wanted
   if (print.plots) {
-    cat('Printing some plots to:\n')
+    cat('Printing some plots to:\n If number of cells or routes is high, could take a  minute or two...\n ')
     if (!is.null(plot.dir)) {
       p.fn=paste0(plot.dir, "/bbs_spatial_exploratory.pdf")
       pdf(file = p.fn)
       cat(plot.dir, " \n")
     }
-    # exploratory plots (should move elsewhere.....)
-    # plot(bbs.grid[4])
-    plot(
+    suppressWarnings(plot(
       bbs_spatial %>%
         dplyr::filter(!is.na(rteno)) %>%
         dplyr::group_by(gridcellid) %>%
         dplyr::summarise(`max num counted` = log(max(c, na.rm = TRUE))) %>%
         dplyr::ungroup() %>%
         dplyr::select(`max num counted`),
-      main="maximum number (log-scale) counted in a route-year"
-    )
-    plot(
+       main="maximum number (log-scale) \ncounted in a route-year"
+    ))
+    suppressWarnings(plot(
       bbs_spatial %>%
         dplyr::group_by(gridcellid) %>%
         dplyr::summarise(x =
                            dplyr::n_distinct(obsn)) %>%
         dplyr::select(x),
       main="total # unique observers in cell"
-    )
-
-
-   suppressWarnings(plot(
-      bbs_spatial  %>%
-        dplyr::group_by(gridcellid) %>%
-        dplyr::summarise(x =
-                           max(totalspp, na.rm=TRUE)) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(x),
-      main=cat("max # species ", na.omit(unique(bbs_spatial$aou)), " detected in single route")
     ))
-    plot((
+   # suppressWarnings(plot(
+   #    bbs_spatial  %>%
+   #      dplyr::group_by(gridcellid) %>%
+   #      dplyr::summarise(x =
+   #                         max(totalspp, na.rm=TRUE)) %>%
+   #      dplyr::ungroup() %>%
+   #      dplyr::select(x),
+   #    main=cat("max number of species #", na.omit(unique(bbs_spatial$aou)), " detected in single route")
+   #  ))##title doesn't print needs fixing--too lazy to do it rn
+   suppressWarnings(plot((
       bbs_spatial %>% dplyr::group_by(gridcellid) %>%
         dplyr::summarise(nRoutesPerCell = dplyr::n_distinct(rteno))
-    )["nRoutesPerCell"], main="# bbs routes in cell")
-
-
-    plot(bbs.grid.lines[6])
+    )["nRoutesPerCell"], main="# BBS routes in cell"))
 
     if (!is.null(plot.dir)) {
       dev.off()
+      cat("opening .pdf...\n")
       browseURL(p.fn)
     } # end writing to pdf if print.plots specified
   }
 
-
-# to be safe.
+# just to be safe I guess
 if(dplyr::is_grouped_df(bbs_spatial)) bbs_spatial <- bbs_spatial %>% dplyr::ungroup()
 
 # remove rownames
