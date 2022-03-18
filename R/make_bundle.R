@@ -488,7 +488,8 @@ rm(LL)
   ### and anything > like 100 will crash most systems.
   ### also need to consider compute time for use in Bayesian param estiamtion
   if (is.null(K)) {
-    K <- max(20, round(min(length(unique(ENgrid$cell.ind))/4), 150))
+    ng <- round(length(unique(ENgrid$cell.ind))/4)
+    K <- max(20, min(ng, 150))
     ###logic for K selection borrowed from AHM2 book , which cites Giminez et al. 2009 and Rupert et al. 2003
   }
 
