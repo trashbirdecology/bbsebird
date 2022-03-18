@@ -2,8 +2,19 @@ Package: bbsebird
 Title: Unifying BBS and eBird Data for Modelers
 Version: 0.0.0.9000
 Authors@R: 
-    person("Jessica", "Burnett", , "jburnett@usgs.gov", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-0896-5099"))
+  c(person(given = "Jessica",
+           family = "Burnett",
+           role = c("aut", "cre"),
+           email = "jburnett@usgs.gov",
+           comment = c(ORCID = "0000-0002-0896-5099")),
+    person(given = "Paige",
+           family = "Howell",
+           role = "ctb",
+           comment = c(ORCID = "0000-0002-5911-2870")),
+    person(given = "Andy",
+           family = "Royle",
+           role = "ctb", 
+           comment = c(ORCID = "0000-0003-3135-2167")))
 Description: Imports, munges and aligns eBird and BBS data to a spatial sampling grid of user's select size.
     Additionally, produces bundles of data for use in JAGS, Nimble or STAN and runs select BUGS models in 
     parallel in JAGS and Nimble via R.

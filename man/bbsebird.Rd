@@ -11,5 +11,11 @@ Imports, munges and aligns eBird and BBS data to a spatial sampling grid of user
 \author{
 \strong{Maintainer}: Jessica Burnett \email{jburnett@usgs.gov} (\href{https://orcid.org/0000-0002-0896-5099}{ORCID})
 
+Other contributors:
+\itemize{
+  \item Paige Howell (\href{https://orcid.org/0000-0002-5911-2870}{ORCID}) [contributor]
+  \item Andy Royle (\href{https://orcid.org/0000-0003-3135-2167}{ORCID}) [contributor]
+}
+
 }
 \keyword{internal}
