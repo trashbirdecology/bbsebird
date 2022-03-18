@@ -106,7 +106,6 @@ run_in_jags <- function(bugs.data,
   time1 <- Sys.time()
   if (!parallel) {
     results <- jagsUI::jags(
-      seed = seed,
       verbose = TRUE,
       data = bugs.data,
       model.file = model,
@@ -132,8 +131,7 @@ run_in_jags <- function(bugs.data,
       n.burnin   = mcmc.specs$nb,
       n.thin     = mcmc.specs$nt,
       parallel   = TRUE,
-      n.cores    = mcmc.specs$ncores,
-      seed       = seed
+      n.cores    = mcmc.specs$ncores
     )
     try({
       # cat("Attempting to stop cluster\n")
