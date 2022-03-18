@@ -17,6 +17,8 @@
 #' @importFrom dplyr mutate
 #' @importFrom dplyr select
 #' @importFrom dplyr summarise
+#' @importFrom doParallel registerDoParallel
+#' @importFrom doParallel stopImplicitCluster
 #' @importFrom hms as_hms
 #' @importFrom lubridate as_date
 #' @importFrom lubridate yday
@@ -45,7 +47,17 @@
 #' @importFrom tidyr separate
 #' @importFrom units drop_units
 #' @importFrom vroom vroom
-#' @importFrom dplyr %>%
+#' @importFrom foreach %dopar%
+#' @importFrom stats complete.cases
+#' @importFrom stats sd
+#' @importFrom stats na.omit
+#' @importFrom utils browseURL
+#' @importFrom utils memory.limit
+#' @importFrom utils menu
+#' @importFrom utils timestamp
+#' @importFrom utils unzip
+#' @importFrom grDevices dev.off
+#' @importFrom grDevices pdf
 NULL
 
 ## quiets concerns of R CMD check re: the .'s that appear in pipelines

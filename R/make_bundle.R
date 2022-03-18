@@ -487,10 +487,12 @@ rm(LL)
   ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
   ### and anything > like 100 will crash most systems.
   ### also need to consider compute time for use in Bayesian param estiamtion
+  if(K > length(unique(ENgrid$cell.ind))){
+    message("[important] you defined K as a value higher than the unique number of grid cells. Resetting K automatically. See notes following. \n")
+    K <- NULL}
   if (is.null(K)) {
-    ng <- round(length(unique(ENgrid$cell.ind))/4)
-    K <- max(20, min(ng, 150))
     ###logic for K selection borrowed from AHM2 book , which cites Giminez et al. 2009 and Rupert et al. 2003
+    K <- max(20, min(round(length(unique(ENgrid$cell.ind))/4), 150))
   }
 
   ## JAGAM -------------------------------------------------------------------------
