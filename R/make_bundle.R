@@ -28,7 +28,7 @@ make_bundle <- function(bbs,
          drop.na.cov.obs = TRUE,
          mins.to.hours = TRUE,
          scale.covs  = TRUE,
-         fill.cov.nas = sample(size = 1, c(-666,-6969,-999)),
+         fill.cov.nas = NA,
          bf.method   = "cubic2D",
          use.ebird.in.ENgrid = TRUE,
          ENgrid.arg    = "max",
@@ -67,11 +67,7 @@ make_bundle <- function(bbs,
   ENgrid.arg <- tolower(ENgrid.arg)
   bf.method  <- tolower(bf.method)
   stopifnot(ENgrid.arg %in% c("mean", "max", "min"))
-  stopifnot(
-    is.integer(fill.cov.nas) |
-      is.numeric(fill.cov.nas) |
-      is.double(fill.cov.nas) | !fill.cov.nas
-  )
+  stopifnot(length(fill.cov.nas)==1)
   stopifnot(is.logical(use.ebird.in.ENgrid))
   stopifnot(is.logical(scale.covs))
   stopifnot(is.logical(drop.na.cov.obs))
@@ -135,7 +131,7 @@ make_bundle <- function(bbs,
 # Subset for dev.mode=TRUE ------------------------------------------------
   if (dev.mode) {
     message(paste0(
-      "dev.mode=TRUE; output object will be a subset of original data.\n"
+      "[important] arg dev.mode==TRUE; output object will be a subset of original data.\n"
     ))
     # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
     # keep 3 years data max
@@ -487,7 +483,7 @@ rm(LL)
   ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
   ### and anything > like 100 will crash most systems.
   ### also need to consider compute time for use in Bayesian param estiamtion
-  if(K > length(unique(ENgrid$cell.ind))){
+  if(!is.null(K) && K > length(unique(ENgrid$cell.ind))){
     message("[important] you defined K as a value higher than the unique number of grid cells. Resetting K automatically. See notes following. \n")
     K <- NULL}
   if (is.null(K)) {
