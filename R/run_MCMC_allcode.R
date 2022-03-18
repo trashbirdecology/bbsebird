@@ -5,24 +5,29 @@
 #' @param seed for internal use
 #' @param data data and constants as list
 #' @param inits list of initial values
+#' @param ... Additional arguments
 #' @param verbose logical if TRUE and code is not running in parallel will print all output available from Nimble commands.
 #' @param mcmc.specs MCMC specifications as a list; created using \code{set_mcmc_specs}
 #' @param model filepath or nimble model object
 #' @importFrom nimble compileNimble buildMCMC readBUGSmodel runMCMC
 #' @export run_MCMC_allcode
 run_MCMC_allcode <-
-  function(seed = 1,
+  function(
            data,
            model,
            inits,
            mcmc.specs,
-           verbose=FALSE
+           verbose=FALSE,
+           seed = sample(1:1E6, 1),
+           monitors=NULL,
+           ...
            ) {
     require(nimble)
     myModel <-
       nimble::readBUGSmodel(model,
                             data,
                             inits)
+
     CmyModel <- nimble::compileNimble(myModel, showCompilerOutput = verbose)
     myMCMC   <- nimble::buildMCMC(CmyModel)
     CmyMCMC  <- nimble::compileNimble(myMCMC, showCompilerOutput = verbose)

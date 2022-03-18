@@ -11,8 +11,9 @@
 #' @param savedir If not specified, will save the samples resulting from nimbleUI::nimble() to current working directory
 #' @param verbose logical Argument used in nimble::compileNimble(showCompilerOutput). If TRUE will generate more messages/information during sampling phase. Note: If parallel=TRUE, messages are suppressed given behavior of parallel compute.
 #' @param mod.name optional Used to save model output to file. Defaults to 'mynimbleModel'
-#' @param monitor optional Character vector of parameters to monitor.
+#' @param monitors optional Character vector of parameters to monitor.
 #' @param traceplots logical If TRUE will attempt to print default traceplots for model output
+#' @param ... Additional arguments
 #' @importFrom parallel detectCores
 #' @importFrom  parallel makeCluster parLapply
 #' @importFrom  doParallel registerDoParallel stopImplicitCluster
@@ -24,13 +25,14 @@ run_in_nimble <- function(myData,
                           myInits     = NULL,
                           traceplots  = TRUE,
                           constants   = NULL,
-                          monitor,
+                          monitors     = NULL,
                           savedir     = "/",
                           seed        = sample(1:111111, size = 1),
                           parallel    = TRUE,
                           verbose     = TRUE,
                           mod.name    = "mynimbleModel",
-                          mcmc.specs  = set_mcmc_specs(dev.mode = TRUE)) {
+                          mcmc.specs  = set_mcmc_specs(dev.mode = TRUE),
+                          ...) {
   # Step -1. arg checks --------------------------------------------------------------
   stopifnot(is.logical(parallel))
   stopifnot(is.logical(verbose))
@@ -94,7 +96,15 @@ run_in_nimble <- function(myData,
   })
 
   }else{
-      results <- run_MCMC_allcode(data=myData, model=myModel, inits = myInits, verbose = verbose.ind, mcmc.specs = specs)
+    results <-
+      run_MCMC_allcode(
+        data = myData,
+        model = myModel,
+        inits = myInits,
+        verbose = verbose.ind,
+        mcmc.specs = specs,
+        monitors = monitors
+      )
 
   }
 

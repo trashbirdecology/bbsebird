@@ -15,6 +15,7 @@
 #' @importFrom parallel detectCores
 #' @importFrom doParallel stopImplicitCluster
 #' @importFrom jagsUI jags
+#' @param ... Additional arguments
 #' @export run_in_jags
 
 run_in_jags <- function(bugs.data,
@@ -28,7 +29,8 @@ run_in_jags <- function(bugs.data,
                         mod.name    = "myJAGSModel",
                         overwrite   = FALSE,
                         traceplots  = TRUE,
-                        mcmc.specs  = set_mcmc_specs()) {
+                        mcmc.specs  = set_mcmc_specs(),
+                        ...) {
   # deal with unbinded vars
 
   # arg checks --------------------------------------------------------------
