@@ -50,11 +50,11 @@ run_in_jags <- function(bugs.data,
     )
     default.vals  <- set_mcmc_specs()
     for (i in seq_along(mcmc.missing)) {
-    j = length(mcmc.specs) + 1
+      j = length(mcmc.specs) + 1
       new.name = mcmc.missing[i]
 
       mcmc.specs[[j]] <- default.vals[[new.name]]
-      names(mcmc.specs)[j] <-new.name
+      names(mcmc.specs)[j] <- new.name
     }
     rm(default.vals, new.name, i, j)
   }
@@ -65,21 +65,36 @@ run_in_jags <- function(bugs.data,
   stopifnot(is.character(params))
 
 
-# Out filepath + file search ----------------------------------------------
-  if(!endsWith(savedir, "/")) savedir <- paste0(savedir, "/")
+  # Out filepath + file search ----------------------------------------------
+  if (!endsWith(savedir, "/"))
+    savedir <- paste0(savedir, "/")
   dir.create(savedir, showWarnings = FALSE)
-  results.out.fn <- paste0(savedir, mod.name, "-jags-",
-                           mcmc.specs$ni, "ni_",
-                           mcmc.specs$na, "na_",
-                           mcmc.specs$nt, "nt_",
-                           mcmc.specs$nb, "nb",
-                           ".RDS")
-  if(file.exists(results.out.fn) & !overwrite){
-    choice <- menu(title=paste0("a jags file at the following location already exists. \nAre you sure you want to re-run JAGS?"),
-                    choices = c("Yes, definitely", "No. Don't run!", "What?!"))
-      message("Great choice. Importing existing results now...\n")
-    if(choice != 1){results <- readRDS(results.out.fn)
-    return(results)
+  results.out.fn <- paste0(
+    savedir,
+    mod.name,
+    "-jags-",
+    mcmc.specs$ni,
+    "ni_",
+    mcmc.specs$na,
+    "na_",
+    mcmc.specs$nt,
+    "nt_",
+    mcmc.specs$nb,
+    "nb",
+    ".RDS"
+  )
+  if (file.exists(results.out.fn) & !overwrite) {
+    choice <-
+      menu(
+        title = paste0(
+          "a jags file at the following location already exists. \nAre you sure you want to re-run JAGS?"
+        ),
+        choices = c("Yes, definitely", "No. Don't run!", "What?!")
+      )
+    message("Great choice. Importing existing results now...\n")
+    if (choice != 1) {
+      results <- readRDS(results.out.fn)
+      return(results)
     }
   }
 
@@ -89,59 +104,76 @@ run_in_jags <- function(bugs.data,
   ## if not parallel:
   message("began jags model at: ", timestamp())
   time1 <- Sys.time()
-  if(!parallel){
-  results <- jagsUI::jags(
-    data = bugs.data,
-    model.file = model,
-    inits      = inits,
-    parameters.to.save = params,
-    n.chains   = mcmc.specs$nc,
-    # n.adapt    = mcmc.specs$na,
-    n.iter     = mcmc.specs$ni,
-    n.burnin   = mcmc.specs$nb,
-    n.thin     = mcmc.specs$nt)}
+  if (!parallel) {
+    results <- jagsUI::jags(
+      seed = seed,
+      verbose = TRUE,
+      data = bugs.data,
+      model.file = model,
+      inits      = inits,
+      parameters.to.save = params,
+      n.chains   = mcmc.specs$nc,
+      # n.adapt    = mcmc.specs$na,
+      n.iter     = mcmc.specs$ni,
+      n.burnin   = mcmc.specs$nb,
+      n.thin     = mcmc.specs$nt
+    )
+  }
   ## if parallel
-  if(parallel){
-  results <- jagsUI::jags(
-    data = bugs.data,
-    model.file = model,
-    inits      = inits,
-    parameters.to.save = params,
-    n.chains   = mcmc.specs$nc,
-    # n.adapt    = mcmc.specs$na,
-    n.iter     = mcmc.specs$ni,
-    n.burnin   = mcmc.specs$nb,
-    n.thin     = mcmc.specs$nt,
-    parallel   = TRUE,
-    n.cores    = mcmc.specs$ncores,
-    seed       = NULL
-  )
-  try({
-    # cat("Attempting to stop cluster\n")
-    doParallel::stopImplicitCluster()
-    # parallel::stopCluster()
-  })
+  if (parallel) {
+    results <- jagsUI::jags(
+      data = bugs.data,
+      model.file = model,
+      inits      = inits,
+      parameters.to.save = params,
+      n.chains   = mcmc.specs$nc,
+      # n.adapt    = mcmc.specs$na,
+      n.iter     = mcmc.specs$ni,
+      n.burnin   = mcmc.specs$nb,
+      n.thin     = mcmc.specs$nt,
+      parallel   = TRUE,
+      n.cores    = mcmc.specs$ncores,
+      seed       = seed
+    )
+    try({
+      # cat("Attempting to stop cluster\n")
+      doParallel::stopImplicitCluster()
+      # parallel::stopCluster()
+    })
 
   } # end run jagsUI::jags()
 
   message("`finish` jags model at: ", timestamp())
-  (time2 <- Sys.time()-time1)
-  if(exists("results")) {
+  (time2 <- Sys.time() - time1)
+  if (exists("results")) {
     results$runtime <- time2
     print(results$runtime)
   }
 
 
-# SAVE FILES --------------------------------------------------------------
+  # SAVE FILES --------------------------------------------------------------
   # SAVE AND EXPORT RESULTS
-  trySave(x = results, name = "jags-samps", savedir, mcmc.specs, traceplots =FALSE)
+  trySave(
+    x = results,
+    name = "jags-samps",
+    savedir,
+    mcmc.specs,
+    traceplots = FALSE
+  )
 
   # SAVE AND EXPORT PLOTS
-  if(traceplots) trySave(x = results, traceplots=TRUE, name = paste0("jags-trace_",mod.name), savedir, mcmc.specs)
+  if (traceplots)
+    trySave(
+      x = results,
+      traceplots = TRUE,
+      name = paste0("jags-trace_", mod.name),
+      savedir,
+      mcmc.specs
+    )
 
 
 
-# RETURN ------------------------------------------------------------------
+  # RETURN ------------------------------------------------------------------
   return(results)
 
 }
