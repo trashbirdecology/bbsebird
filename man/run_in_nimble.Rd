@@ -7,7 +7,7 @@
 run_in_nimble(
   myData,
   myModel,
-  myInits,
+  myInits = NULL,
   traceplots = TRUE,
   constants = NULL,
   monitor,
