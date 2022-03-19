@@ -77,11 +77,14 @@ run_in_nimble <- function(myData,
   specs <- mcmc.specs
 
   if (parallel) {
+    pcores <- min(mcmc.specs$ncores, mcmc.specs$nc)
+    cat("[fyi] ", mcmc.specs$ncores, " are available but mcmc.specs$nc==",mcmc.specs$nc,". Running ",pcores,
+        " independent chains in parallel...\n")
     this_cluster <- this_cluster <- parallel::makeCluster(mcmc.specs$ncores)
   results <-
     parallel::parLapply(
       cl = this_cluster,
-      X = 1:mcmc.specs$ncores,
+      X = 1:pcores,
       fun = run_MCMC_allcode,
       data = myData,
       model = myModel,

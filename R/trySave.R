@@ -6,12 +6,15 @@
 #' @param traceplots logical If TRUE will save plots to PDF
 #' @export trySave
 #' @importFrom coda as.mcmc
+#' @importFrom mcmcplots mcmcplot
 
 
 trySave <- function(x,
                     name,
                     savedir = "/",
-                    mcmc.specs = NULL, traceplots=FALSE) {
+                    mcmc.specs = NULL,
+                    traceplots = FALSE,
+                    monitors="all") {
   if (!endsWith(savedir, "/")) {
     savedir <- paste0(savedir, "/")
   }
@@ -38,10 +41,11 @@ trySave <- function(x,
                    middleparts)
 
   if(traceplots){
-    if("matrix" %in% class(x)){x <- coda::as.mcmc(x)}
     ## save non plot objects
-    tryCatch({pdf(paste0(out.fn,"_trace.pdf"))
-        plot(x)
+    tryCatch({
+        pdf(paste0(out.fn,"_monitor-summary.pdf"))
+        # MCMCvis::MCMCplot(results.nimb)
+        MCMCvis::MCMCplot(results.nimb, params=monitors)
         dev.off()
         }, error = function(e) {
         cat("failed to save traceplots to file\n")
