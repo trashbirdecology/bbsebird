@@ -14,9 +14,7 @@
 *.utf8.md
 *.knit.md
 
-
 ## ignore all examples files except the .R scripts
-/data-in/
 /inst/vignettes/*
 # but do not ignore the R files in examples directory (not subdirectories, though...)
 # Reinclude all folders in /jobs
@@ -24,42 +22,16 @@
 # Ignore everything in the subfolders of /jobs
 #/examples/*/*
 # Reinclude config.xml files in the first-level subfolders of /jobs
-#!/examples/*/.R
+!/examples/*/.R
+!/examples/*/.Rmd
 
 
-## Remove specific examples
-### shoudn't have to do this..
-#### remove data created during vignettes one and two directries down
-inst/vignettes/*/bbs/
-inst/vignettes/*/*/bbs/
-inst/vignettes/*/ebird/
-inst/vignettes/*/*/ebird/
-inst/vignettes/*/jags/
-inst/vignettes/*/*/jags/
-inst/vignettes/*/spatial/
-inst/vignettes/*/*/spatial/
-inst/vignettes/*.pdf
-inst/vignettes/*/*.pdf
-inst/vignettes/*/*/*.pdf
-inst/vignettes/*/*/*/*.pdf
-inst/vignettes/*.zip
-inst/vignettes/*/*.zip
-inst/vignettes/*/*/*.zip
-inst/vignettes/*/*/*/*.zip
-inst/vignettes/*.xml
-inst/vignettes/*/*.xml
-inst/vignettes/*/*/*.xml
-inst/vignettes/*/*/*/*.xml
-inst/vignettes/packrat/
-inst/vignettes/dcco/
 
 *.pdf
-inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/ebird/ebird_filtered.rds
-inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/ebird/ebird_obs_filtered.txt
-inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/ebird/ebird_samp_filtered.txt
-inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/spatial/ebird_spatial.rds
-inst/DCCO/doccor_USFL-USGA_111km_2008-2019_100maxCebird/spatial/grid.rds
+/*.pdf
+/*/*.pdf
+
 inst/doc
+
 packrat/lib*/
-grr.rdataTmp
-development-file.r
+
