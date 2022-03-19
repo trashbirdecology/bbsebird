@@ -60,9 +60,10 @@ Imports:
     mcmcplots
 Suggests: 
     knitr,
-    dclone, 
+    dclone,
     rmarkdown,
-    spelling
+    spelling,
+    spdep
 LazyData: true
 Remotes: 
     github::trashbirdecology/bbsAssistant,

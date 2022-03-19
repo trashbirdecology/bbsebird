@@ -11,7 +11,7 @@ make_bundle(
   drop.na.cov.obs = TRUE,
   mins.to.hours = TRUE,
   scale.covs = TRUE,
-  fill.cov.nas = sample(size = 1, c(-666, -6969, -999)),
+  fill.cov.nas = NA,
   bf.method = "cubic2D",
   use.ebird.in.ENgrid = TRUE,
   ENgrid.arg = "max",

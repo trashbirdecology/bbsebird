@@ -11,7 +11,9 @@ make_spatial_grid(
   states = NULL,
   crs.target = 4326,
   hexagonal = TRUE,
-  grid.size = 1
+  grid.size = 1,
+  adjacency.mat = "knearest",
+  ...
 )
 }
 \arguments{
@@ -28,6 +30,10 @@ make_spatial_grid(
 \item{hexagonal}{logical if TRUE will produce a spatial grid with hexagonal, as opposed to rectangular, cells}
 
 \item{grid.size}{numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km}
+
+\item{adjacency.mat}{character. One of c("knearest", "euclid" or NULL). If specified, will return adjacency matrix of choice as a list element of the returned object. Currently only supports planar coordinates (e.g. crs.target=4326).}
+
+\item{...}{Additional arguments}
 }
 \description{
 Create a Spatial Sampling Grid

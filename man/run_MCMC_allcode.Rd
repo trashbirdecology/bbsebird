@@ -4,11 +4,18 @@
 \alias{run_MCMC_allcode}
 \title{Run MCMC in or Out of Parallel in nimble}
 \usage{
-run_MCMC_allcode(seed = 1, data, model, inits, mcmc.specs, verbose = FALSE)
+run_MCMC_allcode(
+  data,
+  model,
+  inits,
+  mcmc.specs,
+  verbose = FALSE,
+  seed = sample(1:1e+06, 1),
+  monitors = NULL,
+  ...
+)
 }
 \arguments{
-\item{seed}{for internal use}
-
 \item{data}{data and constants as list}
 
 \item{model}{filepath or nimble model object}
@@ -18,6 +25,10 @@ run_MCMC_allcode(seed = 1, data, model, inits, mcmc.specs, verbose = FALSE)
 \item{mcmc.specs}{MCMC specifications as a list; created using \code{set_mcmc_specs}}
 
 \item{verbose}{logical if TRUE and code is not running in parallel will print all output available from Nimble commands.}
+
+\item{seed}{for internal use}
+
+\item{...}{Additional arguments}
 }
 \description{
 Run MCMC in or Out of Parallel in nimble

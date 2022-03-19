@@ -12,7 +12,7 @@ set_mcmc_specs(
   nt = 10,
   in.parallel = FALSE,
   ncores = parallel::detectCores() - 1,
-  dev.mode = FALSE
+  dev.mode = 2
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ set_mcmc_specs(
 
 \item{ncores}{number of cores to run model in parallel}
 
-\item{dev.mode}{logical if TRUE will set mcmc specs to very low values to allow for a quick test of model}
+\item{dev.mode}{integer 1:3. 1=large-ish run; 2=moderate run; 3=quick, short run.}
 }
 \description{
 Set Specifications for MCMC

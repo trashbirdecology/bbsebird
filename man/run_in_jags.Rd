@@ -16,7 +16,8 @@ run_in_jags(
   mod.name = "myJAGSModel",
   overwrite = FALSE,
   traceplots = TRUE,
-  mcmc.specs = set_mcmc_specs()
+  mcmc.specs = set_mcmc_specs(),
+  ...
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ run_in_jags(
 \item{traceplots}{logical If TRUE will attemp to save a default traceplot to file}
 
 \item{mcmc.specs}{list List of specs for use in MCMC specification (e.g., n.chains, n.adapt, n.cores). If any necessary values are missing, will use set_mcmc_specs to grab a default value.}
+
+\item{...}{Additional arguments}
 }
 \description{
 Run BUGS Model in JAGS

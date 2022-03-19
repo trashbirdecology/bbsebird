@@ -10,13 +10,14 @@ run_in_nimble(
   myInits = NULL,
   traceplots = TRUE,
   constants = NULL,
-  monitor,
-  savedir = "/",
+  monitors = NULL,
+  savedir = "outputs",
   seed = sample(1:111111, size = 1),
   parallel = TRUE,
   verbose = TRUE,
   mod.name = "mynimbleModel",
-  mcmc.specs = set_mcmc_specs(dev.mode = TRUE)
+  mcmc.specs = set_mcmc_specs(dev.mode = TRUE),
+  ...
 )
 }
 \arguments{
@@ -30,7 +31,7 @@ run_in_nimble(
 
 \item{constants}{optional Can be provided separately from myData. If both are provided, function will combine prior to inclusion in readNimbleModel}
 
-\item{monitor}{optional Character vector of parameters to monitor.}
+\item{monitors}{optional Character vector of parameters to monitor.}
 
 \item{savedir}{If not specified, will save the samples resulting from nimbleUI::nimble() to current working directory}
 
@@ -43,6 +44,8 @@ run_in_nimble(
 \item{mod.name}{optional Used to save model output to file. Defaults to 'mynimbleModel'}
 
 \item{mcmc.specs}{list List of specs for use in MCMC specification (e.g., n.chains, n.adapt, n.cores). If any necessary values are missing, will use set_mcmc_specs to grab a default value.}
+
+\item{...}{Additional arguments}
 }
 \description{
 Run BUGS Model in nimble
