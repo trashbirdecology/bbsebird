@@ -91,7 +91,7 @@ mmyyyy              = "dec-2021" # the month and year of the eBird data download
 
 
 ### see bbsAssistant::region_codes
-states              = c("us-fl")
+states              = c("us-fl", "us-ga", "us-al")
 countries           = c("US") ## string of  countries Call \code{bbsebird::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
 # species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
 # species.abbr        = c("doccor","dcco", "docco")
@@ -132,15 +132,19 @@ The following chunk creates a spatial sampling grid of size grid.size
 with units defaulting to the units of crs.target.
 
 ``` r
-if(is.null(states)){ states.ind <- NULL}else{states.ind<-gsub(x=toupper(states), pattern="-", replacement="")}
-study_area <- make_spatial_grid(dir.out = dirs[['dir.spatial.out']],
-                          # overwrite=overwrite.grid,
-                          states = states.ind,
+study_area <- make_spatial_grid(
+                          dir.out = dirs[['dir.spatial.out']],
+                          states = states,
                           countries = countries,
                           crs.target = crs.target,
-                          grid.size = grid.size
+                          grid.size = grid.size, 
+                          adjacency.mat = "knearest",
+                          overwrite = FALSE
                           )
-plot(study_area[1])
+if(is.list(study_area)){ neighborhood <- study_area$neighborhood
+study_area <- study_area$grid
+}
+plot(study_area)
 ```
 
 Create the BBS data. This chunk relieson R package . The resulting data
@@ -169,8 +173,7 @@ bbs_spatial <- make_bbs_spatial(
   plot.dir = dirs$dir.plots,
   crs.target = crs.target,
   grid = study_area,
-  dir.out = dirs$dir.spatial.out, 
-  overwrite=TRUE
+  dir.out = dirs$dir.spatial.out
 )
 saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
 }
@@ -198,7 +201,7 @@ ebird <- munge_ebird_data(
   dir.ebird.out = dirs$dir.ebird.out,
   countries = countries,
   states = states,
-  # overwrite = FALSE, ## this function checks for exisiting, munged files iin dir.ebird.out..
+  # overwrite = FALSE, ## this function checks for existing, munged files iin dir.ebird.out..
   years = year.range
 )
 
@@ -206,6 +209,8 @@ ebird <- munge_ebird_data(
 ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
+  grid = ifelse(is.list(study_area), study_area[[1]], study_area),
+
   grid = study_area,
   overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
   dir.out = dirs$dir.spatial.out 

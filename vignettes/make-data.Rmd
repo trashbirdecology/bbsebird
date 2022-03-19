@@ -10,10 +10,160 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>", 
+  echo=TRUE, 
+  eval=FALSE
 )
 ```
 
 ```{r setup}
+# remotes::install_github("trashbirdecology/bbsebird", force=TRUE)
 library(bbsebird)
+```
+
+
+```{r args}
+# REQUIRED ARGUMENTS
+dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/" 
+dir.proj       = "C:/users/jburnett/OneDrive - DOI/research/cormorants/do-not-edit/"
+species             = c("wood thrush")
+species.abbr        = c("woothr") # see ebird filenames for abbreviation
+usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile 
+cws.layer           = "ALL_ROUTES" # name of the Canadian (CWS) BBS route shapefile.
+mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
+states              = c("us-ia", "us-il", "us-mo")
+countries           = c("US") ## string of  countries Call \code{bbsebird::iso.codes} to find relevant 
+year.range          = 2008:2019
+base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) 
+crs.target          = 4326 #target CRS for all created spatial layers
+grid.size           = 0.75 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
+min.yday            = 91
+max.yday            = 245
+## Munge the states and countries indexes for use in dir/proj dir reation
+if(!exists("states")) states <- NULL
+if(!is.null(states)){regions <- states}else{regions <- countries}
+stopifnot(all(tolower(states) %in% tolower(bbsAssistant::region_codes$iso_3166_2)))
+```
+
+Specify and create directories
+```{r dirs-set}
+subdir.proj <-  set_proj_shorthand(species.abbr, regions, grid.size, year.range)
+dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
+                         dir.proj = dir.proj,
+                         subdir.proj = subdir.proj) # create and/or specify 
+```
+
+
+## Create a spatial sampling grid
+The following chunk creates a spatial sampling grid of size grid.size with units defaulting to the units of crs.target.
+```{r spatial-grid}
+study_area <- make_spatial_grid(
+                          dir.out = dirs[['dir.spatial.out']],
+                          states = states,
+                          countries = countries,
+                          crs.target = crs.target,
+                          grid.size = grid.size, 
+                          adjacency.mat = "knearest",
+                          overwrite = FALSE
+                          )
+if(is.list(study_area)){ neighborhood <- study_area$neighborhood
+study_area <- study_area$grid
+}
+plot(study_area)
+```
+
+
+## Create BBS Data
+Create the BBS data. This chunk relieson R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
+```{r bbs-data}
+## if the files already exist, don't overwrite unless you've made changes to data specs
+if("bbs_obs.rds" %in% list.files(dirs$dir.bbs.out)){bbs_obs <- readRDS(list.files(dirs$dir.bbs.out, "bbs_obs.rds", full.names=TRUE))}else{
+bbs_orig <- bbsAssistant::grab_bbs_data(bbs_dir = dirs$dir.bbs.out) 
+bbs_obs  <- bbsAssistant::munge_bbs_data(
+    bbs_list = bbs_orig,
+    states   = states,
+    species = species, 
+    year.range = year.range)
+bbs_obs <- bbsebird:::match_col_names(bbs_obs) # munge column names to mesh with eBird
+saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds")) # suggest saving data to file for easy access
+}
+# Overlay BBS and study area / sampling grid
+### note, sometimes when running this in a notebook/rmd a random .rdf" path error occurs.
+#### I have no clue what this bug is. Just try running it again. See also https://github.com/rstudio/rstudio/issues/6260
+if("bbs_spatial.rds" %in% list.files(dirs$dir.bbs.out)){bbs_spatial <- readRDS(list.files(dirs$dir.bbs.out, "bbs_spatial.rds", full.names=TRUE))}else{
+bbs_spatial <- make_bbs_spatial(
+  df = bbs_obs,
+  cws.routes.dir = dirs$cws.routes.dir,
+  usgs.routes.dir = dirs$usgs.routes.dir,
+  plot.dir = dirs$dir.plots,
+  crs.target = crs.target,
+  grid = study_area,
+  dir.out = dirs$dir.spatial.out
+)
+saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
+}
+## check out the bbs spatial data to ensure things look ok
+# plot(bbs_spatial['area']) # cell area
+```
+
+## Create eBird Data
+```{r ebird-data}
+## check the specified ebird original data directory for files. 
+(fns.ebird    <- id_ebird_files(
+  dir.ebird.in = dirs$dir.ebird.in,
+  dir.ebird.out = dirs$dir.ebird.out,
+  mmyyyy = mmyyyy,
+  species = species.abbr,
+  states.ind = states
+))
+stopifnot(length(fns.ebird) > 1)
+
+# Import and munge the desired files
+ebird <- munge_ebird_data(
+  fns.ebird = fns.ebird,
+  species = c(species, species.abbr),
+  dir.ebird.out = dirs$dir.ebird.out,
+  countries = countries,
+  states = states,
+  # overwrite = FALSE, ## this function checks for existing, munged files iin dir.ebird.out..
+  years = year.range
+)
+
+# Create spatial ebird
+ebird_spatial <- make_ebird_spatial(
+  df = ebird,
+  crs.target = crs.target,
+  grid = study_area,
+  overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
+  dir.out = dirs$dir.spatial.out 
+)
+## visualizing the ebird_spatial data takes a while, do not recommend.
+```
+
+## Bundle Data for Modeling
+Create a list of lists and indexes for use in JAGS or elsewhere. We suggest creating a list using `make_bundle` and subsequently grabbing useful data from there. 
+
+`make_bundle` creates site-level covariates in both long (vector) and wide (matrix) form. Matrix form are housed inside Xsite matrix, whereas long-form are within list elements 'bbs.df' and 'ebird.df'. Note, however, that the Xsite matrices include missing covariate data.  
+```{r make_bundle}
+message("[note] sometimes when running this chunk in notebook/rmarkdown it crashes. try restarting session or running interactively\n")
+### make a teeny little bundle for model dev/debugging
+bundle.dev <- make_bundle(
+  bbs = bbs_spatial,
+  ebird = ebird_spatial,
+  grid = study_area,
+  dev.mode = TRUE
+)
+## recommend saving to file in case you have crashes due to memory or modeling
+saveRDS(bundle.dev, paste0(dirs$dir.proj,"/dev-bundle.rds"))
+
+### make full sized bundle
+bundle <- make_bundle(
+  # data
+  bbs = bbs_spatial,
+  ebird = ebird_spatial,
+  grid = study_area,
+  # optional args
+  dev.mode = FALSE
+)
+saveRDS(bundle, paste0(dirs$dir.proj,"/bundle.rds"))
 ```
