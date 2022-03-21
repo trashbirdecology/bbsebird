@@ -2,9 +2,9 @@
 title: "make-data"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{make-data}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+  %/VignetteIndexEntry{make-data}
+  %/VignetteEngine{knitr::rmarkdown}
+  %/VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-# remotes::install_github("trashbirdecology/bbsebird", force=TRUE)
+remotes::install_github("trashbirdecology/bbsebird")#, force=TRUE)
 library(bbsebird)
 ```
 
@@ -32,7 +32,7 @@ usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the
 cws.layer           = "ALL_ROUTES" # name of the Canadian (CWS) BBS route shapefile.
 mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
 states              = c("us-ia", "us-il", "us-mo")
-countries           = c("US") ## string of  countries Call \code{bbsebird::iso.codes} to find relevant 
+countries           = c("US") ## string of  countries Call /code{bbsebird::iso.codes} to find relevant 
 year.range          = 2008:2019
 base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) 
 crs.target          = 4326 #target CRS for all created spatial layers
@@ -63,18 +63,21 @@ study_area <- make_spatial_grid(
                           countries = countries,
                           crs.target = crs.target,
                           grid.size = grid.size, 
-                          adjacency.mat = "knearest",
-                          overwrite = TRUE
+                          hexagonal = FALSE,
+                          adjacency.mat = "euclid",
+                          overwrite = FALSE
                           )
-if(is.list(study_area)){ neighborhood <- study_area$neighborhood
-study_area <- study_area$grid
+if(is.list(study_area)){ 
+  neighborhood <- study_area$neighborhood
+  study_area <- study_area$grid
+  overlay      <- study_area$overlay
 }
 plot(study_area)
 ```
 
 
 ## Create BBS Data
-Create the BBS data. This chunk relieson R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
+Create the BBS data. This chunk relieson R package /code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
 ```{r bbs-data}
 ## if the files already exist, don't overwrite unless you've made changes to data specs
 if("bbs_obs.rds" %in% list.files(dirs$dir.bbs.out)){bbs_obs <- readRDS(list.files(dirs$dir.bbs.out, "bbs_obs.rds", full.names=TRUE))}else{
@@ -98,7 +101,8 @@ bbs_spatial <- make_bbs_spatial(
   plot.dir = dirs$dir.plots,
   crs.target = crs.target,
   grid = study_area,
-  dir.out = dirs$dir.spatial.out
+  dir.out = dirs$dir.spatial.out, 
+  overwrite = FALSE
 )
 saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
 }
@@ -125,7 +129,7 @@ ebird <- munge_ebird_data(
   dir.ebird.out = dirs$dir.ebird.out,
   countries = countries,
   states = states,
-  # overwrite = TRUE, ## this function checks for existing, munged files iin dir.ebird.out..
+  overwrite = FALSE, ## this function checks for existing, munged files iin dir.ebird.out..
   years = year.range
 )
 
@@ -134,7 +138,7 @@ ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
   grid = study_area,
-  # overwrite = TRUE, # this fun checks for existing spatial ebird file in dir.spatial.out
+  overwrite = TRUE, # this fun checks for existing spatial ebird file in dir.spatial.out
   dir.out = dirs$dir.spatial.out 
 )
 ## visualizing the ebird_spatial data takes a while, do not recommend.
@@ -145,7 +149,7 @@ Create a list of lists and indexes for use in JAGS or elsewhere. We suggest crea
 
 `make_bundle` creates site-level covariates in both long (vector) and wide (matrix) form. Matrix form are housed inside Xsite matrix, whereas long-form are within list elements 'bbs.df' and 'ebird.df'. Note, however, that the Xsite matrices include missing covariate data.  
 ```{r make_bundle}
-message("[note] sometimes when running this chunk in notebook/rmarkdown it crashes. try restarting session or running interactively\n")
+message("[note] sometimes when running this chunk in notebook/rmarkdown it crashes. try restarting session or running interactively/n")
 ### make a teeny little bundle for model dev/debugging
 bundle.dev <- make_bundle(
   bbs = bbs_spatial,
@@ -166,4 +170,12 @@ bundle <- make_bundle(
   dev.mode = FALSE
 )
 saveRDS(bundle, paste0(dirs$dir.proj,"/bundle.rds"))
+
+# saveRDS(overlay, paste0(dirs$dir.proj,"/overlay.rds"))
+# saveRDS(neighborhood, paste0(dirs$dir.proj,"/neighborhood.rds"))
+# dir.copy <- "C:/Users/jburnett/DOI/Royle, Andy - aaaaa/"
+# file.copy(paste0(dirs$dir.proj,"/bundle.rds"), dir.copy)
+# file.copy(paste0(dirs$dir.proj,"/dev-bundle.rds"), dir.copy)
+# file.copy(paste0(dirs$dir.proj,"/overlay.rds"), dir.copy)
+# file.copy(paste0(dirs$dir.proj,"/neighborhood.rds"), dir.copy)
 ```
