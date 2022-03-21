@@ -115,14 +115,18 @@ study_area <- make_spatial_grid(
                           states = states,
                           countries = countries,
                           crs.target = crs.target,
+                          hexagonal = FALSE, 
                           grid.size = grid.size, 
-                          adjacency.mat = "knearest",
-                          overwrite = FALSE
+                          adjacency.mat = "euclid",
+                          overwrite = TRUE
                           )
-if(is.list(study_area)){ neighborhood <- study_area$neighborhood
-study_area <- study_area$grid
+if(is.list(study_area)) {
+  overlay   <- study_area$grid.overlay
+  neighborhood <- study_area$neighborhood
+  study_area <- study_area$grid
 }
 plot(study_area)
+plot(overlay)
 ```
 
 Create the BBS data. This chunk relieson R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
@@ -144,6 +148,7 @@ saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds")) # suggest saving data
 if("bbs_spatial.rds" %in% list.files(dirs$dir.bbs.out)){bbs_spatial <- readRDS(list.files(dirs$dir.bbs.out, "bbs_spatial.rds", full.names=TRUE))}else{
 bbs_spatial <- make_bbs_spatial(
   df = bbs_obs,
+  overwrite=TRUE, 
   cws.routes.dir = dirs$cws.routes.dir,
   usgs.routes.dir = dirs$usgs.routes.dir,
   plot.dir = dirs$dir.plots,

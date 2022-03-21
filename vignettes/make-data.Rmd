@@ -64,7 +64,7 @@ study_area <- make_spatial_grid(
                           crs.target = crs.target,
                           grid.size = grid.size, 
                           adjacency.mat = "knearest",
-                          overwrite = FALSE
+                          overwrite = TRUE
                           )
 if(is.list(study_area)){ neighborhood <- study_area$neighborhood
 study_area <- study_area$grid
@@ -125,7 +125,7 @@ ebird <- munge_ebird_data(
   dir.ebird.out = dirs$dir.ebird.out,
   countries = countries,
   states = states,
-  # overwrite = FALSE, ## this function checks for existing, munged files iin dir.ebird.out..
+  # overwrite = TRUE, ## this function checks for existing, munged files iin dir.ebird.out..
   years = year.range
 )
 
@@ -134,7 +134,7 @@ ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
   grid = study_area,
-  overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
+  # overwrite = TRUE, # this fun checks for existing spatial ebird file in dir.spatial.out
   dir.out = dirs$dir.spatial.out 
 )
 ## visualizing the ebird_spatial data takes a while, do not recommend.

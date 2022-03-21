@@ -78,7 +78,7 @@ run_in_nimble <- function(myData,
 
   if (parallel) {
     pcores <- min(mcmc.specs$ncores, mcmc.specs$nc)
-    cat("[fyi] ", mcmc.specs$ncores, " are available but mcmc.specs$nc==",mcmc.specs$nc,". Running ",pcores,
+    cat("[fyi] At least", mcmc.specs$ncores," CPUS are available but mcmc.specs$nc==",mcmc.specs$nc,". Running ",pcores,
         " independent chains in parallel...\n")
     this_cluster <- this_cluster <- parallel::makeCluster(mcmc.specs$ncores)
   results <-

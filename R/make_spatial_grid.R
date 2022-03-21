@@ -33,6 +33,7 @@ make_spatial_grid <- function(dir.out,
 
   if(!is.null(states)) states <- gsub(x=toupper(states), pattern="-", replacement="")
 
+  stopifnot(tolower(adjacency.mat) %in% c("knearest", "tri", "euclid",  NULL, "NULL") )
   # If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file.
   if ("grid.rds" %in% list.files(dir.out) & !overwrite) {
     grid <- readRDS(paste0(dir.out, "/", "grid.rds"))
@@ -40,7 +41,6 @@ make_spatial_grid <- function(dir.out,
   } else{
     cat("Making spatial sampling grid.")
   }
-  stopifnot(tolower(adjacency.mat) %in% c("knearest", "tri", "euclid") )
 
   # Begin by grabbing  all data to check arguments
   regions.avail <-
@@ -91,29 +91,38 @@ make_spatial_grid <- function(dir.out,
   square <- ifelse(hexagonal, FALSE, TRUE)
   grid <- study.area %>%
     sf::st_make_grid(cellsize = grid.size,
-                     square = FALSE,
-                     flat_topped = TRUE) %>%
+                     square = square,
+                     flat_topped = TRUE,
+                     what = "polygons")
+
+
+  ## GRID.OVERLAY IS TH EOLD OUTPUT
+  grid.overlay <- grid %>%
     sf::st_intersection(study.area) %>%
     # st_cast("MULTIPOLYGON") %>%
     sf::st_sf() %>%
     dplyr::mutate(gridcellid = row_number()) %>%
     sf::st_transform(crs = crs.target)
 
+  grid <- grid[study.area] %>%
+    sf::st_sf() %>%
+    dplyr::mutate(gridcellid = row_number()) %>%
+    sf::st_transform(crs = crs.target)
+
+
   # Calculate and add the grid cell centroid to the sf
-  suppressWarnings(centroid.coords <-
+  suppressWarnings(xy <-
                      sf::st_coordinates(sf::st_geometry(sf::st_centroid(grid))))
   ### This warning is supposed to be regarding calculating centroids on a LAT LON CRS, but I've tried with both PCRS and UNProj-CRS and sitll get the warning..
-  grid$cell.lon.centroid <- centroid.coords[, 1]
-  grid$cell.lat.centroid <- centroid.coords[, 2]
+  grid$cell.lon.centroid <- xy[, 1]
+  grid$cell.lat.centroid <- xy[, 2]
   grid$area <- sf::st_area(grid)
-
 
   # Adjacency matrix
   if(!is.null(adjacency.mat)){
     adjacency.mat <- tolower(adjacency.mat)
     longlat.ind <- ifelse(sf::st_is_longlat(grid), TRUE, FALSE)
     if(!longlat.ind) stop("sorry, but this funciton currently doesn't support adjacency matrix creation for projected CRS. Please specify crs.target as 4326 or adjacency.mat=FALSE\n")
-    xy <- centroid.coords
 
     ### The retunred object from the make_spatial_grid function needs to be totally re-organized by
     #### the new rownames (xid) if we want to use the triangular method... for now, ignoring.
@@ -130,23 +139,37 @@ make_spatial_grid <- function(dir.out,
     if(adjacency.mat == "knearest"){
       print("[note] calculating k-nearest neighborhood structure\n")
       xy.nb <- spdep::knn2nb(spdep::knearneigh(xy))
-    }
+      all.linked <- max(unlist(spdep::nbdists(xy.nb, xy)))
+      col.nb.0.all <- dnearneigh(xy, 0, all.linked, row.names=rownames(grid))
+      summary(col.nb.0.all, xy)
+      opar <- par(no.readonly=TRUE)
+      plot(st_geometry(grid), border="grey", reset=FALSE,
+           main=paste("Distance based neighbours 0-",  format(all.linked), sep=""))
+      plot(col.nb.0.all, xy, add=TRUE)
+      }
 
     if(adjacency.mat=="euclid"){
-    if(!exists("dmax")) dmax <- max(10, round(nrow(xy)*.10))
+    # if(!exists("dmax")) dmax <- max(10, round(nrow(xy)*.10))
     print("[note] calculating Euclidean distance-based neighborhood structure\n")
-    xy.nb <- spdep::dnearneigh(xy, d1=0, d2=dmax)
+    # dmax <- ifelse(hexagonal, 4, sqrt(2)+1)
+    xy.nb <- spdep::dnearneigh(xy, d1=0, d2=sqrt(2)+1)
     }
+#
+#     if(adjacency.mat=="ahm2"){
+#       # see pg 565 AHMv2
+#       print("[note] following adjacency methods from AHMV2\n")
+#       dmax <- ifelse(hexagonal, NA, sqrt(2)+1) # fishnet grid has sqrt(2)+1
+#       xy.nb <- spdep::dnearneigh(xy, d1=0, d2=sqe, longlat = longlat.ind)
+#     }
+
     # PLOT
     plot(xy.nb, xy)
     if(adjacency.mat %in% c("tri", "euclid")) plot(xy.nb, xy, add=TRUE, col="grey50")
 
-
-    message("[important] adjacency matrix specified. Spatial grid will be returned as a two-element list, where X[[1]] = sf object comprising the spatial grid  and X[[2]] = 'nb' object (see package: spdep).\n")
-    grid <- list(grid=grid, neighborhood=xy.nb)
   } # end if adjacency.mat is.null
 
-
+  grid <- list(grid=grid, grid.overlay = grid.overlay)
+  if(exists("xy.nb")) grid$neighborhood <-spdep::nb2WB(xy.nb)
   # Export Data
   fn <- paste0(dir.out, "/", "grid.rds")
   fn <- stringr::str_replace(fn, "//", "/")

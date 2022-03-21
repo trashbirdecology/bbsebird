@@ -34,7 +34,7 @@ make_bbs_spatial <- function(df,
                              usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
                              crs.target = 4326,
                              ncores = parallel::detectCores()-1,
-                             print.plots = FALSE,
+                             print.plots = TRUE,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL,
                              overwrite = FALSE,
@@ -43,7 +43,7 @@ make_bbs_spatial <- function(df,
   # first, if overwrite is false and this file exists. import and return asap.
   f <- paste0(dir.out, "bbs_spatial.rds")
   if(file.exists(f) & !overwrite){
-    cat("File ", f," exists and overwrite.ebird = FALSE. Importing spatial bbs data.")
+    cat("File ", f," exists and overwrite = FALSE. Importing existing spatial bbs data.\n")
     bbs_spatial <-readRDS(f)
     return(bbs_spatial)
   }
@@ -175,10 +175,13 @@ if(par.ind){
     i=i+1
     # print(paste0(i, " of 2 attempts in parallel"))
     try(bbs.grid.lines <-
-              foreach::foreach(j = 1:length(chunks), .combine = dplyr::bind_rows, .packages = "sf") %dopar%{
-                df = bbs_routes[chunks[[j]],]
-                sf::st_intersection(grid, df)
-              })
+          foreach::foreach(
+            j = 1:length(chunks),
+            .combine = dplyr::bind_rows,
+            .packages = "sf") %dopar% {
+            df = bbs_routes[chunks[[j]], ]
+            sf::st_intersection(grid, df)
+          })
   }
 rm(i)
 parallel::stopCluster(cl) # prob should add a tryCatch here...
