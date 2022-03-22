@@ -552,7 +552,6 @@ if(drop.na.cov.obs){
   }
 
 
-
   ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
   ## For now just using default values for building neighborhood...
     xy <- sf::st_coordinates(grid)

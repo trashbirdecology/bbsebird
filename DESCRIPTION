@@ -22,7 +22,6 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Depends: 
-    R (>= 3.50), 
     bbsAssistant (>= 2.0.0),
     dplyr
 Imports: 
