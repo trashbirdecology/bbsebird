@@ -2,7 +2,7 @@
 #' @param bbs BBS data table
 #' @param ebird eBird data table
 #' @param grid spatial sampling grid/study area table
-#' @param adj.mat if an adjacency matrix is provided relevant BUGS data will be reutned for CAR.
+#' @param neigh.method if an adjacency matrix is provided relevant BUGS data will be reutned for CAR.
 #' @param drop.na.cov.obs logical if TRUE will remove ALL data where any specified covariate does not exist. If TRUE, suggest examining the data and covariates prior to specifying site.covs and grid.covs.
 #' @param scale.covs logical if TRUE will automatically scale the numeric/integer covariates.
 #' @param K the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.
@@ -26,7 +26,7 @@
 make_bundle <- function(bbs,
          ebird,
          grid,
-         adj.mat = NULL,
+         neigh.method = NULL,
          drop.na.cov.obs = TRUE,
          mins.to.hours = TRUE,
          scale.covs  = TRUE,
@@ -312,7 +312,6 @@ if(drop.na.cov.obs){
   }
 
 
-
 # SITE-LEVEL COVARS -------------------------------------------------------
   ## create arrays for covariates
   ### dimensions are n.sites by n.years
@@ -394,7 +393,7 @@ if(drop.na.cov.obs){
   ## rename LL elements
   bbs   <- LL$bbs
   ebird <- LL$ebird
-rm(LL)
+  rm(LL)
 
 # GRID-LEVEL COVARIATES ---------------------------------------------------
   ## create arrays for grid cell-level covariates
@@ -557,16 +556,15 @@ rm(LL)
   ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
   ## For now just using default values for building neighborhood...
     xy <- sf::st_coordinates(grid)
-    xx <- spdep::poly2nb(as(grid,"Spatial"))
+    xx <- spdep::poly2nb(as(grid,"Spatial"), row.names = cell.index$cell.ind)
+    # spdep::is.symmetric.nb(xx, verbose = FALSE, force = TRUE)
     N = length(xx)
     (num=sapply(xx,length))
     adj=unlist(xx)
     sumNumNeigh=length(unlist(xx))
-    nb <- nb2WB(xx)
-    nb$sumNumNeigh = sumNumNeigh
+    nbWB <- spdep::nb2WB(xx)
+    nbWB$sumNumNeigh = sumNumNeigh
     rm(xx, N,adj, sumNumNeigh)
-
-
 
 
 # BUNDLE UP DATA ----------------------------------------------------------
@@ -612,11 +610,11 @@ bundle.out <- list(
     # dims <ncells  by nbfs/knots
     nbfs       = nbfs,                                # number of basis functions/knots
     #### neighborhood stuff
-    nb         = nb # neighborhood information
+    nb         = nbWB # neighborhood information for use in BUGS/JAGS/NIMBLE
     )
 
 
-  # RETURNED OBJECT ---------------------------------------------------------
+# RETURNED OBJECT ---------------------------------------------------------
 cat("  [note] packaging the data into a single list\n")
 stopifnot(!any(is.na(bundle.out$bbs.df$c)))
 stopifnot(!any(is.na(bundle.out$ebird.df$c)))
