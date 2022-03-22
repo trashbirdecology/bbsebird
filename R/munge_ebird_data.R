@@ -164,7 +164,7 @@ munge_ebird_data <-
           f_samp_out,")\n")
       sampling <- vroom::vroom(f_samp_out, col_types = cols_samp)
     } else{
-      cat("Importing the sampling events dataset. This file should take ~2 mins to import\n\n")
+      cat("Importing the sampling events dataset. This file should take ~2 mins to import. Ignore parsing errors.\n\n")
       sampling <- vroom::vroom(f_samp_in, col_types = cols_samp)
 
       ### The sampling df is large so this script tries to prioritize commands that

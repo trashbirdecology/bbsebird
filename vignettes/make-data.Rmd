@@ -171,10 +171,12 @@ bundle <- make_bundle(
 )
 saveRDS(bundle, paste0(dirs$dir.proj,"/bundle.rds"))
 
+
+# dir.copy <- "C:/Users/jburnett/DOI/Royle, Andy - aaaaa/"
 # saveRDS(overlay, paste0(dirs$dir.proj,"/overlay.rds"))
 # saveRDS(neighborhood, paste0(dirs$dir.proj,"/neighborhood.rds"))
-# dir.copy <- "C:/Users/jburnett/DOI/Royle, Andy - aaaaa/"
 # file.copy(paste0(dirs$dir.proj,"/bundle.rds"), dir.copy)
+# file.copy(paste0(dirs$dir.proj,"/overlay.rds"), dir.copy)
 # file.copy(paste0(dirs$dir.proj,"/dev-bundle.rds"), dir.copy)
 # file.copy(paste0(dirs$dir.proj,"/overlay.rds"), dir.copy)
 # file.copy(paste0(dirs$dir.proj,"/neighborhood.rds"), dir.copy)

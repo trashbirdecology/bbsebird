@@ -115,18 +115,17 @@ study_area <- make_spatial_grid(
                           states = states,
                           countries = countries,
                           crs.target = crs.target,
-                          hexagonal = FALSE, 
                           grid.size = grid.size, 
-                          adjacency.mat = "euclid",
+                          hexagonal = TRUE,
                           overwrite = TRUE
                           )
-if(is.list(study_area)) {
-  overlay   <- study_area$grid.overlay
-  neighborhood <- study_area$neighborhood
-  study_area <- study_area$grid
+if(is.list(study_area)){ 
+  grid          <- study_area$grid
+  overlay       <- study_area$grid.overlay
 }
-plot(study_area)
+plot(grid)
 plot(overlay)
+rm(study_area)
 ```
 
 Create the BBS data. This chunk relieson R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
@@ -189,8 +188,6 @@ ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
   grid = ifelse(is.list(study_area), study_area[[1]], study_area),
-
-  grid = study_area,
   overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
   dir.out = dirs$dir.spatial.out 
 )

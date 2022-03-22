@@ -9,7 +9,6 @@
 #' @param grid.size numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km
 #' @importFrom rnaturalearth ne_states
 #' @param ... Additional arguments
-#' @param adjacency.mat character. One of c("knearest", "euclid" or NULL). If specified, will return adjacency matrix of choice as a list element of the returned object. Currently only supports planar coordinates (e.g. crs.target=4326).
 #' @importFrom sf st_transform st_make_grid st_area st_make_grid
 #' @importFrom dplyr mutate
 #' @importFrom stringr str_replace
@@ -21,7 +20,6 @@ make_spatial_grid <- function(dir.out,
                               crs.target = 4326,
                               hexagonal = TRUE,
                               grid.size = 1.00,
-                              adjacency.mat = "knearest",
                               ...) {
   # check arguments
   if (is.null(countries)) {
@@ -33,7 +31,6 @@ make_spatial_grid <- function(dir.out,
 
   if(!is.null(states)) states <- gsub(x=toupper(states), pattern="-", replacement="")
 
-  stopifnot(tolower(adjacency.mat) %in% c("knearest", "tri", "euclid",  NULL, "NULL") )
   # If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file.
   if ("grid.rds" %in% list.files(dir.out) & !overwrite) {
     grid <- readRDS(paste0(dir.out, "/", "grid.rds"))
@@ -118,55 +115,55 @@ make_spatial_grid <- function(dir.out,
   grid$cell.lat.centroid <- xy[, 2]
   grid$area <- sf::st_area(grid)
 
-  # Adjacency matrix
-  if(!is.null(adjacency.mat)){
-    adjacency.mat <- tolower(adjacency.mat)
-    longlat.ind <- ifelse(sf::st_is_longlat(grid), TRUE, FALSE)
-    if(!longlat.ind) stop("sorry, but this funciton currently doesn't support adjacency matrix creation for projected CRS. Please specify crs.target as 4326 or adjacency.mat=FALSE\n")
-
-    ### The retunred object from the make_spatial_grid function needs to be totally re-organized by
-    #### the new rownames (xid) if we want to use the triangular method... for now, ignoring.
-    # if(adjacency.mat=="tri"){
-    #   print("[note] calculating triangular graph-based neighborhood structure\n")
-    #   ## triangular requires grid to be randomized such that at last first 3 aren't collinear
-    #   xid <- sample(1:nrow(xy))
-    #   xy.nb <- spdep::tri2nb(xy[xid,])
-    #   xy <- xy[xid,] ## re-organize so we can properly align with data later and plot
-    #   ### need to re-organize the rownames of xy.nb to match the original xy order.... if i do this here
-    #   ### then i can remove the xy[xid,] here...
-    # }
-
-    if(adjacency.mat == "knearest"){
-      print("[note] calculating k-nearest neighborhood structure\n")
-      xy.nb <- spdep::knn2nb(spdep::knearneigh(xy))
-      all.linked <- max(unlist(spdep::nbdists(xy.nb, xy)))
-      col.nb.0.all <- dnearneigh(xy, 0, all.linked, row.names=rownames(grid))
-      summary(col.nb.0.all, xy)
-      opar <- par(no.readonly=TRUE)
-      plot(st_geometry(grid), border="grey", reset=FALSE,
-           main=paste("Distance based neighbours 0-",  format(all.linked), sep=""))
-      plot(col.nb.0.all, xy, add=TRUE)
-      }
-
-    if(adjacency.mat=="euclid"){
-    # if(!exists("dmax")) dmax <- max(10, round(nrow(xy)*.10))
-    print("[note] calculating Euclidean distance-based neighborhood structure\n")
-    # dmax <- ifelse(hexagonal, 4, sqrt(2)+1)
-    xy.nb <- spdep::dnearneigh(xy, d1=0, d2=sqrt(2)+1)
-    }
+#   # Adjacency matrix
+#   if(!is.null(adjacency.mat)){
+#     adjacency.mat <- tolower(adjacency.mat)
+#     longlat.ind <- ifelse(sf::st_is_longlat(grid), TRUE, FALSE)
+#     if(!longlat.ind) stop("sorry, but this funciton currently doesn't support adjacency matrix creation for projected CRS. Please specify crs.target as 4326 or adjacency.mat=FALSE\n")
 #
-#     if(adjacency.mat=="ahm2"){
-#       # see pg 565 AHMv2
-#       print("[note] following adjacency methods from AHMV2\n")
-#       dmax <- ifelse(hexagonal, NA, sqrt(2)+1) # fishnet grid has sqrt(2)+1
-#       xy.nb <- spdep::dnearneigh(xy, d1=0, d2=sqe, longlat = longlat.ind)
+#     ### The retunred object from the make_spatial_grid function needs to be totally re-organized by
+#     #### the new rownames (xid) if we want to use the triangular method... for now, ignoring.
+#     # if(adjacency.mat=="tri"){
+#     #   print("[note] calculating triangular graph-based neighborhood structure\n")
+#     #   ## triangular requires grid to be randomized such that at last first 3 aren't collinear
+#     #   xid <- sample(1:nrow(xy))
+#     #   xy.nb <- spdep::tri2nb(xy[xid,])
+#     #   xy <- xy[xid,] ## re-organize so we can properly align with data later and plot
+#     #   ### need to re-organize the rownames of xy.nb to match the original xy order.... if i do this here
+#     #   ### then i can remove the xy[xid,] here...
+#     # }
+#
+#     if(adjacency.mat == "knearest"){
+#       print("[note] calculating k-nearest neighborhood structure\n")
+#       xy.nb <- spdep::knn2nb(spdep::knearneigh(xy))
+#       all.linked <- max(unlist(spdep::nbdists(xy.nb, xy)))
+#       col.nb.0.all <- dnearneigh(xy, 0, all.linked, row.names=rownames(grid))
+#       summary(col.nb.0.all, xy)
+#       opar <- par(no.readonly=TRUE)
+#       plot(st_geometry(grid), border="grey", reset=FALSE,
+#            main=paste("Distance based neighbours 0-",  format(all.linked), sep=""))
+#       plot(col.nb.0.all, xy, add=TRUE)
+#       }
+#
+#     if(adjacency.mat=="euclid"){
+#     # if(!exists("dmax")) dmax <- max(10, round(nrow(xy)*.10))
+#     print("[note] calculating Euclidean distance-based neighborhood structure\n")
+#     # dmax <- ifelse(hexagonal, 4, sqrt(2)+1)
+#     xy.nb <- spdep::dnearneigh(xy, d1=0, d2=sqrt(2)+1)
 #     }
-
-    # PLOT
-    plot(xy.nb, xy)
-    if(adjacency.mat %in% c("tri", "euclid")) plot(xy.nb, xy, add=TRUE, col="grey50")
-
-  } # end if adjacency.mat is.null
+# #
+# #     if(adjacency.mat=="ahm2"){
+# #       # see pg 565 AHMv2
+# #       print("[note] following adjacency methods from AHMV2\n")
+# #       dmax <- ifelse(hexagonal, NA, sqrt(2)+1) # fishnet grid has sqrt(2)+1
+# #       xy.nb <- spdep::dnearneigh(xy, d1=0, d2=sqe, longlat = longlat.ind)
+# #     }
+#
+#     # PLOT
+#     plot(xy.nb, xy)
+#     if(adjacency.mat %in% c("tri", "euclid")) plot(xy.nb, xy, add=TRUE, col="grey50")
+#
+#   } # end if adjacency.mat is.null
 
   grid <- list(grid=grid, grid.overlay = grid.overlay)
   if(exists("xy.nb")) grid$neighborhood <-spdep::nb2WB(xy.nb)

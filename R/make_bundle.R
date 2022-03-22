@@ -2,6 +2,7 @@
 #' @param bbs BBS data table
 #' @param ebird eBird data table
 #' @param grid spatial sampling grid/study area table
+#' @param adj.mat if an adjacency matrix is provided relevant BUGS data will be reutned for CAR.
 #' @param drop.na.cov.obs logical if TRUE will remove ALL data where any specified covariate does not exist. If TRUE, suggest examining the data and covariates prior to specifying site.covs and grid.covs.
 #' @param scale.covs logical if TRUE will automatically scale the numeric/integer covariates.
 #' @param K the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.
@@ -25,6 +26,7 @@
 make_bundle <- function(bbs,
          ebird,
          grid,
+         adj.mat = NULL,
          drop.na.cov.obs = TRUE,
          mins.to.hours = TRUE,
          scale.covs  = TRUE,
@@ -52,14 +54,15 @@ make_bundle <- function(bbs,
            "time_observations_started_hsm",
            "time_observations_started",
            "duration_minutes",
-           "effort_distance_km",
+           # "effort_distance_km",
            # "effort_area_ha",
            "protocol_type",
            # "protocol_code",
            "number_observers"
          ),
          K = NULL,
-         dev.mode    = FALSE) {
+         dev.mode    = FALSE
+         ) {
 
 
 # EVALUATE ARGS -----------------------------------------------------------
@@ -73,12 +76,13 @@ make_bundle <- function(bbs,
   stopifnot(is.logical(drop.na.cov.obs))
   stopifnot(bf.method %in% c("mgcv", "jagam", "cubic2d"))
 
-# Munge Data Frames a Little Before Beginning ---------------------------------------------------
+
+# Munge Data Frames a Little Prior to Data Munging ---------------------------------------------------
   # bbs=bbs_spatial; ebird=ebird_spatial; grid=study_area ## FOR DEV
   ## drop spatial geometry
   bbs   <- as.data.frame(bbs)
   ebird <- as.data.frame(ebird)
-  grid  <- as.data.frame(grid)
+  # grid  <- as.data.frame(grid)
   ## force colnames to lower
   names(bbs)   <- tolower(names(bbs))
   names(ebird) <- tolower(names(ebird))
@@ -136,8 +140,8 @@ make_bundle <- function(bbs,
     # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
     # keep 3 years data max
     T.keep <- max(unique(bbs$year.id), na.rm = TRUE)
-    T.keep <- (T.keep - 10):T.keep
-    G.keep <- sample(unique(grid$cell.id), 10)
+    T.keep <- (T.keep - 25):T.keep
+    G.keep <- sample(unique(grid$cell.id), 25)
     ## keep max 10 grid cells
     grid <- grid[grid$cell.id %in% G.keep,]
 
@@ -188,7 +192,7 @@ make_bundle <- function(bbs,
   ebird <- newlist$ebird
   rm(all_na, LLL, newlist)
 
-# DROP DATA WITH MISSING COVS IF TRUE -------------------------------------
+# DROP DATA WITH MISSING COVS IF drop.na.cov.obs TRUE -------------------------------------
 if(drop.na.cov.obs){
   # for ebird and for bbs...
   # cols.to.index <- colnames(bbs)[colnames(bbs) %in% c("c",site.covs)]
@@ -286,7 +290,7 @@ if(drop.na.cov.obs){
   rm(LL)
 
 
-# BBS-SPECIFIC DATA CREATE MATRIX PROP (% site.ind in cell.ind) ----------------------------------------------------
+# BBS-SPECIFIC DATA : PROP (% site.ind in cell.ind) ----------------------------------------------------
   cat("  [note] creating prop matrix for bbs routes/grid cells\n")
   stopifnot(nrow(bbs %>% distinct(site.ind, cell.ind, proprouteincell)) ==
               nrow(bbs %>% distinct(site.ind, cell.ind)))
@@ -385,6 +389,7 @@ if(drop.na.cov.obs){
     } # j loop
   }# end Xsite i loop
   cat("  [note] done building covariate matrices\n")
+
 
   ## rename LL elements
   bbs   <- LL$bbs
@@ -549,6 +554,19 @@ rm(LL)
 
 
 
+  ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
+  ## For now just using default values for building neighborhood...
+    xy <- sf::st_coordinates(grid)
+    xx <- spdep::poly2nb(as(grid,"Spatial"))
+    N = length(xx)
+    (num=sapply(xx,length))
+    adj=unlist(xx)
+    sumNumNeigh=length(unlist(xx))
+    nb <- nb2WB(xx)
+    nb$sumNumNeigh = sumNumNeigh
+    rm(xx, N,adj, sumNumNeigh)
+
+
 
 
 # BUNDLE UP DATA ----------------------------------------------------------
@@ -560,9 +578,12 @@ bundle.out <- list(
     # max C per grid per year  (zero-filled)
     ENgrid       = ENgrid,
     ENgrid.mat   = ENgrid.mat,
-    # covariate matrices
-    Xsite      = Xsite,
+    # covariate matrices as lists
+    Xsite      = Xsite, # can run simplify2array here to output an array...
+    Xb=simplify2array(Xsite$bbs),
+    Xe=simplify2array(Xsite$ebird),
     Xgrid      = Xgrid,
+    Xg         = simplify2array(Xgrid),
     # proportion of routes in grid cell as matrix (dim <nroutes by ngrids>)
     prop       = prop,
     # % BBS route per grid cell (dims <ngrid nroutes>)
@@ -589,8 +610,10 @@ bundle.out <- list(
     # all JAGAM output
     Z.mat      = Z.mat,
     # dims <ncells  by nbfs/knots
-    nbfs       = nbfs                                 # number of basis functions/knots
-  )
+    nbfs       = nbfs,                                # number of basis functions/knots
+    #### neighborhood stuff
+    nb         = nb # neighborhood information
+    )
 
 
   # RETURNED OBJECT ---------------------------------------------------------
