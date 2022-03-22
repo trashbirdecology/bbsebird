@@ -25,13 +25,13 @@ run_in_nimble <- function(myData,
                           myInits     = NULL,
                           traceplots  = TRUE,
                           constants   = NULL,
-                          monitors     = NULL,
+                          monitors    = NULL,
                           savedir     = "outputs",
                           seed        = sample(1:111111, size = 1),
-                          parallel    = TRUE,
+                          parallel    = FALSE,
                           verbose     = TRUE,
                           mod.name    = "mynimbleModel",
-                          mcmc.specs  = set_mcmc_specs(dev.mode = TRUE),
+                          mcmc.specs  = set_mcmc_specs(dev.mode = FALSE),
                           ...) {
   # Step -1. arg checks --------------------------------------------------------------
   stopifnot(is.logical(parallel))
