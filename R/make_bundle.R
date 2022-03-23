@@ -82,7 +82,6 @@ make_bundle <- function(bbs,
   ## drop spatial geometry
   bbs   <- as.data.frame(bbs)
   ebird <- as.data.frame(ebird)
-  # grid  <- as.data.frame(grid)
   ## force colnames to lower
   names(bbs)   <- tolower(names(bbs))
   names(ebird) <- tolower(names(ebird))
@@ -135,13 +134,14 @@ make_bundle <- function(bbs,
 # Subset for dev.mode=TRUE ------------------------------------------------
   if (dev.mode) {
     message(paste0(
-      "[important] arg dev.mode==TRUE; output object will be a subset of original data.\n"
+      "[notice] `dev.mode` is TRUE. Output object will be a small subset of the original data.\n"
     ))
     # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
     # keep 3 years data max
-    T.keep <- max(unique(bbs$year.id), na.rm = TRUE)
-    T.keep <- (T.keep - 25):T.keep
-    G.keep <- sample(unique(grid$cell.id), 25)
+    maxyr <- max(unique(bbs$year.id), na.rm = TRUE)
+    totalyrs <- maxyr- min(unique(bbs$year.id), na.rm = TRUE)
+    T.keep <- (maxyr - min(5, totalyrs)):maxyr
+    G.keep <- sample(unique(grid$cell.id), 10)
     ## keep max 10 grid cells
     grid <- grid[grid$cell.id %in% G.keep,]
 
@@ -309,6 +309,8 @@ if(drop.na.cov.obs){
   if (any(rownames(prop) %in% c("NA", NA))) {
     prop <-
       prop[-which(rownames(prop) %in% c(NA, "NA")),]
+
+  if(dev.mode) message("[notice] `dev.mode`is TRUE. Please expect all(rowSums(data$prop)!=1). Route segments are calculated in make_bbs_spatial(). \n")
   }
 
 
