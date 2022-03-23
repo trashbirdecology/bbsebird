@@ -67,13 +67,12 @@ run_in_nimble <- function(myData,
 
   stopifnot(is.character(params))
 
-  if (!is.null(constants))
-    myData <- c(myData, constants)
+  if (!is.null(constants)) myData <- c(myData, constants)
 
   stopifnot(typeof(myModel) == "language" |  file.exists(myModel))
 
   ## avoid recursive arg specification in run_MCMC_allcode (need to fix later.)
-  verbose.ind<-verbose
+  verbose.ind <- verbose
   specs <- mcmc.specs
 
   if (parallel) {
@@ -107,9 +106,9 @@ run_in_nimble <- function(myData,
         inits = myInits,
         verbose = verbose.ind,
         mcmc.specs = specs,
-        monitors = monitors
+        monitors = monitors,
+        seed = seed
       )
-
   }
 
 
