@@ -4,7 +4,14 @@
 \alias{trySave}
 \title{Try to Save Results or plot(results) to File}
 \usage{
-trySave(x, name, savedir = "/", mcmc.specs = NULL, traceplots = FALSE)
+trySave(
+  x,
+  name,
+  savedir = "/",
+  mcmc.specs = NULL,
+  traceplots = FALSE,
+  monitors = "all"
+)
 }
 \arguments{
 \item{x}{object to save to file as .RDS or as .PDF}
@@ -16,6 +23,8 @@ trySave(x, name, savedir = "/", mcmc.specs = NULL, traceplots = FALSE)
 \item{mcmc.specs}{if provided, the MCMC specs will be used to save output files}
 
 \item{traceplots}{logical If TRUE will save plots to PDF}
+
+\item{monitors}{parameters monitored and that user wishes to plot}
 }
 \description{
 Try to Save Results or plot(results) to File

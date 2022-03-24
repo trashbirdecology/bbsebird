@@ -228,188 +228,188 @@ saveRDS(bundle, paste0(dirs$dir.proj,"/bundle.rds"))
 # bundle <- readRDS(bundle.fns[1])
 ```
 
-# BAYESIAN HIERARCHICAL MODELING 
-Here, we provide one approach to creating, compiling, and . Additional functionality for compiling models, MCMC samplers, and for sampling from posterior distributions can be found in the R packages nimble and jagsUI or rjags. 
+<!-- # BAYESIAN HIERARCHICAL MODELING  -->
+<!-- Here, we provide one approach to creating, compiling, and . Additional functionality for compiling models, MCMC samplers, and for sampling from posterior distributions can be found in the R packages nimble and jagsUI or rjags.  -->
 
-## Step 1: Specify Model
-To facilitate modeling using either JAGS or Nimble, we recommend first creating a text file of a standard BUGS model. However, to be compatible within Nimble, the user should not provide any empty indexes (e.g., myMatrix[,] should be myMatrix[1:N, 1:M]). 
+<!-- ## Step 1: Specify Model -->
+<!-- To facilitate modeling using either JAGS or Nimble, we recommend first creating a text file of a standard BUGS model. However, to be compatible within Nimble, the user should not provide any empty indexes (e.g., myMatrix[,] should be myMatrix[1:N, 1:M]).  -->
 
-<!-- We provide some model files in the package: -->
-<!-- ```{r view.model} -->
+<!-- <!-- We provide some model files in the package: --> -->
+<!-- <!-- ```{r view.model} --> -->
+<!-- <!-- ``` --> -->
+<!-- Specify model as a BUGS model in R: -->
+<!-- ```{r write-bugs-model} -->
+<!-- mod.fn <- paste0(dirs$dir.models, "/myBUGSmodel.txt") -->
+<!-- sink(mod.fn) -->
+<!-- cat(model.base, sep = "") -->
+<!-- sink() -->
+<!-- stopifnot(file.exists(mod.fn)) -->
 <!-- ``` -->
-Specify model as a BUGS model in R:
-```{r write-bugs-model}
-mod.fn <- paste0(dirs$dir.models, "/myBUGSmodel.txt")
-sink(mod.fn)
-cat(model.base, sep = "")
-sink()
-stopifnot(file.exists(mod.fn))
-```
 
-## Step 2: bugs.data
-The output of `make_bundle()` will likely create more constants and data than the user requires. Extract what is necessary for your model here. You can unwrap this from a function, but the function makes it quicker to switch between the dev and full bundled datasets.
-```{r make bugs.data}
-make.bugs.data <- function(myBundleDat){
-## see myBundleDat$bbs.df and myBundleDat$ebird.df for all data in a flat data object
-bugs.data          = list(
-  ## Center the years on some reference year
-  ref.year  = round(median(1:myBundleDat$T)),
-  nobsb     = nrow(myBundleDat$bbs.df),             # num obs. for bbs data
-  nobse     = nrow(myBundleDat$ebird.df),           # num obs. for ebird data
-  Cb        = myBundleDat$bbs.df$c,                 # bbs count data
-  Ce        = myBundleDat$ebird.df$c,               # ebird count data
-  Mb        = myBundleDat$Mb,                       # num sites bbs data
-  Me        = myBundleDat$Me,                       # num sites ebird data
-  G         = myBundleDat$G,                        # num grid cells total
-  T         = myBundleDat$T,                        # num years total
-  yearb     = myBundleDat$bbs.df$year.ind,          # vec of year index bbs data
-  siteb     = myBundleDat$bbs.df$site.ind,          # vec of site index bbs data
-  cellb     = myBundleDat$bbs.df$cell.ind,          # vec of grid cell index bbs data
-  yeare     = myBundleDat$ebird.df$year.ind,        # vec of year index ebird data
-  sitee     = myBundleDat$ebird.df$site.ind,        # vec of site index ebird data
-  celle     = myBundleDat$ebird.df$cell.ind,        # vec of grid cell index ebird data
-  nobsrb    = length(unique(myBundleDat$bbs.df$obs.ind)), # num unique observers bbs
-  obsrb     = myBundleDat$bbs.df$obs.ind,           # observer identifier bbs data
-  fyr       = myBundleDat$bbs.df$obsfirstyearbbs,   # first-year index bbs
-  asst      = myBundleDat$bbs.df$assistant,         # assistant index bbs
-  mins      = myBundleDat$ebird.df$duration_minutes,   # num mins surveyed ebird
-  dist      = myBundleDat$ebird.df$effort_distance_km, # dist (km) traveled ebird
-  effarea   = myBundleDat$ebird.df$effort_area_ha, # dist (km) traveled ebird
-  party     = myBundleDat$ebird.df$number_observers,   # num observers ebird
-  starttime = myBundleDat$ebird.df$time_observations_started_hsm, # time start ebird
-  nknots    = myBundleDat$nbfs,                      # numb knots/basis functions
-  gy        = as.matrix(myBundleDat$gy),             # index for all grid-year combos
-  ngy       = myBundleDat$ngy,                       # length of grid-year combo mat (gy)
-  prop      = as.matrix(myBundleDat$prop),           # proportion of route in grid (< G x T >)
-  hab       = sqrt(abs(myBundleDat$Xgrid$area)),     # made-up hab variable 
-  Z         = myBundleDat$Z.mat                      # Z-matrix (<G x nknots>)
-)
-return(bugs.data)
-}
-```
+<!-- ## Step 2: bugs.data -->
+<!-- The output of `make_bundle()` will likely create more constants and data than the user requires. Extract what is necessary for your model here. You can unwrap this from a function, but the function makes it quicker to switch between the dev and full bundled datasets. -->
+<!-- ```{r make bugs.data} -->
+<!-- make.bugs.data <- function(myBundleDat){ -->
+<!-- ## see myBundleDat$bbs.df and myBundleDat$ebird.df for all data in a flat data object -->
+<!-- bugs.data          = list( -->
+<!--   ## Center the years on some reference year -->
+<!--   ref.year  = round(median(1:myBundleDat$T)), -->
+<!--   nobsb     = nrow(myBundleDat$bbs.df),             # num obs. for bbs data -->
+<!--   nobse     = nrow(myBundleDat$ebird.df),           # num obs. for ebird data -->
+<!--   Cb        = myBundleDat$bbs.df$c,                 # bbs count data -->
+<!--   Ce        = myBundleDat$ebird.df$c,               # ebird count data -->
+<!--   Mb        = myBundleDat$Mb,                       # num sites bbs data -->
+<!--   Me        = myBundleDat$Me,                       # num sites ebird data -->
+<!--   G         = myBundleDat$G,                        # num grid cells total -->
+<!--   T         = myBundleDat$T,                        # num years total -->
+<!--   yearb     = myBundleDat$bbs.df$year.ind,          # vec of year index bbs data -->
+<!--   siteb     = myBundleDat$bbs.df$site.ind,          # vec of site index bbs data -->
+<!--   cellb     = myBundleDat$bbs.df$cell.ind,          # vec of grid cell index bbs data -->
+<!--   yeare     = myBundleDat$ebird.df$year.ind,        # vec of year index ebird data -->
+<!--   sitee     = myBundleDat$ebird.df$site.ind,        # vec of site index ebird data -->
+<!--   celle     = myBundleDat$ebird.df$cell.ind,        # vec of grid cell index ebird data -->
+<!--   nobsrb    = length(unique(myBundleDat$bbs.df$obs.ind)), # num unique observers bbs -->
+<!--   obsrb     = myBundleDat$bbs.df$obs.ind,           # observer identifier bbs data -->
+<!--   fyr       = myBundleDat$bbs.df$obsfirstyearbbs,   # first-year index bbs -->
+<!--   asst      = myBundleDat$bbs.df$assistant,         # assistant index bbs -->
+<!--   mins      = myBundleDat$ebird.df$duration_minutes,   # num mins surveyed ebird -->
+<!--   dist      = myBundleDat$ebird.df$effort_distance_km, # dist (km) traveled ebird -->
+<!--   effarea   = myBundleDat$ebird.df$effort_area_ha, # dist (km) traveled ebird -->
+<!--   party     = myBundleDat$ebird.df$number_observers,   # num observers ebird -->
+<!--   starttime = myBundleDat$ebird.df$time_observations_started_hsm, # time start ebird -->
+<!--   nknots    = myBundleDat$nbfs,                      # numb knots/basis functions -->
+<!--   gy        = as.matrix(myBundleDat$gy),             # index for all grid-year combos -->
+<!--   ngy       = myBundleDat$ngy,                       # length of grid-year combo mat (gy) -->
+<!--   prop      = as.matrix(myBundleDat$prop),           # proportion of route in grid (< G x T >) -->
+<!--   hab       = sqrt(abs(myBundleDat$Xgrid$area)),     # made-up hab variable  -->
+<!--   Z         = myBundleDat$Z.mat                      # Z-matrix (<G x nknots>) -->
+<!-- ) -->
+<!-- return(bugs.data) -->
+<!-- } -->
+<!-- ``` -->
 
-## Step 3: MCMC and Model Specs
-First, specify parameters to monitor (based on your model):
-```{r set-params}
-##  refer to model for inits or params
-# browseURL(mod.fn) # check out the model if you wish
-params <- c("alpha1", #asst
-            "alpha2", #fyrobs
-            "beta1",   #hab
-            "alpha11",  #party
-            "alpha22",  #dist
-            "alpha33",  #mins
-            "alpha44",  #effarea
-            "alpha55",  #starttime
-            "yeareff", 
-            "obseff",
-            "Ntot" , 
-            "lambda" 
-)
-```
+<!-- <!-- ## Step 3: MCMC and Model Specs --> -->
+<!-- <!-- First, specify parameters to monitor (based on your model): --> -->
+<!-- <!-- ```{r set-params} --> -->
+<!-- <!-- ##  refer to model for inits or params --> -->
+<!-- <!-- # browseURL(mod.fn) # check out the model if you wish --> -->
+<!-- <!-- params <- c("alpha1", #asst --> -->
+<!-- <!--             "alpha2", #fyrobs --> -->
+<!-- <!--             "beta1",   #hab --> -->
+<!-- <!--             "alpha11",  #party --> -->
+<!-- <!--             "alpha22",  #dist --> -->
+<!-- <!--             "alpha33",  #mins --> -->
+<!-- <!--             "alpha44",  #effarea --> -->
+<!-- <!--             "alpha55",  #starttime --> -->
+<!-- <!--             "yeareff",  --> -->
+<!-- <!--             "obseff", --> -->
+<!-- <!--             "Ntot" ,  --> -->
+<!-- <!--             "lambda"  --> -->
+<!-- <!-- ) --> -->
+<!-- <!-- ``` --> -->
 
-Next, create a function for later specifying intiial values. Creating this as  function allows us to dynamically create intiail values for whatever number of chains we wish to run and, importantly, creates unique intial values for independent MCMC chains in parallel:
-```{r set.inits}
-##  refer to model for inits or params
-# browseURL(mod.fn) # check out the model if you wish
-set.inits <- function(n = 1, dat = bugs.data) {
-  inits.out <- list()
-  for (i in 1:n) {
-    inits.list <- list(
-      alpha1        = rnorm(1, 0, 0.001), # bbs asst
-      alpha2        = rnorm(1, 0, 0.001), # bbs fyr
-      beta1         = rnorm(1, 0, 0.001), # hab
-      alpha11       = rnorm(1, 0, 0.001), # num in party ebird
-      alpha22       = rnorm(1, 0, 0.001), # dist travel ebird
-      alpha33       = rnorm(1, 0, 0.001), # duration min ebird
-      alpha44       = rnorm(1, 0, 0.001), # eff area  ebird
-      alpha55       = rnorm(1, 0, 0.001), # starttime
-      mu.b          = rnorm(1, 0, 0.001), # log expected N on lambda.route
-      obseff        = rep(rnorm(dat$nobsb, 0, 0.001)),
-      trend         = rep(rnorm(dat$G,     0, 0.001)),
-      yeareff       = matrix(rep(rnorm(dat$G,     0, 0.001)),
-                             nrow = dat$G,
-                             ncol = dat$T)
-      # .RNG.name = "base::Mersenne-Twister",
-      # .RNG.seed = runif(1, 1, 2000)
-    )
-    inits.out[[i]] <- inits.list
-    if (n == 1)
-      return(inits.list)
-    else{
-      next()
-    }
-  }
-  return(inits.out)
-}
-```
+<!-- <!-- Next, create a function for later specifying intiial values. Creating this as  function allows us to dynamically create intiail values for whatever number of chains we wish to run and, importantly, creates unique intial values for independent MCMC chains in parallel: --> -->
+<!-- <!-- ```{r set.inits} --> -->
+<!-- <!-- ##  refer to model for inits or params --> -->
+<!-- <!-- # browseURL(mod.fn) # check out the model if you wish --> -->
+<!-- <!-- set.inits <- function(n = 1, dat = bugs.data) { --> -->
+<!-- <!--   inits.out <- list() --> -->
+<!-- <!--   for (i in 1:n) { --> -->
+<!-- <!--     inits.list <- list( --> -->
+<!-- <!--       alpha1        = rnorm(1, 0, 0.001), # bbs asst --> -->
+<!-- <!--       alpha2        = rnorm(1, 0, 0.001), # bbs fyr --> -->
+<!-- <!--       beta1         = rnorm(1, 0, 0.001), # hab --> -->
+<!-- <!--       alpha11       = rnorm(1, 0, 0.001), # num in party ebird --> -->
+<!-- <!--       alpha22       = rnorm(1, 0, 0.001), # dist travel ebird --> -->
+<!-- <!--       alpha33       = rnorm(1, 0, 0.001), # duration min ebird --> -->
+<!-- <!--       alpha44       = rnorm(1, 0, 0.001), # eff area  ebird --> -->
+<!-- <!--       alpha55       = rnorm(1, 0, 0.001), # starttime --> -->
+<!-- <!--       mu.b          = rnorm(1, 0, 0.001), # log expected N on lambda.route --> -->
+<!-- <!--       obseff        = rep(rnorm(dat$nobsb, 0, 0.001)), --> -->
+<!-- <!--       trend         = rep(rnorm(dat$G,     0, 0.001)), --> -->
+<!-- <!--       yeareff       = matrix(rep(rnorm(dat$G,     0, 0.001)), --> -->
+<!-- <!--                              nrow = dat$G, --> -->
+<!-- <!--                              ncol = dat$T) --> -->
+<!-- <!--       # .RNG.name = "base::Mersenne-Twister", --> -->
+<!-- <!--       # .RNG.seed = runif(1, 1, 2000) --> -->
+<!-- <!--     ) --> -->
+<!-- <!--     inits.out[[i]] <- inits.list --> -->
+<!-- <!--     if (n == 1) --> -->
+<!-- <!--       return(inits.list) --> -->
+<!-- <!--     else{ --> -->
+<!-- <!--       next() --> -->
+<!-- <!--     } --> -->
+<!-- <!--   } --> -->
+<!-- <!--   return(inits.out) --> -->
+<!-- <!-- } --> -->
+<!-- <!-- ``` --> -->
 
-You can set the MCMC specs now or later. The function `bbsebird::set_mcmc_specs()` allows user to create mcmc specification as a list. Use `dev.mode=TRUE` to create mcmc specifications useful for quickly testing/diagnosing models. This function can also be called directly inside the `run_in_jags()` or `run_in_nimble()` funcitons.
-```{r set.mcmc.specs}
-# mcmc.specs <- set_mcmc_specs(dev.mode=TRUE)
-```
-## Step 4: Run Model(s)
-### JAGS
-```{r run-jags, eval=FALSE}
-bugs.dat  <- make.bugs.data(bundle.dev)
-myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
-tictoc::tic("jags runtime")
-results.jags <- run_in_jags(bugs.data = bugs.dat,
-  parallel = TRUE,
-  model=mod.fn,
-  inits = set.inits(dat = bugs.dat, n=myMCMC.specs$nc), 
-  mcmc.specs = myMCMC.specs,
-  savedir = dirs$dir.results,
-  monitor = params, 
-  mod.name = "testrun"
-)
-tictoc::toc()
-# plot(results.jags)
-```
+<!-- <!-- You can set the MCMC specs now or later. The function `bbsebird::set_mcmc_specs()` allows user to create mcmc specification as a list. Use `dev.mode=TRUE` to create mcmc specifications useful for quickly testing/diagnosing models. This function can also be called directly inside the `run_in_jags()` or `run_in_nimble()` funcitons. --> -->
+<!-- <!-- ```{r set.mcmc.specs} --> -->
+<!-- <!-- # mcmc.specs <- set_mcmc_specs(dev.mode=TRUE) --> -->
+<!-- <!-- ``` --> -->
+<!-- <!-- ## Step 4: Run Model(s) --> -->
+<!-- <!-- ### JAGS --> -->
+<!-- <!-- ```{r run-jags, eval=FALSE} --> -->
+<!-- <!-- bugs.dat  <- make.bugs.data(bundle.dev) --> -->
+<!-- <!-- myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE) --> -->
+<!-- <!-- tictoc::tic("jags runtime") --> -->
+<!-- <!-- results.jags <- run_in_jags(bugs.data = bugs.dat, --> -->
+<!-- <!--   parallel = TRUE, --> -->
+<!-- <!--   model=mod.fn, --> -->
+<!-- <!--   inits = set.inits(dat = bugs.dat, n=myMCMC.specs$nc),  --> -->
+<!-- <!--   mcmc.specs = myMCMC.specs, --> -->
+<!-- <!--   savedir = dirs$dir.results, --> -->
+<!-- <!--   monitor = params,  --> -->
+<!-- <!--   mod.name = "testrun" --> -->
+<!-- <!-- ) --> -->
+<!-- <!-- tictoc::toc() --> -->
+<!-- <!-- # plot(results.jags) --> -->
+<!-- <!-- ``` --> -->
 
-### Nimble
-```{r run-nimble, eval=FALSE}
-# unlike in JAGS, there cannot be stray INITS. 
-# compiling the model takes a while in nimble...
-# bugs.dat  <- make.bugs.data(bundle.dev)
-# myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE)
-bugs.dat  <- make.bugs.data(bundle)
-myMCMC.specs <- set_mcmc_specs(nc=3, ncores = 13)
-# inits <- set.inits(n=1, dat=bugs.dat)
-results.nimb <- run_in_nimble(
-  myModel = mod.fn,
-  myData = bugs.dat,
-  myInits = set.inits(n=1, dat=bugs.dat),
-  # myInits = inits,
-  parallel = TRUE,
-  mcmc.specs = myMCMC.specs,  
-  monitor = params, 
-  mod.name = "test-nimb")
-saveRDS(
-  results.nimb,
-  paste0(
-    dirs$dir.proj,"/jagsout/",
-    Sys.Date(),
-    "run-nimble",
-    myMCMC.specs$ni,
-    "ni_",
-    myMCMC.specs$na,
-    "na_",
-    myMCMC.specs$nt,
-    "nt_",
-    myMCMC.specs$nb,
-    "nb",
-    ".RDS"
-  )
-)
-# results.nimb[[1]]
-# 
-library(coda)
-coda.samples <- as.mcmc(samples)
-```
+<!-- <!-- ### Nimble --> -->
+<!-- <!-- ```{r run-nimble, eval=FALSE} --> -->
+<!-- <!-- # unlike in JAGS, there cannot be stray INITS.  --> -->
+<!-- <!-- # compiling the model takes a while in nimble... --> -->
+<!-- <!-- # bugs.dat  <- make.bugs.data(bundle.dev) --> -->
+<!-- <!-- # myMCMC.specs <- set_mcmc_specs(dev.mode=TRUE) --> -->
+<!-- <!-- bugs.dat  <- make.bugs.data(bundle) --> -->
+<!-- <!-- myMCMC.specs <- set_mcmc_specs(nc=3, ncores = 13) --> -->
+<!-- <!-- # inits <- set.inits(n=1, dat=bugs.dat) --> -->
+<!-- <!-- results.nimb <- run_in_nimble( --> -->
+<!-- <!--   myModel = mod.fn, --> -->
+<!-- <!--   myData = bugs.dat, --> -->
+<!-- <!--   myInits = set.inits(n=1, dat=bugs.dat), --> -->
+<!-- <!--   # myInits = inits, --> -->
+<!-- <!--   parallel = TRUE, --> -->
+<!-- <!--   mcmc.specs = myMCMC.specs,   --> -->
+<!-- <!--   monitor = params,  --> -->
+<!-- <!--   mod.name = "test-nimb") --> -->
+<!-- <!-- saveRDS( --> -->
+<!-- <!--   results.nimb, --> -->
+<!-- <!--   paste0( --> -->
+<!-- <!--     dirs$dir.proj,"/jagsout/", --> -->
+<!-- <!--     Sys.Date(), --> -->
+<!-- <!--     "run-nimble", --> -->
+<!-- <!--     myMCMC.specs$ni, --> -->
+<!-- <!--     "ni_", --> -->
+<!-- <!--     myMCMC.specs$na, --> -->
+<!-- <!--     "na_", --> -->
+<!-- <!--     myMCMC.specs$nt, --> -->
+<!-- <!--     "nt_", --> -->
+<!-- <!--     myMCMC.specs$nb, --> -->
+<!-- <!--     "nb", --> -->
+<!-- <!--     ".RDS" --> -->
+<!-- <!--   ) --> -->
+<!-- <!-- ) --> -->
+<!-- <!-- # results.nimb[[1]] --> -->
+<!-- <!-- #  --> -->
+<!-- <!-- library(coda) --> -->
+<!-- <!-- coda.samples <- as.mcmc(samples) --> -->
+<!-- <!-- ``` --> -->
 
-### STAN
-```{r run-stan, eval=FALSE}
-# jags_to_stan # make fun to convert the JAGS to stan (prob already exists)
-# run_in_stan
-```
+<!-- <!-- ### STAN --> -->
+<!-- <!-- ```{r run-stan, eval=FALSE} --> -->
+<!-- <!-- # jags_to_stan # make fun to convert the JAGS to stan (prob already exists) --> -->
+<!-- <!-- # run_in_stan --> -->
+<!-- <!-- ``` --> -->

@@ -8,6 +8,7 @@ make_bundle(
   bbs,
   ebird,
   grid,
+  neigh.method = NULL,
   drop.na.cov.obs = TRUE,
   mins.to.hours = TRUE,
   scale.covs = TRUE,
@@ -25,7 +26,7 @@ make_bundle(
   site.covs = c("wind", "noise", "cars", "minute", "assistant", "obsfirstyearbbs",
     "obsfirstyearonbbs", "obsfirstyearroute", "obsfirstyearonroute",
     "time_observations_started_hsm", "time_observations_started", "duration_minutes",
-    "effort_distance_km", "protocol_type", "number_observers"),
+    "protocol_type", "number_observers"),
   K = NULL,
   dev.mode = FALSE
 )
@@ -36,6 +37,8 @@ make_bundle(
 \item{ebird}{eBird data table}
 
 \item{grid}{spatial sampling grid/study area table}
+
+\item{neigh.method}{if an adjacency matrix is provided relevant BUGS data will be reutned for CAR.}
 
 \item{drop.na.cov.obs}{logical if TRUE will remove ALL data where any specified covariate does not exist. If TRUE, suggest examining the data and covariates prior to specifying site.covs and grid.covs.}
 

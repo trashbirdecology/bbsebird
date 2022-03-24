@@ -13,10 +13,10 @@ run_in_nimble(
   monitors = NULL,
   savedir = "outputs",
   seed = sample(1:111111, size = 1),
-  parallel = TRUE,
+  parallel = FALSE,
   verbose = TRUE,
   mod.name = "mynimbleModel",
-  mcmc.specs = set_mcmc_specs(dev.mode = TRUE),
+  mcmc.specs = set_mcmc_specs(dev.mode = FALSE),
   ...
 )
 }

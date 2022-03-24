@@ -2,6 +2,7 @@
 #' @param x object to save to file as .RDS or as .PDF
 #' @param name object name (e.g., plots-nimble or jags_samples)
 #' @param savedir directory within which object will attempt to save
+#' @param monitors parameters monitored and that user wishes to plot
 #' @param mcmc.specs if provided, the MCMC specs will be used to save output files
 #' @param traceplots logical If TRUE will save plots to PDF
 #' @export trySave

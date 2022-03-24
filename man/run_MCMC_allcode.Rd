@@ -28,6 +28,8 @@ run_MCMC_allcode(
 
 \item{seed}{for internal use}
 
+\item{monitors}{list of parameters to monitor}
+
 \item{...}{Additional arguments}
 }
 \description{

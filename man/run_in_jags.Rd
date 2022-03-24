@@ -8,7 +8,7 @@ run_in_jags(
   bugs.data,
   model,
   inits,
-  monitor,
+  monitors,
   savedir = "/",
   seed = sample(1:111111, size = 1),
   parallel = TRUE,
@@ -27,7 +27,7 @@ run_in_jags(
 
 \item{inits}{list List of initial values.}
 
-\item{monitor}{optional Character vector of parameters to monitor.}
+\item{monitors}{optional Character vector of parameters to monitor.}
 
 \item{savedir}{If not specified, will save the samples resulting from jagsUI::jags() to current working directory}
 

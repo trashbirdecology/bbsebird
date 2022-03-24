@@ -13,7 +13,7 @@ make_bbs_spatial(
   usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
   crs.target = 4326,
   ncores = parallel::detectCores() - 1,
-  print.plots = FALSE,
+  print.plots = TRUE,
   keep.empty.cells = TRUE,
   plot.dir = NULL,
   overwrite = FALSE,
