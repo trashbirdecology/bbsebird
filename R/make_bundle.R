@@ -2,7 +2,6 @@
 #' @param bbs BBS data table
 #' @param ebird eBird data table
 #' @param grid spatial sampling grid/study area table
-#' @param neigh.method if an adjacency matrix is provided relevant BUGS data will be reutned for CAR.
 #' @param drop.na.cov.obs logical if TRUE will remove ALL data where any specified covariate does not exist. If TRUE, suggest examining the data and covariates prior to specifying site.covs and grid.covs.
 #' @param scale.covs logical if TRUE will automatically scale the numeric/integer covariates.
 #' @param K the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.
@@ -11,7 +10,8 @@
 #' @param cell.id column name(s) of the grid cell identifier
 #' @param site.id column name(s) of the site  identifier (e.g., BBS route, eBird checklists)
 #' @param year.id column name of the temporal identifier
-#' @param bf.method method for developing basis functions. Defaults to creating duchon splines using mgcv::jagam().
+#' @param bf.method default value "cubic2d". Alternatives include cubic splines using one of c("mgcv", "jagam").
+#' @param dir.jagam directory location of where to save the JAGAM.bugs model file created by mgcv::jagam(). Defaults to ./models/
 #' @param obs.id  column name(s) of the observer identifier
 #' @param use.ebird.in.ENgrid logical if TRUE will use data across both eBird and BBS observations to create basis functions.
 #' @param cell.covs column name(s) of the grid-level covariates
@@ -26,7 +26,6 @@
 make_bundle <- function(bbs,
                         ebird,
                         grid,
-                        neigh.method = NULL,
                         drop.na.cov.obs = TRUE,
                         mins.to.hours = TRUE,
                         scale.covs  = TRUE,
@@ -61,7 +60,8 @@ make_bundle <- function(bbs,
                           "number_observers"
                         ),
                         K = NULL,
-                        dev.mode    = FALSE) {
+                        dev.mode    = FALSE,
+                        dir.jagam   = "models/") {
   # EVALUATE ARGS -----------------------------------------------------------
   ## first, test and evaluate args as necessary.
   ENgrid.arg <- tolower(ENgrid.arg)
@@ -73,7 +73,6 @@ make_bundle <- function(bbs,
   stopifnot(is.logical(drop.na.cov.obs))
   stopifnot(bf.method %in% c("mgcv", "jagam", "cubic2d"))
 
-
   # Munge Data Frames a Little Prior to Data Munging ---------------------------------------------------
   # bbs=bbs_spatial; ebird=ebird_spatial; grid=study_area ## FOR DEV
   ## drop spatial geometry
@@ -83,7 +82,6 @@ make_bundle <- function(bbs,
   names(bbs)   <- tolower(names(bbs))
   names(ebird) <- tolower(names(ebird))
   names(grid)  <- tolower(names(grid))
-
 
   # Rename Data Table Colnames ----------------------------------------------
   L <- list(bbs = bbs,
@@ -127,7 +125,6 @@ make_bundle <- function(bbs,
   ebird <-
     ebird |> distinct(year.id, site.id, cell.id, c, .keep_all = TRUE) ## this is a prtoblem (duplicates in ebird, though it might be because we have multiple observers. huge amoutn of excess data..)
 
-
   # Subset for dev.mode=TRUE ------------------------------------------------
   if (dev.mode) {
     message(
@@ -140,8 +137,10 @@ make_bundle <- function(bbs,
     maxyr <- max(unique(bbs$year.id), na.rm = TRUE)
     totalyrs <- maxyr - min(unique(bbs$year.id), na.rm = TRUE)
     T.keep <- (maxyr - min(5, totalyrs)):maxyr
-    G.keep <- sample(unique(grid$cell.id), 10)
-    ## keep max 10 grid cells
+    ## keep max 30 grid cells,
+    ## sample 5 and grab potentially adjacent neighbors.
+    G.keep <- sample(sort(unique(grid$cell.id))-1, 30) # but dont grab the last one
+    G.keep  <- c(G.keep+1, G.keep)
     grid <- grid[grid$cell.id %in% G.keep,]
 
     bbs  <-   bbs |> filter(cell.id %in% G.keep &
@@ -158,7 +157,6 @@ make_bundle <- function(bbs,
     bbs <- b.samp.keep |>
       slice_sample(n = min(b.samp.keep$maxn, 10)) |>
       ungroup()
-
     e.samp.keep <- ebird |>
       dplyr::distinct(year.id, cell.id, site.id, .keep_all = TRUE) |>
       group_by(year.id, cell.id) |>
@@ -174,8 +172,9 @@ make_bundle <- function(bbs,
 
   # DROP COLS WHERE ALL ROWS == NA ------------------------------------------
   ### some covariates may have all NA. prior to subsetting, let's remove those columns.
-  all_na <- function(x)
-    any(!is.na(x)) #helper function
+  all_na <- function(x){
+    any(!is.na(x))
+        }
   LLL <- list(ebird = ebird, bbs = bbs)
   newlist <- list(ebird = NULL, bbs = NULL)
   for (i in seq_along(LLL)) {
@@ -523,7 +522,7 @@ make_bundle <- function(bbs,
   ### also need to consider compute time for use in Bayesian param estiamtion
   if (!is.null(K) && K > length(unique(ENgrid$cell.ind))) {
     message(
-      "[important] you defined K as a value higher than the unique number of grid cells. Resetting K automatically. See notes following. \n"
+      "[important] you defined K as a value higher than the unique number of available grid cells. Resetting K automatically. See notes following. \n"
     )
     K <- NULL
   }
@@ -542,7 +541,7 @@ make_bundle <- function(bbs,
   )
   if (bf.method %in% c("mgcv", "jagam")) {
     cat("  [note] creating 2D duchon splines using `mgcv::jagam()`\n")
-    jagam.fn <- paste0(dirs$dir.models, "/gam-UNEDITED.txt")
+    # jagam.fn <- paste0(dirs$dir.models, "/gam-UNEDITED.txt")
     jagam.mod <- mgcv::jagam(
       c ~ s(
         # note the c doesn't matter, it's just for show

@@ -17,7 +17,8 @@ make_bbs_spatial(
   keep.empty.cells = TRUE,
   plot.dir = NULL,
   overwrite = FALSE,
-  dir.out = NULL
+  dir.out = NULL,
+  save.route.lines = TRUE
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ make_bbs_spatial(
 \item{overwrite}{logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out}
 
 \item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
+
+\item{save.route.lines}{logical. If TRUE (default) will save the BBS routes segments as .RDS to dir.out}
 }
 \description{
 This function is meant to intake two shapefiles, one per cws and usgs munges them such that they conform to the USGS data release for BBS observations and route metadata.

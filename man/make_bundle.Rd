@@ -8,7 +8,6 @@ make_bundle(
   bbs,
   ebird,
   grid,
-  neigh.method = NULL,
   drop.na.cov.obs = TRUE,
   mins.to.hours = TRUE,
   scale.covs = TRUE,
@@ -28,7 +27,8 @@ make_bundle(
     "time_observations_started_hsm", "time_observations_started", "duration_minutes",
     "protocol_type", "number_observers"),
   K = NULL,
-  dev.mode = FALSE
+  dev.mode = FALSE,
+  dir.jagam = "models/"
 )
 }
 \arguments{
@@ -38,8 +38,6 @@ make_bundle(
 
 \item{grid}{spatial sampling grid/study area table}
 
-\item{neigh.method}{if an adjacency matrix is provided relevant BUGS data will be reutned for CAR.}
-
 \item{drop.na.cov.obs}{logical if TRUE will remove ALL data where any specified covariate does not exist. If TRUE, suggest examining the data and covariates prior to specifying site.covs and grid.covs.}
 
 \item{mins.to.hours}{logical if TRUE will convert covariates on the minute scale to the hour scale.}
@@ -48,7 +46,7 @@ make_bundle(
 
 \item{fill.cov.nas}{value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.}
 
-\item{bf.method}{method for developing basis functions. Defaults to creating duchon splines using mgcv::jagam().}
+\item{bf.method}{default value "cubic2d". Alternatives include cubic splines using one of c("mgcv", "jagam").}
 
 \item{use.ebird.in.ENgrid}{logical if TRUE will use data across both eBird and BBS observations to create basis functions.}
 
@@ -73,6 +71,8 @@ make_bundle(
 \item{K}{the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.}
 
 \item{dev.mode}{logical if TRUE will return a reduced data set to use in development/debugging purposes. This method reduces the number of time units to 2, the maximum number of grid cells to 10, and 2 sites from each data source}
+
+\item{dir.jagam}{directory location of where to save the JAGAM.bugs model file created by mgcv::jagam(). Defaults to ./models/}
 }
 \description{
 Bundle Data for Use in JAGS

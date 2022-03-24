@@ -13,6 +13,7 @@
 #' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.
 #' @param ncores max number of cores to engage for parallel data processing. Defaults to one fewer CPUs than the machine has. Parallel processing is used only when a high number of routes and/or grid cells are in the data.
+#' @param save.route.lines logical. If TRUE (default) will save the BBS routes segments as .RDS to dir.out
 #' @importFrom foreach %dopar%
 #' @importFrom doParallel registerDoParallel
 #' @importFrom parallel stopCluster detectCores makeCluster
@@ -38,7 +39,8 @@ make_bbs_spatial <- function(df,
                              keep.empty.cells = TRUE,
                              plot.dir = NULL,
                              overwrite = FALSE,
-                             dir.out = NULL) {
+                             dir.out = NULL,
+                             save.route.lines = TRUE) {
   # first, if overwrite is false and this file exists. import and return asap.
   f <- paste0(dir.out, "bbs_spatial.rds")
   if (file.exists(f) & !overwrite) {
@@ -145,17 +147,22 @@ make_bbs_spatial <- function(df,
     # We definitely wnat to remove the following before proceeding:
     ## 1. RouteName: they don't always match the published observations data
     ## 2. ShapeLength or variations thereof: we need to calc route/line length within our desired projections.
-    dplyr::select(rteno, geometry) |>
+    dplyr::select(rteno, geometry)
+
+
+  ## Calculate segment lengths and then add up to grab route lengths
+  ## (some routes have gaps and are therefore represented on different line objects/rows)
+  bbs_routes$segmentlength <-  bbs_routes |> sf::st_length() # this is not currently incompatible when called inside using (.) native pipe operator,
+  ## so i had to break it out of this workflow chunk..
+  bbs_routes <- bbs_routes |>
     #### sometimes when I get to this poitnt when running within a notebook/rmd i get this error: https://github.com/rstudio/rstudio/issues/6260
     ## calculate lengths of lines (may be multiples for one rteno)
-    dplyr::mutate(segmentlength = sf::st_length(.)) |>
     dplyr::group_by(rteno) |>
     dplyr::mutate(routelength = sum(segmentlength)) |>
     dplyr::ungroup() |>
     dplyr::select(-segmentlength) # we don't really gaf about these lines, they're just segments because of the drawings
   ## Drop the z-dimension from data. Exists in USGS but not in CWS
   bbs_routes <- sf::st_zm(bbs_routes, drop = TRUE, what = "ZM")
-
 
   # Project/reproject grid to match bbs_routes layer --------------------------------
   # match grid projection/crs to target
@@ -169,13 +176,15 @@ make_bbs_spatial <- function(df,
 
   ### chunk up processing of st_intersection to speed up overlay
   # add process for:: if ngrids>X and chunks > Y then parallel, else just run straight up
+    message(
+      "[note] overlaying bbs route and grid (study area). This may take a few minutes depending on size of grid cells and extent of study area..\n"
+    )
   len       <- nrow(bbs_routes)
   my_vec    <- 1:len
   ngrids    <- nrow(grid)
   chunk_len <-
     round(len / ncores) + 1 # divide equally across all available cores..
   chunks    <- split(my_vec, f = ceiling(seq_along(my_vec) / chunk_len))
-
   # this produces a sf as LINES with grid cell ids appended as attributes.
   ## if parallel index is true, use parallel data processing to speed things up. This is a slow process for >>1 state and grid cells <0.50
   par.ind <-
@@ -183,14 +192,11 @@ make_bbs_spatial <- function(df,
   if (par.ind) {
     cl        <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
-    i = 0
-    message(
-      "[note] using parallel processing to ~try~ to achieve this....monitor CPU/LPU usage before initiating additional processes...\n"
-    )
-    while (!exists("bbs.grid.lines") &&
-           i < 3) {
-      # will try this 2 times.
-      i = i + 1
+    # i = 0
+    # while (!exists("bbs.grid.lines") &&
+    #        i < 2) {
+    #   # will try this 2 times.
+    #   i = i + 1
       # print(paste0(i, " of 2 attempts in parallel"))
       try(bbs.grid.lines <-
             foreach::foreach(
@@ -200,26 +206,22 @@ make_bbs_spatial <- function(df,
             ) %dopar% {
               df = bbs_routes[chunks[[j]],]
               sf::st_intersection(grid, df)
-            })
-    }
-    rm(i)
+            }, silent = TRUE)
+    # }
+    # rm(i)
     parallel::stopCluster(cl) # prob should add a tryCatch here...
   }
   rm(chunks, chunk_len, my_vec, len)
 
-
   if (!par.ind | !exists("bbs.grid.lines")) {
-    message(
-      "[note] overlaying bbs route and grid (study area). This may take a few minutes depending on size of grid cells and extent of study area..\n"
-    )
     bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   }
   message("[note]...overlay was great success! jagshemash \n")
 
-  # Calculate total lengths of routes within a grid cell. -------------------
-  bbs.grid.lines.df <- bbs.grid.lines |>
-    # This calculate line segments for each row (segment)
-    dplyr::mutate(segmentlength = sf::st_length(.)) |>
+  # Calculate total lengths of routes WITHIN EAcH GRID CELL -------------------
+  bbs.grid.lines.df <- bbs.grid.lines
+  bbs.grid.lines.df$segmentlength  <- sf::st_length(bbs.grid.lines)
+  bbs.grid.lines.df <- bbs.grid.lines.df |>
     # Calculate the total length of the entire route (regardless of whether the rteno is clipped by the study area..)
     dplyr::group_by(rteno) |>
     dplyr::mutate(totalroutelength = sum(segmentlength)) |>
@@ -229,11 +231,11 @@ make_bbs_spatial <- function(df,
     dplyr::ungroup()
 
   # create an object describing the rtenos as lines if we want to plot later on
-  route.line.geometry <- bbs.grid.lines |>
-    dplyr::select(rteno, geometry) |>
-    dplyr::mutate(route.geometry = geometry) |>
-    sf::st_drop_geometry()
-
+  geom  <- sf::st_geometry(bbs.grid.lines)
+  route.line.geometry <- bbs.grid.lines |> select(rteno) |>
+    sf::st_drop_geometry() |>
+    mutate(geometry  = geom)
+  rm(geom)
   # Expand the grid/study area to include all years and cell combos  -------------
   # expand the grid to include all years and grid cell ids
   grid.expanded <- grid |>
@@ -241,7 +243,7 @@ make_bbs_spatial <- function(df,
     ## add years to the grid layer
     tidyr::expand(year = unique(df$year), gridcellid) |>
     # add these to grid attributes attributes
-    dplyr::full_join(grid) |>
+    dplyr::full_join(grid, by="gridcellid") |>
     sf::st_as_sf()
 
   # Create BBS Routes as GRIDDED object (not lines) -------------------------
@@ -257,11 +259,10 @@ make_bbs_spatial <- function(df,
                     routelength)
 
   ## overlay the bbs routes to the grid, again.
-  bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp)
+  bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp, by="gridcellid")
 
   # Add attributes and obs to BBS gridded layer -----------------------------
-  ## append the route line geometry
-  bbs.grid <- dplyr::left_join(bbs.grid, route.line.geometry)
+
   ## add the BBS observations to the BBS spatial object
   bbs_spatial <- left_join(bbs.grid, df)
 
@@ -334,13 +335,18 @@ make_bbs_spatial <- function(df,
 
   if (!nrow(bbs_spatial |> dplyr::distinct(year, gridcellid, rteno, c)) == nrow(bbs_spatial))
     message(
-      "FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists."
+      "FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists.\n"
     )
 
   # Outputs -----------------------------------------------------------------
-  cat("Writing to file: ", f, "\n")
-  saveRDS(bbs_spatial, file = f)
+  if(save.route.lines){
+  f2 <- paste0(dir.out, "bbs_route_lines.rds")
+  cat("`save.route.lines == TRUE`; saving the BBS routes as linefiles to :\n  ", f2, "\n")
+  saveRDS(bbs.grid.lines.df, file = f2)
+  }
 
+  cat("Writing bbs_spatial to file: ", f, "\n")
+  saveRDS(bbs_spatial, file = f)
 
   return(bbs_spatial)
 } ## end function
