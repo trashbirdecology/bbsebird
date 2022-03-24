@@ -541,7 +541,7 @@ make_bundle <- function(bbs,
   )
   if (bf.method %in% c("mgcv", "jagam")) {
     cat("  [note] creating 2D duchon splines using `mgcv::jagam()`\n")
-    # jagam.fn <- paste0(dirs$dir.models, "/gam-UNEDITED.txt")
+    jagam.fn <- paste0(dir.jagam, "/gam-UNEDITED.txt")
     jagam.mod <- mgcv::jagam(
       c ~ s(
         # note the c doesn't matter, it's just for show
