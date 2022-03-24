@@ -29,7 +29,7 @@ make_ebird_spatial <- function(df, crs.target, dir.out=NULL, grid = NULL, overwr
 
   # add attribute comprising the ebird coordinates. when i assign lat and lon as coordinates to the sf object, i lose them as attributes and
   ### theyre hard to recover when it becomes an SFC object... annnoying? yes.
-  df <- df %>%
+  df <- df |>
     dplyr::mutate(lon=longitude,
            lat=latitude) ## we want to duplicate because its easier to keep lat and lon in the df also
 
@@ -63,25 +63,25 @@ make_ebird_spatial <- function(df, crs.target, dir.out=NULL, grid = NULL, overwr
 
   # # expand the grid to include all years and  grid cell ids
   ### not really sure why i wanted to do this..eh
-  # grid <- grid %>%
-  #   as.data.frame() %>%
+  # grid <- grid |>
+  #   as.data.frame() |>
   #   ## add years to the grid layer
-  #   tidyr::expand(year = unique(df$year), gridcellid) %>%
+  #   tidyr::expand(year = unique(df$year), gridcellid) |>
   #   # add these to grid attributes attributes
-  #   full_join(grid)%>%
+  #   full_join(grid)|>
   #   sf::st_as_sf()
 
   # cat("Joining ebird to spatial grid. Takes at least a couple of minutes for smaller eBird datasets.\n")
   ebird_spatial <- sf::st_join(grid, df)
   # ## must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
   # ebird_spatial <-
-  #   grid.expanded %>%
+  #   grid.expanded |>
   #   sf::st_join(df)
   #
   # # append the missing grid cell ids (this is a lot faster than st_joining the ebird_spatial and grid.expanded)
   # ebird_spatial <- full_join(ebird_spatial, grid.expanded)
   #
-  # ebird_spatial <- ebird_spatial %>% filter(!is.na(year))
+  # ebird_spatial <- ebird_spatial |> filter(!is.na(year))
 
   #remove rownames
   rownames(ebird_spatial) <- NULL

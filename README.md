@@ -13,10 +13,12 @@ The purpose of this R package (*likely to undergo a name change…*) is
 to:
 
 1.  provide a (currently) faster alternative to the R package `auk` for
-    importing and munging the large eBird datasets\*
-2.  integrate the BBS and eBird observation datasets for use in JAGS
-    (`rjags`) and `mcgv::jagam()` by binding data to a common, spatial
-    sampling grid
+    importing and munging the large eBird datasets\*.
+2.  integrate the BBS and eBird observation datasets for use in
+    hierarchical modeling efforts by assigning point-referenced data to
+    a gridded surface.
+3.  provide modeling workflow for analysing spatio-temporal dynamics in
+    Nimble or JAGS.
 
 > \*[@cboettig](https://github.com/cboettig/) and
 > [@amstrimas](https://github.com/amstrimas/) are currently developing
@@ -138,13 +140,16 @@ study_area <- make_spatial_grid(
                           countries = countries,
                           crs.target = crs.target,
                           grid.size = grid.size, 
-                          adjacency.mat = "knearest",
-                          overwrite = FALSE
+                          hexagonal = TRUE,
+                          overwrite = TRUE
                           )
-if(is.list(study_area)){ neighborhood <- study_area$neighborhood
-study_area <- study_area$grid
+if(is.list(study_area)){ 
+  grid          <- study_area$grid
+  overlay       <- study_area$grid.overlay
 }
-plot(study_area)
+plot(grid)
+plot(overlay)
+rm(study_area)
 ```
 
 Create the BBS data. This chunk relieson R package . The resulting data
@@ -168,6 +173,7 @@ saveRDS(bbs_obs, paste0(dirs$dir.bbs.out, "/bbs_obs.rds")) # suggest saving data
 if("bbs_spatial.rds" %in% list.files(dirs$dir.bbs.out)){bbs_spatial <- readRDS(list.files(dirs$dir.bbs.out, "bbs_spatial.rds", full.names=TRUE))}else{
 bbs_spatial <- make_bbs_spatial(
   df = bbs_obs,
+  overwrite=TRUE, 
   cws.routes.dir = dirs$cws.routes.dir,
   usgs.routes.dir = dirs$usgs.routes.dir,
   plot.dir = dirs$dir.plots,
@@ -210,8 +216,6 @@ ebird_spatial <- make_ebird_spatial(
   df = ebird,
   crs.target = crs.target,
   grid = ifelse(is.list(study_area), study_area[[1]], study_area),
-
-  grid = study_area,
   overwrite = FALSE, # this fun checks for existing spatial ebird file in dir.spatial.out
   dir.out = dirs$dir.spatial.out 
 )

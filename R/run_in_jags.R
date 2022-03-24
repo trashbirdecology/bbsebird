@@ -10,7 +10,7 @@
 #' @param verbose logical Argument used in jagsUI::jags(). If TRUE will generate more messages/information during sampling phase. Note: If parallel=TRUE, messages are suppressed given behavior of parallel compute.
 #' @param mod.name optional Used to save model output to file. Defaults to 'myJAGSModel'
 #' @param overwrite logical If TRUE and .RDS file already exists, will prompt user with a menu to confirm model re-run. Specifying overwrite=TRUE will avoid that prompt.
-#' @param monitor optional Character vector of parameters to monitor.
+#' @param monitors optional Character vector of parameters to monitor.
 #' @param traceplots logical If TRUE will attemp to save a default traceplot to file
 #' @importFrom parallel detectCores
 #' @importFrom doParallel stopImplicitCluster
@@ -21,7 +21,7 @@
 run_in_jags <- function(bugs.data,
                         model,
                         inits,
-                        monitor,
+                        monitors,
                         savedir     = "/",
                         seed        = sample(1:111111, size = 1),
                         parallel    = TRUE,
@@ -64,7 +64,7 @@ run_in_jags <- function(bugs.data,
   stopifnot(is.integer(seed) || is.numeric(seed))
   set.seed(seed)
 
-  stopifnot(is.character(params))
+  stopifnot(is.character(monitors))
 
 
   # Out filepath + file search ----------------------------------------------
@@ -112,7 +112,7 @@ run_in_jags <- function(bugs.data,
       data = bugs.data,
       model.file = model,
       inits      = inits,
-      parameters.to.save = params,
+      parameters.to.save = monitors,
       n.chains   = mcmc.specs$nc,
       # n.adapt    = mcmc.specs$na,
       n.iter     = mcmc.specs$ni,
@@ -126,7 +126,7 @@ run_in_jags <- function(bugs.data,
       data = bugs.data,
       model.file = model,
       inits      = inits,
-      parameters.to.save = params,
+      parameters.to.save = monitors,
       n.chains   = mcmc.specs$nc,
       # n.adapt    = mcmc.specs$na,
       n.iter     = mcmc.specs$ni,

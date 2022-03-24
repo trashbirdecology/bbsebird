@@ -52,7 +52,7 @@ zerofill_ebird <-
     events.zeroes.to.add <-
       setdiff(events.samp, events.obs)#which evenest are in sampling but NOT in obs
     ## filter those events out of sampling df prior to joining
-    list$sampling <- list$sampling %>%
+    list$sampling <- list$sampling |>
       dplyr::filter(sampling_event_identifier %in% events.zeroes.to.add)
     ## This should already be done in filter_ebird_data()--fpr some reason time wasn't working but needs to be double checked
     list$observations <- convert_cols(list$observations)

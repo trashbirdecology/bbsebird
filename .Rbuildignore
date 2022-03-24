@@ -16,4 +16,3 @@ Makefile
 ^LICENSE\.md$
 ^packrat/
 ^\.Rprofile$
-^development-file\.r$

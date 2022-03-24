@@ -41,7 +41,7 @@ make_spatial_grid <- function(dir.out,
 
   # Begin by grabbing  all data to check arguments
   regions.avail <-
-    rnaturalearth::ne_states() %>% as.data.frame()
+    rnaturalearth::ne_states() |> as.data.frame()
 
   regions.avail$states    <-
     toupper(gsub(
@@ -78,15 +78,15 @@ make_spatial_grid <- function(dir.out,
     rnaturalearth::ne_states(iso_a2 = countries.ind, returnclass = "sf")
 
   if (!is.null(states))
-    study.area <- study.area %>% filter(iso_3166_2 %in% states.ind)
+    study.area <- study.area |> filter(iso_3166_2 %in% states.ind)
 
   # crs transform
-  study.area <- study.area %>%
+  study.area <- study.area |>
     sf::st_transform(study.area, crs = crs.target)
 
   # throw a grid over the study area layer
   square <- ifelse(hexagonal, FALSE, TRUE)
-  grid <- study.area %>%
+  grid <- study.area |>
     sf::st_make_grid(cellsize = grid.size,
                      square = square,
                      flat_topped = TRUE,
@@ -94,16 +94,16 @@ make_spatial_grid <- function(dir.out,
 
 
   ## GRID.OVERLAY IS TH EOLD OUTPUT
-  grid.overlay <- grid %>%
-    sf::st_intersection(study.area) %>%
-    # st_cast("MULTIPOLYGON") %>%
-    sf::st_sf() %>%
-    dplyr::mutate(gridcellid = row_number()) %>%
+  grid.overlay <- grid |>
+    sf::st_intersection(study.area) |>
+    # st_cast("MULTIPOLYGON") |>
+    sf::st_sf() |>
+    dplyr::mutate(gridcellid = row_number()) |>
     sf::st_transform(crs = crs.target)
 
-  grid <- grid[study.area] %>%
-    sf::st_sf() %>%
-    dplyr::mutate(gridcellid = row_number()) %>%
+  grid <- grid[study.area] |>
+    sf::st_sf() |>
+    dplyr::mutate(gridcellid = row_number()) |>
     sf::st_transform(crs = crs.target)
 
 

@@ -31,7 +31,6 @@ Imports:
     foreach (>= 1.5.1),
     hms,
     lubridate (>= 1.8.0),
-    magrittr,
     mgcv,
     readr (>= 2.1.1),
     reshape2 (>= 1.4.4),

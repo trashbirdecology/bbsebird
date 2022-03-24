@@ -23,16 +23,17 @@ make_array <- function(df = bbs,
   keep <-
     na.omit(keep[!grepl(paste0(c("NULL", "NA", NA, NULL), collapse = "|"), keep)])
   df <- df[, keep]
-  df <- dplyr::distinct(df) %>% arrange(slice, row, col)
+  df <- dplyr::distinct(df) |> arrange(slice, row, col)
 
   expr <- paste(strsplit(names(df)[-ncol(df)], split = "#"),
                 collapse = "~",
                 sep = "#")
 
   if (drop.na.rows)
-    df <- df %>% na.omit(row)
+    df <- df |> na.omit(row)
 
-  df.new <- reshape2::acast(df, eval(parse(text = expr)), value.var = val)
+  df.new <-
+    reshape2::acast(df, eval(parse(text = expr)), value.var = val)
 
 
   return(df.new)

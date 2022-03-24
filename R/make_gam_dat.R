@@ -19,7 +19,7 @@ make_gam_dat <-
     dat.names <- NULL
     for (i in 1:length(dat)) {
       if (any(class(dat[[i]]) %in% c("sf", "spdf")))
-        dat[[i]] <- dat[[i]] %>% sf::st_drop_geometry()
+        dat[[i]] <- dat[[i]] |> sf::st_drop_geometry()
 
       ind <-  colnames(dat[[i]])
       if ("checklist_id" %in% ind)
@@ -35,14 +35,14 @@ make_gam_dat <-
       for (i in seq_along(dat)) {
         colnames(dat[[i]]) <- tolower(colnames(dat[[i]]))
         suppressWarnings(
-          output[[i]] <- dat[[i]] %>%
-            dplyr::distinct(gridcellid, cell.lat.centroid, cell.lon.centroid, c) %>%
-            dplyr::group_by(gridcellid) %>%
+          output[[i]] <- dat[[i]] |>
+            dplyr::distinct(gridcellid, cell.lat.centroid, cell.lon.centroid, c) |>
+            dplyr::group_by(gridcellid) |>
             dplyr::summarise(
               Cmax = max(c, na.rm = TRUE),
               x = max(cell.lon.centroid),
               y = max(cell.lat.centroid) # doing max lat lon here b/c im lazy
-            ) %>%
+            ) |>
             ungroup()
         )
         output[[i]]$Cmax[output[[i]]$Cmax %in% c("Inf", "-Inf")] <- 0

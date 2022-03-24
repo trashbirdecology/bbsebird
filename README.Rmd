@@ -23,8 +23,9 @@ knitr::opts_chunk$set(
 # bbsebird
 The purpose of this R package (*likely to undergo a name change...*) is to:
 
-  1. provide a (currently) faster alternative to the R package `auk ` for importing and munging the large eBird datasets*
-  1. integrate the BBS and eBird observation datasets for use in JAGS (`rjags`) and `mcgv::jagam()` by binding data to a common, spatial sampling grid
+  1. provide a (currently) faster alternative to the R package `auk ` for importing and munging the large eBird datasets*. 
+  1. integrate the BBS and eBird observation datasets for use in hierarchical modeling efforts by assigning point-referenced data to a gridded surface. 
+  1. provide modeling workflow for analysing spatio-temporal dynamics in Nimble or JAGS.   
   
 > *[\@cboettig](https://github.com/cboettig/) and [\@amstrimas](https://github.com/amstrimas/) are currently developing an `auk` alternative, [`birddb`](https://github.com/cboettig/birddb/). It is likely that, once stable, this R package will use `birddb` as dependency for eBird import and manipulation. For now, however, the functions herein provide a much faster alternative to `auk`.
 

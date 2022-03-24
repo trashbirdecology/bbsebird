@@ -15,7 +15,6 @@ RMD
 SamplingEvents
 USGS
 YAML
-YYYY
 arg
 bbs
 bbsAssistant
@@ -27,13 +26,11 @@ dir
 duchon
 eBird
 ebird
+EBIRD
 filepath
 funcitons
 gridsize
 inits
-intiail
-intial
-intiial
 jagam
 jagsUI
 jdat
@@ -53,10 +50,8 @@ offical
 proj
 rds
 readNimbleModel
-relieson
 rjags
-shoudl
 showCompilerOutput
 usgs
 yyyy
-zf
+

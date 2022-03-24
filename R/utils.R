@@ -5,10 +5,10 @@
 clean_ebird_colnames <- function(df) {
 
   if("observation_count" %in% colnames(df)){
-    df <- df %>% dplyr::rename(c=observation_count)
+    df <- df |> dplyr::rename(c=observation_count)
   }
 
-  clean_df <- df %>%
+  clean_df <- df |>
     mutate(
       # convert X to NA
       c = as.integer(c),
@@ -18,7 +18,7 @@ clean_ebird_colnames <- function(df) {
     )
 
   suppressWarnings(
-    clean_df <- clean_df %>% dplyr::mutate(
+    clean_df <- clean_df |> dplyr::mutate(
       # convert time to decimal hours since midnight
       time_observations_started_hsm = lubridate::hms(time_observations_started),
       # split date into year and day of year
@@ -54,7 +54,7 @@ match_col_names <- function(x) {
     oldnames = col_names[[i]]
 
     toreplace = names(x)[which(names(x) %in% oldnames)]
-    x <- x %>%
+    x <- x |>
       rename_with(~ newname, all_of(toreplace))
   }
   return(x)
@@ -104,10 +104,10 @@ convert_cols <- function(x) {
   )
 
 
-  x <- x %>%
-    mutate(across(any_of(c(chrs, num, ints)), as.character)) %>%
-    mutate(across(any_of(num), as.numeric)) %>%
-    mutate(across(any_of(ints), as.integer)) %>%
+  x <- x |>
+    mutate(across(any_of(c(chrs, num, ints)), as.character)) |>
+    mutate(across(any_of(num), as.numeric)) |>
+    mutate(across(any_of(ints), as.integer)) |>
     mutate(across(any_of(dates), as.Date))
 
   return(x)
@@ -121,7 +121,7 @@ convert_cols <- function(x) {
 #' @keywords internal
 split_tibble <-
   function(tibble, col = 'col')
-    tibble %>% split(., .[, col])
+    tibble |> split(., .[, col])
 
 
 #' compute standard error of a vector
@@ -157,7 +157,7 @@ make.integer <- function(x, var = c("AOU", "aou")) {
 #' @param new.args.save Optional. One or more new object names to save (in addition to args.save)
 #' @noRd
 junk_it <- function(args.save, new.args.save = NULL) {
-  args.save <- c(args.save, new.args.save, "args.save") %>% unique()
+  args.save <- c(args.save, new.args.save, "args.save") |> unique()
   rm(list = setdiff(ls(envir = .GlobalEnv), args.save), envir = .GlobalEnv)
   return(args.save)
 }
@@ -297,9 +297,9 @@ make_mat <-
            val,
            replace.na = FALSE) {
     # ensure no duplicates of the row and col identifiers exist.
-    df.in <- df.in %>%
+    df.in <- df.in |>
       filter(!is.na(eval(parse(text = row))) &
-               !is.na(eval(parse(text = col)))) %>%
+               !is.na(eval(parse(text = col)))) |>
       distinct(eval(parse(text = row)), eval(parse(text = col)), .keep_all = TRUE)
 
     ## will make row and col NULL and then add a thing for when they are NULL for ebird and bbs
@@ -309,15 +309,15 @@ make_mat <-
       id_cols = row,
       names_from = col,
       values_from = val
-    ) %>%
+    ) |>
       as.data.frame() ## add this instead of matrix otherwise numeric cell values --> character
     # make first col the rownames
     # remove missing values in first column, which will be the rteno/checklist_id
     mat <- mat[!is.na(mat[, 1]),]
 
     ## sort matrix
-    mat <- mat %>%
-      arrange(mat[row]) %>%
+    mat <- mat |>
+      arrange(mat[row]) |>
       tibble::column_to_rownames(var = row)
 
     ## replace nulls with NA
@@ -329,7 +329,7 @@ make_mat <-
     #ensure matrix is sorted by rownames and colnames
     ## sort column names as integers
     mat <-
-      mat %>% dplyr::select(order(as.integer(colnames(mat))))#cols
+      mat |> dplyr::select(order(as.integer(colnames(mat))))#cols
 
     #### crude tests
     stopifnot(rownames(mat) == sort(unique(df.in$site.ind)))
@@ -376,7 +376,7 @@ munge_date_time <-
         julian(dat$date, origin = lubridate::as_date(base.date))
       ## filter on the ydays (if provided)
       dat <-
-        dat %>% filter((yday >= min.yday &
+        dat |> filter((yday >= min.yday &
                           yday <= max.yday) | is.na(yday)) ## keep the NA values.
     } # end dates munging
 
@@ -405,7 +405,7 @@ munge_date_time <-
       ## ebird is so large that I need to split up b/c calculating astronomical info takes forever.
       ## i'd like to use kit::funique, but cannot figure out how to do that with >1 columns.
       ### so, am resorting to this method.
-      x <- dat %>% dplyr::select(date, lat, lon) %>%
+      x <- dat |> dplyr::select(date, lat, lon) |>
         filter(!is.na(date))
       chunks <- parallel::splitIndices(nrow(x), 100)
 
@@ -426,7 +426,7 @@ munge_date_time <-
       }#end chunk for loop
 
       ### turn vars in sunlight.keep into time only (otherwise they are in YYYY-MM-DD HH-MM-SS; we need only HH-MM)
-      dat.sun <- dat.sun %>%
+      dat.sun <- dat.sun |>
         dplyr::mutate(across(sunlight.keep, hms::as_hms))
 
       ### add sunlight information to spatial data sets

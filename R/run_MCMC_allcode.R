@@ -17,7 +17,6 @@ run_MCMC_allcode <-
            data,
            model,
            inits,
-           monitors = NULL,
            mcmc.specs,
            verbose=FALSE,
            seed = sample(1:1E6, 1),
@@ -33,7 +32,7 @@ run_MCMC_allcode <-
 
     # myModel$plotGraph() # add functionality to plot..
     ### inspect log probabilities
-    myModel$logProb_alpha
+    # myModel$logProb_alpha
     ## trying to figure out how to add the monitors to compiled model.
     # if(!is.null(monitors)){
     #   toeval <- paste0("CmyModel$addMonitors(",

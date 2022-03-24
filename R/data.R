@@ -433,18 +433,18 @@
 #' #' #' #'
 #' #'
 #' #' # grab ebird region codes
-#' #' ebird.codes <- auk::ebird_states %>%
+#' #' ebird.codes <- auk::ebird_states |>
 #' #'   rename()
 #' #'
 #' #' # grab bbs region codes
-#' #' bbs.codes <- bbsAssistant::region_codes %>%
+#' #' bbs.codes <- bbsAssistant::region_codes |>
 #' #'   dplyr::filter(!stringr::str_detect())
 #' #'
 #' #' setdiff(tolower(bbs.codes$State),toupper(iso.codes$name))
 #' #'
-#' #' iso.codes <- rnaturalearth::ne_states() %>%
-#' #'   as.data.frame() %>%
-#' #'   # tibble::column_to_rownames(name_en) %>%
+#' #' iso.codes <- rnaturalearth::ne_states() |>
+#' #'   as.data.frame() |>
+#' #'   # tibble::column_to_rownames(name_en) |>
 #' #'   dplyr::select(name_en, iso_3166_2, iso_a2, , name_fr, name_es)
 #' #'
 #' #' # Add a column for eBird file identification
