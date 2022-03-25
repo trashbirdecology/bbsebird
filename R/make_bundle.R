@@ -371,6 +371,7 @@ make_bundle <- function(bbs,
     prop <-
       prop[-which(rownames(prop) %in% c(NA, "NA")), ]
   }
+  browser()
 stopifnot(all(rowSums(prop)==1))
 
   # SITE-LEVEL COVARS -------------------------------------------------------
@@ -639,7 +640,7 @@ stopifnot(all(rowSums(prop)==1))
     adj         = nbWB$adj,
     wts         = nbWB$weights,
     num         = nbWB$num,
-    NN          = nbWB$sumNumNeigh
+    NN          = sum(nbWB$num)
   )
 
 
