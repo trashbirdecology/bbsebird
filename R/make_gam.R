@@ -4,6 +4,7 @@
 #' @param nruns ...
 #' @param nruns ...
 #' @param num.nn ...
+#' @param print.plot logical if TRUE will print the spatial representation of gam to local device
 #' @param max.loop ...
 #' @param K max number of basis functions to produce in mgcv::jagam()
 #' @param scale.coords logical if TRUE will scale the XY coordinates
@@ -15,9 +16,10 @@ make_gam <- function(coords,
                      nd = 20,
                      nruns = 10,
                      num.nn = 20,
+                     print.plot=TRUE,
                      max.loop = 40,
                      K        = NULL,
-                     scale.coords = TRUE) {
+                     scale.coords = FALSE) {
 
 # ARGS --------------------------------------------------------------------
   method <- tolower(method)
@@ -25,21 +27,23 @@ make_gam <- function(coords,
   stopifnot(ncol(coords)>=2)
   stopifnot(  is.numeric(coords[,1]) | is.integer(coords[,1]))
   stopifnot(  is.numeric(coords[,2]) | is.integer(coords[,2]))
-  
+
 # SCALE XY ----------------------------------------------------------------
+XY <- matrix(NA, nrow=nrow(coords), ncol=2)
 if(scale.coords){
   cat("   [note] coords.scaled == TRUE; z-scaling coordinates.\n")
   XY[,1] <- standardize(coords[,1])
   XY[,2] <- standardize(coords[,2])
-} else(XY <- coords[,1:2])
-  
-    
+} else{
+  XY <- coords[,1:2]
+}
+
 # JAGAM -------------------------------------------------------------------------
   # if not specified, K is defined as:
   ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
   ### and anything > like 100 will crash most systems.
   ### also need to consider compute time for use in Bayesian param estiamtion
-  if (bf.method %in% c("mgcv", "jagam")) {
+  if (method %in% c("mgcv", "jagam")) {
     cat("  [note] creating 2D duchon splines using `mgcv::jagam()`\n")
     if (!is.null(K) && K > nrow(XY)) {
       message(
@@ -51,7 +55,7 @@ if(scale.coords){
       ###logic for K selection borrowed from AHM2 book , which cites Giminez et al. 2009 and Rupert et al. 2003
       K <- max(20, min(round(nrow(XY) / 4), 150))
     }
-    
+
     cat(
       "  [note] K is currently set to ",
       K,
@@ -83,10 +87,10 @@ if(scale.coords){
       dim(jagam.mod$jags.data$X)[2]        # number of basis functions/knots
 
   }#end JAGAM
-  
-  
+
+
 # CUBIC --------------------------------------------------
-  if (bf.method %in% c("strebel")) {
+  if (method %in% c("strebel")) {
     ### follow the methods of Strebel et al. (which follows methods of Royle and Kery AHM)
     cat("  [note] creating 2D cubic splines following Strebel et al. \n")
     # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
@@ -102,7 +106,8 @@ if(scale.coords){
     nbfs  <- dim(Z.mat)[2]
   }
 
-  if (bf.method %in% "cubic2d") {
+  if (method %in% "cubic2d") {
+    cat("   [note] using method cubic2d\n")
     # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
     knots <-
       fields::cover.design(
@@ -112,7 +117,6 @@ if(scale.coords){
         num.nn = num.nn,
         max.loop = max.loop
       )$design
-    
     omega.all <- fields::rdist(knots, knots) ^ 3
     svd.omega.all <- svd(omega.all)
     sqrt.omega.all <- t(svd.omega.all$v %*% (t(svd.omega.all$u) *
@@ -120,24 +124,37 @@ if(scale.coords){
     Z.k <- (fields::rdist(XY, knots)) ^ 3
     Z.mat <- t(solve(sqrt.omega.all, t(Z.k)))
     nbfs <- dim(Z.mat)[2]
-    
+
   } # end cubic2d
-  
-  
+
+
+# plot --------------------------------------------------------------------
+
+if(print.plot){
+  if(method %in% c("mgcv", "jagam")){"plotting currently not supported for mgcv gam"}else{
+    plot(XY,pch=20)
+    points(knots, pch=20,col="red",cex=2)
+  }
+
+
+}
+
+
 
 # RETURN OBJECT -----------------------------------------------------------
 out <- list(
-  knotlocs  = ifelse(exists("knotlocs"), knotlocs, "NULL"),
-  K         = nbfs, 
-  Z.mat     = Z.mat, 
-  XY        = XY
-)  
+  K         = nbfs,
+  Z.mat     = Z.mat,
+  XY        = XY)
+## add knots if not gam
+if(!method %in% c("mgcv", "jagam")) out$knotlocs <- knots
+
 ## remove empty objects
 todel <- NULL
 for(i in seq_along(out)){
  if(length(out[[i]]) == 1 & out[[i]][1]=="NULL"){todel<-c(todel, names(out)[i])}
 }
-out <- pluck_multiple(out, remove = todel)
+if(!is.null(todel)) out <- pluck_multiple(out, remove = todel)
 
-    
+return(out)
 } # end fFUn

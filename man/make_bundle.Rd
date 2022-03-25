@@ -13,9 +13,8 @@ make_bundle(
   scale.covs = TRUE,
   fill.cov.nas = NA,
   return.orig.dat = FALSE,
-  bf.method = "cubic2D",
-  use.ebird.in.ENgrid = TRUE,
-  ENgrid.arg = "max",
+  use.ebird.in.EN = TRUE,
+  EN.arg = "max",
   X = "cell.lon.centroid",
   Y = "cell.lat.centroid",
   cell.id = "gridcellid",
@@ -27,7 +26,6 @@ make_bundle(
     "obsfirstyearbbs", "obsfirstyearonbbs", "obsfirstyearroute", "obsfirstyearonroute",
     "time_observations_started_hsm", "time_observations_started", "duration_minutes",
     "protocol_type", "number_observers"),
-  K = NULL,
   dev.mode = FALSE,
   dir.outputs = "outputs",
   save.neighborhood = TRUE
@@ -50,11 +48,9 @@ make_bundle(
 
 \item{return.orig.dat}{logical if TRUE will return the bbs, ebird, and grid data as data.frames in returned list. If FALSE, returned list will include lookup tables to link cell.ind, site.ind, and year.ind to cell.id, site.id, and year.id for data.}
 
-\item{bf.method}{default value "cubic2d". Alternatives include cubic splines using one of c("mgcv", "jagam").}
+\item{use.ebird.in.EN}{logical if TRUE will use data across both eBird and BBS observations to create basis functions.}
 
-\item{use.ebird.in.ENgrid}{logical if TRUE will use data across both eBird and BBS observations to create basis functions.}
-
-\item{ENgrid.arg}{if "max" will use the maximum value of observed birds at each grid cell. Alternatives include "min", "mean".}
+\item{EN.arg}{if "max" will use the maximum value of observed birds at each grid cell to produce matrix of expected number of birds at the grid cell level. Alternatives include "min", "mean".}
 
 \item{X}{variable name associated with the x-coordinate (e.g., long, longitude, Easting, X) across 'grid', 'bbs', and 'ebird'}
 
@@ -71,8 +67,6 @@ make_bundle(
 \item{cell.covs}{column name(s) of the grid-level covariates}
 
 \item{site.covs}{column name(s) of the site-level covariates}
-
-\item{K}{the maximum number of basis functions that JAGAM will produce. Used for code development purposes, mostly. Do not change unless you know what you're doing.}
 
 \item{dev.mode}{logical if TRUE will return a reduced data set to use in development/debugging purposes. This method reduces the number of time units to 2, the maximum number of grid cells to 10, and 2 sites from each data source}
 
