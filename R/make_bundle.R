@@ -423,7 +423,7 @@ make_bundle <- function(bbs,
       LL[[i]][cov.name]  <- cov.dat$cov
     } # j loop
   }# end Xsite i loop
-  cat("  [note] done building covariate matrices\n")
+  cat("  [note] done munging site-level covariates\n")
 
 
   ## rename LL elements
@@ -437,8 +437,8 @@ make_bundle <- function(bbs,
   Xgrid <- list(NULL)
 
   cell.index <- cell.index |> arrange(cell.ind)
-  cell.covs <- cell.covs[cell.covs %in% colnames(cell.index)]
-  if (!is.null(cell.covs)) {
+  cell.covs  <- cell.covs[cell.covs %in% colnames(cell.index)]
+  if (!length(cell.covs)==0) {
     for (i in seq_along(cell.covs)) {
       Xgrid[[i]] <- cell.index[, cell.covs[i]]
       names(Xgrid)[i] <- cell.covs[i]
@@ -476,7 +476,7 @@ make_bundle <- function(bbs,
     "(c, na.rm=TRUE)) |>\n
       dplyr::ungroup()\n"
   )
-  eval(str2expression(myfun))
+  ENgrid <- eval(str2expression(myfun))
 
   ## next, add the missing grid cells and fill in with grand MEAN
   gy.all <- expand.grid(cell.ind = cell.index$cell.ind,
@@ -500,7 +500,6 @@ make_bundle <- function(bbs,
   )
 
 
-
   # create data for use in creating spatial basis functions
   bf.in <- data.frame(merge(ENgrid, cell.index))
   bf.in <-
@@ -512,9 +511,10 @@ make_bundle <- function(bbs,
 
   ### 'scale' down the XY coordinates until max is under 10 (10 is an arbitrary choice sorta)
   while (abs(max(c(bf.in$X, bf.in$Y), na.rm = TRUE)) > 10) {
+    warning("Values of X and Y coordinates are > 10, scaling down by factors of 5 until max value < 10.\n")
     bf.in <- bf.in |>
-      dplyr::mutate(X = X / 10,
-                    Y = Y / 10)
+      dplyr::mutate(X = X / 5,
+                    Y = Y / 5)
   }
 
 
@@ -577,7 +577,7 @@ make_bundle <- function(bbs,
   ### follow the methods of Strebel et al. (which follows methods of Royle and Kery AHM)
   if (bf.method %in% c("cubic2d")) {
     # browser()
-    cat("  [note] creating 2D cubic splines\n")
+    cat("  [note] creating 2D cubic splines following Strebel et al. \n")
     XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
     XY.orig <- cell.index[c("X", "Y")]
     # Define the omega and Z.k matrices for the random effects
@@ -593,20 +593,20 @@ make_bundle <- function(bbs,
   }
 
 
-  ## THIS IS BEING MADE OUTSIDE MAKE_BUNDLE FOR NOW....
-  # ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
-  # ## For now just using default values for building neighborhood...
-  # xy <- sf::st_coordinates(grid)
-  # xx <-
-  #   spdep::poly2nb(as(grid, "Spatial"), row.names = cell.index$cell.ind)
-  # # spdep::is.symmetric.nb(xx, verbose = FALSE, force = TRUE)
-  # N = length(xx)
-  # (num = sapply(xx, length))
-  # adj = unlist(xx)
-  # sumNumNeigh = length(unlist(xx))
-  # nbWB <- spdep::nb2WB(xx)
-  # nbWB$sumNumNeigh = sumNumNeigh
-  # rm(xx, N, adj, sumNumNeigh)
+  # THIS IS BEING MADE OUTSIDE MAKE_BUNDLE FOR NOW....
+  ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
+  ## For now just using default values for building neighborhood...
+  xy <- sf::st_coordinates(grid)
+  xx <-
+    spdep::poly2nb(as(grid, "Spatial"), row.names = cell.index$cell.ind)
+  # spdep::is.symmetric.nb(xx, verbose = FALSE, force = TRUE)
+  N = length(xx)
+  (num = sapply(xx, length))
+  adj = unlist(xx)
+  sumNumNeigh = length(unlist(xx))
+  nbWB <- spdep::nb2WB(xx)
+  nbWB$sumNumNeigh = sumNumNeigh
+  rm(xx, N, adj, sumNumNeigh)
 
 
   # BUNDLE UP DATA ----------------------------------------------------------
@@ -616,11 +616,10 @@ make_bundle <- function(bbs,
   bundle.out <- list(
     bbs.df      = bbs   |> distinct(year.ind, site.ind, .keep_all = keep.ind),
     ebird.df    = ebird |> distinct(year.ind, site.ind, .keep_all = keep.ind),
-    grid.df     = cell.index |> distinct(cell.ind, cell.id, X, Y, .keep_all = keep.ind),
+    grid.df     = cell.index |> distinct(cell.ind, cell.id, .keep_all = keep.ind),
     # "all" data as data tables
     # max C per grid per year  (zero-filled)
-    # ENgrid       = ENgrid,
-    ENgrid.mat   = ENgrid.mat,
+    Cmax        = ENgrid.mat,
     # covariate matrices as lists
     # Xsite      = Xsite,
     # can run simplify2array here to output an array...
@@ -654,12 +653,17 @@ make_bundle <- function(bbs,
     # all JAGAM output
     Z.mat      = Z.mat,
     # dims <ncells  by nbfs/knots
-    K       = nbfs
+    K       = nbfs,
     # number of basis functions/knots
     #### neighborhood stuff
-    # adj         = nbWB$adj
-    # adj         = nbWB$adj
-    # adj         = nbWB$adj
+    adj         = nbWB$adj,
+    wts         = nbWB$weights,
+    num         = nbWB$num,
+    NN          = nbWB$sumNumNeigh,
+    #### GRID AND YEAR LOOKUP TABLES
+    cell.index  = cell.index |> distinct(cell.ind, cell.id),
+    year.index  = year.index
+
 
   )
 
