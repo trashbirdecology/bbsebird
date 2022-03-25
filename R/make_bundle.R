@@ -11,7 +11,7 @@
 #' @param site.id column name(s) of the site  identifier (e.g., BBS route, eBird checklists)
 #' @param year.id column name of the temporal identifier
 #' @param bf.method default value "cubic2d". Alternatives include cubic splines using one of c("mgcv", "jagam").
-#' @param dir.jagam directory location of where to save the JAGAM.bugs model file created by mgcv::jagam(). Defaults to ./models/
+#' @param dir.outputs directory location of where to save the JAGAM.bugs model file created by mgcv::jagam(). Defaults to ./models/
 #' @param obs.id  column name(s) of the observer identifier
 #' @param use.ebird.in.ENgrid logical if TRUE will use data across both eBird and BBS observations to create basis functions.
 #' @param cell.covs column name(s) of the grid-level covariates
@@ -19,6 +19,7 @@
 #' @param site.covs column name(s) of the site-level covariates
 #' @param mins.to.hours logical if TRUE will convert covariates on the minute scale to the hour scale.
 #' @param dev.mode logical if TRUE will return a reduced data set to use in development/debugging purposes. This method reduces the number of time units to 2, the maximum number of grid cells to 10, and 2 sites from each data source
+#' @param save.neighborhood logical if TRUE will save the neighborhood network to file as "neighborhood.rds" at 'dir.outputs'.
 #' @param fill.cov.nas value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.
 #' @importFrom dplyr group_by mutate select distinct arrange filter
 #' @export make_bundle
@@ -65,7 +66,8 @@ make_bundle <- function(bbs,
                         ),
                         K = NULL,
                         dev.mode    = FALSE,
-                        dir.jagam   = "models/") {
+                        dir.outputs = "outputs",
+                        save.neighborhood = TRUE) {
   # EVALUATE ARGS -----------------------------------------------------------
   ## first, test and evaluate args as necessary.
   ENgrid.arg <- tolower(ENgrid.arg)
@@ -214,7 +216,6 @@ make_bundle <- function(bbs,
         "after removing all NA observations without associated covariate information, no eBird data exists. \nConsider removing some site.covs from data subsetting/model and/or specifying dev.mode=FALSE..\n"
       )
   }
-
 
   # MAKE INDEXES ------------------------------------------------------------
   ## Global Indexes-----------------------------------------------------------------
@@ -544,7 +545,7 @@ make_bundle <- function(bbs,
   )
   if (bf.method %in% c("mgcv", "jagam")) {
     cat("  [note] creating 2D duchon splines using `mgcv::jagam()`\n")
-    jagam.fn <- paste0(dir.jagam, "/gam-UNEDITED.txt")
+    jagam.fn <- paste0(dir.outputs, "/gam-UNEDITED.txt")
     jagam.mod <- mgcv::jagam(
       c ~ s(
         # note the c doesn't matter, it's just for show
@@ -592,21 +593,28 @@ make_bundle <- function(bbs,
     nbfs  <- dim(Z.mat)[2]
   }
 
-
   # THIS IS BEING MADE OUTSIDE MAKE_BUNDLE FOR NOW....
   ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
   ## For now just using default values for building neighborhood...
-  xy <- sf::st_coordinates(grid)
-  xx <-
-    spdep::poly2nb(as(grid, "Spatial"), row.names = cell.index$cell.ind)
-  # spdep::is.symmetric.nb(xx, verbose = FALSE, force = TRUE)
-  N = length(xx)
-  (num = sapply(xx, length))
-  adj = unlist(xx)
-  sumNumNeigh = length(unlist(xx))
-  nbWB <- spdep::nb2WB(xx)
+  # temp.fn.ind <-
+  fnb <- paste0(dir.outputs, "/neighborhood", ifelse(dev.mode, "-dev", ""), ".rds")
+  cat("  [note] creating spatial neighborhood and saving output to ", fnb, "\n")
+  # nb.coords <- sf::st_coordinates(sf::st_geometry(grid))
+  nb.coords <- as.matrix(cbind(grid$X, grid$Y))
+  nb <- spdep::poly2nb(as(grid, "Spatial"), row.names = cell.index$cell.ind)
+  # spdep::is.symmetric.nb(nb, verbose = FALSE, force = TRUE)
+  N = length(nb)
+  (num = sapply(nb, length))
+  adj = unlist(nb)
+  sumNumNeigh = length(unlist(nb))
+  nbWB <- spdep::nb2WB(nb)
   nbWB$sumNumNeigh = sumNumNeigh
-  rm(xx, N, adj, sumNumNeigh)
+  saveRDS(nb, fnb)
+
+  rm(nb, N, adj, sumNumNeigh)
+
+
+
 
 
   # BUNDLE UP DATA ----------------------------------------------------------
@@ -615,8 +623,8 @@ make_bundle <- function(bbs,
   keep.ind <- ifelse(return.orig.dat, TRUE, FALSE)
   bundle.out <- list(
     bbs.df      = bbs   |> distinct(year.ind, site.ind, .keep_all = keep.ind),
-    ebird.df    = ebird |> distinct(year.ind, site.ind, .keep_all = keep.ind),
-    grid.df     = cell.index |> distinct(cell.ind, cell.id, .keep_all = keep.ind),
+    ebird.df    = ebird |> dplyr::distinct(year.ind, site.ind, .keep_all = keep.ind),
+    grid.df     = cell.index |> dplyr::distinct(cell.ind, cell.id, X, Y, .keep_all = keep.ind),
     # "all" data as data tables
     # max C per grid per year  (zero-filled)
     Cmax        = ENgrid.mat,
@@ -630,8 +638,6 @@ make_bundle <- function(bbs,
     # proportion of routes in grid cell as matrix (dim <nroutes by ngrids>)
     prop       = as.matrix(prop),
     # % BBS route per grid cell (dims <ngrid nroutes>)
-    G.ind = dat.dev$G.ind[c("X", "Y")] |> sf::st_drop_geometry(),
-    # lookup table for grid cells
     T.ind = year.index,
     # lookup table for year
     # create indexes here
@@ -660,11 +666,7 @@ make_bundle <- function(bbs,
     wts         = nbWB$weights,
     num         = nbWB$num,
     NN          = nbWB$sumNumNeigh,
-    #### GRID AND YEAR LOOKUP TABLES
-    cell.index  = cell.index |> distinct(cell.ind, cell.id),
-    year.index  = year.index
-
-
+    nb.coords   = nb.coords
   )
 
 
