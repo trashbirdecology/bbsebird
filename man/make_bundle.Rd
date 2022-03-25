@@ -12,6 +12,7 @@ make_bundle(
   mins.to.hours = TRUE,
   scale.covs = TRUE,
   fill.cov.nas = NA,
+  return.orig.dat = FALSE,
   bf.method = "cubic2D",
   use.ebird.in.ENgrid = TRUE,
   ENgrid.arg = "max",
@@ -22,13 +23,14 @@ make_bundle(
   site.id = c("checklist_id", "rteno"),
   obs.id = c("obsn", "observer_id"),
   cell.covs = c("area"),
-  site.covs = c("wind", "noise", "cars", "minute", "assistant", "obsfirstyearbbs",
-    "obsfirstyearonbbs", "obsfirstyearroute", "obsfirstyearonroute",
+  site.covs = c("starttime", "endtime", "wind", "noise", "cars", "minute", "assistant",
+    "obsfirstyearbbs", "obsfirstyearonbbs", "obsfirstyearroute", "obsfirstyearonroute",
     "time_observations_started_hsm", "time_observations_started", "duration_minutes",
     "protocol_type", "number_observers"),
   K = NULL,
   dev.mode = FALSE,
-  dir.jagam = "models/"
+  dir.outputs = "outputs",
+  save.neighborhood = TRUE
 )
 }
 \arguments{
@@ -45,6 +47,8 @@ make_bundle(
 \item{scale.covs}{logical if TRUE will automatically scale the numeric/integer covariates.}
 
 \item{fill.cov.nas}{value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.}
+
+\item{return.orig.dat}{logical if TRUE will return the bbs, ebird, and grid data as data.frames in returned list. If FALSE, returned list will include lookup tables to link cell.ind, site.ind, and year.ind to cell.id, site.id, and year.id for data.}
 
 \item{bf.method}{default value "cubic2d". Alternatives include cubic splines using one of c("mgcv", "jagam").}
 
@@ -72,7 +76,9 @@ make_bundle(
 
 \item{dev.mode}{logical if TRUE will return a reduced data set to use in development/debugging purposes. This method reduces the number of time units to 2, the maximum number of grid cells to 10, and 2 sites from each data source}
 
-\item{dir.jagam}{directory location of where to save the JAGAM.bugs model file created by mgcv::jagam(). Defaults to ./models/}
+\item{dir.outputs}{directory location of where to save the JAGAM.bugs model file created by mgcv::jagam(). Defaults to ./models/}
+
+\item{save.neighborhood}{logical if TRUE will save the neighborhood network to file as "neighborhood.rds" at 'dir.outputs'.}
 }
 \description{
 Bundle Data for Use in JAGS
