@@ -570,6 +570,7 @@ make_bundle <- function(bbs,
   cat("  [note] creating spatial neighborhood and saving output to ",
       fnb,
       "\n")
+  # browser()
   # nb.coords <- sf::st_coordinates(sf::st_geometry(grid))
   nb.coords <- as.matrix(cbind(grid$X, grid$Y))
   nb <-
