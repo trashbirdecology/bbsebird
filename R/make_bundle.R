@@ -21,7 +21,6 @@
 #' @param fill.cov.nas value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.
 #' @importFrom dplyr group_by mutate select distinct arrange filter
 #' @export make_bundle
-#' @param return.orig.dat logical if TRUE will return the bbs, ebird, and grid data as data.frames in returned list. If FALSE, returned list will include lookup tables to link cell.ind, site.ind, and year.ind to cell.id, site.id, and year.id for data.
 
 make_bundle <- function(bbs,
                         ebird,
@@ -30,7 +29,6 @@ make_bundle <- function(bbs,
                         mins.to.hours = TRUE,
                         scale.covs  = TRUE,
                         fill.cov.nas = NA,
-                        return.orig.dat = FALSE,
                         use.ebird.in.EN = TRUE,
                         EN.arg    = "max",
                         X           = "cell.lon.centroid",
@@ -82,6 +80,9 @@ make_bundle <- function(bbs,
   names(bbs)   <- tolower(names(bbs))
   names(ebird) <- tolower(names(ebird))
   names(grid)  <- tolower(names(grid))
+
+  if("grid.study.area." %in% names(bbs)) bbs <- bbs |> dplyr::select(-grid.study.area.)
+
 
   # Rename Data Table Colnames ----------------------------------------------
   L <- list(bbs = bbs,
@@ -300,7 +301,6 @@ make_bundle <- function(bbs,
   ebird <- LL$ebird
   rm(LL)
 
-
   # BBS-SPECIFIC DATA : PROP (% site.ind in cell.ind) ----------------------------------------------------
   cat("  [note] creating prop matrix for bbs routes/grid cells\n")
   stopifnot(nrow(bbs |> distinct(site.ind, cell.ind, proprouteincell)) ==
@@ -312,62 +312,66 @@ make_bundle <- function(bbs,
     dplyr::select(proprouteincell, site.ind, cell.ind) # remove geometry
   prop$proprouteincell[is.na(prop$proprouteincell)] <-
     0  #
-  ## if in development mode, impute values such that rowsums prop == 1;
-  # browser()
-  if (dev.mode) {
-    warning(
-      "  [importante] dev.mode == TRUE. Output 'prop' will have made-up values to ensure all(rowsums(output$prop) == 1)!!\n "
-    )
-    ## A very messy workaround but tis for the dev version so whatever...
-    ## make a table of the site indexes and the total missing proportion we need to impute
-    toadd <- prop |> dplyr::group_by(site.ind, cell.ind) |>
-      summarise(propsum = sum(proprouteincell , na.rm = TRUE)) |>
-      dplyr::group_by(site.ind) |>
-      dplyr::summarise(totalsum = sum(propsum , na.rm = TRUE)) |>
-      dplyr::filter(totalsum < 1.0) |>
-      dplyr::ungroup() |>
-      dplyr::mutate(proprouteincell = 1 - totalsum) |>
-      dplyr::select(-totalsum)
-    # toadd == list of site.index with associated MISSING proportions
-
-    ## choose the grid cell to add the toadd prop to as min
-    sitegridsaddtome <- prop |>
-      select(site.ind, cell.ind) |>
-      filter(site.ind %in% toadd$site.ind) |>
-      group_by(site.ind) |>
-      slice_sample(n = 1)  |>
-      full_join(toadd)
-    prop <- dplyr::bind_rows(sitegridsaddtome, prop) |>
-      group_by(site.ind) |>
-      mutate(proprouteincell = sum(proprouteincell, na.rm = TRUE)) |>
-      distinct(site.ind, cell.ind, proprouteincell)
-    rm(sitegridsaddtome, toadd)
-    # prop.impute <-
-    #   reshape2::acast(prop.impute,
-    #                   site.ind ~ cell.ind,
-    #                   # formula =
-    #                   value.var = "proprouteincell",
-    #                   fill = 0)
-    # stopifnot(max(prop.impute)==1)
-  }
+  # ## if in development mode, impute values such that rowsums prop == 1;
+  # # browser()
+  # if (dev.mode) {
+  #   warning(
+  #     "  [importante] dev.mode == TRUE. Output 'prop' will have made-up values to ensure all(rowsums(output$prop) == 1)!!\n "
+  #   )
+  #   ## A very messy workaround but tis for the dev version so whatever...
+  #   ## make a table of the site indexes and the total missing proportion we need to impute
+  #   toadd <- prop |> dplyr::group_by(site.ind, cell.ind) |>
+  #     summarise(propsum = sum(proprouteincell , na.rm = TRUE)) |>
+  #     dplyr::group_by(site.ind) |>
+  #     dplyr::summarise(totalsum = sum(propsum , na.rm = TRUE)) |>
+  #     dplyr::filter(totalsum < 1.0) |>
+  #     dplyr::ungroup() |>
+  #     dplyr::mutate(proprouteincell = 1 - totalsum) |>
+  #     dplyr::select(-totalsum)
+  #   # toadd == list of site.index with associated MISSING proportions
+  #
+  #   ## choose the grid cell to add the toadd prop to as min
+  #   sitegridsaddtome <- prop |>
+  #     select(site.ind, cell.ind) |>
+  #     filter(site.ind %in% toadd$site.ind) |>
+  #     group_by(site.ind) |>
+  #     slice_sample(n = 1)  |>
+  #     full_join(toadd)
+  #   prop <- dplyr::bind_rows(sitegridsaddtome, prop) |>
+  #     group_by(site.ind) |>
+  #     mutate(proprouteincell = sum(proprouteincell, na.rm = TRUE)) |>
+  #     distinct(site.ind, cell.ind, proprouteincell)
+  #   rm(sitegridsaddtome, toadd)
+  #   # prop.impute <-
+  #   #   reshape2::acast(prop.impute,
+  #   #                   site.ind ~ cell.ind,
+  #   #                   # formula =
+  #   #                   value.var = "proprouteincell",
+  #   #                   fill = 0)
+  #   # stopifnot(max(prop.impute)==1)
+  # }
+  ## AS grid sizes get smaller, the probabilty of routes being cut off from the regions is likely.
   prop <-
     reshape2::acast(prop,
                     site.ind ~ cell.ind,
                     value.var = "proprouteincell",
                     fill = 0)
 
+  ### this is hacky and really needs to be fixed before production.
+  ### something must be up with the BBS data spatial because should equal one automatically.
+  ## need to check make_bbs_spatial soon
+  ### but actually this is likely correct and will just need to improve documenattion to eflect that
+  ### proportion of route that falls within the study area grids may not equal absolute length of route IRL
+  for(i in 1:nrow(prop)){
+    prop[i,]<- prop[i,]/sum(prop[i,])
+  }
 
   # remove the rownames==NA (the last row usually..)
   if (any(rownames(prop) %in% c("NA", NA))) {
     prop <-
       prop[-which(rownames(prop) %in% c(NA, "NA")), ]
-
-    if (dev.mode)
-      message(
-        "[notice] `dev.mode`is TRUE. Please expect all(rowSums(data$prop)!=1). Route segments are calculated in make_bbs_spatial(). \n"
-      )
   }
-
+stopifnot(all(rowSums(prop)==1))
 
   # SITE-LEVEL COVARS -------------------------------------------------------
   ## create arrays for covariates
