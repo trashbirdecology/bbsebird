@@ -491,7 +491,6 @@ make_bundle <- function(bbs,
   ## argument use.ebird.in.ENgrid lets user ignore the eBird data when producing the GAM data
   ## this is important when modeling only the BBS data, as eBird observations
   ## are typically >>> BBS observations for some (many?) species.
-  # cat("  [note] creating basisi functions")
   if (use.ebird.in.ENgrid) {
     ENgrid <- rbind(
       bbs |> dplyr::distinct(cell.ind, year.ind, c),
@@ -549,7 +548,7 @@ make_bundle <- function(bbs,
     dplyr::ungroup() |>
     dplyr::distinct(cell.ind, .keep_all = TRUE)
 
-  ### 'scale' down the XY coordinates until max is under 10 (10 is an arbitrary choice sorta)
+  ## 'scale' down the XY coordinates until max is under 10 (10 is an arbitrary choice sorta)
   while (abs(max(c(bf.in$X, bf.in$Y), na.rm = TRUE)) > 10) {
     warning("Values of X and Y coordinates are > 10, scaling down by factors of 5 until max value < 10.\n")
     bf.in <- bf.in |>
@@ -558,79 +557,99 @@ make_bundle <- function(bbs,
   }
 
 
-  ## DEFINE K  ---------------------------------------------------------------
-  # if not specified, K is defined as:
-  ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
-  ### and anything > like 100 will crash most systems.
-  ### also need to consider compute time for use in Bayesian param estiamtion
-  if (!is.null(K) && K > length(unique(ENgrid$cell.ind))) {
-    message(
-      "[important] you defined K as a value higher than the unique number of available grid cells. Resetting K automatically. See notes following. \n"
-    )
-    K <- NULL
-  }
-  if (is.null(K)) {
-    ###logic for K selection borrowed from AHM2 book , which cites Giminez et al. 2009 and Rupert et al. 2003
-    K <- max(20, min(round(length(
-      unique(ENgrid$cell.ind)
-    ) / 4), 150))
-  }
+  # ## DEFINE K  ---------------------------------------------------------------
+  # # if not specified, K is defined as:
+  # ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
+  # ### and anything > like 100 will crash most systems.
+  # ### also need to consider compute time for use in Bayesian param estiamtion
+  # if (!is.null(K) && K > length(unique(ENgrid$cell.ind))) {
+  #   message(
+  #     "[important] you defined K as a value higher than the unique number of available grid cells. Resetting K automatically. See notes following. \n"
+  #   )
+  #   K <- NULL
+  # }
+  # if (is.null(K)) {
+  #   ###logic for K selection borrowed from AHM2 book , which cites Giminez et al. 2009 and Rupert et al. 2003
+  #   K <- max(20, min(round(length(
+  #     unique(ENgrid$cell.ind)
+  #   ) / 4), 150))
+  # }
+  #
+  # ## JAGAM -------------------------------------------------------------------------
+  # cat(
+  #   "  [note] K is currently set to ",
+  #   K,
+  #   ". If you have memory errors, try defining K in arguments as a lower value\n"
+  # )
+  # if (bf.method %in% c("mgcv", "jagam")) {
+  #   cat("  [note] creating 2D duchon splines using `mgcv::jagam()`\n")
+  #   jagam.fn <- paste0(dir.outputs, "/gam-UNEDITED.txt")
+  #   jagam.mod <- mgcv::jagam(
+  #     c ~ s(
+  #       # note the c doesn't matter, it's just for show
+  #       X,
+  #       Y,
+  #       bs = "ds",
+  #       k = K,
+  #       m = c(1, 0.5)
+  #     ),
+  #     file = jagam.fn,
+  #     sp.prior = "log.uniform",
+  #     data = bf.in,
+  #     diagonalize = TRUE,
+  #     # parallell = TRUE,
+  #     # modules = "glm"
+  #     family = "poisson"
+  #   )
+  #   jagam.mod$fn <- jagam.fn
+  #   ## specify some output scalars and data
+  #   Z.mat <-
+  #     jagam.mod$jags.data$X               # dims <ncells  by nknots>
+  #   nbfs  <-
+  #     dim(jagam.mod$jags.data$X)[2]        # number of basis functions/knots
+  #
+  # } else{
+  #   jagam.mod <- NULL
+  # }
+  #
+  # ##STREBEL ET AL METHOD --------------------------------------------------
+  # ### follow the methods of Strebel et al. (which follows methods of Royle and Kery AHM)
+  # if (bf.method %in% c("cubic2d")) {
+  #   # browser()
+  #   cat("  [note] creating 2D cubic splines following Strebel et al. \n")
+  #   # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
+  #   XY <- as.data.frame(grid)[c("X", "Y")]
+  #   # Define the omega and Z.k matrices for the random effects
+  #   omega.all <-
+  #     fields::rdist(XY, XY) ^ 3 # 2D cubic splines on "reduced coords
+  #   svd.omega.all <- svd(omega.all)
+  #   sqrt.omega.all <-
+  #     t(svd.omega.all$v %*% (t(svd.omega.all$u) * sqrt(svd.omega.all$d)))
+  #   ##
+  #   Z.k   <- (fields::rdist(XY.orig, XY)) ^ 3
+  #   Z.mat <- t(solve(sqrt.omega.all, t(Z.k)))
+  #   nbfs  <- dim(Z.mat)[2]
+  # }
+  # # browser()
+  # if(bf.method %in% "cubic2d"){
+  #     # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
+  #     XY <- as.data.frame(grid)[c("X", "Y")]
+  #     knots <- fields::cover.design(XY, nd = bf.specs$nd, nruns = bf.specs$nruns,
+  #                                   num.nn = bf.specs$num.nn, max.loop = bf.specs$max.loop)$design
+  #     plot(XY,pch=20)
+  #     points(knots, pch=20,col="red",cex=2)
+  #
+  #     omega.all <- fields::rdist(knots, knots)^3
+  #     svd.omega.all <- svd(omega.all)
+  #     sqrt.omega.all <- t(svd.omega.all$v %*% (t(svd.omega.all$u) *
+  #                                                sqrt(svd.omega.all$d)))
+  #     Z.k <- (fields::rdist(XY, knots))^3
+  #     Z.mat <- t(solve(sqrt.omega.all, t(Z.k)))
+  #     nbfs <- dim(Z.mat)[2]
+  #
+  # }
 
-  ## JAGAM -------------------------------------------------------------------------
-  cat(
-    "  [note] K is currently set to ",
-    K,
-    ". If you have memory errors, try defining K in arguments as a lower value\n"
-  )
-  if (bf.method %in% c("mgcv", "jagam")) {
-    cat("  [note] creating 2D duchon splines using `mgcv::jagam()`\n")
-    jagam.fn <- paste0(dir.outputs, "/gam-UNEDITED.txt")
-    jagam.mod <- mgcv::jagam(
-      c ~ s(
-        # note the c doesn't matter, it's just for show
-        X,
-        Y,
-        bs = "ds",
-        k = K,
-        m = c(1, 0.5)
-      ),
-      file = jagam.fn,
-      sp.prior = "log.uniform",
-      data = bf.in,
-      diagonalize = TRUE,
-      # parallell = TRUE,
-      # modules = "glm"
-      family = "poisson"
-    )
-    jagam.mod$fn <- jagam.fn
-    ## specify some output scalars and data
-    Z.mat <-
-      jagam.mod$jags.data$X               # dims <ncells  by nknots>
-    nbfs  <-
-      dim(jagam.mod$jags.data$X)[2]        # number of basis functions/knots
 
-  } else{
-    jagam.mod <- NULL
-  }
-
-  ##STREBEL ET AL METHOD --------------------------------------------------
-  ### follow the methods of Strebel et al. (which follows methods of Royle and Kery AHM)
-  if (bf.method %in% c("cubic2d")) {
-    # browser()
-    cat("  [note] creating 2D cubic splines following Strebel et al. \n")
-    XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
-    XY.orig <- cell.index[c("X", "Y")]
-    # Define the omega and Z.k matrices for the random effects
-    omega.all <-
-      fields::rdist(XY, XY) ^ 3 # 2D cubic splines on "reduced coords
-    svd.omega.all <- svd(omega.all)
-    sqrt.omega.all <-
-      t(svd.omega.all$v %*% (t(svd.omega.all$u) * sqrt(svd.omega.all$d)))
-    ##
-    Z.k   <- (fields::rdist(XY.orig, XY)) ^ 3
-    Z.mat <- t(solve(sqrt.omega.all, t(Z.k)))
-    nbfs  <- dim(Z.mat)[2]
-  }
 
   # THIS IS BEING MADE OUTSIDE MAKE_BUNDLE FOR NOW....
   ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
