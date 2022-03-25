@@ -22,6 +22,7 @@
 #' @param fill.cov.nas value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.
 #' @importFrom dplyr group_by mutate select distinct arrange filter
 #' @export make_bundle
+#' @param return.orig.dat logical if TRUE will return the bbs, ebird, and grid data as data.frames in returned list. If FALSE, returned list will include lookup tables to link cell.ind, site.ind, and year.ind to cell.id, site.id, and year.id for data.
 
 make_bundle <- function(bbs,
                         ebird,
@@ -30,6 +31,7 @@ make_bundle <- function(bbs,
                         mins.to.hours = TRUE,
                         scale.covs  = TRUE,
                         fill.cov.nas = NA,
+                        return.orig.dat = FALSE,
                         bf.method   = "cubic2D",
                         use.ebird.in.ENgrid = TRUE,
                         ENgrid.arg    = "max",
@@ -41,6 +43,8 @@ make_bundle <- function(bbs,
                         obs.id      = c("obsn", "observer_id"),
                         cell.covs   = c("area"),
                         site.covs   = c(
+                          "starttime",# bbs
+                          "endtime",  # bbs
                           "wind",
                           "noise",
                           "cars",
@@ -74,8 +78,6 @@ make_bundle <- function(bbs,
   stopifnot(bf.method %in% c("mgcv", "jagam", "cubic2d"))
 
   # Munge Data Frames a Little Prior to Data Munging ---------------------------------------------------
-  # bbs=bbs_spatial; ebird=ebird_spatial; grid=study_area ## FOR DEV
-  ## drop spatial geometry
   bbs   <- as.data.frame(bbs)
   ebird <- as.data.frame(ebird)
   ## force colnames to lower
@@ -122,8 +124,9 @@ make_bundle <- function(bbs,
   # Ensure no duplicates exist ----------------------------------------------
   bbs   <-
     bbs |> distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
+  ## (duplicates in ebird, though it might be because we have multiple observers. huge amount of excess data being imported...)
   ebird <-
-    ebird |> distinct(year.id, site.id, cell.id, c, .keep_all = TRUE) ## this is a prtoblem (duplicates in ebird, though it might be because we have multiple observers. huge amoutn of excess data..)
+    ebird |> distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
 
   # Subset for dev.mode=TRUE ------------------------------------------------
   if (dev.mode) {
@@ -167,7 +170,6 @@ make_bundle <- function(bbs,
 
     rm(T.keep, G.keep, e.samp.keep, b.samp.keep)
   }
-
 
 
   # DROP COLS WHERE ALL ROWS == NA ------------------------------------------
@@ -225,6 +227,7 @@ make_bundle <- function(bbs,
     # create grid cell id as index and not identity (though they may be the)
     mutate(cell.ind = 1:n())
   # keep only useful information....
+  ### ie drop covs not specified in grid.covs
   cell.index <-
     cell.index[names(cell.index) %in% c("cell.id", "cell.ind", "X", "Y", cell.covs)]
   ## scale if specified
@@ -234,7 +237,6 @@ make_bundle <- function(bbs,
       mutate(X  = standardize(X)) |>
       mutate(Y  = standardize(Y))
   }
-
   ## YEAR INDEX
   year.index <-
     data.frame(year.id = min(c(ebird$year.id, bbs$year.id), na.rm = TRUE):max(c(ebird$year.id, bbs$year.id), na.rm =
@@ -353,16 +355,18 @@ make_bundle <- function(bbs,
       if (all(is.na(cov.dat$cov))) {
         next()
       }
-      is.time   <-
+      is.time   <- ## index for POSIX/LUBRIDATE TIMES
         class(cov.dat$cov) %in% c("period", "time", "Period")
       is.binary <-  if (is.time) {
         FALSE
-      } else{
-        !(max(cov.dat$cov, na.rm = TRUE) > 1)
+      } else{!is.character(cov.dat$cov) && !(max(cov.dat$cov, na.rm = TRUE) > 1)
       }
+      if(cov.name %in% c("endtime", "starttime")){
+        cov.dat$cov <- as.integer(cov.dat$cov)
+      }
+
       is.factor <-
-        ifelse(is.factor(cov.dat$cov) |
-                 is.character(cov.dat$cov),
+        ifelse(is.factor(cov.dat$cov),
                TRUE,
                FALSE)
       if (is.time)
@@ -392,8 +396,7 @@ make_bundle <- function(bbs,
 
       }
 
-      if (scale.covs &
-          !is.binary) {
+      if (scale.covs & (!is.binary & !is.character(cov.dat$cov))) {
         cov.dat$cov <- standardize(cov.dat$cov)
       }
 
@@ -590,43 +593,47 @@ make_bundle <- function(bbs,
   }
 
 
-  ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
-  ## For now just using default values for building neighborhood...
-  xy <- sf::st_coordinates(grid)
-  xx <-
-    spdep::poly2nb(as(grid, "Spatial"), row.names = cell.index$cell.ind)
-  # spdep::is.symmetric.nb(xx, verbose = FALSE, force = TRUE)
-  N = length(xx)
-  (num = sapply(xx, length))
-  adj = unlist(xx)
-  sumNumNeigh = length(unlist(xx))
-  nbWB <- spdep::nb2WB(xx)
-  nbWB$sumNumNeigh = sumNumNeigh
-  rm(xx, N, adj, sumNumNeigh)
+  ## THIS IS BEING MADE OUTSIDE MAKE_BUNDLE FOR NOW....
+  # ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
+  # ## For now just using default values for building neighborhood...
+  # xy <- sf::st_coordinates(grid)
+  # xx <-
+  #   spdep::poly2nb(as(grid, "Spatial"), row.names = cell.index$cell.ind)
+  # # spdep::is.symmetric.nb(xx, verbose = FALSE, force = TRUE)
+  # N = length(xx)
+  # (num = sapply(xx, length))
+  # adj = unlist(xx)
+  # sumNumNeigh = length(unlist(xx))
+  # nbWB <- spdep::nb2WB(xx)
+  # nbWB$sumNumNeigh = sumNumNeigh
+  # rm(xx, N, adj, sumNumNeigh)
 
 
   # BUNDLE UP DATA ----------------------------------------------------------
+  # make index logical for whether or
+  # if return.orig.dat == TRUE then we want to keep all
+  keep.ind <- ifelse(return.orig.dat, TRUE, FALSE)
   bundle.out <- list(
+    bbs.df      = bbs   |> distinct(year.ind, site.ind, .keep_all = keep.ind),
+    ebird.df    = ebird |> distinct(year.ind, site.ind, .keep_all = keep.ind),
+    grid.df     = cell.index |> distinct(cell.ind, cell.id, X, Y, .keep_all = keep.ind),
     # "all" data as data tables
-    bbs.df     = bbs |> distinct(year.ind, site.ind, .keep_all = TRUE),
-    ebird.df   = ebird |> distinct(year.ind, site.ind, .keep_all = TRUE),
-    grid.df    = grid,
     # max C per grid per year  (zero-filled)
-    ENgrid       = ENgrid,
+    # ENgrid       = ENgrid,
     ENgrid.mat   = ENgrid.mat,
     # covariate matrices as lists
-    Xsite      = Xsite,
+    # Xsite      = Xsite,
     # can run simplify2array here to output an array...
     Xb = simplify2array(Xsite$bbs),
     Xe = simplify2array(Xsite$ebird),
-    Xgrid      = Xgrid,
+    # Xgrid      = Xgrid,
     Xg         = simplify2array(Xgrid),
     # proportion of routes in grid cell as matrix (dim <nroutes by ngrids>)
-    prop       = prop,
+    prop       = as.matrix(prop),
     # % BBS route per grid cell (dims <ngrid nroutes>)
-    cell.index = cell.index,
+    G.ind = dat.dev$G.ind[c("X", "Y")] |> sf::st_drop_geometry(),
     # lookup table for grid cells
-    year.index = year.index,
+    T.ind = year.index,
     # lookup table for year
     # create indexes here
     T          = length(unique(year.index$year.ind)),
@@ -640,24 +647,26 @@ make_bundle <- function(bbs,
     gy         = gy.all,
     ngy        = nrow(gy.all),
     ## more indexes
-    GTb        = bbs   |> dplyr::distinct(cell.ind, year.ind) |> dplyr::arrange(cell.ind, year.ind),
+    # GTb        = bbs   |> dplyr::distinct(cell.ind, year.ind) |> dplyr::arrange(cell.ind, year.ind),
     # grid-years sampled bbs
-    GTe        = ebird |> dplyr::distinct(cell.ind, year.ind) |> dplyr::arrange(cell.ind, year.ind),
+    # GTe        = ebird |> dplyr::distinct(cell.ind, year.ind) |> dplyr::arrange(cell.ind, year.ind),
     # grid-years sampled ebird
     # all JAGAM output
     Z.mat      = Z.mat,
     # dims <ncells  by nbfs/knots
-    nbfs       = nbfs,
+    K       = nbfs
     # number of basis functions/knots
     #### neighborhood stuff
-    nb         = nbWB # neighborhood information for use in BUGS/JAGS/NIMBLE
+    # adj         = nbWB$adj
+    # adj         = nbWB$adj
+    # adj         = nbWB$adj
+
   )
+
 
 
   # RETURNED OBJECT ---------------------------------------------------------
   cat("  [note] packaging the data into a single list\n")
-  stopifnot(!any(is.na(bundle.out$bbs.df$c)))
-  stopifnot(!any(is.na(bundle.out$ebird.df$c)))
 
   return(bundle.out)
 
