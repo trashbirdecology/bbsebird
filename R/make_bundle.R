@@ -593,7 +593,8 @@ make_bundle <- function(bbs,
     bbs.df      = bbs   |> distinct(year.ind, site.ind, .keep_all = TRUE),
     ebird.df    = ebird |> dplyr::distinct(year.ind, site.ind, .keep_all = TRUE),
     grid.df     = cell.index |> dplyr::distinct(cell.ind, cell.id, X, Y, .keep_all = TRUE) |>
-      dplyr::mutate(X = nb.coords$X, Y = nb.coords$Y),
+      dplyr::mutate(X = nb.coords[,1], Y = nb.coords[,2]),
+    coords      = nb.coords,
     EN        = EN.mat,
     # max C per grid per year  (zero-filled)
     Xb = simplify2array(Xsite$bbs),
