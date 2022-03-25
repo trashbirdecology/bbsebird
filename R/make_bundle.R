@@ -310,14 +310,53 @@ make_bundle <- function(bbs,
   ## grab all cell ids and site inds
   prop <- bbs |>
     distinct(site.ind, cell.ind, proprouteincell) |>
-    full_join(cell.index |> dplyr::select(cell.ind), by = "cell.ind")
+    full_join(cell.index |> dplyr::select(cell.ind), by = "cell.ind") |>
+    dplyr::select(proprouteincell, site.ind, cell.ind) # remove geometry
   prop$proprouteincell[is.na(prop$proprouteincell)] <-
-    0  ##supply prop with zero if route
+    0  #
+  ## if in development mode, impute values such that rowsums prop == 1;
+  # browser()
+  if(dev.mode){
+  warning("  [importante] dev.mode == TRUE. Output object, `prop` will have imputed values to ensure all(rowsums(output$prop) == 1)!!\n ")
+    ## A very messy workaround but tis for the dev version so whatever...
+    ## make a table of the site indexes and the total missing proportion we need to impute
+    toadd <- prop |> dplyr::group_by(site.ind, cell.ind) |>
+      summarise(propsum = sum(proprouteincell , na.rm = TRUE)) |>
+      dplyr::group_by(site.ind) |>
+      dplyr::summarise(totalsum = sum(propsum , na.rm = TRUE)) |>
+      dplyr::filter(totalsum < 1.0 ) |>
+      dplyr::ungroup() |>
+      dplyr::mutate(proprouteincell = 1 - totalsum) |>
+      dplyr::select(-totalsum)
+    # toadd == list of site.index with associated MISSING proportions
+
+    ## choose the grid cell to add the toadd prop to as min
+    sitegridsaddtome <- prop |>
+      select(site.ind, cell.ind) |>
+      filter(site.ind %in% toadd$site.ind) |>
+      group_by(site.ind) |>
+      slice_sample(n=1)  |>
+      full_join(toadd)
+    prop <- dplyr::bind_rows(sitegridsaddtome, prop) |>
+      group_by(site.ind) |>
+      mutate(proprouteincell = sum(proprouteincell, na.rm=TRUE)) |>
+      distinct(site.ind, cell.ind, proprouteincell)
+    rm(sitegridsaddtome, toadd)
+    # prop.impute <-
+    #   reshape2::acast(prop.impute,
+    #                   site.ind ~ cell.ind,
+    #                   # formula =
+    #                   value.var = "proprouteincell",
+    #                   fill = 0)
+    # stopifnot(max(prop.impute)==1)
+  }
   prop <-
     reshape2::acast(prop,
                     site.ind ~ cell.ind,
                     value.var = "proprouteincell",
                     fill = 0)
+
+
   # remove the rownames==NA (the last row usually..)
   if (any(rownames(prop) %in% c("NA", NA))) {
     prop <-
