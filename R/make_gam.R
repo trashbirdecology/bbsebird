@@ -3,9 +3,11 @@
 #' @param nd  ...
 #' @param nruns ...
 #' @param nruns ...
+#' @param coords matrix or data frame with easting and northing coordinates, respectively. First column should be easting (e.g., X, long) and second northing.
 #' @param num.nn ...
 #' @param print.plot logical if TRUE will print the spatial representation of gam to local device
 #' @param max.loop ...
+#' @param ll.to.utm logical if TRUE will convert lat long coordinates to UTMs prior to creating distance-based basis functions.
 #' @param K max number of basis functions to produce in mgcv::jagam()
 #' @param scale.coords logical if TRUE will scale the XY coordinates
 #' @param XY matrix or data frame comprising XY coordinates, where first column is X coordinate and second is Y.
@@ -16,12 +18,14 @@ make_gam <- function(coords,
                      nd = 20,
                      nruns = 10,
                      num.nn = 20,
+                     ll.to.utm = TRUE,
                      print.plot=TRUE,
                      max.loop = 40,
                      K        = NULL,
                      scale.coords = FALSE) {
 
 # ARGS --------------------------------------------------------------------
+  coords <- as.matrix(coords)
   method <- tolower(method)
   stopifnot(method %in% c("cubic2d", "jagam", "mgcv", "cubicalt"))
   stopifnot(ncol(coords)>=2)
@@ -127,9 +131,7 @@ if(scale.coords){
 
   } # end cubic2d
 
-
 # plot --------------------------------------------------------------------
-
 if(print.plot){
   if(method %in% c("mgcv", "jagam")){"plotting currently not supported for mgcv gam"}else{
     plot(XY,pch=20)
