@@ -188,7 +188,7 @@ make_bundle <- function(bbs,
     diff <- setdiff(colnames(LLL[[i]]), colnames(newlist[[i]]))
     if (length(diff) > 0)
       message(
-        "[note] the following columns in the ",
+        "[notice] the following columns in the ",
         names(LLL)[i],
         " data had all NA values and were removed:\n\t",
         paste(diff, collapse = ", "),
@@ -446,7 +446,7 @@ make_bundle <- function(bbs,
         cov.dat$cov <- cov.dat$cov@hour * 60 + cov.dat$cov@minute
       if (is.time &
           grepl("minute|time_observations_started", cov.name)) {
-        message("[note] converting covariate ",
+        message("[notice] converting covariate ",
                 cov.name ,
                 " from minutes to hours")
         cov.dat$cov <- cov.dat$cov / 60
@@ -634,8 +634,10 @@ make_bundle <- function(bbs,
     Xe = simplify2array(Xsite$ebird),
     # Xgrid      = Xgrid,
     Xg         = simplify2array(Xgrid),
-    # proportion of routes in grid cell as matrix (dim <nroutes by ngrids>)
-    prop       = as.matrix(prop),
+    # proportion of routes in grid cell as matrix (dim <nsites by ngrids>)
+    prop      = as.matrix(prop$bbs), ## keeping this here during dev phase.
+    propb      = as.matrix(prop$bbs),
+    prope      = as.matrix(prop$ebird),
     # % BBS route per grid cell (dims <ngrid nroutes>)
     T.ind = year.index,
     ref.year   = round(median(1:length(
