@@ -12,7 +12,6 @@ make_bundle(
   mins.to.hours = TRUE,
   scale.covs = TRUE,
   fill.cov.nas = NA,
-  return.orig.dat = FALSE,
   use.ebird.in.EN = TRUE,
   EN.arg = "max",
   X = "cell.lon.centroid",
@@ -45,8 +44,6 @@ make_bundle(
 \item{scale.covs}{logical if TRUE will automatically scale the numeric/integer covariates.}
 
 \item{fill.cov.nas}{value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.}
-
-\item{return.orig.dat}{logical if TRUE will return the bbs, ebird, and grid data as data.frames in returned list. If FALSE, returned list will include lookup tables to link cell.ind, site.ind, and year.ind to cell.id, site.id, and year.id for data.}
 
 \item{use.ebird.in.EN}{logical if TRUE will use data across both eBird and BBS observations to create basis functions.}
 

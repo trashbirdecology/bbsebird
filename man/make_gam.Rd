@@ -10,6 +10,7 @@ make_gam(
   nd = 20,
   nruns = 10,
   num.nn = 20,
+  ll.to.utm = TRUE,
   print.plot = TRUE,
   max.loop = 40,
   K = NULL,
@@ -17,6 +18,8 @@ make_gam(
 )
 }
 \arguments{
+\item{coords}{matrix or data frame with easting and northing coordinates, respectively. First column should be easting (e.g., X, long) and second northing.}
+
 \item{method}{one of c("mgcv", "cubic2d", "strebel")}
 
 \item{nd}{...}
@@ -24,6 +27,8 @@ make_gam(
 \item{nruns}{...}
 
 \item{num.nn}{...}
+
+\item{ll.to.utm}{logical if TRUE will convert lat long coordinates to UTMs prior to creating distance-based basis functions.}
 
 \item{print.plot}{logical if TRUE will print the spatial representation of gam to local device}
 

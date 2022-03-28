@@ -2,8 +2,10 @@
 
 export(dir_spec)
 export(eval_params)
+export(find_UTM_zone)
 export(id_ebird_files)
 export(import_jdat)
+export(longlat_to_UTM)
 export(make_array)
 export(make_bbs_spatial)
 export(make_bundle)
