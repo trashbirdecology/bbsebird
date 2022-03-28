@@ -64,6 +64,10 @@ make_bundle <- function(bbs,
                         dev.mode    = FALSE,
                         dir.outputs = "outputs",
                         save.neighborhood = TRUE) {
+  ## for dev
+  # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
+
+
   # EVALUATE ARGS -----------------------------------------------------------
   ## first, test and evaluate args as necessary.
   EN.arg <- tolower(EN.arg)
@@ -135,7 +139,6 @@ make_bundle <- function(bbs,
         "[notice] `dev.mode` is TRUE. Output object will be a small subset of the original data.\n"
       )
     )
-    # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
     # keep 3 years data max
     maxyr <- max(unique(bbs$year.id), na.rm = TRUE)
     totalyrs <- maxyr - min(unique(bbs$year.id), na.rm = TRUE)
@@ -301,17 +304,34 @@ make_bundle <- function(bbs,
   ebird <- LL$ebird
   rm(LL)
 
-  # BBS-SPECIFIC DATA : PROP (% site.ind in cell.ind) ----------------------------------------------------
-  cat("  [note] creating prop matrix for bbs routes/grid cells\n")
-  stopifnot(nrow(bbs |> distinct(site.ind, cell.ind, proprouteincell)) ==
-              nrow(bbs |> distinct(site.ind, cell.ind)))
-  ## grab all cell ids and site inds
-  prop <- bbs |>
-    distinct(site.ind, cell.ind, proprouteincell) |>
-    full_join(cell.index |> dplyr::select(cell.ind), by = "cell.ind") |>
-    dplyr::select(proprouteincell, site.ind, cell.ind) # remove geometry
-  prop$proprouteincell[is.na(prop$proprouteincell)] <-
-    0  #
+  # PROP MATRICES (% site.ind in cell.ind) ----------------------------------------------------
+  ### all values for prope will be either 0, 1, since a checklist always falls only within one cell..
+  ### but we need the prope as a conveneicne for matrix multiplication in models.
+  ### values for prop (for bbs ) will be between 0 and 1.
+  LL <- list(bbs = bbs, ebird = ebird)
+  prop <- list()
+  for(i in seq_along(LL)){
+    if(names(LL)[i]=="ebird") LL[[i]]$proprouteincell <- 1
+    stopifnot(nrow(LL[[i]] |> distinct(site.ind, cell.ind, proprouteincell)) ==
+                nrow(LL[[i]] |> distinct(site.ind, cell.ind)))
+    prop[[i]] <- LL[[i]] |>
+      distinct(site.ind, cell.ind, proprouteincell) |>
+      full_join(cell.index |> dplyr::select(cell.ind), by = "cell.ind") |>
+      dplyr::select(proprouteincell, site.ind, cell.ind) # remove geometry
+    prop[[i]]$proprouteincell[is.na(prop[[i]]$proprouteincell)] <-
+      0  #
+
+
+  # cat("  [note] creating prop matrix for", names(LL[i])  , "sites and grid cells\n")
+  # stopifnot(nrow(bbs |> distinct(site.ind, cell.ind, proprouteincell)) ==
+  #             nrow(bbs |> distinct(site.ind, cell.ind)))
+  # ## grab all cell ids and site inds
+  # prop <- bbs |>
+  #   distinct(site.ind, cell.ind, proprouteincell) |>
+  #   full_join(cell.index |> dplyr::select(cell.ind), by = "cell.ind") |>
+  #   dplyr::select(proprouteincell, site.ind, cell.ind) # remove geometry
+  # prop$proprouteincell[is.na(prop$proprouteincell)] <-
+  #   0  #
   # ## if in development mode, impute values such that rowsums prop == 1;
   # # browser()
   # if (dev.mode) {
@@ -351,8 +371,8 @@ make_bundle <- function(bbs,
   #   # stopifnot(max(prop.impute)==1)
   # }
   ## AS grid sizes get smaller, the probabilty of routes being cut off from the regions is likely.
-  prop <-
-    reshape2::acast(prop,
+  prop[[i]] <-
+    reshape2::acast(prop[[i]],
                     site.ind ~ cell.ind,
                     value.var = "proprouteincell",
                     fill = 0)
@@ -362,15 +382,24 @@ make_bundle <- function(bbs,
   ## need to check make_bbs_spatial soon
   ### but actually this is likely correct and will just need to improve documenattion to eflect that
   ### proportion of route that falls within the study area grids may not equal absolute length of route IRL
-  for(i in 1:nrow(prop)){
-    prop[i,]<- prop[i,]/sum(prop[i,])
+  for(k in 1:nrow(prop[[i]])){
+    prop[[i]][k,]<- prop[[i]][k,]/sum(prop[[i]][k,])
   }
 
   # remove the rownames==NA (the last row usually..)
-  if (any(rownames(prop) %in% c("NA", NA))) {
-    prop <-
-      prop[-which(rownames(prop) %in% c(NA, "NA")), ]
+  if (any(rownames(prop[[i]]) %in% c("NA", NA))) {
+    prop[[i]] <-
+      prop[[i]][-which(rownames(prop[[i]]) %in% c(NA, "NA")), ]
   }
+}# end  LL for PROP CREATION
+  names(prop) <- names(LL)
+  names(prop)
+  ##extract from list
+  bbs   <- LL$bbs
+  ebird <- LL$ebird
+  rm(LL)
+
+
 
   # SITE-LEVEL COVARS -------------------------------------------------------
   ## create arrays for covariates
