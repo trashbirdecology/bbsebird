@@ -16,3 +16,5 @@ Makefile
 ^LICENSE\.md$
 ^packrat/
 ^\.Rprofile$
+^_pkgdown\.yml$
+^pkgdown$
