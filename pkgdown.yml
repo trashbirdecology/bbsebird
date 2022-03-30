@@ -1,13 +1,10 @@
-pandoc: 2.14.0.3
-pkgdown: 2.0.1
+pandoc: 2.7.3
+pkgdown: 2.0.2
 pkgdown_sha: ~
 articles:
   make-data: make-data.html
-last_built: 2022-03-30T13:02Z
-template:
-  bootstrap: 5
-  bootswatch: lux
-navbar:
-  structure:
-    left:  [intro, reference, articles, tutorials, news]
-    right: [search, github]
+last_built: 2022-03-30T13:27Z
+urls:
+  reference: https://trashbirdecology.github.io/bbsebird/reference
+  article: https://trashbirdecology.github.io/bbsebird/articles
+
