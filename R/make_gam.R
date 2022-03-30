@@ -21,6 +21,7 @@ make_gam <- function(coords,
                      ll.to.utm = TRUE,
                      print.plot=TRUE,
                      max.loop = 40,
+                     plot.main=NULL,
                      K        = NULL,
                      scale.coords = FALSE) {
 
@@ -134,7 +135,7 @@ if(scale.coords){
 # plot --------------------------------------------------------------------
 if(print.plot){
   if(method %in% c("mgcv", "jagam")){"plotting currently not supported for mgcv gam"}else{
-    plot(XY,pch=20)
+    plot(XY,pch=20, main=plot.main)
     points(knots, pch=20,col="red",cex=2)
   }
 
