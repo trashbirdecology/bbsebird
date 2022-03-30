@@ -1,5 +1,5 @@
 Package: bbsebird
-Title: Unifying BBS and eBird Data for Modelers
+Title: Unifying BBS and eBird Data for Integrating Modeling
 Version: 0.0.0.9000
 Authors@R: 
   c(person(given = "Jessica",
