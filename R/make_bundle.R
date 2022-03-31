@@ -63,7 +63,7 @@ make_bundle <- function(bbs,
                           "number_observers"
                         ),
                         dev.mode    = FALSE,
-                        dir.outputs = "outputs",
+                        dir.outputs = "/outputs",
                         save.neighborhood = TRUE) {
   ## for dev
   # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
@@ -87,6 +87,7 @@ make_bundle <- function(bbs,
   names(grid)  <- tolower(names(grid))
 
   if("grid.study.area." %in% names(bbs)) bbs <- bbs |> dplyr::select(-grid.study.area.)
+  if("grid.study.area" %in% names(bbs)) bbs <- bbs |> dplyr::select(-grid.study.area)
 
 
   # Rename Data Table Colnames ----------------------------------------------
@@ -600,6 +601,7 @@ make_bundle <- function(bbs,
            "/neighborhood",
            ifelse(dev.mode, "-dev", ""),
            ".rds")
+  dir.create(paste0(dir.outputs, "/neighborhood"))
   cat("  [note] creating spatial neighborhood and saving output to ",
       fnb,
       "\n")

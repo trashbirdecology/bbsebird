@@ -13,6 +13,7 @@ make_gam(
   ll.to.utm = TRUE,
   print.plot = TRUE,
   max.loop = 40,
+  plot.main = NULL,
   K = NULL,
   scale.coords = FALSE
 )
