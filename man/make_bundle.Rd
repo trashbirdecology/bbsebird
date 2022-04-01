@@ -12,6 +12,7 @@ make_bundle(
   mins.to.hours = TRUE,
   scale.covs = TRUE,
   fill.cov.nas = NA,
+  max.ebird = 25,
   use.ebird.in.EN = TRUE,
   EN.arg = "max",
   X = "cell.lon.centroid",
@@ -44,6 +45,8 @@ make_bundle(
 \item{scale.covs}{logical if TRUE will automatically scale the numeric/integer covariates.}
 
 \item{fill.cov.nas}{value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.}
+
+\item{max.ebird}{integer maximum number of eBird checklists within a single grid cell and year to keep in the data. Does not apply to dev.mode. If an integer is not provided (e.g., NULL, FALSE), all checklists will be returned in the resulting data object.}
 
 \item{use.ebird.in.EN}{logical if TRUE will use data across both eBird and BBS observations to create basis functions.}
 
