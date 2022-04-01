@@ -15,11 +15,12 @@
 #' @param EN.arg if "max" will use the maximum value of observed birds at each grid cell to produce matrix of expected number of birds at the grid cell level. Alternatives include "min", "mean".
 #' @param use.ebird.in.EN logical if TRUE will use data across both eBird and BBS observations to create basis functions.
 #' @param site.covs column name(s) of the site-level covariates
+#' @param max.ebird integer maximum number of eBird checklists within a single grid cell and year to keep in the data. Does not apply to dev.mode. If an integer is not provided (e.g., NULL, FALSE), all checklists will be returned in the resulting data object.
 #' @param mins.to.hours logical if TRUE will convert covariates on the minute scale to the hour scale.
 #' @param dev.mode logical if TRUE will return a reduced data set to use in development/debugging purposes. This method reduces the number of time units to 2, the maximum number of grid cells to 10, and 2 sites from each data source
 #' @param save.neighborhood logical if TRUE will save the neighborhood network to file as "neighborhood.rds" at 'dir.outputs'.
 #' @param fill.cov.nas value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.
-#' @importFrom dplyr group_by mutate select distinct arrange filter
+#' @importFrom dplyr group_by mutate select distinct arrange filter slice
 #' @export make_bundle
 
 make_bundle <- function(bbs,
@@ -29,7 +30,7 @@ make_bundle <- function(bbs,
                         mins.to.hours = TRUE,
                         scale.covs  = TRUE,
                         fill.cov.nas = NA,
-                        # max.checklists = ,
+                        max.ebird = 25,
                         use.ebird.in.EN = TRUE,
                         EN.arg    = "max",
                         X           = "cell.lon.centroid",
@@ -66,7 +67,7 @@ make_bundle <- function(bbs,
                         dir.outputs = "/outputs",
                         save.neighborhood = TRUE) {
   ## for dev
-  # ebird=ebird_spatial;bbs=bbs_spatial;grid=study_area
+  # ebird=ebird_spatial;bbs=bbs_spatial;grid=grid
 
 
   # EVALUATE ARGS -----------------------------------------------------------
@@ -161,22 +162,61 @@ make_bundle <- function(bbs,
     #### slice_max orders by site and takes 'top' n
     b.samp.keep <- bbs |>
       dplyr::distinct(year.id, cell.id, site.id, .keep_all = TRUE) |>
-      group_by(year.id, cell.id) |>
-      mutate(maxn = n_distinct(site.id))
+      dplyr::group_by(year.id, cell.id) |>
+      dplyr::mutate(maxn = n_distinct(site.id))
     bbs <- b.samp.keep |>
-      slice_sample(n = min(b.samp.keep$maxn, 10)) |>
-      ungroup()
+      dplyr::slice_sample(n = min(b.samp.keep$maxn, 5)) |>
+      dplyr::ungroup()
     e.samp.keep <- ebird |>
       dplyr::distinct(year.id, cell.id, site.id, .keep_all = TRUE) |>
-      group_by(year.id, cell.id) |>
-      mutate(maxn = n_distinct(site.id))
+      dplyr::group_by(year.id, cell.id) |>
+      dplyr::mutate(maxn = n_distinct(site.id))
     ebird <- e.samp.keep |>
-      slice_sample(n = min(e.samp.keep$maxn, 10)) |>
+      dplyr::slice_sample(n = min(e.samp.keep$maxn, 5)) |>
       ungroup()
 
     rm(T.keep, G.keep, e.samp.keep, b.samp.keep)
   }
 
+
+
+# KEEP N CHECKLISTS IF SPECIFIED ------------------------------------------
+if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
+  cat(
+    "`dev.mode` is FALSE & max.ebird is",
+    max.ebird,
+    ". Keeping a maximum of",
+    max.ebird,
+    "checklists per grid cell per year. If you wish to keep all, specify `max.ebird = NULL`" ,
+    "\n"
+  )
+  temp.ebird <- ebird |>
+    dplyr::distinct(year.id, cell.id, site.id, .keep_all = TRUE) |>
+    dplyr::group_by(year.id, cell.id) |>
+    dplyr::mutate(maxn = n_distinct(site.id)) |>
+    dplyr::ungroup()
+  temp.ebird <- temp.ebird |>
+    dplyr::group_by(year.id, cell.id) |>
+    dplyr::mutate(nkeep = min(maxn, max.ebird))    |>
+    dplyr::ungroup()
+  # unique(temp.ebird$nkeep)
+  ### randomly shuffle all the rows to improve chances of randomly selecting rows to keep
+  temp.ebird <- temp.ebird[sample(1:nrow(temp.ebird)), ]
+
+  ### next, assign row numbers within each group then drop any below N
+  ebird <- temp.ebird |>
+    dplyr::group_by(year.id, cell.id) |>
+    dplyr::mutate(rownum = row_number()) |>
+    dplyr::filter(rownum <= max.ebird) |>
+    dplyr::ungroup() |>
+    dplyr::select(-rownum, -nkeep, -rownum)
+  # test=temp.ebird |>
+  #   dplyr::group_by(year.id, cell.id) |>
+  # mutate(n=n_distinct(site.id))
+  # hist(test$n)
+  #
+
+}
 
   # DROP COLS WHERE ALL ROWS == NA ------------------------------------------
   ### some covariates may have all NA. prior to subsetting, let's remove those columns.
