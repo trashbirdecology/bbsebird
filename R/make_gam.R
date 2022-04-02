@@ -135,8 +135,10 @@ if(scale.coords){
 # plot --------------------------------------------------------------------
 if(print.plot){
   if(method %in% c("mgcv", "jagam")){"plotting currently not supported for mgcv gam"}else{
+    try({
     plot(XY,pch=20, main=plot.main)
     points(knots, pch=20,col="red",cex=2)
+    })
   }
 
 
