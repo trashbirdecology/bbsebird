@@ -641,7 +641,7 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
            "/neighborhood",
            ifelse(dev.mode, "-dev", ""),
            ".rds")
-  dir.create(paste0(dir.outputs, "/neighborhood"))
+  dir.create(paste0(dir.outputs, "/neighborhood"), showWarnings = FALSE)
   cat("  [note] creating spatial neighborhood and saving output to ",
       fnb,
       "\n")

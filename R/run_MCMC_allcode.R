@@ -9,12 +9,13 @@
 #' @param ... Additional arguments
 #' @param verbose logical if TRUE and code is not running in parallel will print all output available from Nimble commands.
 #' @param mcmc.specs MCMC specifications as a list; created using \code{set_mcmc_specs}
-#' @param model filepath or nimble model object
+#' @param model filepath or nimbleModel object
 #' @importFrom nimble compileNimble buildMCMC readBUGSmodel runMCMC
 #' @export run_MCMC_allcode
 run_MCMC_allcode <-
   function(
            data,
+           constants = NULL,
            model,
            inits,
            mcmc.specs,
@@ -24,27 +25,36 @@ run_MCMC_allcode <-
            ...
            ) {
     require(nimble)
-    myModel <-
+
+    if(is.character(model) && file.exists(model)){
+
+    model <-
       nimble::readBUGSmodel(model=model,
                             data=data,
+                            constants=constants,
                             inits=inits)
-    CmyModel <- nimble::compileNimble(myModel, showCompilerOutput = verbose)
+    }
 
-    # myModel$plotGraph() # add functionality to plot..
+
+
+
+    Cmodel <- nimble::compileNimble(model, showCompilerOutput = verbose)
+
+    # model$plotGraph() # add functionality to plot..
     ### inspect log probabilities
-    # myModel$logProb_alpha
+    # model$logProb_alpha
     ## trying to figure out how to add the monitors to compiled model.
     # if(!is.null(monitors)){
-    #   toeval <- paste0("CmyModel$addMonitors(",
+    #   toeval <- paste0("Cmodel$addMonitors(",
     #                    paste0("'", paste(monitors, collapse ="', '"), "'")
     #                    ,")")
     #   eval(parse(text=toeval))
-    #   CmyModel$addMonitors(c("alpha", "beta", "theta"))
+    #   Cmodel$addMonitors(c("alpha", "beta", "theta"))
     #
     #
       # }
 
-    myMCMC   <- nimble::buildMCMC(CmyModel)
+    myMCMC   <- nimble::buildMCMC(Cmodel)
     CmyMCMC  <- nimble::compileNimble(myMCMC, showCompilerOutput = verbose)
 
     results <-
