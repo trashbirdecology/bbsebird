@@ -3,7 +3,8 @@
 ### retrieved last 2022-03-10
 #' Run MCMC in or Out of Parallel in nimble
 #' @param seed for internal use
-#' @param data data and constants as list
+#' @param data data as a list
+#' @param constants constants as list
 #' @param inits list of initial values
 #' @param monitors list of parameters to monitor
 #' @param ... Additional arguments

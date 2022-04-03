@@ -17,7 +17,9 @@ run_MCMC_allcode(
 )
 }
 \arguments{
-\item{data}{data and constants as list}
+\item{data}{data as a list}
+
+\item{constants}{constants as list}
 
 \item{model}{filepath or nimbleModel object}
 

@@ -11,8 +11,8 @@ make_gam(
   nruns = 10,
   num.nn = 20,
   ll.to.utm = TRUE,
-  print.plot = TRUE,
   max.loop = 40,
+  print.plot = TRUE,
   plot.main = NULL,
   K = NULL,
   scale.coords = FALSE
@@ -31,15 +31,15 @@ make_gam(
 
 \item{ll.to.utm}{logical if TRUE will convert lat long coordinates to UTMs prior to creating distance-based basis functions.}
 
-\item{print.plot}{logical if TRUE will print the spatial representation of gam to local device}
-
 \item{max.loop}{...}
+
+\item{print.plot}{logical if TRUE will print spatial representation of site and knot locations to local device.}
+
+\item{plot.main}{optional Character vector for plot title.}
 
 \item{K}{max number of basis functions to produce in mgcv::jagam()}
 
 \item{scale.coords}{logical if TRUE will scale the XY coordinates}
-
-\item{XY}{matrix or data frame comprising XY coordinates, where first column is X coordinate and second is Y.}
 }
 \description{
 Function for Generating Basis Functions

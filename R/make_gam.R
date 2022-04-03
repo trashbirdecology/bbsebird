@@ -5,12 +5,12 @@
 #' @param nruns ...
 #' @param coords matrix or data frame with easting and northing coordinates, respectively. First column should be easting (e.g., X, long) and second northing.
 #' @param num.nn ...
-#' @param print.plot logical if TRUE will print the spatial representation of gam to local device
 #' @param max.loop ...
+#' @param print.plot logical if TRUE will print spatial representation of site and knot locations to local device.
+#' @param plot.main optional Character vector for plot title.
 #' @param ll.to.utm logical if TRUE will convert lat long coordinates to UTMs prior to creating distance-based basis functions.
 #' @param K max number of basis functions to produce in mgcv::jagam()
 #' @param scale.coords logical if TRUE will scale the XY coordinates
-#' @param XY matrix or data frame comprising XY coordinates, where first column is X coordinate and second is Y.
 #' @importFrom fields cover.design rdist
 #' @export make_gam
 make_gam <- function(coords,
@@ -19,9 +19,9 @@ make_gam <- function(coords,
                      nruns = 10,
                      num.nn = 20,
                      ll.to.utm = TRUE,
-                     print.plot=TRUE,
                      max.loop = 40,
-                     plot.main=NULL,
+                     print.plot = TRUE,
+                     plot.main  = NULL,
                      K        = NULL,
                      scale.coords = FALSE) {
 
