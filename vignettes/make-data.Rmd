@@ -100,6 +100,7 @@ bbs_spatial <- make_bbs_spatial(
   usgs.routes.dir = dirs$usgs.routes.dir,
   # plot.dir = dirs$dir.plots,
   crs.target = crs.target,
+  print.plots = FALSE,
   grid = study_area,
   dir.out = dirs$dir.spatial.out, 
   overwrite = FALSE

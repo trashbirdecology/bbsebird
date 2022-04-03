@@ -2,13 +2,15 @@ citHeader("To cite bbsebird in publications use:")
 
 citEntry(
   entry    = "Article",
-  title    = "bbsebird: Aligning BBS and eBird Data for Use in Integrated Modeling",
-  author   = "Jessica L. Burnett",
+  title    = ,
+  author   = ,
   journal  = ,
   year     = ,
   volume   = ,
   number   = ,
   pages    = ,
-  url      = "https://github.com/trashbirdecology/bbsebird",
-  textVersion = paste("")
+  url      = ,
+  textVersion = paste(
+
+  )
 )
