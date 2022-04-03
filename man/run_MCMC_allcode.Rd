@@ -6,6 +6,7 @@
 \usage{
 run_MCMC_allcode(
   data,
+  constants = NULL,
   model,
   inits,
   mcmc.specs,
@@ -18,7 +19,7 @@ run_MCMC_allcode(
 \arguments{
 \item{data}{data and constants as list}
 
-\item{model}{filepath or nimble model object}
+\item{model}{filepath or nimbleModel object}
 
 \item{inits}{list of initial values}
 
