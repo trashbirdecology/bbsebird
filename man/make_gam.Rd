@@ -8,14 +8,14 @@ make_gam(
   coords,
   method = "cubic2d",
   nd = 20,
+  K = NULL,
   nruns = 10,
   num.nn = 20,
   ll.to.utm = TRUE,
   max.loop = 40,
   print.plot = TRUE,
   plot.main = NULL,
-  K = NULL,
-  scale.coords = FALSE
+  scale.coords = TRUE
 )
 }
 \arguments{
@@ -23,23 +23,23 @@ make_gam(
 
 \item{method}{one of c("mgcv", "cubic2d", "strebel")}
 
-\item{nd}{...}
+\item{nd}{number of points to use in cover design. See fields::cover.design.}
 
-\item{nruns}{...}
+\item{K}{max number of basis functions to produce in mgcv::jagam()}
 
-\item{num.nn}{...}
+\item{nruns}{The number of random starts to be optimized.See fields::cover.design.}
+
+\item{num.nn}{max number of nearest neighbors. See fields::cover.design.}
 
 \item{ll.to.utm}{logical if TRUE will convert lat long coordinates to UTMs prior to creating distance-based basis functions.}
 
-\item{max.loop}{...}
+\item{max.loop}{Maximum number of passes throguh cover.design algorithm. See fields::cover.design.}
 
 \item{print.plot}{logical if TRUE will print spatial representation of site and knot locations to local device.}
 
 \item{plot.main}{optional Character vector for plot title.}
 
-\item{K}{max number of basis functions to produce in mgcv::jagam()}
-
-\item{scale.coords}{logical if TRUE will scale the XY coordinates}
+\item{scale.coords}{logical if TRUE will scale and center the XY coordinates using bbsebird::standardize.}
 }
 \description{
 Function for Generating Basis Functions

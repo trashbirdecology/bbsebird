@@ -3,6 +3,7 @@
 export(dir_spec)
 export(eval_params)
 export(find_UTM_zone)
+export(get.list.dims)
 export(id_ebird_files)
 export(import_jdat)
 export(longlat_to_UTM)

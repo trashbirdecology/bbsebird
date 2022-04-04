@@ -63,13 +63,14 @@ longlat_to_UTM <- function(long, lat, units = 'm') {
 
 
     ids = dat$id
-  out[[i]] <- sp::spTransform(dat, sp::CRS(CRSstring[1L]))  |>
+suppressWarnings(  out[[i]] <- sp::spTransform(dat, sp::CRS(CRSstring[1L]))  |>
     tibble::as_tibble() |>
     dplyr::mutate(
       zone = z,
       hemisphere = h,
       id = ids
     )
+)
 
   } # end loop
 
