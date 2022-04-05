@@ -2,6 +2,7 @@
 # ----FUN: save.runtime ----------------------------------------------------
 #' Write Model Runtimes to Working Directory
 #' @param name description of model to be saved under heading 'name'
+#' @export save.runtime
 #' @param time optional runtime as numeric or integer
 #' @param other optional information to be saved under heading 'other' (e.g., number iterations, number chains, etc.)
 #' @param fn path to existing or desired output file. This is where the runtimes and arguments will be saved. If file DNE, this function will create it.
