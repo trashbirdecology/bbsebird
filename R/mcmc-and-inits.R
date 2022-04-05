@@ -10,7 +10,7 @@
 #' @param dev.mode integer 1:3. 1=large-ish run; 2=moderate run; 3=quick, short run.
 #' @importFrom  parallel detectCores
 #' @param nt thinning rate (every nth iteration removed)
-#' @export set_mcmc_specs
+#' @export
 set_mcmc_specs <- function(
                       na=1000,
                       nb=5000,

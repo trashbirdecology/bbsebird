@@ -1,20 +1,23 @@
 
 # ----FUN: save.runtime ----------------------------------------------------
 #' Write Model Runtimes to Working Directory
-save.runtime <- function(name, time, fn.mod = "mymodel.rds", fn="model-runtimes.txt"){
+#' @param name description of model to be saved under heading 'name'
+#' @param time optional runtime as numeric or integer
+#' @param other optional information to be saved under heading 'other' (e.g., number iterations, number chains, etc.)
+#' @param fn path to existing or desired output file. This is where the runtimes and arguments will be saved. If file DNE, this function will create it.
+save.runtime <- function(name=NULL, time=NULL, other = NULL, fn="model-runtimes.txt"){
   make.file <- ifelse(file.exists(fn), FALSE, TRUE)
   
-  time <- round(as.numeric(time), 2)
+  if(!is.null(time)) time <- round(as.numeric(time), 2)
   
   if(make.file){
     suppressMessages(file.create(fn, showWarnings = FALSE))
-    line=paste("name","runtime (minutes)", "output filename", "rundate",sep=",")
+    line=paste("name","runtime", "other", "rundate",sep=",")
     #if first time, add headers
     write(line, fn, append=FALSE)
   }
   
-  last <- paste0(fn.mod, "")
-  line <- paste(name, round(time), last, Sys.date(), sep=",")
+  line <- paste(name, round(time), other, Sys.date(), sep=",")
   
   write(line,
         file = fn, append = TRUE)
