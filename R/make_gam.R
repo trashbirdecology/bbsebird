@@ -32,21 +32,21 @@ make_gam <- function(coords,
   stopifnot(is.numeric(coords[, 1]) | is.integer(coords[, 1]))
   stopifnot(is.numeric(coords[, 2]) | is.integer(coords[, 2]))
 
-  # SCALE XY ----------------------------------------------------------------
+
+  # LL to UTM? --------------------------------------------------------------
+  if(ll.to.utm){
+    coords <- as.data.frame(longlat_to_UTM(coords[,1], coords[,2]))
+  }
+
   XY <- matrix(NA, nrow = nrow(coords), ncol = 2)
+
+  # SCALE XY ----------------------------------------------------------------
   if (scale.coords) {
     cat("   [note] coords.scaled == TRUE; z-scaling coordinates.\n")
     XY[, 1] <- standardize(coords[, 1])
     XY[, 2] <- standardize(coords[, 2])
   } else{
     XY <- coords[, 1:2]
-  }
-
-
-# LL to UTM? --------------------------------------------------------------
-  if(ll.to.utm){
-    XY <- longlat_to_UTM(XY[,1], XY[,2])
-
   }
 
 
@@ -123,7 +123,7 @@ make_gam <- function(coords,
     # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
     knots <-
       fields::cover.design(
-        cbind(XY$x, XY$y),
+        cbind(XY[,1], XY[,2]),
         nd = nd,
         nruns = nruns,
         num.nn = num.nn,
@@ -133,7 +133,7 @@ make_gam <- function(coords,
     svd.omega.all <- svd(omega.all)
     sqrt.omega.all <- t(svd.omega.all$v %*% (t(svd.omega.all$u) *
                                                sqrt(svd.omega.all$d)))
-    Z.k <- (fields::rdist(cbind(XY$x, XY$y), knots)) ^ 3
+    Z.k <- (fields::rdist(cbind(XY[,1], XY[,2]), knots)) ^ 3
     Z.mat <- t(solve(sqrt.omega.all, t(Z.k)))
     nbfs <- dim(Z.mat)[2]
 
@@ -145,23 +145,20 @@ make_gam <- function(coords,
       "plotting currently not supported for mgcv gam"
     } else{
       try({
-        plot(cbind(XY$x, XY$y), pch = 20, main = plot.main, xlab="X coord", ylab="Y coord")
+        plot(cbind(XY[,1], XY[,2]), pch = 20, main = plot.main, xlab="X coord", ylab="Y coord")
         points(knots,
                pch = 20,
                col = "red",
                cex = 2)
       })
     }
-
-
   }
-
 
   # RETURN OBJECT -----------------------------------------------------------
   if(ll.to.utm) {out <- list(K         = nbfs,
               Z.mat     = Z.mat,
-              XY        = data.frame(x=XY$x, y=XY$y),
-              XY.utm.df = XY
+              XY        = data.frame(x=XY[,1], y=XY[,2]),
+              XY.utm.df = coords
               )
   }else{
   out <- list(K         = nbfs,
@@ -169,8 +166,7 @@ make_gam <- function(coords,
               XY        = XY)
   }
   ## add knots if not gam
-  if (!method %in% c("mgcv", "jagam"))
-    out$knotlocs <- knots
+  if (!method %in% c("mgcv", "jagam")){out$knotlocs <- knots}
 
   ## remove empty objects
   todel <- NULL

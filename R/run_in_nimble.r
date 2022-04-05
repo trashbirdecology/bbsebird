@@ -18,7 +18,6 @@
 #' @importFrom  parallel makeCluster parLapply
 #' @importFrom  doParallel registerDoParallel stopImplicitCluster
 #' @importFrom foreach %dopar%
-#' @export run_in_nimble
 
 run_in_nimble <- function(myData,
                           myModel,

@@ -16,7 +16,6 @@
 #' @importFrom doParallel stopImplicitCluster
 #' @importFrom jagsUI jags
 #' @param ... Additional arguments
-#' @export run_in_jags
 
 run_in_jags <- function(bugs.data,
                         model,

@@ -12,7 +12,6 @@
 #' @param mcmc.specs MCMC specifications as a list; created using \code{set_mcmc_specs}
 #' @param model filepath or nimbleModel object
 #' @importFrom nimble compileNimble buildMCMC readBUGSmodel runMCMC
-#' @export run_MCMC_allcode
 run_MCMC_allcode <-
   function(
            data,
