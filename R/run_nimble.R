@@ -12,7 +12,6 @@
 #' @param nb number of burn-in iterations to discard
 #' @param nt thinning rate (every Nth iteration will be saved)
 #' @param nc number of chains to run (in parallel)
-#' @param aI optional If using parameter block sampler, specify the adaptive interval
 #' @param ntries optional If using parameter block sampler, specify the maximum number of tries
 #' @param block.name optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
@@ -33,9 +32,9 @@ run_par_nimble <- function(code,
                          nb = NULL,
                          nt = 1,
                          nc = 1,
-                         aI = 100,
+                         aI = 200,
                          ntries = 5,
-                         block.name = NULL,
+                         block.name      = "alpha+b",
                          block.samp.type = "AF_slice",
                          mod.name = "mymodel",
                          seed = 123
@@ -45,11 +44,10 @@ if(is.null(nb)) nb <- round(ni/nt*.15, 0)
 stopifnot(ni/nt - nb > 100)
 if(is.null(ncores)) ncores <- min(nc, parallel::detectCores()-1)
 
+
 ## make empty objects
 minefficiency <- list(NULL)
 list.out      <- list(NULL)
-
-
 
 # FUN: in.parallel() ------------------------------------------------------
 in.parallel <- function(code,
@@ -57,18 +55,15 @@ in.parallel <- function(code,
                         constants = NULL,
                         inits=inits,
                         monitors = NULL,
-                        nt=1,
-                        ni=1e4,
-                        nb=0,
-                        aI=100,
-                        ntries=10,
+                        nt,
+                        ni,
+                        nb,
+                        aI,
+                        ntries,
                         block.name=NULL,
                         block.samp.type=NULL,
-                        seed=123
-){
-  library(nimble)
-
-
+                        seed=123){
+  require(nimble)
   ## compile model code
   Rmodel   <- nimbleModel(
     code = code,
@@ -113,7 +108,7 @@ in.parallel <- function(code,
       c("alpha", "b"),
       type = block.samp.type,
       control =
-        list(adaptInterval = aI, ntries=ntries),
+        list(ntries=ntries),
       silent = TRUE)
   }
 
@@ -124,12 +119,14 @@ in.parallel <- function(code,
   # Run
   results <- runMCMC(Cmcmc,
                      niter = ni,
-                     setSeed = seed
-                     )
+                     setSeed = seed,
+                     samples = TRUE,
+                     samplesAsCodaMCMC = TRUE
+  )
 
   return(results)
 
-}  # END
+}  # END in.parallel
 
 
 # Init cluster ------------------------------------------------------------
@@ -145,9 +142,8 @@ results <-
     inits=inits,
     monitors = monitors,
     nt=nt,
-    nb=nb,
     aI=aI,
-    ni=ni,
+    nb=nb,
     ntries=ntries,
     block.name=block.name,
     block.samp.type=block.samp.type
@@ -160,8 +156,12 @@ try({
 })
 
 
+par(mfrow = c(2,2))
+for (i in 1:length(results)) {
+  this_output <- results[[i]]
+  plot(this_output[,"alpha[1]"], type = "l", ylab = 'b')
+}
 
 return(results)
-
 
 } # END FUN
