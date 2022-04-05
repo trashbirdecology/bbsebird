@@ -5,7 +5,6 @@
 #' @param constants constants as list
 #' @param inits list of initial values
 #' @param parallel logical if TRUE will run chains in parallel (using foreach).
-#' @param seed used to set the seed for nimble within each processor
 #' @param ncores maximum number of cores to employ. Actual number used is the minimum of nc and ncores
 #' @param mod.name optional Used to save model output to file. Defaults to 'mynimbleModel'
 #' @param monitors optional Character vector of parameters to monitor.
@@ -38,7 +37,6 @@ run_nimble_model <- function(code,
                            block.name      = "alpha+b",
                            block.samp.type = "AF_slice",
                            mod.name = "mymodel",
-                           seed = 123,
                            parallel = TRUE
                            ) {
   require(foreach)
@@ -121,7 +119,6 @@ run_nimble_model <- function(code,
       results <- runMCMC(
         Cmcmc,
         niter = ni,
-        setSeed = seed,
         samples = TRUE,
         samplesAsCodaMCMC = TRUE
       )
@@ -130,7 +127,6 @@ run_nimble_model <- function(code,
       return(results)
     }
     parallel::stopCluster(cl)
-
     names(out) <- paste0("chain_", seq_len(ncores))
 } # end parallel processing
 
@@ -191,7 +187,6 @@ run_nimble_model <- function(code,
     out <- runMCMC(
       Cmcmc,
       niter = ni,
-      setSeed = seed,
       samples = TRUE,
       samplesAsCodaMCMC = TRUE
     )

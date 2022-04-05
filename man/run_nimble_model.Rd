@@ -21,7 +21,6 @@ run_nimble_model(
   block.name = "alpha+b",
   block.samp.type = "AF_slice",
   mod.name = "mymodel",
-  seed = 123,
   parallel = TRUE
 )
 }
@@ -53,8 +52,6 @@ run_nimble_model(
 \item{block.samp.type}{optional one of c("AF_slice", "RW_block").}
 
 \item{mod.name}{model name}
-
-\item{seed}{used to set the seed for nimble within each processor}
 
 \item{parallel}{logical if TRUE will run chains in parallel (using foreach).}
 }
