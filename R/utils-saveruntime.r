@@ -7,20 +7,20 @@
 #' @param fn path to existing or desired output file. This is where the runtimes and arguments will be saved. If file DNE, this function will create it.
 save.runtime <- function(name=NULL, time=NULL, other = NULL, fn="model-runtimes.txt"){
   make.file <- ifelse(file.exists(fn), FALSE, TRUE)
-  
+
   if(!is.null(time)) time <- round(as.numeric(time), 2)
-  
+
   if(make.file){
     suppressMessages(file.create(fn, showWarnings = FALSE))
     line=paste("name","runtime", "other", "rundate",sep=",")
     #if first time, add headers
     write(line, fn, append=FALSE)
   }
-  
-  line <- paste(name, round(time), other, Sys.date(), sep=",")
-  
+
+  line <- paste(name, round(time), other, Sys.Date(), sep=",")
+
   write(line,
         file = fn, append = TRUE)
-  
-  
+
+
 }
