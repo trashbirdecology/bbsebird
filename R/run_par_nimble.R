@@ -10,6 +10,7 @@
 #' @param monitors optional Character vector of parameters to monitor.
 #' @param ni number iterations to run
 #' @param nb number of burn-in iterations to discard
+#' @param nt thinning rate (every Nth iteration will be saved)
 #' @param nc number of chains to run (in parallel)
 #' @param aI optional If using parameter block sampler, specify the adaptive interval
 #' @param ntries optional If using parameter block sampler, specify the maximum number of tries

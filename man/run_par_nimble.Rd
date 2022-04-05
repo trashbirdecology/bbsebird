@@ -41,6 +41,8 @@ run_par_nimble(
 
 \item{nb}{number of burn-in iterations to discard}
 
+\item{nt}{thinning rate (every Nth iteration will be saved)}
+
 \item{nc}{number of chains to run (in parallel)}
 
 \item{aI}{optional If using parameter block sampler, specify the adaptive interval}
