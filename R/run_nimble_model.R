@@ -18,7 +18,7 @@
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
 #' @param mod.name model name
 #' @importFrom parallel makeCluster stopCluster detectCores
-#' @importFrom foreach %dopar%
+#' @importFrom foreach %dopar% foreach
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom nimble compileNimble buildMCMC runMCMC nimbleModel configureMCMC runMCMC buildMCMC
 #' @export run_nimble_model
@@ -41,15 +41,15 @@ run_nimble_model <- function(code,
                            seed = 123,
                            parallel = TRUE
                            ) {
+  require(foreach)
   ## arg eval
   if (is.null(nb))
     nb <- round(ni / nt * .10, 0)
-  stopifnot((ni - nb)/nt > 75)
+  stopifnot((ni - nb)/nt > 50)
   if (is.null(ncores))
     ncores <- min(nc, parallel::detectCores() - 1)
 
   block.name <- tolower(block.name)
-
 
   # RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
@@ -59,7 +59,7 @@ run_nimble_model <- function(code,
 
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
-    out <- foreach(
+    out <- foreach::foreach(
       i = 1:nc,
       .combine = list,
       .packages = c("nimble"),
@@ -132,9 +132,7 @@ run_nimble_model <- function(code,
     parallel::stopCluster(cl)
 
     names(out) <- paste0("chain_", seq_len(ncores))
-
-  } # end parallel processing
-
+} # end parallel processing
 
   # NO PARALLEL PROCESSING --------------------------------------------------
   if (ncores == 1 || !parallel) {
@@ -197,11 +195,8 @@ run_nimble_model <- function(code,
       samples = TRUE,
       samplesAsCodaMCMC = TRUE
     )
-
-    return(out)
   }  # END NO PARALLEL PROCESSING
 
-traceplot(out)
-
+return(out)
 
 } #END FUNCTION
