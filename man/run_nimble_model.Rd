@@ -19,8 +19,7 @@ run_nimble_model(
   aI = 200,
   ntries = 5,
   block.name = "alpha+b",
-  block.samp.type = "AF_slice",
-  mod.name = "mymodel",
+  block.samp.type = "RW_block",
   parallel = TRUE
 )
 }
@@ -50,8 +49,6 @@ run_nimble_model(
 \item{block.name}{optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.}
 
 \item{block.samp.type}{optional one of c("AF_slice", "RW_block").}
-
-\item{mod.name}{model name}
 
 \item{parallel}{logical if TRUE will run chains in parallel (using foreach).}
 }

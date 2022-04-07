@@ -73,7 +73,8 @@ make_gam <- function(coords,
       K,
       ". If you have memory errors, try defining K in arguments as a lower value\n"
     )
-    jagam.fn <- paste0(dir.outputs, "/gam-UNEDITED.txt")
+    # browser()
+    jagam.fn <- paste0("gam-UNEDITED.txt")
     jagam.mod <- mgcv::jagam(
       c ~ s(
         # note the c doesn't matter, it's just for show
@@ -85,10 +86,9 @@ make_gam <- function(coords,
       ),
       file = jagam.fn,
       sp.prior = "log.uniform",
-      data = bf.in,
+      data = data.frame(c=rep(0, nrow(XY)), X=XY[,1], Y=XY[,2]),
       diagonalize = TRUE,
       # parallell = TRUE,
-      # modules = "glm"
       family = "poisson"
     )
     jagam.mod$fn <- jagam.fn
@@ -141,8 +141,8 @@ make_gam <- function(coords,
 
   # plot --------------------------------------------------------------------
   if (print.plot) {
-    if (method %in% c("mgcv", "jagam")) {
-      "plotting currently not supported for mgcv gam"
+    if (!method %in% c("cubic2d")) {
+      "plotting currently only supported for CUBIC2D basis functions"
     } else{
       try({
         plot(cbind(XY[,1], XY[,2]), pch = 20, main = plot.main, xlab="X coord", ylab="Y coord")

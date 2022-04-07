@@ -9,8 +9,6 @@
 save.runtime <- function(name=NULL, time=NULL, other = NULL, fn="model-runtimes.txt"){
   make.file <- ifelse(file.exists(fn), FALSE, TRUE)
 
-  if(!is.null(time)) time <- round(as.numeric(time), 2)
-
   if(make.file){
     suppressMessages(file.create(fn, showWarnings = FALSE))
     line=paste("name","runtime", "other", "rundate",sep=",")
@@ -18,7 +16,7 @@ save.runtime <- function(name=NULL, time=NULL, other = NULL, fn="model-runtimes.
     write(line, fn, append=FALSE)
   }
 
-  line <- paste(name, round(time), other, Sys.Date(), sep=",")
+  line <- paste(name, time, other, Sys.Date(), sep=",")
 
   write(line,
         file = fn, append = TRUE)

@@ -6,7 +6,6 @@
 #' @param inits list of initial values
 #' @param parallel logical if TRUE will run chains in parallel (using foreach).
 #' @param ncores maximum number of cores to employ. Actual number used is the minimum of nc and ncores
-#' @param mod.name optional Used to save model output to file. Defaults to 'mynimbleModel'
 #' @param monitors optional Character vector of parameters to monitor.
 #' @param ni number iterations to run
 #' @param nb number of burn-in iterations to discard (I think it's PRE-THINNING burnin discard...)
@@ -15,7 +14,6 @@
 #' @param ntries optional If using parameter block sampler, specify the maximum number of tries
 #' @param block.name optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
-#' @param mod.name model name
 #' @importFrom parallel makeCluster stopCluster detectCores
 #' @importFrom foreach %dopar% foreach
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
@@ -35,10 +33,10 @@ run_nimble_model <- function(code,
                            aI = 200,
                            ntries = 5,
                            block.name      = "alpha+b",
-                           block.samp.type = "AF_slice",
-                           mod.name = "mymodel",
+                           block.samp.type = "RW_block",
                            parallel = TRUE
                            ) {
+
   require(foreach)
   ## arg eval
   if (is.null(nb))
@@ -129,9 +127,9 @@ run_nimble_model <- function(code,
     parallel::stopCluster(cl)
     names(out) <- paste0("chain_", seq_len(ncores))
 } # end parallel processing
-
+# browser()
   # NO PARALLEL PROCESSING --------------------------------------------------
-  if (ncores == 1 || !parallel) {
+  if (ncores == 1 | !parallel) {
     Rmodel   <- nimbleModel(
       code = code,
       data = data,
