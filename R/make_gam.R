@@ -50,6 +50,20 @@ make_gam <- function(coords,
   }
 
 
+  # SPLINES PKGS ------------------------------------------------------------
+  cat("   [note] using method cubic2d\n")
+  # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
+  knots <-
+    fields::cover.design(
+      cbind(XY[,1], XY[,2]),
+      nd = nd,
+      nruns = nruns,
+      num.nn = num.nn,
+      max.loop = max.loop
+    )$design
+
+
+
   # JAGAM -------------------------------------------------------------------------
   # if not specified, K is defined as:
   ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
@@ -141,6 +155,8 @@ make_gam <- function(coords,
 
   # plot --------------------------------------------------------------------
   if (print.plot) {
+    ## cubic spline basis functions have continutous (smooth) 1st AND second derivatives.
+
     if (!method %in% c("cubic2d")) {
       "plotting currently only supported for CUBIC2D basis functions"
     } else{
