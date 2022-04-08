@@ -13,8 +13,10 @@ make_model_data <- function(data) {
   new <- list(
     nobsb     = nrow(data$bbs.df),
     nobse     = nrow(data$ebird.df),
-    rteobs    = data$bbs.df |> dplyr::distinct(site.ind, obs.ind) |> dplyr::select(site.ind, obs.ind),
-    nrteobs   = nrow(data$bbs.df |> distinct(site.ind, obs.ind)),
+    rteobs    = data$bbs.df$rteobs.ind,
+    nrteobs   = length(data$bbs.df$rteobs.ind),
+    # rteobs    = data$bbs.df |> dplyr::distinct(site.ind, obs.ind) |> dplyr::select(site.ind, obs.ind),
+    # nrteobs   = nrow(data$bbs.df |> distinct(site.ind, obs.ind)),
     Cb        = data$bbs.df$c,
     Ce        = data$ebird.df$c,
     yearb     = data$bbs.df$year.ind,

@@ -546,6 +546,15 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
   ebird <- LL$ebird
   rm(LL)
 
+
+ # BBS rte-observer index --------------------------------------------------
+  ### create an index for route-observer combination effect
+ bbs <- bbs |>
+    dplyr::distinct(site.ind, obs.ind) |>
+    dplyr::mutate(rteobs.ind = 1:n()) |>
+  full_join(bbs, by = c("obs.ind", "site.ind"))
+
+
   # GRID-LEVEL COVARIATES ---------------------------------------------------
   ## create arrays for grid cell-level covariates
   ### dimensions are ngrid by nyear
