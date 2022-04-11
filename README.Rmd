@@ -71,29 +71,19 @@ cws.layer           = "ALL_ROUTES" # name of the Canadian (CWS) BBS route shapef
 ##ebird arguments
 mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
 
-# Strongly suggested but optional args
-##general arguments
-# dir.proj  = "C:/Users/jburnett/desktop/testing/"
-
-
-### see bbsAssistant::region_codes
-states              = c("us-fl", "us-ga", "us-al")
-countries           = c("US") ## string of  countries Call \code{bbsebird::iso.codes} to find relevant codes for Countries and States/Prov/Territories.
-# species             = c("Double-crested Cormorant", "Nannopterum auritum", "phalacrocorax auritum")
-# species.abbr        = c("doccor","dcco", "docco")
-
 year.range          = 2008:2019
 base.julian.date    = lubridate::ymd(paste0(min(year.range), c("-01-01"))) # used as base date for Julian dates.
 crs.target          = 4326 #target CRS for all created spatial layers
 ##grid arguments
 grid.size           = 1.00 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
-
+### default grid is in WGS84
 ##ebird arguments
 min.yday            = 91
 max.yday            = 245
 
 ## Munge the states and countries indexes for use in dir/proj dir reation
 if(!exists("states")) states <- NULL
+if(!exists("countries")) countries <- NULL
 if(!is.null(states)){regions <- states}else{regions <- countries}
 stopifnot(all(tolower(states) %in% tolower(bbsAssistant::region_codes$iso_3166_2)))
 ```
@@ -111,25 +101,25 @@ dirs        <-  dir_spec(dir.orig.data = dir.orig.data,
 ### Create a spatial sampling grid
 The following chunk creates a spatial sampling grid of size grid.size with units defaulting to the units of crs.target.
 ```{r spatial-grid}
+## entirity of North America takes a couple mins...even longer for <<<0.50 grid size
 study_area <- make_spatial_grid(
-                          dir.out = dirs[['dir.spatial.out']],
-                          states = states,
-                          countries = countries,
+                          dir.out    = dirs[['dir.spatial.out']],
+                          states     = states$iso_3166_2,
                           crs.target = crs.target,
-                          grid.size = grid.size, 
-                          hexagonal = TRUE,
-                          overwrite = TRUE
+                          grid.size  = grid.size, 
+                          hexagonal  = TRUE,
+                          overwrite  = TRUE
                           )
 if(is.list(study_area)){ 
   grid          <- study_area$grid
   overlay       <- study_area$grid.overlay
 }
-plot(grid)
-plot(overlay)
+# plot(grid)
+# plot(overlay)
 rm(study_area)
 ```
 
-Create the BBS data. This chunk relieson R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
+Create the BBS data. This chunk relies on R package \code{bbsAssistant}. The resulting data is aligned with the spatial grid (see above).
 ```{r bbs-data}
 ## if the files already exist, don't overwrite unless you've made changes to data specs
 if("bbs_obs.rds" %in% list.files(dirs$dir.bbs.out)){bbs_obs <- readRDS(list.files(dirs$dir.bbs.out, "bbs_obs.rds", full.names=TRUE))}else{
@@ -151,9 +141,10 @@ bbs_spatial <- make_bbs_spatial(
   overwrite=TRUE, 
   cws.routes.dir = dirs$cws.routes.dir,
   usgs.routes.dir = dirs$usgs.routes.dir,
+  print.plots = FALSE, ## if extent large or ncells very high, do not plot..takes longer than it takes to create the overlay... 
   plot.dir = dirs$dir.plots,
   crs.target = crs.target,
-  grid = study_area,
+  grid = grid,
   dir.out = dirs$dir.spatial.out
 )
 saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
@@ -161,6 +152,7 @@ saveRDS(bbs_spatial, paste0(dirs$dir.bbs.out, "/bbs_spatial.rds"))
 ## check out the bbs spatial data to ensure things look ok
 # plot(bbs_spatial['area']) # cell area
 ```
+
 Munge the eBird data (must be saved to file):
 ```{r ebird-data}
 ## check the specified ebird original data directory for files. 

@@ -18,6 +18,7 @@ run_nimble_model(
   nc = 1,
   aI = 200,
   ntries = 5,
+  calculate = FALSE,
   block.name = "alpha+b",
   block.samp.type = "RW_block",
   parallel = TRUE
@@ -45,6 +46,8 @@ run_nimble_model(
 \item{nc}{number of chains to run (in parallel)}
 
 \item{ntries}{optional If using parameter block sampler, specify the maximum number of tries}
+
+\item{calculate}{logical if TRUE will calculate the model logprob. Used as argument 'calculate' in function nimble::nimbleModel()}
 
 \item{block.name}{optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.}
 

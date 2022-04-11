@@ -36,7 +36,7 @@ make_spatial_grid <- function(dir.out,
     grid <- readRDS(paste0(dir.out, "/", "grid.rds"))
     return(grid) # exit function
   } else{
-    cat("Making spatial sampling grid.")
+    cat("Making spatial sampling grid.\n")
   }
 
   # Begin by grabbing  all data to check arguments

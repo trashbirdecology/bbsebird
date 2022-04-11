@@ -8,6 +8,7 @@
 #' @param ncores maximum number of cores to employ. Actual number used is the minimum of nc and ncores
 #' @param monitors optional Character vector of parameters to monitor.
 #' @param ni number iterations to run
+#' @param calculate logical if TRUE will calculate the model logprob. Used as argument 'calculate' in function nimble::nimbleModel()
 #' @param nb number of burn-in iterations to discard (I think it's PRE-THINNING burnin discard...)
 #' @param nt thinning rate (every Nth iteration will be saved)
 #' @param nc number of chains to run (in parallel)
@@ -30,8 +31,10 @@ run_nimble_model <- function(code,
                            nb = NULL,
                            nt = 1,
                            nc = 1,
+
                            aI = 200,
                            ntries = 5,
+                           calculate = FALSE,
                            block.name      = "alpha+b",
                            block.samp.type = "RW_block",
                            parallel = TRUE
@@ -44,6 +47,11 @@ run_nimble_model <- function(code,
   stopifnot((ni - nb)/nt > 50)
   if (is.null(ncores))
     ncores <- min(nc, parallel::detectCores() - 1)
+
+  if(ncores > parallel::detectCores()){
+    ncores <- parallel::detectCores()
+    cat("ncores requested is greater than available cores. Requesting only", ncores, "workers at this time.")
+  }
 
   block.name <- tolower(block.name)
 
@@ -67,7 +75,7 @@ run_nimble_model <- function(code,
         data = data,
         constants = constants,
         inits = inits,
-        check = TRUE
+        calculate = calculate
       )
       Rmodel.comp <- compileNimble(Rmodel)
       ## configure MCMC alg
@@ -135,7 +143,7 @@ run_nimble_model <- function(code,
       data = data,
       constants = constants,
       inits = inits,
-      check = TRUE
+      calculate = calculate
     )
     Rmodel.comp <- compileNimble(Rmodel)
     ## configure MCMC alg

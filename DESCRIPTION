@@ -23,7 +23,8 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Depends: 
     bbsAssistant (>= 2.0.0),
-    dplyr
+    dplyr, 
+    R (>= 4.1)
 Imports: 
     auk,
     countrycode (>= 1.3.0),
