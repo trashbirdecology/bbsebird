@@ -12,11 +12,13 @@
 #' @param nb number of burn-in iterations to discard (I think it's PRE-THINNING burnin discard...)
 #' @param nt thinning rate (every Nth iteration will be saved)
 #' @param nc number of chains to run (in parallel)
+#' @param aI adapt interval, used in nimble::addSamplers
 #' @param ntries optional If using parameter block sampler, specify the maximum number of tries
 #' @param block.name optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
 #' @importFrom parallel makeCluster stopCluster detectCores
 #' @importFrom foreach %dopar% foreach
+#' @import foreach
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom nimble compileNimble buildMCMC runMCMC nimbleModel configureMCMC runMCMC buildMCMC
 #' @export run_nimble_model
@@ -31,7 +33,6 @@ run_nimble_model <- function(code,
                            nb = NULL,
                            nt = 1,
                            nc = 1,
-
                            aI = 200,
                            ntries = 5,
                            calculate = FALSE,

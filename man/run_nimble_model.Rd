@@ -45,6 +45,8 @@ run_nimble_model(
 
 \item{nc}{number of chains to run (in parallel)}
 
+\item{aI}{adapt interval, used in nimble::addSamplers}
+
 \item{ntries}{optional If using parameter block sampler, specify the maximum number of tries}
 
 \item{calculate}{logical if TRUE will calculate the model logprob. Used as argument 'calculate' in function nimble::nimbleModel()}
