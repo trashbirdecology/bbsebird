@@ -11,7 +11,7 @@ dir_spec(dir.orig.data, dir.proj = NULL, subdir.proj = NULL)
 
 \item{dir.proj}{Project directory. Assumes current working directory. This is where the directories and output files will be stored.}
 
-\item{subdir.proj}{The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using \code{dubcorms::set_proj_shorthand()}}
+\item{subdir.proj}{The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using 'dubcorms::set_proj_shorthand'}
 }
 \description{
 Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with \code{list2env()} to assign directories to desired environment (typically .GlobalEnv)
