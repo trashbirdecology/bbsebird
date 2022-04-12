@@ -29,7 +29,7 @@ id_ebird_files <- function(dir.ebird.in,
   states.ind <- rc[which(rc.temp %in% states.ind),]$iso_3166_2
 
   # Simple Tests and Create Simple Indexes
-  if (!str_detect(mmyyyy, "-"))
+  if (!stringr::str_detect(mmyyyy, "-"))
     stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")
   mmyyyy <- tolower(mmyyyy)
   e.regions          <- c("us", "ca", "usa", "mx", "mex")
@@ -87,11 +87,15 @@ id_ebird_files <- function(dir.ebird.in,
       region = tolower(paste(states.ind, collapse = "|"))
     }
     ### get files by species
-    temp <-
-      fns_obs[grepl(fns_obs, pattern = ".zip")]# possibles for the species
     fns_obs.zip <-
-      temp[grepl(temp, pattern = region)]# possibles for the region
-    ### if no files found then grab the country-level ones
+      fns_obs[grepl(fns_obs, pattern = ".zip")]# possibles for the species
+    if(length(fns_obs.zip) != 1) fns_obs.zip <- temp[grepl(fns_obs.zip, pattern = region)]# possibles for the region
+
+
+    if(length(fns_obs.zip) == 0)  fns_obs.zip <-
+      temp[grepl(temp, pattern=paste0(species.abbr, "_rel", mmyyyy, ".zip"))]
+
+    ### if no files found then grab the country- or global-level ones
     if (length(fns_obs.zip) == 0) {
       fns_obs.zip <-
         temp[grepl(temp, pattern = country.spp)]
@@ -107,6 +111,8 @@ id_ebird_files <- function(dir.ebird.in,
       temp  <-
         tolower(unzip(f_zip, list = TRUE)[, 1])# grab file names
       f_txt <- temp[grepl(temp, pattern = region)]
+      if (length(f_txt) == 0) f_txt <- temp[grepl(temp, pattern = paste0(species.abbr, "_rel", mmyyyy))]
+
       if (length(f_txt) == 0)
         f_txt <- temp[grepl(temp, pattern = country.spp)]
       f_txt <-
