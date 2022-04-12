@@ -12,6 +12,7 @@ make_spatial_grid(
   crs.target = 4326,
   hexagonal = TRUE,
   grid.size = 1,
+  conterminousUSA = TRUE,
   ...
 )
 }
@@ -29,6 +30,8 @@ make_spatial_grid(
 \item{hexagonal}{logical if TRUE will produce a spatial grid with hexagonal, as opposed to rectangular, cells}
 
 \item{grid.size}{numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km}
+
+\item{conterminousUSA}{logical if TRUE will remove Hawaii and Alaska. Default TRUE to reduce computation times and extent of sptaial grid.}
 
 \item{...}{Additional arguments}
 }

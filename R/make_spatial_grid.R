@@ -9,6 +9,7 @@
 #' @param grid.size numeric size (relative to units defining crs.target) of resulting cell. E.g., if crs.target==4326 a value of gridsize=1.0 equals ~111.11km
 #' @importFrom rnaturalearth ne_states
 #' @param ... Additional arguments
+#' @param conterminousUSA logical if TRUE will remove Hawaii and Alaska. Default TRUE to reduce computation times and extent of sptaial grid.
 #' @importFrom sf st_transform st_make_grid st_area st_make_grid
 #' @importFrom dplyr mutate
 #' @importFrom stringr str_replace
@@ -20,8 +21,11 @@ make_spatial_grid <- function(dir.out,
                               crs.target = 4326,
                               hexagonal = TRUE,
                               grid.size = 1.00,
+                              conterminousUSA = TRUE,
                               ...) {
   # check arguments
+  if( "CAN" %in% countries) countries <- stringr::str_replace(countries, pattern="CAN", "CA")
+  if( "USA" %in% countries) countries <- stringr::str_replace(countries, pattern="USA|U.S.A", "US")
   if (is.null(countries)) {
     countries <- c("US", "CA")
     cat(
@@ -33,10 +37,9 @@ make_spatial_grid <- function(dir.out,
 
   # If grid.rds already exists in the spatial files directory AND overwrite is FALSE, will just import the file.
   if ("grid.rds" %in% list.files(dir.out) & !overwrite) {
+    cat("grid.rds already exists and overwrite=FALSE. Importing existing file....\n")
     grid <- readRDS(paste0(dir.out, "/", "grid.rds"))
     return(grid) # exit function
-  } else{
-    cat("Making spatial sampling grid.\n")
   }
 
   # Begin by grabbing  all data to check arguments
@@ -77,6 +80,10 @@ make_spatial_grid <- function(dir.out,
   study.area <-
     rnaturalearth::ne_states(iso_a2 = countries.ind, returnclass = "sf")
 
+  ## remove alaska and hawaii if conterminous ==TRUE
+  if(conterminous) study.area <- study.area[!tolower(study.area$name) %in% c("hawaii","alaska"
+                                                                    ),]
+
   if (!is.null(states))
     study.area <- study.area |> filter(iso_3166_2 %in% states.ind)
 
@@ -86,6 +93,7 @@ make_spatial_grid <- function(dir.out,
 
   # throw a grid over the study area layer
   square <- ifelse(hexagonal, FALSE, TRUE)
+  cat("Creating spatial grid. \n")
   grid <- study.area |>
     sf::st_make_grid(cellsize = grid.size,
                      square = square,
@@ -93,7 +101,7 @@ make_spatial_grid <- function(dir.out,
                      what = "polygons")
 
 
-  ## GRID.OVERLAY IS TH EOLD OUTPUT
+  ## GRID.OVERLAY IS USEFUL FOR PLOTTING but NOT FOR ALIGNING BBS AND EBIRD DATA
   grid.overlay <- grid |>
     sf::st_intersection(study.area) |>
     # st_cast("MULTIPOLYGON") |>
