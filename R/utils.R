@@ -274,7 +274,7 @@ set_proj_shorthand <- function(species,
     "_",
     ifelse(is.null(max.C.ebird), "", paste0(max.C.ebird, "maxCebird"))
   )
-  return(x)
+  return(tolower(x))
 }
 
 
