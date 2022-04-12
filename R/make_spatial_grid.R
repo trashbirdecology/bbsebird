@@ -81,7 +81,7 @@ make_spatial_grid <- function(dir.out,
     rnaturalearth::ne_states(iso_a2 = countries.ind, returnclass = "sf")
 
   ## remove alaska and hawaii if conterminous ==TRUE
-  if(conterminous) study.area <- study.area[!tolower(study.area$name) %in% c("hawaii","alaska"
+  if(conterminousUSA) study.area <- study.area[!tolower(study.area$name) %in% c("hawaii","alaska"
                                                                     ),]
 
   if (!is.null(states))
