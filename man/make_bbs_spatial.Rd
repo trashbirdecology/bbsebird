@@ -13,9 +13,7 @@ make_bbs_spatial(
   usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
   crs.target = 4326,
   ncores = parallel::detectCores() - 1,
-  print.plots = TRUE,
   keep.empty.cells = TRUE,
-  plot.dir = NULL,
   overwrite = FALSE,
   dir.out = NULL,
   save.route.lines = TRUE
@@ -38,11 +36,7 @@ make_bbs_spatial(
 
 \item{ncores}{max number of cores to engage for parallel data processing. Defaults to one fewer CPUs than the machine has. Parallel processing is used only when a high number of routes and/or grid cells are in the data.}
 
-\item{print.plots}{logical if TRUE will print exploratory figures to device}
-
 \item{keep.empty.cells}{logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.}
-
-\item{plot.dir}{Directory path for where to save the resulting exploratory pdf (if print.plots==TRUE)}
 
 \item{overwrite}{logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out}
 
