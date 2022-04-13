@@ -86,14 +86,17 @@ id_ebird_files <- function(dir.ebird.in,
     } else{
       region = tolower(paste(states.ind, collapse = "|"))
     }
-    ### get files by species
+    ### get files by species and filter our region
+    # fns_obs <- fns_obs[grepl(fns_obs, pattern=species.abbr)]
     fns_obs.zip <-
       fns_obs[grepl(fns_obs, pattern = ".zip")]# possibles for the species
-    if(length(fns_obs.zip) != 1) fns_obs.zip <- temp[grepl(fns_obs.zip, pattern = region)]# possibles for the region
+    if(length(fns_obs.zip) != 1) temp <-
+      fns_obs.zip[grepl(fns_obs.zip, pattern = region)]# possibles for the region
+    if(length(temp) > 0) fns_obs.zip <- temp  # if length temp is greater than zero then ensure we keep all those zips...
 
 
-    if(length(fns_obs.zip) == 0)  fns_obs.zip <-
-      temp[grepl(temp, pattern=paste0(species.abbr, "_rel", mmyyyy, ".zip"))]
+    fns_obs.zip <-
+       fns_obs.zip[grepl(fns_obs.zip, pattern=paste0(species.abbr, "_rel", mmyyyy))]
 
     ### if no files found then grab the country- or global-level ones
     if (length(fns_obs.zip) == 0) {
