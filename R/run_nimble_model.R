@@ -61,7 +61,8 @@ run_nimble_model <- function(code,
     print(
       "ncores is greater than 1. Invoking multiple workers. Nimble messages/updates are suppressed in parallel mode.\n"
     )
-
+    ## need to add an output file for cluster logs
+    # https://stackoverflow.com/questions/24327137/error-in-unserializesocklistn-error-reading-from-connection-on-unix
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
     out <- foreach::foreach(
@@ -126,6 +127,7 @@ run_nimble_model <- function(code,
       results <- runMCMC(
         Cmcmc,
         niter = ni,
+        nburnin = nb,
         samples = TRUE,
         samplesAsCodaMCMC = TRUE
       )
