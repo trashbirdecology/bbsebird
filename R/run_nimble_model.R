@@ -44,8 +44,8 @@ run_nimble_model <- function(code,
   require(foreach)
   ## arg eval
   if (is.null(nb))
-    nb <- round(ni / nt * .10, 0)
-  stopifnot((ni - nb)/nt > 50)
+    nb <- round(ni / nt * .25, 0)
+  stopifnot((ni-nb)/nt > 50)
   if (is.null(ncores))
     ncores <- min(nc, parallel::detectCores() - 1)
 
@@ -127,6 +127,7 @@ run_nimble_model <- function(code,
       results <- runMCMC(
         Cmcmc,
         niter = ni,
+        thin = nt,
         nburnin = nb,
         samples = TRUE,
         samplesAsCodaMCMC = TRUE
@@ -196,6 +197,8 @@ run_nimble_model <- function(code,
     out <- runMCMC(
       Cmcmc,
       niter = ni,
+      thin = nt,
+      nburnin = nb,
       samples = TRUE,
       samplesAsCodaMCMC = TRUE
     )
