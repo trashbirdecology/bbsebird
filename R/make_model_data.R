@@ -14,7 +14,7 @@ make_model_data <- function(data) {
     nobsb     = nrow(data$bbs.df),
     nobse     = nrow(data$ebird.df),
     rteobs    = data$bbs.df$rteobs.ind,
-    nrteobs   = length(data$bbs.df$rteobs.ind),
+    nrteobs   = length(unique(data$bbs.df$rteobs.ind)),
     # rteobs    = data$bbs.df |> dplyr::distinct(site.ind, obs.ind) |> dplyr::select(site.ind, obs.ind),
     # nrteobs   = nrow(data$bbs.df |> distinct(site.ind, obs.ind)),
     Cb        = data$bbs.df$c,
