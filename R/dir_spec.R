@@ -12,12 +12,11 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   if(is.null(dir.proj) | dir.proj == "") dir.proj <- getwd()
 
 
-  if(!is.null(subdir.proj) & nchar(subdir.proj)>100){cat("subdir.proj is very long. specifying a new name for project."); subdir.proj="myproject"}
-
   # first, create the proj directory if necessary
   dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified
-  dir.proj <- paste0(dir.proj, "/", subdir.proj)
+  dir.proj <- paste0(dir.proj, "/")
+  if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj, subdir.proj, "/")
   dir.proj <- stringr::str_replace(dir.proj, "//","/")
   dir.create(dir.proj, showWarnings = FALSE)
 
