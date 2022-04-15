@@ -100,9 +100,11 @@ for(i in (x+1):z){
   names(paths)[i] <- base.names[j]
 }
 
-## nesure directories are created (need to fix bug in earlier part of script...not making dirs)
+## Ensure directories are created (need to fix bug in earlier part of script...not making dirs)
 for(i in seq_along(paths)){
   if(!dir.exists(paths[[i]])) dir.create(paths[[i]], showWarnings = FALSE)
+  paths[[i]]   <- stringr::str_replace(paths[[i]], "//","/") # replace all double forward slashes...
+
 }
 
 
