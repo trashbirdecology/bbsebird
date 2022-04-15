@@ -9,8 +9,7 @@
 
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
-  if(is.null(dir.proj) | dir.proj == "") dir.proj <- getwd()
-
+  if(is.null(dir.proj)) dir.proj <- getwd()
 
   # first, create the proj directory if necessary
   dir.create(dir.proj, showWarnings = FALSE)
@@ -61,15 +60,14 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       'dir.models',
       'dir.plots',
       'dir.proj')
-  dir.create(dir.bbs.out, showWarnings = FALSE)
-  dir.create(dir.ebird.out, showWarnings = FALSE)
-  dir.create(dir.spatial.out, showWarnings = FALSE)
-  dir.create(dir.results, showWarnings = FALSE)
-  dir.create(dir.models, showWarnings = FALSE)
-  dir.create(dir.plots, showWarnings = FALSE)
-  dir.create(dir.proj, showWarnings = FALSE)
+  dir.create(dir.bbs.out, showWarnings = FALSE, recursive = TRUE)
+  dir.create(dir.ebird.out, showWarnings = FALSE, recursive = TRUE)
+  dir.create(dir.spatial.out, showWarnings = FALSE, recursive = TRUE)
+  dir.create(dir.results, showWarnings = FALSE, recursive = TRUE)
+  dir.create(dir.models, showWarnings = FALSE, recursive = TRUE)
+  dir.create(dir.plots, showWarnings = FALSE, recursive = TRUE)
+  dir.create(dir.proj, showWarnings = FALSE, recursive = TRUE)
   # for(i in seq_along(x))dir.create(eval(parse(text=paste0(x))), showWarnings=FALSE)
-  cat("Project directory output files will go to ", dir.proj)
 
   subset.names <- paste0("dir.",
                          c(
@@ -89,8 +87,12 @@ base.names <- c("dir.proj",
 paths <- list()
   for(i in seq_along(subset.names)){
   paths[[i]] <- stringr::str_replace(paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), "//","/")
+  paths[[i]] <- stringr::str_replace(paths[[i]], pattern = "//", replacement = "/")
   names(paths)[[i]] <- subset.names[i]
-  }
+  dir.create(paths[[i]], recursive=TRUE, showWarnings = FALSE)
+  stopifnot(dir.exists(paths[[i]]))
+}
+
 x=length(paths)
 y=length(base.names)
 z=x+y
@@ -104,10 +106,9 @@ for(i in (x+1):z){
 for(i in seq_along(paths)){
   if(!dir.exists(paths[[i]])) dir.create(paths[[i]], showWarnings = FALSE)
   paths[[i]]   <- stringr::str_replace(paths[[i]], "//","/") # replace all double forward slashes...
-
 }
 
 
 return(paths)
-  }
+}
 
