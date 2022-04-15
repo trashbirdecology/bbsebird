@@ -29,14 +29,14 @@ run_nimble_model <- function(code,
                            monitors = NULL,
                            ncores = NULL,
                            ni = 10000,
-                           nb = NULL,
+                           nb = 100,
                            nt = 1,
                            nc = 1,
                            aI = 200,
                            ntries = 5,
                            calculate = FALSE,
                            block.name      = "alpha+b",
-                           block.samp.type = "RW_block",
+                           block.samp.type = "AF_slice",
                            parallel = TRUE
                            ) {
   ## arg eval

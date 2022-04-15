@@ -32,8 +32,8 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   usgs.routes.dir <- stringr::str_replace(usgs.routes.dir, "//","/")
 
   if (!any(length(list.files(cws.routes.dir)) > 0))
-    stop(
-      "No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification.\n"
+    message(
+      "No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification for dirs$dir.bbs.in.\n"
     )
 
   if (!length(list.files(dir.ebird.in) > 0))

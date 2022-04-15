@@ -31,7 +31,6 @@ clean_ebird_colnames <- function(df) {
 }
 
 
-
 #' Munge eBird and BBS Column Names
 #'
 #' Munge the names of eBird and BBS data frames to ensure consistency.
