@@ -16,7 +16,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified
   dir.proj <- paste0(dir.proj, "/")
-  if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj, subdir.proj, "/")
+  if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj, subdir.proj)
   dir.proj <- stringr::str_replace(dir.proj, "//","/")
   dir.create(dir.proj, showWarnings = FALSE)
 

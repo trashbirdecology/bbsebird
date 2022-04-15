@@ -176,6 +176,7 @@ make_spatial_grid <- function(dir.out,
   grid <- list(grid=grid, grid.overlay = grid.overlay)
   if(exists("xy.nb")) grid$neighborhood <-spdep::nb2WB(xy.nb)
   # Export Data
+  dir.create(dir.out, showWarnings = FALSE)
   fn <- paste0(dir.out, "/", "grid.rds")
   fn <- stringr::str_replace(fn, "//", "/")
   cat("Saving spatial grid as .RDS to file: ", fn)
