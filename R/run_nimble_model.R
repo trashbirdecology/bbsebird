@@ -18,7 +18,6 @@
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
 #' @importFrom parallel makeCluster stopCluster detectCores
 #' @importFrom foreach %dopar% foreach
-#' @import foreach
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom nimble compileNimble buildMCMC runMCMC nimbleModel configureMCMC runMCMC buildMCMC
 #' @export run_nimble_model
@@ -40,8 +39,6 @@ run_nimble_model <- function(code,
                            block.samp.type = "RW_block",
                            parallel = TRUE
                            ) {
-
-  require(foreach)
   ## arg eval
   if (is.null(nb))
     nb <- round(ni / nt * .25, 0)
