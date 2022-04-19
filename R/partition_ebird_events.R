@@ -6,6 +6,7 @@
 #' @importFrom stringr str_detect str_replace
 #' @importFrom data.table setkey haskey
 #' @importFrom bit chunk
+#' @param outpath path location to where output files will be saved. If NULL will save to a directory within dir.ebird.in for each mmyyyy
 #' @param overwrite if TRUE, will overwrite existing partitioned file for country and mmyyyy combination
 #' @param ncores number of processors to engage during data import and export (using data.table)
 #' @param cols.remove which columns will be removed upon import. For internal use primarily. Changing my disrupt the workflow as this feature has not been tested downstream.
@@ -15,6 +16,7 @@
 partition_ebird_events <-
   function(dir.ebird.in,
            mmyyyy,
+           outpath = NULL,
            overwrite = FALSE,
            countries = c("US", "CA", "MX"),
            ncores = NULL) {
@@ -26,17 +28,19 @@ partition_ebird_events <-
     if (is.null(ncores))
       ncores <- parallel::detectCores() - 2
 
+    if(is.null(outpath)) outpath <- paste0(dir.ebird.in, "/", "partitioned_",mmyyyy,"/")
+    dir.create(outpath, showWarnings=FALSE)
     ## FIRST CHECK TO SEE IF PARTITIONS ALREADY EXIST WHEN OVERWRITE IS FALSE
-    if (!overwrite) {
-      fns <-
+    fns.temp <-
         tolower(
           list.files(
-            dir.ebird.in,
+            outpath,
             pattern = "partitioned-sampling-events",
-            recursive = TRUE,
+            recursive = FALSE,
             full.names = TRUE
           )
         )
+    if (!overwrite & length(fns.temp >0)) {
       pattern <-
         paste0("partitioned-sampling-events_",
                tolower(countries),
@@ -44,13 +48,13 @@ partition_ebird_events <-
                mmyyyy)
       x = NULL
       for (i in seq_along(pattern)) {
-        x = c(x, any(stringr::str_detect(fns[i], pattern)))
+        x = c(x, any(stringr::str_detect(fns.temp[i], pattern)))
       }
       if (all(x)) {
         message(
           "Overwrite is FALSE and partitioned files exist for specified countries. Not overwriting existing files and returning list of partitioned filenames.\n"
         )
-        return(fns)
+        return(fns.temp)
       } else{
         rm(fns, pattern, x)
       }
@@ -62,7 +66,7 @@ partition_ebird_events <-
         list.files(
           dir.ebird.in,
           pattern = "sampling_rel",
-          recursive = TRUE,
+          recursive = FALSE,
           full.names = TRUE
         )
       )
@@ -91,7 +95,7 @@ partition_ebird_events <-
       tolower(list.files(
         dir.ebird.in,
         pattern = "sampling",
-        recursive = TRUE,
+        recursive = FALSE,
         full.names = TRUE
       ))
     fn.txt <-
@@ -110,7 +114,7 @@ partition_ebird_events <-
     cat("Splitting data by country\n")
     samps <- split(samps, by = "COUNTRY CODE")
     fn <- NULL
-    cat("saving data in chunks by country\n")
+    cat("saving data in chunks by country. This takes ~10mins for CAN and USA on 15 threads.\n")
     for (i in seq_along(samps)) {
       fn <-
         paste0(
@@ -119,7 +123,7 @@ partition_ebird_events <-
           names(samps)[1],
           "_",
           mmyyyy,
-          ".txt"
+          ".txt.gz"
         )
       if ((file.exists(fn) & overwrite) || !file.exists(fn)) {
         chunks <- bit::chunk(1:nrow(samps[[1]]), length = 5000)
