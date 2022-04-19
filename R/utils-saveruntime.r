@@ -21,5 +21,4 @@ save.runtime <- function(name=NULL, time=NULL, other = NULL, fn="model-runtimes.
   write(line,
         file = fn, append = TRUE)
 
-
 }
