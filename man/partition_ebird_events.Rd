@@ -17,7 +17,11 @@ partition_ebird_events(
 
 \item{mmyyyy}{month and year associated with the sampling events file.}
 
+\item{overwrite}{if TRUE, will overwrite existing partitioned file for country and mmyyyy combination}
+
 \item{countries}{list of 2-letter country codes. Only sampling events from these countries will be partitioned into indiviudal sampling event files on local disk. Specify countries=NULL to partition all countries (this will take a while)}
+
+\item{ncores}{number of processors to engage during data import and export (using data.table)}
 
 \item{cols.remove}{which columns will be removed upon import. For internal use primarily. Changing my disrupt the workflow as this feature has not been tested downstream.}
 }

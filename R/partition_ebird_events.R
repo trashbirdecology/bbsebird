@@ -5,6 +5,8 @@
 #' @import data.table
 #' @importFrom stringr str_detect str_replace
 #' @importFrom bit chunk
+#' @param overwrite if TRUE, will overwrite existing partitioned file for country and mmyyyy combination
+#' @param ncores number of processors to engage during data import and export (using data.table)
 #' @param cols.remove which columns will be removed upon import. For internal use primarily. Changing my disrupt the workflow as this feature has not been tested downstream.
 #' @param mmyyyy month and year associated with the sampling events file.
 #' @param countries list of 2-letter country codes. Only sampling events from these countries will be partitioned into indiviudal sampling event files on local disk. Specify countries=NULL to partition all countries (this will take a while)
