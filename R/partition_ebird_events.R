@@ -108,33 +108,31 @@ partition_ebird_events <-
             stringr::str_detect(fns, ".txt.gz")]
     stopifnot(length(fn.txt) == 1)
 
-    cat("Importing the ebird sampling events data. This process takes ~3-4 mins on 15 cores....hang in there buddy...\n")
-    # data.table::setDTthreads(ncores)
+
 ## IMPORT THE SAMPLING EVENTS
+    cat("Importing the ebird sampling events data. This process takes ~3-4 mins on 15 cores....hang in there buddy...\n")
     samps <-
-      data.table::fread(file = fn.txt, nThread = ncores, verbose = FALSE,
+      data.table::fread(file = fn.txt, nThread = ncores,
                         drop = c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
+    message("ignore COLUMN name X not found warnings...\n")
     gc() # ~3GB saved maybe
 
 ## FIND ROW NUMBERS ASSOCIATED WITH SAMPS DT for each country of interest
-    cat("Removing unwanted data using countries arg\n")
+    cat("Removing non-target countries from sampling events data...\n")
     vec <- samps[,'COUNTRY CODE'][,`:=`(rownum=1:nrow(samps))] ## grab ctry col + add rownumber
-    temp=countries[!all(countries %in% unique(vec$`COUNTRY CODE`))]
-    if(length(temp)==0)
+    temp <- countries[which(!countries %in% unique(vec$`COUNTRY CODE`))]
+    if(length(temp)>0)
       warning(
         "the following countries were not found in sampling data. please check specification is correct for countries:\n\t",
-        countries[which(!countries %in% unique(vec$`COUNTRY CODE`))]
+          temp
       )
-    data.table::setkey(vec, "COUNTRY CODE"); stopifnot(haskey(vec))
-
     rowinds <- which(vec$`COUNTRY CODE` %in% countries)
     samps <- samps[rowinds,] ## filter down sampling events
-    rm(rowinds, vec)
+    rm(rowinds, vec, temp)
     gc() # definitely keep this one!
     cat("Splitting data by country\n")
     samps <- split(samps, by = "COUNTRY CODE")
-
-
+length(samps)
     cat("To try to avoid memory overload, I, robot, am saving data in chunks by country. \nThis takes ~10mins for CAN and USA on 15 threads.\n")
     for (i in seq_along(samps)) {
       if(!toupper(names(samps)[i]) %in% countries) next()
@@ -147,7 +145,11 @@ partition_ebird_events <-
           mmyyyy,
           out.filetype
         )
-      if((file.exists(fn) & !overwrite))
+      if((file.exists(fn) & !overwrite)){
+        print(fn, "already exists and overwrite is FALSE. Not overwriting...\n")
+        samps[[1]] <- NULL
+        next()
+      }
       if ((file.exists(fn) & overwrite) || !file.exists(fn)) {
         chunks <- bit::chunk(1:nrow(samps[[1]]), length = 5000)
         for (j in seq_along(chunks)) {
