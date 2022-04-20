@@ -102,7 +102,7 @@ for(i in seq_along(fns)){
 }# end i loop
 tictoc::toc()
 
-# tictoc::tic("RBIND THEN RBIND")
+# tictoc::tic("RBIND THEN FILTER")
 # for(i in seq_along(fns)){
 #    fs    <- fns[[i]]
 #   ## import files
