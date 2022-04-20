@@ -58,7 +58,7 @@ make_ebird <-
                                                       mmyyyy,
                                                       outpath = NULL,
                                                       overwrite = FALSE,
-                                                      out.filetype = ".csv.gz"
+                                                      out.filetype = ".csv.gz",
                                                       countries = countries)
   gc() # try to help with mem issues
   ## OBSERVATIONS FILENAMES
