@@ -8,7 +8,7 @@
 munge_ebird <- function(fns.obs,
                         fns.samps,
                         dir.out,
-                        complete.only = TRUE,
+                        zerofill = TRUE,
                         years = NULL,
                         countries = c("US", "CA"),
                         states    = NULL,
@@ -19,15 +19,16 @@ munge_ebird <- function(fns.obs,
                         max.effort.mins = 360,
                         max.num.observers = 10
                         ){
-## ARGS
+
+# EVAL ARGS ----------------------------------------------------------
 dir.create(dir.out, showWarnings = FALSE)
 countries <- toupper(countries)
-## IMPORT SAMPLING
+
 f.equal <-
   list(
     "COUNTRY CODE" = countries,
     "STATE CODE" = states,
-    "ALL SPECIES REPORTED" = complete.only,
+    "ALL SPECIES REPORTED" = ifelse(zerofill, c(1, TRUE), c(0, FALSE)),
     "PROTOCOL TYPE" = protocol)
 less.equal<-list(
     "EFFORT DISTANCE KM" = max.effort.km,
@@ -38,49 +39,120 @@ less.equal<-list(
 range.equal<-list(
     "OBSERVATION DATE" = years
 )
-filters <- list("equal"=f.equal, "less"=less.equal, "range"=range.equal)
+more.equal <-list(NULL)
+
+filters <- list("equal"=f.equal, "less"=less.equal, "range"=range.equal, "more"=more.equal)
 filters <- lapply(filters, function(x){
   x <- x[!unlist(lapply(x, is.null))]
 })
-samps <- vector("list", 2)
-fns <- list(obs=fns.obs, samps=fns.samps)
-tictoc::tic()
+
+# IMPORT & BASIC SUBSET------------------------------------------------------------------
+data <- vector("list", 2)
+fns <- list(observations=fns.obs, samplingevents=fns.samps)
+names(data) <- names(fns)
+# tictoc::tic()
+message("!!keep an eye on memory usage. this is where shit gets sticky...\n")
+dataout<-data<-list(NULL)
+tictoc::tic("FILTER THEN RBIND")
 for(i in seq_along(fns)){
-   fs    <- fns[[i]]
+  fs    <- fns[[i]]
   ## import files
-   cat("importing files:", fs, sep="\n","this may take a while...\n")
-   DT <- rbindlist(lapply(fs, function(x) {
+  cat("importing and performing initial filtering on ", names(fns)[i]," files:\n\n", paste0(fs, sep="\n"),"this may take a while...\n")
+  for(ii in seq_along(fs)){
+    x=fs[ii]
+    DT <-
+      # <- rbindlist(lapply(fs, function(x) {
       data.table::fread(x,
                         nThread = ncores,
                         # nrows = 1e2, ## FOR DEV PURPOSES
                         fill=FALSE,
-                        drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS"))
-    }))
-    # subset by EQUAL TO filters
-    filt.temp <- filters$equal[names(filters$equal)  %in% toupper(colnames(DT))]##keep only those relevnat to file (obs vs samp)
-    for(j in seq_along(filt.temp)){
-      f <- as.vector(unlist(filt.temp[j]))
-      n <- names(filt.temp)[j]
-      # set key
-      eval(parse(text=paste0("setkey(DT,`", n ,"`)")))
-      # filter
-      DT <- DT[eval(parse(text=paste0("`",n,"`"))) %in% f]
-      # remove key
-      data.table::setkey(DT, NULL)
-      cat("\n\t\tend j",j, " ", nrow(DT))
-    }#end j loop EQUAL
-  cat("\nEND i loop ", i,"..rows remaining:",  nrow(DT))
-  samps[[i]] <- DT
-  rm(DT)
+                        drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
+    # }))
+    cat("...import success. jagshemash!\n")
+    # subset by filter types
+    for(k in seq_along(filters)){
+      filt.ind <- tolower(names(filters)[k])
+      filt.temp <- filters[[k]][names(filters[[k]])  %in% toupper(colnames(DT))] ##keep only those relevnat to file (obs vs samp)
+      if(length(filt.temp)==0) next()
+      for(j in seq_along(filt.temp)){
+        f <- as.vector(unlist(filt.temp[j]))
+        n <- names(filt.temp)[j]
+        # set key
+        eval(parse(text=paste0("setkey(DT,`", n ,"`)")))
+        # filter
+        if(filt.ind == "equal") DT <- DT[eval(parse(text=paste0("`",n,"`"))) %in% f]
+        if(filt.ind == "less")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) <= f]
+        if(filt.ind == "more")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= f]
+        if(filt.ind == "range") {
+          DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= min(f)]
+          DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= max(f)]
+        }
+        # remove key
+        data.table::setkey(DT, NULL)
+        cat("\n\tend i-loop",i, "& j-loop", j ,nrow(DT) , "rows remain after", names(filt.temp)[j], "filter")
+      }#end j loop one fitler type
+    } # end k loop all filters
+
+    data[[ii]] <- DT
+    rm(DT)
+  } # end ii loop
+  length(data)==length(fns)
+  dataout[[i]] <- rbindlist(data)
+  data <- list() # empty data list for next i
 }# end i loop
 tictoc::toc()
-# cl <- parallel::makeCluster(ncores)
-# doParallel::registerDoParallel(cl, cores=ncores)
-# library(foreach)
-  # foreach::foreach(i=1:length(fns.samps), .combine="rbind")%dopar%{
-# parallel::stopCluster(cl)
-nrow(samps)
 
+# tictoc::tic("RBIND THEN RBIND")
+# for(i in seq_along(fns)){
+#    fs    <- fns[[i]]
+#   ## import files
+#    cat("importing and performing initial filtering on ", names(fns)[i]," files:\n\n", paste0(fs, sep="\n"),"this may take a while...\n")
+#    DT <- rbindlist(lapply(fs, function(x) {
+#     data.table::fread(x,
+#                         nThread = ncores,
+#                         # nrows = 1e2, ## FOR DEV PURPOSES
+#                         fill=FALSE,
+#                         drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
+#    }))
+#    cat("...import success. jagshemash!\n")
+#     # subset by filter types
+#     for(k in seq_along(filters)){
+#       filt.ind <- tolower(names(filters)[k])
+#       filt.temp <- filters[[k]][names(filters[[k]])  %in% toupper(colnames(DT))] ##keep only those relevnat to file (obs vs samp)
+#       if(length(filt.temp)==0) next()
+#     for(j in seq_along(filt.temp)){
+#       f <- as.vector(unlist(filt.temp[j]))
+#       n <- names(filt.temp)[j]
+#       # set key
+#       eval(parse(text=paste0("setkey(DT,`", n ,"`)")))
+#       # filter
+#       if(filt.ind == "equal") DT <- DT[eval(parse(text=paste0("`",n,"`"))) %in% f]
+#       if(filt.ind == "less")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) <= f]
+#       if(filt.ind == "more")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= f]
+#       if(filt.ind == "range") {
+#         DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= min(f)]
+#         DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= max(f)]
+#       }
+#       # remove key
+#       data.table::setkey(DT, NULL)
+#       cat("\n\t\tend j-loop",j,  nrow(DT), "rows remain after", names(filt.temp)[j], "filter")
+#       }#end j loop one fitler type
+#     }#end k loop all filters
+#   cat("\nEND i loop ", i, nrow(DT)," rows remain in", names(fns)[i],"files.\n")
+#   data[[i]] <- DT
+#   rm(DT)
+# }# end i loop
+# tictoc::toc()
+gc()
+# object.size(data)
+
+# MERGE -----------------------------------------------------------------
+
+colnames(data$observations)[which(colnames(data$observations) %in%  colnames(data$samplingevents))]
+colnames(data$samplingevents)[!which(colnames(data$samplingevents) %in%  colnames(data$observations))]
+colnames(data$observations)[!which(colnames(data$observations) %in%  colnames(data$samplingevents))]
+
+# END FUN -----------------------------------------------------------------
 
 
 return(out)

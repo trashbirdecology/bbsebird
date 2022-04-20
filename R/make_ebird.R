@@ -41,8 +41,7 @@ make_ebird <-
                                                       overwrite = FALSE,
                                                       countries = countries)
   ## OBSERVATIONS FILENAMES
-  if (is.null(fns.obs))
-    fns.obs   <-
+  if (is.null(fns.obs)) fns.obs   <-
     get_ebird_obs_files(
       dir.ebird.in = dir.ebird.in,
       mmyyyy = mmyyyy,
@@ -52,6 +51,21 @@ make_ebird <-
     )
 # fns.samps; fns.obs
   ## IMPORT AND MUNGE THE DATA
+munged <- munge_ebird(
+    fns.obs = fns.obs,
+    fns.samps = fns.samps,
+    dir.out = dir.out,
+    complete.only = complete.only,
+    years = years,
+    countries = countries,
+    states = states,
+    species = species,
+    protocol = protocol,
+    remove.bbs.obs = remove.bbs.obs,
+    max.effort.km = max.effort.km,
+    max.effort.mins = max.effort.mins,
+    max.num.observers = max.num.observers
+  )
 
 
 
