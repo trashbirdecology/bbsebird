@@ -8,7 +8,7 @@ munge_ebird(
   fns.obs,
   fns.samps,
   dir.out,
-  complete.only = TRUE,
+  zerofill = TRUE,
   years = NULL,
   countries = c("US", "CA"),
   states = NULL,
