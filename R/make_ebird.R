@@ -26,6 +26,20 @@ make_ebird <-
            max.num.observers = 10,
            ncores  = NULL
            ) {
+### FOR DEV PURPOSES
+    dir.out=NULL;
+    fns.samps = NULL
+    fns.obs = NULL
+    complete.only = TRUE;
+    protocol = c("Traveling", "Stationary");
+    remove.bbs.obs = TRUE;
+    years = NULL;
+    max.effort.km = NULL;
+    max.effort.mins = NULL;
+    max.num.observers = 10;
+    ncores  = NULL
+
+
   # ARGS
   if(!grep("-", mmyyyy)==1){stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")}
   mmyyyy <- tolower(mmyyyy)
@@ -35,11 +49,18 @@ make_ebird <-
   if(is.null(ncores)) ncores <- parallel::detectCores()-1
 
   ## SAMPLING FILENAMES
+  ### this identifies, unpacks (if necessary), and paritions the sampling events data into
+  ### country-level files. the sampling events df can be one of the limiting  factor
+  ### w.r.t. memory capacity.....
+  ### this function also grabs filenames for previously-partitioned data if
+  ### overwrite==FALSE && data exists for mmyyyy && countries...
   if(is.null(fns.samps)) fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
                                                       mmyyyy,
                                                       outpath = NULL,
                                                       overwrite = FALSE,
+                                                      out.filetype = ".csv.gz"
                                                       countries = countries)
+  gc() # try to help with mem issues
   ## OBSERVATIONS FILENAMES
   if (is.null(fns.obs)) fns.obs   <-
     get_ebird_obs_files(

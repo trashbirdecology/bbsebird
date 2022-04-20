@@ -57,7 +57,6 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       'models',
       'plots')
 
-  # dir.spatial, dir.proj
   mylist <- lapply(mylist, function(x) paste0(subdir.proj, eval(parse(text=x))))
 
 subset.names <-            c(
@@ -77,7 +76,7 @@ base.names <- c("dir.proj",
 paths <- list()
   for(i in seq_along(subset.names)){
     if(subset.names[i] == "spatial"){
-      paths[[i]] <-  dir.spatial} else{
+      paths[[i]] <-  spatial} else{
         paths[[i]] <- gsub(x=paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), pattern="//",replacement="/")
         }
      paths[[i]] <- gsub(x=paths[[i]], pattern = "//", replacement = "/")
