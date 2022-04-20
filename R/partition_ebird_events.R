@@ -35,17 +35,18 @@ partition_ebird_events <-
         tolower(
           list.files(
             outpath,
-            pattern = "partitioned-sampling-events",
+            pattern = ".csv.gz",
+            ignore.case = TRUE,
             recursive = FALSE,
             full.names = TRUE
           )
         )
-    if (!overwrite & length(fns.temp >0)) {
+    if (!overwrite & length(fns.temp)>0) {
       pattern <-
         paste0("partitioned-sampling-events_",
                tolower(countries),
                "_",
-               mmyyyy)
+               mmyyyy, ".csv.gz")
       x = NULL
       for (i in seq_along(pattern)) {
         x = c(x, any(stringr::str_detect(fns.temp[i], pattern)))
@@ -104,15 +105,25 @@ partition_ebird_events <-
     stopifnot(length(fn.txt) == 1)
 
     cat("Importing the ebird sampling events data. This process takes ~3-4 mins on 15 cores....hang in there buddy...\n")
-    ## import two columns then grab only event identifiers where country code is in countries
+    data.table::setDTthreads(ncores)
+## IMPORT THE SAMPLING EVENTS
     samps <-
-      data.table::fread(file = fn.txt)#, select=c("COUNTRY CODE","SAMPLING EVENT IDENTIFIER"))
+      data.table::fread(file = fn.txt, nThread = ncores)#, select=c("COUNTRY CODE","SAMPLING EVENT IDENTIFIER"))
+    gc() # ~3GB saved maybe
+
+## FIND ROW NUMBERS ASSOCIATED WITH SAMPS DT for each country of interest
     cat("Removing unwanted data using countries arg\n")
-    samps <- samps[which(samps$'COUNTRY CODE' %in% countries), ]
-    data.table::setkey(samps, "COUNTRY CODE")
-    stopifnot(data.table::haskey(samps))
+    vec <- samps[,'COUNTRY CODE'][,`:=`(rownum=1:nrow(samps))] ## grab ctry col + add rownumber
+    data.table::setkey(vec, "COUNTRY CODE"); stopifnot(haskey(vec))
+    stopifnot(all(countries %in% unique(vec$`COUNTRY CODE`)))
+
+    rowinds <- which(vec$`COUNTRY CODE` %in% countries)
+    samps <- samps[rowinds,]
+    rm(rowinds, vec)
+    gc() # definitely keep this one!
     cat("Splitting data by country\n")
     samps <- split(samps, by = "COUNTRY CODE")
+    # gc()
     fn <- NULL
     cat("saving data in chunks by country. This takes ~10mins for CAN and USA on 15 threads.\n")
     for (i in seq_along(samps)) {
@@ -123,7 +134,7 @@ partition_ebird_events <-
           names(samps)[1],
           "_",
           mmyyyy,
-          ".txt.gz"
+          ".csv"
         )
       if ((file.exists(fn) & overwrite) || !file.exists(fn)) {
         chunks <- bit::chunk(1:nrow(samps[[1]]), length = 5000)
@@ -149,9 +160,10 @@ partition_ebird_events <-
       rm(chunks)
       } else{
         message(fn,
-                "exists and overwrite=FALSE. Not overwriting existing files.\n")
+                " exists and overwrite=FALSE. Not overwriting existing files.\n")
       }
       samps[[1]] <- NULL #attempt remove data from memory after saving...
+      gc()
     }
 
     return(fn) ### return the filenames for use in eBird import/munging functions

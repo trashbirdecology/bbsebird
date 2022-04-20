@@ -10,16 +10,17 @@
 #' @export
 id_ebird_files <- function(dir.ebird.in,
                            dir.ebird.out = NULL,
-                           mmyyyy = "nov-2021",
-                           species.abbr = "doccor",
+                           mmyyyy = "dec-2021",
+                           species.abbr = NULL,
                            get.full.data = FALSE,
+                           country.ind = NULL,
                            states.ind = NULL) {
   ### NEED TO ADD A MENU FOR WHEN NOT ALL STATES.IND ARE IN THE IDENTIFIED
   ### THEN IT JUST GRABS ALL THE SPECIES-COUNTRY COMBNATONS AND UOTPUTS FOR OBS FILES.
 
   ### ALSO NEED TOE NSURE A COUNTRY-ONLY ARGUMENT
-
-  rc <- bbsAssistant::region_codes
+  if(!is.null(states.ind)){
+      rc <- bbsAssistant::region_codes
   rc.temp <-
     tolower(x = gsub(rc$iso_3166_2, pattern = "-", replacement = ""))
   states.ind <-
@@ -27,62 +28,68 @@ id_ebird_files <- function(dir.ebird.in,
          pattern = "-",
          replacement = "")
   states.ind <- rc[which(rc.temp %in% states.ind),]$iso_3166_2
+  }
 
   # Simple Tests and Create Simple Indexes
   if (!stringr::str_detect(mmyyyy, "-"))
     stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")
   mmyyyy <- tolower(mmyyyy)
   e.regions          <- c("us", "ca", "usa", "mx", "mex")
+  if(!is.null(country.ind) && !is.null(species.abbr)){
   country.spp      <-
     paste(tolower(apply(
       expand.grid(paste0("ebd_", e.regions, "_"), species.abbr), 1, paste, collapse = ""
     )), collapse = "|")
-
+  }
+  if(!is.null(states.ind) && !is.null(species.abbr)){
   state.spp       <-
     paste(tolower(apply(
       expand.grid(paste0(e.regions, sep = "-.{2}_"), species.abbr), 1, paste, collapse = ""
     )), collapse = "|")
-
+}
   # List All Files in Main and Subdirectories
   fns.all <-
     tolower(list.files(dir.ebird.in, recursive = TRUE, full.names = FALSE))
   fns.all <-
     fns.all[!grepl(fns.all, pattern = "usfws|terms_of_use|citation|ibacodes|bcrcodes|metadata")] # remove junk
+
   # Identify files/dirs with mmyyyy
   fns.all <- fns.all[grepl(fns.all, pattern = mmyyyy)] # remove junk
   stopifnot(length(fns.all) >= 1)
-  # Step 1: Identify the sampling events data filename
-  fns_samp     <- fns.all[grepl(fns.all, pattern = "ebd_sampling")]
+  # # Step 1: Identify the sampling events data filename
+  # if(!paste0("partitioned-sampling-events_", mmyyyy, ".csv.gz") %in% fns.all)"test"
+  #
+  # fns_samp     <- fns.all[grepl(fns.all, pattern = "ebd_sampling")]
+  #
+  # ## if the file is already unpacked, skip the step for stepping into it.
+  # f_samp <-
+  #   paste0(dir.ebird.in, "/", fns_samp[grepl(fns_samp, pattern = ".txt.gz")])
+  # while (!file.exists(f_samp)) {
+  #   ## using while because sometimes it fails for no apparent reason. however, this is not good because it will inifinitely loop if the .tar DNE
+  #   message("attempting to unpack ", f_samp, "\n")
+  # fns_samp.tar <-
+  #   paste0(dir.ebird.in, "/", fns_samp[grepl(fns_samp, pattern = ".tar")])
+  # fns_samp.tar.contents <-
+  #   untar(tarfile = fns_samp.tar, list = TRUE)
+  # f_samp <-
+  #   paste0(dir.ebird.in, "/", fns_samp.tar.contents[grepl(fns_samp.tar.contents, pattern =
+  #                                                           ".gz")]) # get the name of the .txt.gz filwithin the tarball that is our target.
+  #
+  #   # cat("Unpacking ", fns_samp.tar, "\n")
+  # untar(tarfile = fns_samp.tar,
+  #         list = FALSE,
+  #         exdir = dir.ebird.in)
+  # } # identify and unpack it if it DNE...
+  #
 
-  ## if the file is already unpacked, skip the step for stepping into it.
-  f_samp <-
-    paste0(dir.ebird.in, "/", fns_samp[grepl(fns_samp, pattern = ".txt.gz")])
-  while (!file.exists(f_samp)) {
-    ## using while because sometimes it fails for no apparent reason. however, this is not good because it will inifinitely loop if the .tar DNE
-    message("attempting to unpack ", f_samp, "\n")
-  fns_samp.tar <-
-    paste0(dir.ebird.in, "/", fns_samp[grepl(fns_samp, pattern = ".tar")])
-  fns_samp.tar.contents <-
-    untar(tarfile = fns_samp.tar, list = TRUE)
-  f_samp <-
-    paste0(dir.ebird.in, "/", fns_samp.tar.contents[grepl(fns_samp.tar.contents, pattern =
-                                                            ".gz")]) # get the name of the .txt.gz filwithin the tarball that is our target.
-
-    # cat("Unpacking ", fns_samp.tar, "\n")
-  untar(tarfile = fns_samp.tar,
-          list = FALSE,
-          exdir = dir.ebird.in)
-  } # identify and unpack it if it DNE...
-
-
-  # Step 3: Identify the observations data filename(s)
-  fns_obs <-
-    setdiff(fns.all, fns_samp) # remove the sampling events filenames
+  # Identify the observations data filename(s)
+  fns_obs <- fns.all[!grepl(pattern="partitioned", x=fns.all)]
+  fns_obs <- fns_obs[setdiff(1:length(fns_obs), which(grepl(pattern="sampling",    x=fns_obs)))]
 
   ## Filter by species if specified
   if (!is.null(species.abbr) & !get.full.data) {
     if (is.null(states.ind)) {
-      region = country.spp
+      region = country.ind
     } else{
       region = tolower(paste(states.ind, collapse = "|"))
     }
