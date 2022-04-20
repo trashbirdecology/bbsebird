@@ -9,7 +9,7 @@
 #' @param outpath path location to where output files will be saved. If NULL will save to a directory within dir.ebird.in for each mmyyyy
 #' @param overwrite if TRUE, will overwrite existing partitioned file for country and mmyyyy combination
 #' @param ncores number of processors to engage during data import and export (using data.table)
-#' @param cols.remove which columns will be removed upon import. For internal use primarily. Changing my disrupt the workflow as this feature has not been tested downstream.
+#' @param out.filetype if writing new files, what file extension to search for? (e.g., .csv, .txt, .csv.gz).
 #' @param mmyyyy month and year associated with the sampling events file.
 #' @param countries list of 2-letter country codes. Only sampling events from these countries will be partitioned into indiviudal sampling event files on local disk. Specify countries=NULL to partition all countries (this will take a while)
 #' @export partition_ebird_events
@@ -18,6 +18,7 @@ partition_ebird_events <-
            mmyyyy,
            outpath = NULL,
            overwrite = FALSE,
+           out.filetype= ".csv.gz",
            countries = c("US", "CA", "MX"),
            ncores = NULL) {
     stopifnot(memory.limit()[1] > 57e3) # i think i acutally needed like 55GB...
@@ -35,7 +36,7 @@ partition_ebird_events <-
         tolower(
           list.files(
             outpath,
-            pattern = ".csv.gz",
+            pattern = out.filetype,
             ignore.case = TRUE,
             recursive = FALSE,
             full.names = TRUE
@@ -46,7 +47,7 @@ partition_ebird_events <-
         paste0("partitioned-sampling-events_",
                tolower(countries),
                "_",
-               mmyyyy, ".csv.gz")
+               mmyyyy, out.filetype)
       x = NULL
       for (i in seq_along(pattern)) {
         x = c(x, any(stringr::str_detect(fns.temp[i], pattern)))

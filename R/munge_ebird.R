@@ -1,3 +1,6 @@
+#' Munge eBird Data
+#'
+#' Filter and zero-fill ebird data.
 #' @param fns.obs Filenames to observations files
 #' @param fns.samps Filenames to sampling events file
 #' @param dir.out Directory of where to save the filtered and munged data files
@@ -41,18 +44,21 @@ filters <- lapply(filters, function(x){
 })
 samps <- vector("list", 2)
 fns <- list(obs=fns.obs, samps=fns.samps)
-
+tictoc::tic()
 for(i in seq_along(fns)){
-  fs    <- fns[[i]]
-    ## import files
-    head(DT)
-    DT <- rbindlist(lapply(fs, function(x) {
-      # cat("importing", i  ,"file", "", length(fs))
-      data.table::fread(x, nThread = ncores, nrows = 1e2, fill=TRUE, drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS"))
+   fs    <- fns[[i]]
+  ## import files
+   cat("importing files:", fs, sep="\n","this may take a while...\n")
+   DT <- rbindlist(lapply(fs, function(x) {
+      data.table::fread(x,
+                        nThread = ncores,
+                        # nrows = 1e2, ## FOR DEV PURPOSES
+                        fill=FALSE,
+                        drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS"))
     }))
     # subset by EQUAL TO filters
     filt.temp <- filters$equal[names(filters$equal)  %in% toupper(colnames(DT))]##keep only those relevnat to file (obs vs samp)
-    for(j in seq_along(filters)){
+    for(j in seq_along(filt.temp)){
       f <- as.vector(unlist(filt.temp[j]))
       n <- names(filt.temp)[j]
       # set key
@@ -63,10 +69,11 @@ for(i in seq_along(fns)){
       data.table::setkey(DT, NULL)
       cat("\n\t\tend j",j, " ", nrow(DT))
     }#end j loop EQUAL
-cat("\nEND i loop ", i, nrow(DT))
-samps[[i]] <- DT
+  cat("\nEND i loop ", i,"..rows remaining:",  nrow(DT))
+  samps[[i]] <- DT
+  rm(DT)
 }# end i loop
-
+tictoc::toc()
 # cl <- parallel::makeCluster(ncores)
 # doParallel::registerDoParallel(cl, cores=ncores)
 # library(foreach)

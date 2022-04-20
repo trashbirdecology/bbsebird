@@ -4,18 +4,25 @@
 \alias{set_proj_shorthand}
 \title{Auto generate a subdirectory name based on project parameters}
 \usage{
-set_proj_shorthand(species, regions, grid.size, year.range, max.C.ebird = NULL)
+set_proj_shorthand(
+  species,
+  countries = c("us", "ca"),
+  states = NULL,
+  grid.size,
+  years,
+  max.C.ebird = NULL
+)
 }
 \arguments{
 \item{species}{string of species names using ISO-366-2}
 
-\item{regions}{string of countries or states}
-
 \item{grid.size}{size of desired grid cell}
 
-\item{year.range}{Vector of years. will take the min and max value}
+\item{years}{Vector of years. will take the min and max value}
 
 \item{max.C.ebird}{optional NULL or integer representing max number of birds allowed on eBird data}
+
+\item{regions}{string of countries or states}
 }
 \description{
 Generates a shorthand name for project based on species, country, states, years, and grid cell size.

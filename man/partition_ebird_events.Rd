@@ -7,7 +7,9 @@
 partition_ebird_events(
   dir.ebird.in,
   mmyyyy,
+  outpath = NULL,
   overwrite = FALSE,
+  out.filetype = ".csv.gz",
   countries = c("US", "CA", "MX"),
   ncores = NULL
 )
@@ -17,13 +19,15 @@ partition_ebird_events(
 
 \item{mmyyyy}{month and year associated with the sampling events file.}
 
+\item{outpath}{path location to where output files will be saved. If NULL will save to a directory within dir.ebird.in for each mmyyyy}
+
 \item{overwrite}{if TRUE, will overwrite existing partitioned file for country and mmyyyy combination}
+
+\item{out.filetype}{if writing new files, what file extension to search for? (e.g., .csv, .txt, .csv.gz).}
 
 \item{countries}{list of 2-letter country codes. Only sampling events from these countries will be partitioned into indiviudal sampling event files on local disk. Specify countries=NULL to partition all countries (this will take a while)}
 
 \item{ncores}{number of processors to engage during data import and export (using data.table)}
-
-\item{cols.remove}{which columns will be removed upon import. For internal use primarily. Changing my disrupt the workflow as this feature has not been tested downstream.}
 }
 \description{
 Relies heavily on package 'data.table' to import, filter, and write the sampling events data for each country of interest.
