@@ -1,4 +1,5 @@
 #' Munge eBird for Use Case
+#'
 #' @param fns.samps Filenames for import sampling events
 #' @param fns.obs  Filenames or directory for
 #' @param dir.ebird.in Where the original eBird data are stored. A single directory only...
@@ -6,7 +7,9 @@
 #' @param countries countries
 #' @param mmyyyy month-year used for searching ebird files.
 #' @param overwrite if TRUE will overwrite any existing files.
+#'
 #' @export make_ebird
+#'
 make_ebird <-
   function(dir.ebird.in,
            dir.out = NULL,
@@ -24,7 +27,8 @@ make_ebird <-
            max.effort.km = NULL,
            max.effort.mins = NULL,
            max.num.observers = 10,
-           ncores  = NULL
+           ncores  = NULL,
+           out.filetype = ".csv.gz"
            ) {
 ### FOR DEV PURPOSES
     dir.out=NULL;
@@ -60,7 +64,7 @@ make_ebird <-
                                                       overwrite = FALSE,
                                                       out.filetype = ".csv.gz",
                                                       countries = countries)
-  gc() # try to help with mem issues
+gc() # try to help with mem issues
   ## OBSERVATIONS FILENAMES
   if (is.null(fns.obs)) fns.obs   <-
     get_ebird_obs_files(

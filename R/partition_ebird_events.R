@@ -22,7 +22,7 @@ partition_ebird_events <-
            countries = c("US", "CA", "MX"),
            ncores = NULL) {
     stopifnot(memory.limit()[1] > 57e3) # i think i acutally needed like 55GB...
-    countries <- toupper(countries)
+    country.ind <- countries <- toupper(countries)
     out.filetype <- tolower(out.filetype)
     stopifnot(out.filetype %in% c(".csv.gz", ".csv", ".txt"))
 
@@ -47,24 +47,26 @@ partition_ebird_events <-
         )
     if (!overwrite & length(fns.temp)>0) {
       pattern <-
-        paste0("partitioned-sampling-events_",
+        tolower(paste0(outpath, "partitioned-sampling-events_",
                tolower(countries),
                "_",
-               mmyyyy, out.filetype)
-      x = NULL
-      for (i in seq_along(pattern)) {
-        x = c(x, any(stringr::str_detect(fns.temp[i], pattern)))
-      }
-      if (all(x)) {
-        message(
-          "Overwrite is FALSE and partitioned files exist for specified countries. Not overwriting existing files and returning list of partitioned filenames.\n"
-        )
-        return(fns.temp)
-      } else{
-        rm(fns, pattern, x)
-      }
-    } # end first test
+               mmyyyy, out.filetype))
 
+      for (i in seq_along(pattern)) {
+        z=any(stringr::str_detect(string = fns.temp, pattern=pattern[i] ))
+        if(i==1) x = z else x=c(x, z);rm(z)
+      }
+
+      if (any(x)) {
+        message(
+          "Overwrite is FALSE and partitioned files exist for specified countries. Not overwriting existing files for countries: \n",
+          countries[x])
+        if(all(x)) return(fns.temp)
+        else{countries <- countries[!x]}
+      } else{
+      }
+      rm(pattern, x)
+    } # end first test
 
     fns <-
       tolower(
@@ -130,9 +132,10 @@ partition_ebird_events <-
     samps <- samps[rowinds,] ## filter down sampling events
     rm(rowinds, vec, temp)
     gc() # definitely keep this one!
-    cat("Splitting data by country\n")
+    cat("Splitting data by country")
     samps <- split(samps, by = "COUNTRY CODE")
-length(samps)
+    cat("...done\n")
+
     cat("To try to avoid memory overload, I, robot, am saving data in chunks by country. \nThis takes ~10mins for CAN and USA on 15 threads.\n")
     for (i in seq_along(samps)) {
       if(!toupper(names(samps)[i]) %in% countries) next()
@@ -180,8 +183,17 @@ length(samps)
       gc()
       rm(fn)
     }#end i loop
+fns.out <- tolower(list.files(outpath, full.names = TRUE))
+fns.out <- fns.out[grep(pattern = out.filetype, x=fns.out)]
+p = unlist(lapply(countries, function(c){
+  paste0("(?=.*", c,")(?=.*", eval(mmyyyy),")(?=.*", eval(out.filetype) ,")")
 
-fns.out <- list.files(outpath, recursive=TRUE)
+}))
+for(i in seq_along(p)){
+  if(i==1) f.out <- NULL
+  f.out <- c(f.out, fns.out[which(grepl(pattern=paste(p[i]), x=fns.out, perl=TRUE, ignore.case = TRUE))])
+}
+fns.out <- unique(f.out)
 
 return(fns.out) ### return the filenames for use in eBird import/munging functions
 
