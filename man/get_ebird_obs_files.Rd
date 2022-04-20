@@ -13,7 +13,15 @@ get_ebird_obs_files(
 )
 }
 \arguments{
+\item{dir.ebird.in}{...}
+
+\item{mmyyyy}{...}
+
 \item{dir.out}{first, search for existing .rds files in output directory.}
+
+\item{species}{...}
+
+\item{countries}{...}
 }
 \description{
 Identify and Unpack eBird Observations Files

@@ -1,13 +1,15 @@
 #' Identify and Unpack eBird Observations Files
-#' 
+#'
 #' @param dir.out first, search for existing .rds files in output directory.
-#' @param dir.ebird.in
-#' @param mmyyyy
+#' @param dir.ebird.in ...
+#' @param species ...
+#' @param countries ...
+#' @param mmyyyy ...
 #' @export get_ebird_obs_files
-get_ebird_obs_files <- function(dir.ebird.in, 
+get_ebird_obs_files <- function(dir.ebird.in,
                                 mmyyyy="feb-2022",
-                                dir.out=NULL, 
-                                species = NULL, 
+                                dir.out=NULL,
+                                species = NULL,
                                 countries=NULL
                                 ){
   fns.obs <- tolower(list.files(path=dir.out, "ebird-obs_", recursive=TRUE, full.names=TRUE, ignore.case = TRUE))
@@ -21,7 +23,7 @@ get_ebird_obs_files <- function(dir.ebird.in,
     if(grab.full.obs){
       fns.obs <- fns.obs[grepl(paste0("ebd_rel", mmyyyy), fns.obs)]
     }
-    
+
     ##Filter fns.obs by species, country
     #### species first...
     if(!is.null(species)){
@@ -61,6 +63,6 @@ get_ebird_obs_files <- function(dir.ebird.in,
   } # END make fn.obs if its NULL/empty
   if(length(fns.obs)==0) stop("no files found. ")
   stopifnot(all(file.exists(fns.obs)))
- 
-  return(fns.obs) 
+
+  return(fns.obs)
 }
