@@ -26,6 +26,7 @@ countries <- toupper(countries)
 stopifnot(is.logical(zerofill))
 stopifnot(is.logical(remove.bbs.obs))
 
+
 # CREATE LISTS FOR SUBSETTING ---------------------------------------------
 f.equal <-
   list(
@@ -50,25 +51,19 @@ filters <- lapply(filters, function(x){
 })
 
 # IMPORT & FILTER OBS + SAMP EVENTS------------------------------------------------------------------
+data <- vector("list", 2)
+fns <- list(observations=fns.obs, samplingevents=fns.samps)
+names(data) <- names(fns)
 # tictoc::tic()
 message("!!keep an eye on memory usage. this is where shit gets sticky...\n")
-fns <- list(observations=fns.obs, samplingevents=fns.samps)
+dataout<-data<-list(NULL)
 tictoc::tic("FILTER THEN RBIND")
 for(i in seq_along(fns)){
   fs    <- fns[[i]]
   type  <- names(fns)[i]
-  if(i==1) fns.grab <- NULL
-  myfn <- paste0(dir.out, "filtered_", type, ".csv.gz")
-  fns.grab <- c(fns.grab, myfn) ## save this for grabbing later on...
-  if (file.exists(myfn) &&
-      !overwrite) {
-    message(myfn," exists and overwrite = FALSE. Not overwriting the filtered ", type, "data. \n");
-    next()
-  }
   ## import files
-  cat("importing and filtering on", type," files:\n\n", paste0(fs, sep="\n"),"\nthis may take a while...\n")
+  cat("importing and performing initial filtering on", type," files:\n\n", paste0(fs, sep="\n"),"\nthis may take a while...\n")
   for(ii in seq_along(fs)){
-    if(ii==1) data<- vector("list", length=length(fs))
     x <- fs[ii]
     DT <-
       # <- rbindlist(lapply(fs, function(x) {
@@ -102,22 +97,63 @@ for(i in seq_along(fns)){
         cat("\n\tend ", names(fns)[i]," i-loop",i,  "& j-loop", j ,nrow(DT) , "rows remain after", names(filt.temp)[j], "filter")
       }#end j loop one fitler type
     } # end k loop all filters
-    if(ii==1) data <- vector("list", length=length(length(fs)))
+
     data[[ii]] <- DT
     rm(DT)
-    if(i==2) browser()
   } # end ii loop
-  length(data)==length(fs)
-  cat("writing the filtered ", type,  "to in the process stops mid-way.......:\n", myfn)
-  data.table::fwrite(x = rbindlist(data), file = myfn, nThread = ncores)
-  rm(data) # clear from mem.
+  browser()
+  cat("writing the filtered ", names(fns)[i], "to file in case your machine crashes....:\n", ,"\n")
+  myfn <- paste0(dir.out, "filtered_", ".csv.gz")
+  data.table::fwrite()
+  length(data)==length(fns)
+  dataout[[i]] <- rbindlist(data)
+  data <- list() # empty data list for next i
 }# end i loop
 tictoc::toc()
 
-
-# Import the filtered and combine and do zero-filling.. -------------------
-
-
+# tictoc::tic("RBIND THEN FILTER")
+# for(i in seq_along(fns)){
+#    fs    <- fns[[i]]
+#   ## import files
+#    cat("importing and performing initial filtering on ", names(fns)[i]," files:\n\n", paste0(fs, sep="\n"),"this may take a while...\n")
+#    DT <- rbindlist(lapply(fs, function(x) {
+#     data.table::fread(x,
+#                         nThread = ncores,
+#                         # nrows = 1e2, ## FOR DEV PURPOSES
+#                         fill=FALSE,
+#                         drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
+#    }))
+#    cat("...import success. jagshemash!\n")
+#     # subset by filter types
+#     for(k in seq_along(filters)){
+#       filt.ind <- tolower(names(filters)[k])
+#       filt.temp <- filters[[k]][names(filters[[k]])  %in% toupper(colnames(DT))] ##keep only those relevnat to file (obs vs samp)
+#       if(length(filt.temp)==0) next()
+#     for(j in seq_along(filt.temp)){
+#       f <- as.vector(unlist(filt.temp[j]))
+#       n <- names(filt.temp)[j]
+#       # set key
+#       eval(parse(text=paste0("setkey(DT,`", n ,"`)")))
+#       # filter
+#       if(filt.ind == "equal") DT <- DT[eval(parse(text=paste0("`",n,"`"))) %in% f]
+#       if(filt.ind == "less")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) <= f]
+#       if(filt.ind == "more")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= f]
+#       if(filt.ind == "range") {
+#         DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= min(f)]
+#         DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= max(f)]
+#       }
+#       # remove key
+#       data.table::setkey(DT, NULL)
+#       cat("\n\t\tend j-loop",j,  nrow(DT), "rows remain after", names(filt.temp)[j], "filter")
+#       }#end j loop one fitler type
+#     }#end k loop all filters
+#   cat("\nEND i loop ", i, nrow(DT)," rows remain in", names(fns)[i],"files.\n")
+#   data[[i]] <- DT
+#   rm(DT)
+# }# end i loop
+# tictoc::toc()
+gc()
+# object.size(data)
 
 # MERGE -----------------------------------------------------------------
 
