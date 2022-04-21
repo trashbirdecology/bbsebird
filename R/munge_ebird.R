@@ -23,7 +23,11 @@ munge_ebird <- function(fns.obs,
 # EVAL ARGS ----------------------------------------------------------
 dir.create(dir.out, showWarnings = FALSE)
 countries <- toupper(countries)
+stopifnot(is.logical(zerofill))
+stopifnot(is.logical(remove.bbs.obs))
 
+
+# CREATE LISTS FOR SUBSETTING ---------------------------------------------
 f.equal <-
   list(
     "COUNTRY CODE" = countries,
@@ -46,7 +50,7 @@ filters <- lapply(filters, function(x){
   x <- x[!unlist(lapply(x, is.null))]
 })
 
-# IMPORT & BASIC SUBSET------------------------------------------------------------------
+# IMPORT & FILTER OBS + SAMP EVENTS------------------------------------------------------------------
 data <- vector("list", 2)
 fns <- list(observations=fns.obs, samplingevents=fns.samps)
 names(data) <- names(fns)
@@ -56,8 +60,9 @@ dataout<-data<-list(NULL)
 tictoc::tic("FILTER THEN RBIND")
 for(i in seq_along(fns)){
   fs    <- fns[[i]]
+  type  <- names(fns)[i]
   ## import files
-  cat("importing and performing initial filtering on ", names(fns)[i]," files:\n\n", paste0(fs, sep="\n"),"this may take a while...\n")
+  cat("importing and performing initial filtering on", type," files:\n\n", paste0(fs, sep="\n"),"\nthis may take a while...\n")
   for(ii in seq_along(fs)){
     x=fs[ii]
     DT <-

@@ -60,7 +60,7 @@ partition_ebird_events <-
       if (any(x)) {
         message(
           "Overwrite is FALSE and partitioned files exist for specified countries. Not overwriting existing files for countries: \n",
-          countries[x])
+          countries[x], "\n")
         if(all(x)) return(fns.temp)
         else{countries <- countries[!x]}
       } else{

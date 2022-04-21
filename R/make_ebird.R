@@ -42,7 +42,7 @@ make_ebird <-
     # max.effort.mins = NULL;
     # max.num.observers = 10;
     # ncores  = NULL
-    #
+
 
   # ARGS
   if(!grep("-", mmyyyy)==1){stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")}
@@ -64,7 +64,7 @@ make_ebird <-
                                                       overwrite = FALSE,
                                                       out.filetype = ".csv.gz",
                                                       countries = countries)
-  ## OBSERVATIONS FILENAMES
+## OBSERVATIONS FILENAMES
   if (is.null(fns.obs)) fns.obs   <-
     get_ebird_obs_files(
       dir.ebird.in = dir.ebird.in,
