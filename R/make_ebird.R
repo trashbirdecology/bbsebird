@@ -42,7 +42,7 @@ make_ebird <-
     # max.effort.mins = NULL;
     # max.num.observers = 10;
     # ncores  = NULL
-
+    #
 
   # ARGS
   if(!grep("-", mmyyyy)==1){stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")}
@@ -79,7 +79,7 @@ munged <- munge_ebird(
     fns.obs = fns.obs,
     fns.samps = fns.samps,
     dir.out = dir.out,
-    complete.only = complete.only,
+    # complete.only = complete.only,
     years = years,
     countries = countries,
     states = states,
@@ -90,7 +90,6 @@ munged <- munge_ebird(
     max.effort.mins = max.effort.mins,
     max.num.observers = max.num.observers
   )
-
 
 
 } # END FUNCTION

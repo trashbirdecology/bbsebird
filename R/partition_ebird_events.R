@@ -80,7 +80,7 @@ partition_ebird_events <-
     fn.txt <-
       fns[stringr::str_detect(fns, mmyyyy) &
             stringr::str_detect(fns, ".txt.gz")]
-
+cat("Partitioning the sampling events data into country-level files for specified countries. This will take ~15 mins.\n")
     ## if fn.xtxt ==0 then NO need to unpack....
     if (length(fn.txt) == 0) {
       fn.tar <-
@@ -91,7 +91,7 @@ partition_ebird_events <-
       fn.txt <-
         fn.tar.contents[stringr::str_detect(fn.tar.contents, pattern = ".txt.gz")]
       stopifnot(length(fn.txt) > 0)
-      cat("attempting to unpack tarball contents ", fn.txt, "\n")
+      cat("Attempting to unpack tarball contents ", fn.txt, "\n")
       untar(tarfile = fn.tar,
             files = fn.txt,
             exdir = dir.ebird.in)
