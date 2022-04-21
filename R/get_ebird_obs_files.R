@@ -12,57 +12,99 @@ get_ebird_obs_files <- function(dir.ebird.in,
                                 species = NULL,
                                 countries=NULL
                                 ){
+  if(is.null(dir.out)) dir.out <- ""
   fns.obs <- tolower(list.files(path=dir.out, "ebird-obs_", recursive=TRUE, full.names=TRUE, ignore.case = TRUE))
-  if(length(fns.obs)>0) fns.obs <- fns[grepl(mmyyyy, fns.obs)]
+  if(length(fns.obs)>0) fns.obs <- fns[grepl(mmyyyy, fns.obs, ignore.case = TRUE)]
   if(length(fns.obs)==0){
     fns.obs <- tolower(list.files(path=dir.ebird.in, pattern="ebd_", recursive = TRUE, full.names=TRUE, ignore.case = TRUE))
     fns.obs <- fns.obs[setdiff(1:length(fns.obs), which(grepl(pattern="sampling",    x=fns.obs)))]
+
+  ## Filter by mmyyyy
     fns.obs <- fns.obs[grepl(mmyyyy, fns.obs)]
-    ## If grabbing the entire dataset (not yet tested..)
+  ## Import all data if desired
     grab.full.obs <- ifelse((is.null(species) && is.null(countries)), TRUE, FALSE)
     if(grab.full.obs){
       fns.obs <- fns.obs[grepl(paste0("ebd_rel", mmyyyy), fns.obs)]
     }
-
-    ##Filter fns.obs by species, country
-    #### species first...
+  ## Filter fns.obs by species
     if(!is.null(species)){
       species <- tolower(species)
-      s=which(nchar(species)==nchar(gsub(" ", "", species)))
-      if(length(s)>0) species <- species[s]
-      fns.obs <- fns.obs[grepl(species, fns.obs)]
-      if(length(fns.obs)==0)stop("no ebird observations files found for ", species, ": ", species,
-                                 ". Please check ", "'species'"," argument.\n")
-    }
-    stopifnot(length(fns.obs)>0)
-    #### species first...
-    if(!is.null(countries)){
-      countries <- tolower(countries)
-      fn.new<-NULL
-      for(i in seq_along(countries)) {
-        fn.new <- c(fn.new, fns.obs[grepl(paste0("_",countries[i]), fns.obs)])
-        if(length(fns.obs)==0)stop("no ebird observations files found for ", "countries " , ": ", countries[i],
-                                   ". Please check ", "'countries'"," argument.\n")
-      }
-      fns.obs <- fn.new
-      rm(fn.new)
-    }
-    fns.obs.zip <- fns.obs[grepl(".zip", fns.obs)]
-    fns.obs.txt <- fns.obs[grepl(".txt", fns.obs)]
-    fns.obs.to.unzip <- setdiff(gsub(pattern = ".txt", replacement = "", x=fns.obs.txt),
-                                gsub(pattern = ".zip", replacement = "", x=fns.obs.zip))
-    if(length(fns.obs.to.unzip)>0){
-      for(i in seq_along(fns.obs.to.unzip)){
-        x=fns.obs.to.unzip[i]
-        y   <- unzip(x,overwrite = TRUE, list = TRUE)$Name
-        f   <- y[grep(x=y, pattern = "ebd_")]
-        suppressWarnings(unzip(zipfile=x, files = y, exdir = dir.ebird.in, overwrite = FALSE))
-      }
-      fns.obs <- fns.obs.txt
-    }else{fns.obs <- fns.obs.txt}
-  } # END make fn.obs if its NULL/empty
-  if(length(fns.obs)==0) stop("no files found. ")
-  stopifnot(all(file.exists(fns.obs)))
+      ss       <- species[which(nchar(species)==nchar(gsub(" ", "", species)))]
+      s       <- unlist(lapply(ss, function(x) {
+        paste0("ebd_(?=.*",
+               x,
+               ")(?=.*rel)")
 
-  return(fns.obs)
+      }))
+      for(i in seq_along(s)){
+        if(i==1) f.out <- NULL
+        f.out <- c(f.out, fns.obs[which(grepl(pattern=paste(s[i]), x=fns.obs, perl=TRUE, ignore.case = TRUE))])
+      }
+      fns.out <- unique(f.out)
+    }else{fns.out <- NULL} # end species IF
+
+  ## Filter by country  or grab all data
+      if ((!is.null(species) && length(fns.out) ==0)||is.null(species)) {
+
+      p <- unlist(lapply(countries, function(x) {paste0("ebd_", x, "_rel", mmyyyy)}))
+
+      for(i in seq_along(p)){
+        if(i==1) f.out <- NULL
+        f.out <-
+          c(f.out, fns.obs[which(grepl(pattern=paste(p[i]), x=fns.obs, perl=TRUE, ignore.case = TRUE))])
+      }
+      fns.obs <- unique(f.out)
+      }else{fns.obs <- fns.out}
+
+}
+stopifnot(length(fns.obs)>0)
+
+# Unzip or grab decompressed filepaths ------------------------------------
+fns.obs.zip      <- fns.obs[grepl(".zip", fns.obs)] ## zip are STATE-LEVEL OBS
+fns.obs.tar      <- fns.obs[grepl(".tar", fns.obs)] ## TARS are ALL OTHER OBS + sampling events...
+fns.obs.txt      <- fns.obs[grepl(".txt", fns.obs)] ## .txt.gz must be extracted from the observations .tars, currently no way to reach inside a .tar and import a single file...
+fns.obs.txt.gz   <- fns.obs[grepl(".txt.gz", fns.obs)] ## .txt.gz must be extracted from the observations .tars, currently no way to reach inside a .tar and import a single file...
+fns.obs.to.unzip <- setdiff(
+  gsub(pattern = ".zip", replacement = "", x=fns.obs.zip),
+  gsub(pattern = ".txt", replacement = "", x=fns.obs.txt))
+fns.obs.tar.to.unpack <- setdiff(
+                                gsub(pattern = ".tar", replacement = "", x=fns.obs.tar),
+                                gsub(pattern = ".txt.gz", replacement = "", x=fns.obs.txt.gz))
+fns.obs.txt      <- setdiff(fns.obs.txt, fns.obs.txt.gz)
+##UNPACK TARBALLS ------------------------------------------------------------------
+if(length(fns.obs.tar.to.unpack)>0){
+  cat("attempting to unpack", length(fns.obs.tar.to.unpack), "tarballs\n")
+  lapply(fns.obs.tar.to.unpack, function(x){
+    fns <- untar(paste0(x, ".tar"), list=TRUE)
+    fn <-  fns[grepl(pattern="_rel", fns)]
+    untar(tarfile = paste0(x, ".tar"), exdir = dir.ebird.in, files = fn)
+})
+  fns.obs.txt.gz <- c(fns.obs.txt.gz, paste0(fns.obs.tar.to.unpack, ".txt.gz"))
+
+} # end TAR unpacking for OBS
+
+# GRAB FILENAMES FROM WITHIN THE .ZIPs ------------------------------------
+if(length(fns.obs.to.unzip)>0){
+  fns.obs.to.unzip <- paste0(fns.obs.to.unzip, ".zip")
+  fns.out <- unlist(lapply(fns.obs.to.unzip, function(x){
+    fns <- unzip(x, list = TRUE)[,1]
+    fn  <- fns[grepl(pattern="ebd_", x = fns, ignore.case=TRUE)]
+    cat("unziping file...")
+    unzip(x, files=fn, exdir=dir.ebird.in, overwrite=FALSE)
+    cat("...done\n")
+    return(list.files(dir.ebird.in, fn, full.names=TRUE))
+  }))
+fns.obs.txt <- c(fns.out, fns.obs.txt)
+}
+
+
+# LIST FILES --------------------------------------------------------------
+stopifnot(all(file.exists(fns.obs.txt.gz)))
+stopifnot(all(file.exists(fns.obs.txt)))
+#### SO FAR I HAVE TESTED THIS ON TEH FULL COUNTRY-LEVEL OBSERVATIONS DAATA (US and CA feb 2022)
+#### now i need to test on state-level data....
+
+
+# END FUNCTION ------------------------------------------------------------
+return(c(fns.obs.txt.gz, fns.obs.txt))
 }

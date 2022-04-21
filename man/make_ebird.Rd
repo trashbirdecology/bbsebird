@@ -21,7 +21,8 @@ make_ebird(
   max.effort.km = NULL,
   max.effort.mins = NULL,
   max.num.observers = 10,
-  ncores = NULL
+  ncores = NULL,
+  out.filetype = ".csv.gz"
 )
 }
 \arguments{

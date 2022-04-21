@@ -31,17 +31,17 @@ make_ebird <-
            out.filetype = ".csv.gz"
            ) {
 ### FOR DEV PURPOSES
-    dir.out=NULL;
-    fns.samps = NULL
-    fns.obs = NULL
-    complete.only = TRUE;
-    protocol = c("Traveling", "Stationary");
-    remove.bbs.obs = TRUE;
-    years = NULL;
-    max.effort.km = NULL;
-    max.effort.mins = NULL;
-    max.num.observers = 10;
-    ncores  = NULL
+    # dir.out=NULL;
+    # fns.samps = NULL
+    # fns.obs = NULL
+    # complete.only = TRUE;
+    # protocol = c("Traveling", "Stationary");
+    # remove.bbs.obs = TRUE;
+    # years = NULL;
+    # max.effort.km = NULL;
+    # max.effort.mins = NULL;
+    # max.num.observers = 10;
+    # ncores  = NULL
 
 
   # ARGS
@@ -64,7 +64,6 @@ make_ebird <-
                                                       overwrite = FALSE,
                                                       out.filetype = ".csv.gz",
                                                       countries = countries)
-gc() # try to help with mem issues
   ## OBSERVATIONS FILENAMES
   if (is.null(fns.obs)) fns.obs   <-
     get_ebird_obs_files(
