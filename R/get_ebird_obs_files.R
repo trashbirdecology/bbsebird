@@ -20,12 +20,12 @@ get_ebird_obs_files <- function(dir.ebird.in,
     fns.obs <- fns.obs[setdiff(1:length(fns.obs), which(grepl(pattern="sampling",    x=fns.obs)))]
 
   ## Filter by mmyyyy
-    fns.obs <- fns.obs[grepl(mmyyyy, fns.obs)]
+  fns.obs <- fns.obs[grepl(mmyyyy, fns.obs)]
   ## Import all data if desired
     grab.full.obs <- ifelse((is.null(species) && is.null(countries)), TRUE, FALSE)
     if(grab.full.obs){
-      fns.obs <- fns.obs[grepl(paste0("ebd_rel", mmyyyy), fns.obs)]
-    }
+      fns.obs.all <- fns.obs <- fns.obs[grepl(paste0("ebd_rel", mmyyyy), fns.obs)]
+    }else{fns.obs.all <- NULL}
   ## Filter fns.obs by species
     if(!is.null(species)){
       species <- tolower(species)
@@ -56,8 +56,17 @@ get_ebird_obs_files <- function(dir.ebird.in,
       fns.obs <- unique(f.out)
       }else{fns.obs <- fns.out}
 
+  }
+####
+if(length(fns.obs)<length(countries)){
+  message(
+    "Country-level data was not found for all countries. If the entire eBird observations dataset for ",
+    mmyyyy,
+    " exists it will be added to the output of filepaths.\n",
+    "Please check the availability of data in dir.ebird.in directory for selections listed in arguments: countries and/or species and mmyyyy."
+  )
 }
-stopifnot(length(fns.obs)>0)
+
 
 # Unzip or grab decompressed filepaths ------------------------------------
 fns.obs.zip      <- fns.obs[grepl(".zip", fns.obs)] ## zip are STATE-LEVEL OBS

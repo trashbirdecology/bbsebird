@@ -31,7 +31,6 @@ make_ebird <-
            out.filetype = ".csv.gz"
            ) {
 ### FOR DEV PURPOSES
-    # dir.out=NULL;
     # fns.samps = NULL
     # fns.obs = NULL
     # complete.only = TRUE;
@@ -42,6 +41,7 @@ make_ebird <-
     # max.effort.mins = NULL;
     # max.num.observers = 10;
     # ncores  = NULL
+    # out.filetype = ".csv.gz"
 
 
   # ARGS
@@ -73,8 +73,10 @@ make_ebird <-
       species = species,
       countries = countries
     )
-# fns.samps; fns.obs
-  ## IMPORT AND MUNGE THE DATA
+# fns.obs
+# fns.samps
+
+## IMPORT AND MUNGE THE DATA
 munged <- munge_ebird(
     fns.obs = fns.obs,
     fns.samps = fns.samps,
