@@ -28,7 +28,8 @@ make_ebird <-
            max.effort.mins = NULL,
            max.num.observers = 10,
            ncores  = NULL,
-           out.filetype = ".csv.gz"
+           out.filetype = ".csv.gz",
+           ydays = NULL
            ) {
 # ## FOR DEV PURPOSES
 # fns.samps = NULL
@@ -53,7 +54,7 @@ make_ebird <-
   dir.create(dir.out, recursive=TRUE, showWarnings = FALSE)
   if(is.null(ncores)) ncores <- parallel::detectCores()-1
 
-  ## SAMPLING FILENAMES
+## SAMPLING FILENAMES
   ### this identifies, unpacks (if necessary), and paritions the sampling events data into
   ### country-level files. the sampling events df can be one of the limiting  factor
   ### w.r.t. memory capacity.....
@@ -90,7 +91,7 @@ munged <- munge_ebird(
     remove.bbs.obs = remove.bbs.obs,
     max.effort.km = max.effort.km,
     max.effort.mins = max.effort.mins,
-    max.num.observers = max.num.observers
+    max.num.observers = max.num.observers, ydays = ydays
   )
 
 return(munged)
