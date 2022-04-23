@@ -20,7 +20,8 @@ munge_ebird <- function(fns.obs,
                         max.num.observers = NULL,
                         complete.only = TRUE,
                         ncores=NULL,
-                        ydays = NULL
+                        ydays = NULL,
+                        overwrite=FALSE
                         ){
 
 # EVAL ARGS ----------------------------------------------------------
@@ -67,6 +68,7 @@ if(file.exists(fn.out) && !overwrite){
 # IMPORT & FILTER OBS + SAMP EVENTS------------------------------------------------------------------
 fns <- list(observations=fns.obs, samplingevents=fns.samps)
 # tictoc::tic()
+
 dataout<-data<-list(NULL)
 tictoc::tic("FILTER THEN RBIND")
 for(i in seq_along(fns)){
@@ -78,7 +80,7 @@ for(i in seq_along(fns)){
     message("file ", myfns[i], " exists. Not overwriting existing data while overwrite=FALSE.\n")
     next()
     }
-message("!!keep an eye on memory usage. this is where shit gets sticky...\n")
+  message("!!keep an eye on memory usage. this is where shit gets sticky...\n")
 
   ## import files
   cat("importing and performing initial filtering on", type," files:\n\n", paste0(fs, sep="\n"),"\nthis may take a while...\n")

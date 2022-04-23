@@ -45,7 +45,8 @@ make_ebird <-
 # ncores  = NULL
 # out.filetype = ".csv.gz"
 # overwrite = FALSE
-
+# dir.ebird.in = dirs$dir.ebird.in
+# dir.out = dirs$project
   # ARGS
   if(!grep("-", mmyyyy)==1){stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")}
   mmyyyy <- tolower(mmyyyy)
@@ -86,12 +87,14 @@ munged <- munge_ebird(
     years = years,
     countries = countries,
     states = states,
+    overwrite = overwrite,
     species = species,
     protocol = protocol,
     remove.bbs.obs = remove.bbs.obs,
     max.effort.km = max.effort.km,
     max.effort.mins = max.effort.mins,
-    max.num.observers = max.num.observers, ydays = ydays
+    max.num.observers = max.num.observers,
+    ydays = ydays
   )
 
 return(munged)
