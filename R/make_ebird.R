@@ -93,8 +93,6 @@ munged <- munge_ebird(
     max.num.observers = max.num.observers
   )
 
-##
-
-
+return(munged)
 } # END FUNCTION
 

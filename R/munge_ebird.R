@@ -112,8 +112,6 @@ for(i in seq_along(fns)){
   } # end ii loop
   # browser()
   cat("writing the filtered ", names(fns)[i], "to file in case your machine crashes....:\n", myfns[i],"\n")
-  data.table::fwrite()
-  length(data)==length(fns[i])
   data.table::fwrite(rbindlist(data), file = myfns[i], nThread = ncores)
 
   rm(data) # empty data list for next i
@@ -182,11 +180,14 @@ data   <- data.table::rbindlist(list(blanks, data))
 rm(blanks)
 gc()
 
+
+
 # Save it .... -------------------------------------------------
 cat("saving munged data to file:\n  ", fn.out, "\n")
 data.table::fwrite(data, file = fn.out)
 
 } ## END munge data
+
 
 
 # END FUN -----------------------------------------------------------------
