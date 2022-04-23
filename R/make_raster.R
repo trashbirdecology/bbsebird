@@ -1,3 +1,6 @@
+#' Create a Spatial Sampling Grid as Raster using WorldClim
+#'
+#' @export make_raster
 make_raster <-
   function(baselayer = "worldclim",
            dir.out = NULL,
