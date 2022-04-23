@@ -97,6 +97,8 @@ munged <- munge_ebird(
     ydays = ydays
   )
 
+cat(nrow(munged), " rows remain after munging ebird sampling events and observations\n")
+
 return(munged)
 } # END FUNCTION
 

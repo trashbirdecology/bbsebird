@@ -115,7 +115,7 @@ for(i in seq_along(fns)){
         }
         # remove key
         data.table::setkey(DT, NULL)
-        cat("\n\tend ", names(fns)[i]," i-loop",i,  "& j-loop", j ,nrow(DT) , "rows remain after", names(filt.temp)[j], "filter")
+        cat("\n\tend ", names(fns)[i], " loop ", k,"-",j,"-",ii, nrow(DT) , "rows remain after", names(filt.temp)[j], "filter")
       }#end j loop one fitler type
     } # end k loop all filters
     if(ii==1) data<-vector("list", length(fs))
