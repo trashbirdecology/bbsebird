@@ -244,15 +244,14 @@ munge_ebird_data <-
 
       # ~attempt to~ remove BBS observations if specified
       ### THIS IS A BIG ASSUMPTION SO WILL NEED TO REVISIT EVENTUALLY!!!
-      ### in fact, i've got some checklists i need to cross-check against the BBS obserfvations data to see if this correctly removes them all.....
+      ### in fact, I've got some checklists i need to cross-check against the BBS obserfvations data to see if this correctly removes them all.....
       if (remove.bbs.obs) {
         sampling <- sampling |>
           dplyr::filter(protocol_type != "Stationary" &
                           duration_minutes != 3)
       }
 
-      # for good measure..
-      cat("Taking out the garbage because this data can be massive.....\n")
+
       gc()
 
       # remove duplicate checklists for same birding party.

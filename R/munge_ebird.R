@@ -17,7 +17,9 @@ munge_ebird <- function(fns.obs,
                         remove.bbs.obs = TRUE,
                         max.effort.km = NULL,
                         max.effort.mins = NULL,
-                        max.num.observers = NULL
+                        max.num.observers = NULL,
+                        complete.only = TRUE,
+                        ncores=NULL
                         ){
 
 # EVAL ARGS ----------------------------------------------------------
@@ -25,14 +27,15 @@ dir.create(dir.out, showWarnings = FALSE)
 countries <- toupper(countries)
 stopifnot(is.logical(zerofill))
 stopifnot(is.logical(remove.bbs.obs))
-
+if(is.null(ncores))ncores <- parallel::detectCores()-1
+setDTthreads(ncores)
 
 # CREATE LISTS FOR SUBSETTING ---------------------------------------------
 f.equal <-
   list(
     "COUNTRY CODE" = countries,
     "STATE CODE" = states,
-    "ALL SPECIES REPORTED" = ifelse(zerofill, c(1, TRUE), c(0, FALSE)),
+    "ALL SPECIES REPORTED" = ifelse(complete.only, c(1, TRUE), c(0, FALSE)),
     "PROTOCOL TYPE" = protocol)
 less.equal <- list(
     "EFFORT DISTANCE KM" = max.effort.km,
@@ -43,6 +46,7 @@ less.equal <- list(
 range.equal<-list(
     "OBSERVATION DATE" = years
 )
+
 more.equal <-list(NULL)
 
 filters <- list("equal"=f.equal, "less"=less.equal, "range"=range.equal, "more"=more.equal)
@@ -59,7 +63,7 @@ tictoc::tic("FILTER THEN RBIND")
 for(i in seq_along(fns)){
   fs    <- fns[[i]]
   type  <- names(fns)[i]
-  if(i==1)myfns<-NULL
+  if(i==1) myfns <- NULL
   myfns  <- c(myfns, paste0(dir.out, "filtered_", type ,".csv.gz"))
   if(file.exists(myfns[i])&&!overwrite){
     message("file ", myfns[i], " exists. Not overwriting existing data while overwrite=FALSE.\n")
@@ -118,25 +122,73 @@ tictoc::toc()
 gc()
 
 
-# IMPORT FILTERED FILES ---------------------------------------------------
-names(myfns) <- names(fns)
-data <- vector("list", length(myfns)); names(data) <- names(myfns)
-cat("importing the filtered observations and sampling events data..")
+# SEE IF MUNGED DATA EXISTS AND IMPORT ------------------------------------
+fn.out <- paste0(dir.out, "munged_ebird_data", ".csv.gz")
 
+if(file.exists(fn.out) && !overwrite){
+  cat("Munged data exists and overwrite=FALSE. Importing previously munged eBird data...\n",fn.out,"\n")
+  data <- data.table::fread(fn.out, nThread = ncores)
+}else{
+# IMPORT FILTERED FILES ---------------------------------------------------
+names(myfns) <- names(fns)## filtered data filenames
+data <- vector("list", length(myfns)); names(data) <- names(myfns)
+cat("importing the filtered observations and sampling events data (", length(myfns),"files)\n")
+## not doing this in parallel because of potential memory crashes on non HPC
 for(i in seq_along(data)){
-  data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores)
+  data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores)#, verbose = TRUE)
 }
 
 
 # COMBINE -----------------------------------------------------------------
+cat("binding the filtered datasets....\n")
 data <- data.table::rbindlist(data, fill=TRUE)
+gc()
 
-colnames(data$observations)[which(colnames(data$observations) %in%  colnames(data$samplingevents))]
-colnames(data$samplingevents)[!which(colnames(data$samplingevents) %in%  colnames(data$observations))]
-colnames(data$observations)[!which(colnames(data$observations) %in%  colnames(data$samplingevents))]
+# REMOVE presence-only ----------------------------------------------------
+## i want to see how much time is saved if igrab row numbers from a vector then only grab those rows
+cat("removing presence-only data (i.e., 'OBSERVATION COUNT' == X) & zero-filling data...")
+# data <- data[,`OBSERVATION COUNT`!="X"]
+data <- data[`OBSERVATION COUNT`!="X"]
+if (zerofill) {
+  data <-
+    data[, `OBSERVATION COUNT` := ifelse(is.na(`OBSERVATION COUNT`),
+                                         0,
+                                         as.integer(`OBSERVATION COUNT`))] ## change NAs to ZERO and THEN force to integer
+}
+## If i convert to integere, "X" goes to NA so don't do that first!
+cat("....done\n")
+cat("Taking out the garbage because this data can be massive.....\n")
+gc()
+
+
+# remove BBS obs ----------------------------------------------------------
+if(remove.bbs.obs){
+  cat("Removing what is suspected to be BBS observations. \n")
+  bbsdays <- 152:188 # a liberal removal of ebird based on instructions: https://www.pwrc.usgs.gov/bbs/participate/BBS%20Instructions.pdf
+    ### ideally this would be adjusted to account for location (latitude)
+  k <- which(which(data$`PROTOCOL TYPE` == "Stationary") %in% which(data$`DURATION MINUTES` == "3"))
+  k <- which(k %in% which(yday(data$`OBSERVATION DATE`) %in% bbsdays))
+  data <- data[!k]
+  rm(k, bbsdays)
+}
+
+
+# Keep One Checklist from Each Group --------------------------------------------------
+# length(unique(data$`SAMPLING EVENT IDENTIFIER`))
+# unique(data$`GROUP IDENTIFIER`)[1:100]
+blanks <- data[`GROUP IDENTIFIER`==""]
+data   <- unique(data[`GROUP IDENTIFIER`!=""], by = "GROUP IDENTIFIER")
+data   <- data.table::rbindlist(list(blanks, data))
+rm(blanks)
+gc()
+
+# Save it .... -------------------------------------------------
+cat("saving munged data to file:\n  ", fn.out, "\n")
+data.table::fwrite(data, file = fn.out)
+
+} ## END munge data
+
 
 # END FUN -----------------------------------------------------------------
-
-
-return(out)
+return(data)
 } # END FUNCTION

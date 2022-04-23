@@ -30,20 +30,20 @@ make_ebird <-
            ncores  = NULL,
            out.filetype = ".csv.gz"
            ) {
-### FOR DEV PURPOSES
-    # fns.samps = NULL
-    # fns.obs = NULL
-    # complete.only = TRUE;
-    # protocol = c("Traveling", "Stationary");
-    # remove.bbs.obs = TRUE;
-    # years = NULL;
-    # max.effort.km = NULL;
-    # max.effort.mins = NULL;
-    # max.num.observers = 10;
-    # zerofill = TRUE
-    # ncores  = NULL
-    # out.filetype = ".csv.gz"
-
+# ## FOR DEV PURPOSES
+# fns.samps = NULL
+# fns.obs = NULL
+# complete.only = TRUE;
+# protocol = c("Traveling", "Stationary");
+# remove.bbs.obs = TRUE;
+# years = NULL;
+# max.effort.km = NULL;
+# max.effort.mins = NULL;
+# max.num.observers = 10;
+# zerofill = TRUE
+# ncores  = NULL
+# out.filetype = ".csv.gz"
+# overwrite = FALSE
 
   # ARGS
   if(!grep("-", mmyyyy)==1){stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")}
@@ -66,23 +66,22 @@ if(is.null(fns.samps)) fns.samps <-  partition_ebird_events(dir.ebird.in = dir.e
                                                       out.filetype = ".csv.gz",
                                                       countries = countries)
 ## OBSERVATIONS FILENAMES
-  if (is.null(fns.obs)) fns.obs   <-
-    get_ebird_obs_files(
+if (is.null(fns.obs)) fns.obs   <-  get_ebird_obs_files(
       dir.ebird.in = dir.ebird.in,
       mmyyyy = mmyyyy,
       dir.out = dir.out,
       species = species,
       countries = countries
     )
-# fns.obs
-# fns.samps
+
 
 ## IMPORT AND MUNGE THE DATA
+## this function will import the munged .csv.gz if it exists and !overwrite and gets this far down...
 munged <- munge_ebird(
     fns.obs = fns.obs,
     fns.samps = fns.samps,
     dir.out = dir.out,
-    # complete.only = complete.only,
+    complete.only = complete.only,
     years = years,
     countries = countries,
     states = states,
@@ -93,6 +92,8 @@ munged <- munge_ebird(
     max.effort.mins = max.effort.mins,
     max.num.observers = max.num.observers
   )
+
+##
 
 
 } # END FUNCTION
