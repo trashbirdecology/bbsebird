@@ -1,108 +1,114 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/404.html</loc>
+    <loc>/404.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/LICENSE.html</loc>
+    <loc>/CODE_OF_CONDUCT.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/articles/index.html</loc>
+    <loc>/LICENSE.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/articles/make-data.html</loc>
+    <loc>/articles/index.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/authors.html</loc>
+    <loc>/articles/make-data.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/index.html</loc>
+    <loc>/authors.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/bbsebird.html</loc>
+    <loc>/index.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/dir_spec.html</loc>
+    <loc>/reference/bbsebird.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/eval_params.html</loc>
+    <loc>/reference/dir_spec.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/find_UTM_zone.html</loc>
+    <loc>/reference/eval_params.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/id_ebird_files.html</loc>
+    <loc>/reference/find_UTM_zone.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/import_jdat.html</loc>
+    <loc>/reference/get.list.dims.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/index.html</loc>
+    <loc>/reference/get_ebird_obs_files.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/longlat_to_UTM.html</loc>
+    <loc>/reference/index.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_array.html</loc>
+    <loc>/reference/longlat_to_UTM.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_bbs_spatial.html</loc>
+    <loc>/reference/make_array.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_bundle.html</loc>
+    <loc>/reference/make_bbs_spatial.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_ebird_spatial.html</loc>
+    <loc>/reference/make_bundle.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_gam.html</loc>
+    <loc>/reference/make_ebird.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_inits_list.html</loc>
+    <loc>/reference/make_ebird_spatial.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_mat.html</loc>
+    <loc>/reference/make_gam.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/make_spatial_grid.html</loc>
+    <loc>/reference/make_inits_list.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/match_col_names.html</loc>
+    <loc>/reference/make_mat.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/munge_date_time.html</loc>
+    <loc>/reference/make_model_data.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/munge_ebird_data.html</loc>
+    <loc>/reference/make_raster.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/pluck_multiple.html</loc>
+    <loc>/reference/make_spatial_grid.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/run_MCMC_allcode.html</loc>
+    <loc>/reference/munge_date_time.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/run_in_jags.html</loc>
+    <loc>/reference/munge_ebird.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/run_in_nimble.html</loc>
+    <loc>/reference/munge_ebird_data.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/scan_files.html</loc>
+    <loc>/reference/partition_ebird_events.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/set_mcmc_specs.html</loc>
+    <loc>/reference/pluck_multiple.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/set_proj_shorthand.html</loc>
+    <loc>/reference/run_nimble_model.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/standardize.html</loc>
+    <loc>/reference/save.runtime.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/trySave.html</loc>
+    <loc>/reference/set_mcmc_specs.html</loc>
   </url>
   <url>
-    <loc>https://trashbirdecology.github.io/bbsebird/reference/zerofill_ebird.html</loc>
+    <loc>/reference/set_proj_shorthand.html</loc>
+  </url>
+  <url>
+    <loc>/reference/standardize.html</loc>
+  </url>
+  <url>
+    <loc>/reference/zerofill_ebird.html</loc>
   </url>
 </urlset>

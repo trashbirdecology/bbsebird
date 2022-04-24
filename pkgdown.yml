@@ -3,8 +3,5 @@ pkgdown: 2.0.2
 pkgdown_sha: ~
 articles:
   make-data: make-data.html
-last_built: 2022-03-30T13:27Z
-urls:
-  reference: https://trashbirdecology.github.io/bbsebird/reference
-  article: https://trashbirdecology.github.io/bbsebird/articles
+last_built: 2022-04-24T13:58Z
 
