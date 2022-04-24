@@ -18,6 +18,7 @@ munge_ebird <- function(fns.obs,
                         max.effort.km = NULL,
                         max.effort.mins = NULL,
                         max.num.observers = NULL,
+                        max.birds.checklist = 55,
                         complete.only = TRUE,
                         ncores=NULL,
                         ydays = NULL,
@@ -159,16 +160,20 @@ cat("removing presence-only data (i.e., 'OBSERVATION COUNT' == X) & zero-filling
 # data <- data[,`OBSERVATION COUNT`!="X"]
 data <- data[`OBSERVATION COUNT`!="X"]
 if (zerofill) {
-  data <-
+  data <- # pretty sure the reassignment isnt necessary whwen ":=" is in place...
     data[, `OBSERVATION COUNT` := ifelse(is.na(`OBSERVATION COUNT`),
                                          0,
                                          as.integer(`OBSERVATION COUNT`))] ## change NAs to ZERO and THEN force to integer
 }
+
+if(!is.null(max.birds.checklist)){
+  data <- data[`OBSERVATION COUNT` <= max.birds.checklist]
+}
+
 ## If i convert to integere, "X" goes to NA so don't do that first!
 cat("....done\n")
 cat("Taking out the garbage because this data can be massive.....\n")
 gc()
-
 
 # remove BBS obs ----------------------------------------------------------
 if(remove.bbs.obs){
@@ -180,16 +185,44 @@ if(remove.bbs.obs){
   data <- data[!k]
   rm(k, bbsdays)
 }
+### waiting for Dave Z to send ideal dates for bbs routes to narrow down potential BBS obs....
 
-
-# Keep One Checklist from Each Group --------------------------------------------------
-# length(unique(data$`SAMPLING EVENT IDENTIFIER`))
-# unique(data$`GROUP IDENTIFIER`)[1:100]
+# Keep One Checklist from Each Group Event ID --------------------------------------------------
 blanks <- data[`GROUP IDENTIFIER`==""]
 data   <- unique(data[`GROUP IDENTIFIER`!=""], by = "GROUP IDENTIFIER")
 data   <- data.table::rbindlist(list(blanks, data))
 rm(blanks)
 gc()
+
+
+# Handle column names -----------------------------------------------------
+names(data) <- gsub(x = names(data),pattern = " ", replacement = "_")
+col_names <- list(
+  date = c("observation_date", "date"),
+  c =    c("observation_count", "count", "routetotal"),
+  yday  = c("dayofyear"),
+  lat  = c("lati", "latitude"),
+  lon = c("longitude", "long")
+)
+for(i in seq_along(col_names)){
+  oldnames <- col_names[[i]]
+  newnames <- rep(names(col_names)[i], length=length(oldnames))
+  data.table::setnames(data, oldnames, newnames,skip_absent = TRUE) # do not reassign, saves in place
+}
+
+
+# Random Light Munging ----------------------------------------------------
+## remove any column where all values are NA (this is mostly just for rouge "country" variable)
+data <- data[,which(unlist(lapply(data, function(x)!all(is.na(x))))), with=FALSE]
+
+## For non-traveling protocol, force effiort_distance_lkm to zero
+data[,effort_distance_km := ifelse(protocol_type != "Traveling",
+                                   0, effort_distance_km)]
+
+
+data[,year  := year(date)]
+data[,yday  := yday(date)]
+data[,month := month(date)]
 
 
 # Save it .... -------------------------------------------------

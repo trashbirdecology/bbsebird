@@ -17,12 +17,14 @@ make_ebird(
   complete.only = TRUE,
   protocol = c("Traveling", "Stationary"),
   remove.bbs.obs = TRUE,
+  max.birds.checklist = 55,
   years = NULL,
   max.effort.km = NULL,
   max.effort.mins = NULL,
   max.num.observers = 10,
   ncores = NULL,
-  out.filetype = ".csv.gz"
+  out.filetype = ".csv.gz",
+  ydays = NULL
 )
 }
 \arguments{

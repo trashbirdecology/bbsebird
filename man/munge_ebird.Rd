@@ -16,8 +16,13 @@ munge_ebird(
   protocol = c("Traveling", "Stationary"),
   remove.bbs.obs = TRUE,
   max.effort.km = NULL,
-  max.effort.mins = 360,
-  max.num.observers = 10
+  max.effort.mins = NULL,
+  max.num.observers = NULL,
+  max.birds.checklist = 55,
+  complete.only = TRUE,
+  ncores = NULL,
+  ydays = NULL,
+  overwrite = FALSE
 )
 }
 \arguments{

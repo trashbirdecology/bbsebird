@@ -23,6 +23,7 @@ make_ebird <-
            complete.only = TRUE,
            protocol = c("Traveling", "Stationary"),
            remove.bbs.obs = TRUE,
+           max.birds.checklist = 55,
            years = NULL,
            max.effort.km = NULL,
            max.effort.mins = NULL,
@@ -47,7 +48,7 @@ make_ebird <-
 # overwrite = FALSE
 # dir.ebird.in = dirs$dir.ebird.in
 # dir.out = dirs$project
-  # ARGS
+# ARGS
   if(!grep("-", mmyyyy)==1){stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")}
   mmyyyy <- tolower(mmyyyy)
   countries <- tolower(countries)
@@ -94,9 +95,12 @@ munged <- munge_ebird(
     max.effort.km = max.effort.km,
     max.effort.mins = max.effort.mins,
     max.num.observers = max.num.observers,
-    ydays = ydays
+    ydays = ydays,
+    max.birds.checklist = max.birds.checklist
   )
 
+
+## RETURN OBJEcT
 cat(nrow(munged), " rows remain after munging ebird sampling events and observations\n")
 
 return(munged)
