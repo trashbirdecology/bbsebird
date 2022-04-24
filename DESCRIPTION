@@ -34,6 +34,7 @@ Imports:
     mgcv,
     readr (>= 2.1.1),
     reshape2 (>= 1.4.4),
+    rnaturalearth (>= 0.3.0), 
     rgdal,
     sp (>= 1.4.6),
     stringr (>= 1.4.0),
@@ -55,7 +56,6 @@ Imports:
 Suggests: 
     knitr,
     dclone,
-    jags,
     rmarkdown,
     spelling,
     spdep

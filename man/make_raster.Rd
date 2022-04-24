@@ -14,6 +14,9 @@ make_raster(
   countries = c("US", "CA")
 )
 }
+\arguments{
+\item{baselayer}{type of base layer data for raster from raster::getData()}
+}
 \description{
 Create a Spatial Sampling Grid as Raster using WorldClim
 }
