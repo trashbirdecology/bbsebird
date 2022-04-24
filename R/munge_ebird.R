@@ -196,20 +196,7 @@ gc()
 
 
 # Handle column names -----------------------------------------------------
-names(data) <- gsub(x = names(data),pattern = " ", replacement = "_")
-col_names <- list(
-  date = c("observation_date", "date"),
-  c =    c("observation_count", "count", "routetotal"),
-  yday  = c("dayofyear"),
-  lat  = c("lati", "latitude"),
-  lon = c("longitude", "long")
-)
-for(i in seq_along(col_names)){
-  oldnames <- col_names[[i]]
-  newnames <- rep(names(col_names)[i], length=length(oldnames))
-  data.table::setnames(data, oldnames, newnames,skip_absent = TRUE) # do not reassign, saves in place
-}
-
+data <- munge_col_names(data)
 
 # Random Light Munging ----------------------------------------------------
 ## remove any column where all values are NA (this is mostly just for rouge "country" variable)

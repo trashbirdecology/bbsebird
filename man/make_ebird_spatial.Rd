@@ -13,7 +13,7 @@ make_ebird_spatial(
 )
 }
 \arguments{
-\item{df}{A data frame with columns c(latitude, longitude) and optional attributes (columns).}
+\item{df}{A data frame with columns c(lat, lon) and optional attributes (columns).}
 
 \item{crs.target}{the integer representing the target CRS.}
 
