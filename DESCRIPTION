@@ -52,6 +52,8 @@ Imports:
     nimble,
     fields,
     coda,
+    vroom, 
+    lubridate,
     mcmcplots
 Suggests: 
     knitr,
