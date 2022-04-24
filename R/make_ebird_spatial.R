@@ -10,7 +10,7 @@
 #' @importFrom sf st_as_sf st_transform
 #' @importFrom dplyr mutate
 #' @export make_ebird_spatial
-make_ebird_spatial <- function(df, crs.target, dir.out=NULL, grid = NULL, overwrite=FALSE) {
+make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, grid = NULL, overwrite=FALSE) {
 
   # first, if overwrite is false and this file exists. import and return asap.
   f <-paste0(dir.out, "ebird_spatial.rds")
