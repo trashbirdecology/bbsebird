@@ -32,7 +32,7 @@ make_model_data <- function(data) {
     # wind      = data$Xb[,,"windmean"],
     mins      = data$Xe[,,"duration_minutes"],
     party     = data$Xe[,,"number_observers"],
-    starttime = data$Xe[,,"time_observations_started_hsm"],
+    # starttime = data$Xe[,,"time_observations_started"], ## this needs to be fixed -- comes in as a character...
     # dist      = data$Xe[,,"effort_distance_km"],
     # effarea   = data$Xe[,,"effort_area_ha"],
     # NN        = length(data$adj),  ## NOTE THIS OVERWRITES NN PRODUCEDBY MAKE_BUNDLE..NEED TO FIX IN PKG
