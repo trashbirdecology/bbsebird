@@ -17,8 +17,8 @@ munge_ebird <- function(fns.obs,
                         remove.bbs.obs = TRUE,
                         max.effort.km = NULL,
                         max.effort.mins = NULL,
-                        max.num.observers = NULL,
                         max.birds.checklist = 55,
+                        max.num.observers = 10,
                         complete.only = TRUE,
                         ncores=NULL,
                         ydays = NULL,
@@ -170,7 +170,7 @@ if(!is.null(max.birds.checklist)){
   data <- data[`OBSERVATION COUNT` <= max.birds.checklist]
 }
 
-## If i convert to integere, "X" goes to NA so don't do that first!
+## If i convert to integer before remocving "X", the "X" goes to NA so don't do that first!
 cat("....done\n")
 cat("Taking out the garbage because this data can be massive.....\n")
 gc()
@@ -188,10 +188,10 @@ if(remove.bbs.obs){
 ### waiting for Dave Z to send ideal dates for bbs routes to narrow down potential BBS obs....
 
 # Keep One Checklist from Each Group Event ID --------------------------------------------------
-blanks <- data[`GROUP IDENTIFIER`==""]
-data   <- unique(data[`GROUP IDENTIFIER`!=""], by = "GROUP IDENTIFIER")
-data   <- data.table::rbindlist(list(blanks, data))
-rm(blanks)
+blanks    <- data[`GROUP IDENTIFIER`==""]
+noblank   <- unique(data[`GROUP IDENTIFIER`!=""], by = c("GROUP IDENTIFIER"))
+data   <- data.table::rbindlist(list(blanks, noblank))
+rm(blanks, noblank)
 gc()
 
 
@@ -205,7 +205,6 @@ data <- data[,which(unlist(lapply(data, function(x)!all(is.na(x))))), with=FALSE
 ## For non-traveling protocol, force effiort_distance_lkm to zero
 data[,effort_distance_km := ifelse(protocol_type != "Traveling",
                                    0, effort_distance_km)]
-
 
 data[,year  := year(date)]
 data[,yday  := yday(date)]
