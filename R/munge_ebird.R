@@ -218,8 +218,6 @@ data.table::fwrite(data, file = fn.out)
 
 } ## END if data DNE then munge it...
 
-
-
 # END FUN -----------------------------------------------------------------
 return(data)
 } # END FUNCTION

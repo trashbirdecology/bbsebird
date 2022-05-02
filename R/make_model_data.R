@@ -27,16 +27,16 @@ make_model_data <- function(data) {
     celle     = data$ebird.df$cell.ind,
     nobsrb    = length(unique(data$bbs.df$obs.ind)),
     obsrb     = data$bbs.df$obs.ind,
-    fyr       = data$Xb$obsfirstyearroute, ## change to obsfirstyearbbs if desired.
-    asst      = data$Xb$assistant,
+    fyr       = data$Xb[,,'obsfirstyearroute'], ## change to obsfirstyearbbs if desired.
+    asst      = data$Xb[,,'assistant'],
     # wind      = data$Xb[,,"windmean"],
-    mins      = data$Xe$duration_minutes,
-    party     = data$Xe$number_observers,
-    # starttime = data$Xe[,,"time_observations_started"], ## this needs to be fixed -- comes in as a character...
+    mins      = data$Xe[,,"duration_minutes"],
+    party     = data$Xe[,,"number_observers"],
+    starttime = data$Xe[,,"starttime"], ## this needs to be fixed -- comes in as a character...
     # dist      = data$Xe[,,"effort_distance_km"],
     # effarea   = data$Xe[,,"effort_area_ha"],
     # NN        = length(data$adj),  ## NOTE THIS OVERWRITES NN PRODUCEDBY MAKE_BUNDLE..NEED TO FIX IN PKG
-    hab       = sqrt(abs(data$Xg$area))# made-up hab variable
+    hab       = sqrt(abs(data$Xg))# made-up hab variable
   )
 
   ## ensure matrices comprise numbers and not characters

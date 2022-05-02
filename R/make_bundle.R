@@ -335,7 +335,6 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
     LL[[i]] <-     LL[[i]][!is.na(LL[[i]]$site.ind),]
 
   } # end LL loop
-  # browser()
   ##extract from list
   bbs   <- LL$bbs
   ebird <- LL$ebird
