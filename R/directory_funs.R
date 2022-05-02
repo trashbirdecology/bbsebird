@@ -48,14 +48,17 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   ebird.out <- "/ebird/"
   results <- "/results/"
   plots <- "/plots/"
-  spatial <- paste0(dir.proj.orig, "spatial-data/")
+  spatial <- "/spatial/"
+  # spatial <- paste0(dir.proj.orig, "spatial-data/")
   # add dir.proj to directories and dir.create them
   mylist <- list(
       'bbs.out',
       'ebird.out',
       'results',
       'models',
-      'plots')
+      'plots',
+      'spatial'
+      )
 
   mylist <- lapply(mylist, function(x) paste0(subdir.proj, eval(parse(text=x))))
 
@@ -75,10 +78,10 @@ base.names <- c("dir.proj",
 
 paths <- list()
   for(i in seq_along(subset.names)){
-    if(subset.names[i] == "spatial"){
-      paths[[i]] <-  spatial} else{
+    # if(subset.names[i] == "spatial"){
+    #   paths[[i]] <-  spatial} else{
         paths[[i]] <- gsub(x=paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), pattern="//",replacement="/")
-        }
+        # }
      paths[[i]] <- gsub(x=paths[[i]], pattern = "//", replacement = "/")
      names(paths)[[i]] <- subset.names[i]
      dir.create(paths[[i]], recursive=TRUE, showWarnings = FALSE)
