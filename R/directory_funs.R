@@ -115,21 +115,23 @@ return(paths)
 #' @param species string of species names using ISO-366-2
 #' @param regions string of countries or states
 #' @param grid.size size of desired grid cell
-#' @param max.C.ebird optional NULL or integer representing max number of birds allowed on eBird data
 #' @param years Vector of years. will take the min and max value
 #' @export set_proj_shorthand
 set_proj_shorthand <- function(species,
                                countries=c("us", "ca"),
                                states=NULL,
                                grid.size,
-                               years,
-                               max.C.ebird = NULL) {
+                               years) {
   s=which(nchar(species)==nchar(gsub(" ", "", species)))
   if(length(s)>0) species <- species[s]
 
   stopifnot(all(tolower(states) %in% tolower(bbsAssistant::region_codes$iso_3166_2)))
   stopifnot(all(tolower(countries) %in% tolower(bbsAssistant::region_codes$iso_a2)))
-  if(!is.null(states)){regions <- states}else{regions <- countries}
+  if(!is.null(states)) {
+    regions <- states
+  } else{
+    regions <- countries
+  }
 
   ## munge the states first.
   regions <- toupper(regions)
@@ -159,19 +161,17 @@ set_proj_shorthand <- function(species,
     species[nchar(species) == (max(nchar(species)))][1],
     #take min or max to assign species to dir name
     "_",
-    regions,
     # regions
+    regions,
     "_",
+    # size of grid cells
     grid.size * 111,
     "km",
-    # size of grid cells
     "_",
+    # time period
     min(years),
     "-",
-    max(years),
-    # time period
-    "_",
-    ifelse(is.null(max.C.ebird), "", paste0(max.C.ebird, "maxCebird"))
-  )
+    max(years)
+    )
   return(tolower(x))
 }
