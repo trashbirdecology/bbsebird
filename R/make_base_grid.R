@@ -13,7 +13,7 @@
 #' @importFrom sf st_transform st_make_grid st_area st_make_grid
 #' @importFrom dplyr mutate
 #' @importFrom stringr str_replace
-#' @export make_spatial_grid
+#' @export make_base_grid
 make_base_grid <- function(dir.out = NULL,
                               overwrite = FALSE,
                               countries = c("US", "CA"),

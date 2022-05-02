@@ -19,7 +19,7 @@
 #' @importFrom tidyr expand separate
 #' @importFrom sf st_as_sf st_drop_geometry st_transform st_length st_area st_read
 #' @importFrom dplyr mutate full_join select mutate group_by ungroup distinct rename left_join summarise filter
-#' @export make_bbs_spatial
+#' @export make_base_grid_bbs
 make_base_grid_bbs <- function(grid,
                              ## observations data frame. must contain at least var rteno
                              cws.routes.dir,
@@ -44,10 +44,10 @@ make_base_grid_bbs <- function(grid,
     bbs_spatial <- readRDS(f)
     return(bbs_spatial)
   }
-  
+
   ## set CRS
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
-  
+
   ## Import and merge CAN and USA BBS routes -------------
   cat("importing route layers")
   # LOAD DATA
@@ -62,7 +62,7 @@ make_base_grid_bbs <- function(grid,
                        layer = cws.layer,
                        verbose = FALSE
                      ))#suppress a warning about dropping Z-dimension
-  
+
   # cws_routes <- sf::st_read(dsn=cws.gdb, layer=cws.layer)
   cws_routes <- sp::spTransform(cws_routes, crs.string)
   #coerce to sf
@@ -75,7 +75,7 @@ make_base_grid_bbs <- function(grid,
   usgs_routes <-
     sf::st_read(dsn = usgs.routes.dir, layer = usgs.layer)
   usgs_routes <- sf::st_transform(usgs_routes, crs = crs.string)
-  
+
   # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
   # These fields are applicable only to the Sauer shapefile.
   if (usgs.layer == "bbsrte_2012_alb") {
@@ -106,7 +106,7 @@ make_base_grid_bbs <- function(grid,
       ) |>
       dplyr::select(-FID_1)
   }
-  
+
   # Deal with Canadian shapefile (shared by V. Aponte)
   cws_routes <- cws_routes |>
     dplyr::mutate(
@@ -118,11 +118,11 @@ make_base_grid_bbs <- function(grid,
         "left"
       )
     )
-  
+
   cws_routes <- bbsAssistant::make.rteno(cws_routes)
   names(cws_routes) <- tolower(names(cws_routes))
   names(usgs_routes) <- tolower(names(usgs_routes))
-  
+
   # merge the CA and USA BBS routes
   ## keep just a few of same cols-we can delete this but theyre not too useful.
   keep <-
@@ -130,7 +130,7 @@ make_base_grid_bbs <- function(grid,
   cws_routes  <- cws_routes[, tolower(names(cws_routes)) %in% keep]
   usgs_routes <-
     usgs_routes[, tolower(names(usgs_routes)) %in% keep]
-  
+
   ### join CWS and USGS routes
   bbs_routes <- dplyr::bind_rows(usgs_routes, cws_routes) |>
     # Keep only the necessary information.
@@ -138,8 +138,8 @@ make_base_grid_bbs <- function(grid,
     ## 1. RouteName: they don't always match the published observations data
     ## 2. ShapeLength or variations thereof: we need to calc route/line length within our desired projections.
     dplyr::select(rteno, geometry)
-  
-  
+
+
   ## Calculate segment lengths and then add up to grab route lengths
   ## (some routes have gaps and are therefore represented on different line objects/rows)
   bbs_routes$segmentlength <-  bbs_routes |> sf::st_length() # this is not currently incompatible when called inside using (.) native pipe operator,
@@ -153,19 +153,19 @@ make_base_grid_bbs <- function(grid,
     dplyr::select(-segmentlength) # we don't really gaf about these lines, they're just segments because of the drawings
   ## Drop the z-dimension from data. Exists in USGS but not in CWS
   bbs_routes <- sf::st_zm(bbs_routes, drop = TRUE, what = "ZM")
-  
-  
-  
+
+
+
   # Project/reproject grid to match bbs_routes layer --------------------------------
   # match grid projection/crs to target
   grid <- sf::st_transform(grid, crs = crs.string)
-  
+
   # Clip bbs_routes to grid extent and overlay grid cells ------------------------------------------
   # append original (projected) grid to bbs_routes spatial lines layer
   cat(
     "overlaying bbs routes and study area grid. this may take a minute or three...or ten....sorry bruh\n\n"
   )
-  
+
   ### chunk up processing of st_intersection to speed up overlay
   # add process for:: if ngrids>X and chunks > Y then parallel, else just run straight up
   message(
@@ -174,7 +174,7 @@ make_base_grid_bbs <- function(grid,
   nroutes  <- nrow(bbs_routes)
   r_vec    <- 1:nroutes
   r_chunks <- split(r_vec, f = ceiling(seq_along(r_vec) / round(len / ncores) + 1 ))
-  
+
   ngrids    <- nrow(grid)
   g_vec    <- 1:nroutes
   g_chunks    <- split(g_vec, f = ceiling(seq_along(g_vec) / round(len / ncores) + 1 ))
@@ -182,9 +182,9 @@ make_base_grid_bbs <- function(grid,
   ## loop over all the BBS route chunks
   mylist <- list()
   for(ii in 1:length(r_chunks)){
-    r.temp <- bbs_routes[r_chunks[[ii]],] 
+    r.temp <- bbs_routes[r_chunks[[ii]],]
     ### loop over all the grid chunks
-    for(jj in 1:length(g_chunks)){ 
+    for(jj in 1:length(g_chunks)){
     print(paste(ii, "-", jj))
       if(jj==1) temp <- list()
       g.temp <- grid[g_chunks[[jj]],]
@@ -195,7 +195,7 @@ make_base_grid_bbs <- function(grid,
     rm(temp)
   }
   ### not sure if I can go ahead and just bind the rows...so if the calculate segment length doesnt work then try st_join again
-  
+
   # ## bind rows...
   # for(i in seq_along(mylist)){
   #   print(paste0("spatial joining: ", i, " of ", length(mylist)))
@@ -204,7 +204,7 @@ make_base_grid_bbs <- function(grid,
   bbs.grid.lines <- dplyr::bind_rows(mylist)
   message("[note]...overlay was great success! jagshemash \n")
   # rm(mylist)
-  
+
   # Calculate total lengths of routes WITHIN EAcH GRID CELL -------------------
   bbs.grid.lines.df <- bbs.grid.lines
   bbs.grid.lines.df$segmentlength  <- sf::st_length(bbs.grid.lines)
@@ -216,14 +216,14 @@ make_base_grid_bbs <- function(grid,
     dplyr::group_by(gridcellid, rteno) |>
     dplyr::mutate(proprouteincell = sum(segmentlength) / totalroutelength) |>
     dplyr::ungroup()
-  
+
   # create an object describing the rtenos as lines if we want to plot later on
   geom  <- sf::st_geometry(bbs.grid.lines)
   route.line.geometry <- bbs.grid.lines |> select(rteno) |>
     sf::st_drop_geometry() |>
     mutate(geometry  = geom)
   rm(geom)
- 
+
   # Create BBS Routes as GRIDDED object (not lines) -------------------------
   # Join the expanded grid with the BBS routes information
   ## first, let's remove redundant information (we don't care about the segment lengths../)
@@ -235,37 +235,37 @@ make_base_grid_bbs <- function(grid,
                     proprouteincell,
                     totalroutelength,
                     routelength)
-  
+
   ## overlay the bbs routes to the grid, again.
   bbs_spatial  <- dplyr::left_join(grid, bbs.temp, by="gridcellid")
-  
+
   # Add attributes and obs to BBS gridded layer -----------------------------
-  
+
   ## add the BBS observations to the BBS spatial object
   # bbs_spatial <- left_join(bbs.grid, df)
-  
+
   # if empty cells not desired, will remove them.
   if (!keep.empty.cells) {
     bbs_spatial <-  bbs_spatial |> dplyr::filter(!is.na(rteno))
   }
-  
-  
-  
+
+
+
   # just to be safe I guess
   if (dplyr::is_grouped_df(bbs_spatial))
     bbs_spatial <- bbs_spatial |> dplyr::ungroup()
-  
+
   # remove rownames
   rownames(bbs_spatial) <- NULL
-  
- 
+
+
   # Outputs -----------------------------------------------------------------
   if(save.route.lines){
     f2 <- paste0(dir.out, "bbs_route_lines.rds")
     cat("`save.route.lines == TRUE`; saving the BBS routes as linefiles to :\n  ", f2, "\n")
     saveRDS(bbs.grid.lines.df, file = f2)
   }
-  
+
   cat("Writing bbs_spatial to file: ", f, "\n")
   saveRDS(bbs_spatial, file = f)
   return(bbs_spatial)
