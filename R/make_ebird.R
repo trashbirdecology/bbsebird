@@ -38,7 +38,7 @@ make_ebird <-
 # complete.only = TRUE;
 # protocol = c("Traveling", "Stationary");
 # remove.bbs.obs = TRUE;
-# years = NULL;
+# # years = NULL;
 # max.effort.km = NULL;
 # max.effort.mins = NULL;
 # max.num.observers = 10;
@@ -62,12 +62,21 @@ make_ebird <-
   ### w.r.t. memory capacity.....
   ### this function also grabs filenames for previously-partitioned data if
   ### overwrite==FALSE && data exists for mmyyyy && countries...
-if(is.null(fns.samps)) fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
+if(is.null(fns.samps)){ fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
                                                       mmyyyy,
                                                       outpath = NULL,
                                                       overwrite = FALSE,
                                                       out.filetype = ".csv.gz",
                                                       countries = countries)
+### I need to run twice on the first go around -- this is a really lazy and gross fix.....
+#### I should go into partition_ebird_events() and re-eval the directory for the fns.samps
+fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
+                                     mmyyyy,
+                                     outpath = NULL,
+                                     overwrite = FALSE,
+                                     out.filetype = ".csv.gz",
+                                     countries = countries)
+}
 ## OBSERVATIONS FILENAMES
 if (is.null(fns.obs)) fns.obs   <-  get_ebird_obs_files(
       dir.ebird.in = dir.ebird.in,
@@ -76,7 +85,6 @@ if (is.null(fns.obs)) fns.obs   <-  get_ebird_obs_files(
       species = species,
       countries = countries
     )
-
 
 ## IMPORT AND MUNGE THE DATA
 ## this function will import the munged .csv.gz if it exists and !overwrite and gets this far down...
@@ -98,9 +106,7 @@ munged <- munge_ebird(
     ydays = ydays,
     max.birds.checklist = max.birds.checklist
   )
-tm=data.table::as.ITime(munged$time_observations_started)
-munged[,starttime := (hour(tm)*60+minute(tm))] ## num minutes after midnight
-rm(tm)
+munged[,starttime := (hour(as.ITime(munged$time_observations_started))*60+minute(as.ITime(munged$time_observations_started)))] ## num minutes after midnight
 
 ## RETURN OBJEcT
 cat(nrow(munged), " rows remain after munging ebird sampling events and observations\n")

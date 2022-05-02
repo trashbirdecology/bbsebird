@@ -83,7 +83,7 @@ partition_ebird_events <-
             stringr::str_detect(fns, ".txt.gz")]
 cat("Partitioning the sampling events data into country-level files for specified countries. This will take ~15 mins.\n")
     ## if fn.xtxt ==0 then NO need to unpack....
-    if (length(fn.txt) == 0) {
+if (length(fn.txt) == 0) {
       fn.tar <-
         fns[stringr::str_detect(fns, mmyyyy) &
               stringr::str_detect(fns, ".tar")]
