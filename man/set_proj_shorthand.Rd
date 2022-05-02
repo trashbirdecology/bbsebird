@@ -9,8 +9,7 @@ set_proj_shorthand(
   countries = c("us", "ca"),
   states = NULL,
   grid.size,
-  years,
-  max.C.ebird = NULL
+  years
 )
 }
 \arguments{
@@ -19,8 +18,6 @@ set_proj_shorthand(
 \item{grid.size}{size of desired grid cell}
 
 \item{years}{Vector of years. will take the min and max value}
-
-\item{max.C.ebird}{optional NULL or integer representing max number of birds allowed on eBird data}
 
 \item{regions}{string of countries or states}
 }

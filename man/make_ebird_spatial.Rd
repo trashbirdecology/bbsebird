@@ -6,7 +6,7 @@
 \usage{
 make_ebird_spatial(
   df,
-  crs.target,
+  crs.target = 4326,
   dir.out = NULL,
   grid = NULL,
   overwrite = FALSE

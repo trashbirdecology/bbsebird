@@ -19,7 +19,7 @@ make_bundle(
   Y = "cell.lat.centroid",
   cell.id = "gridcellid",
   year.id = "year",
-  site.id = c("checklist_id", "rteno"),
+  site.id = c("checklist_id", "rteno", "sampling_event_identifier"),
   obs.id = c("obsn", "observer_id"),
   cell.covs = c("area"),
   site.covs = c("starttime", "endtime", "wind", "noise", "cars", "minute", "assistant",
