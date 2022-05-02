@@ -21,7 +21,8 @@ partition_ebird_events <-
            out.filetype= ".csv.gz",
            countries = c("US", "CA", "MX"),
            ncores = NULL) {
-    stopifnot(memory.limit()[1] > 57e3) # i think i acutally needed like 55GB...
+
+    if(!"Linux" %in% Sys.info()[1])stopifnot(memory.limit()[1] > 57e3) # i think i acutally needed like 55GB...
     country.ind <- countries <- toupper(countries)
     out.filetype <- tolower(out.filetype)
     stopifnot(out.filetype %in% c(".csv.gz", ".csv", ".txt"))
@@ -30,7 +31,7 @@ partition_ebird_events <-
     if (unlist(gregexpr('-', mmyyyy)[1] == -1))
       stop("please place a hyphen between month and year in arg mmyyyy (e.g., 'dec-2022')")
     if (is.null(ncores))
-      ncores <- parallel::detectCores() - 2
+      ncores <- parallel::detectCores() - 1
 
     if(is.null(outpath)) outpath <- paste0(dir.ebird.in, "/", "partitioned_",mmyyyy,"/")
     dir.create(outpath, showWarnings=FALSE)
