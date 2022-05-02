@@ -175,43 +175,46 @@ make_bbs_spatial <- function(df,
     message(
       "[note] overlaying bbs route and grid (study area). This may take a few minutes depending on size of grid cells and extent of study area..\n"
     )
-  len       <- nrow(bbs_routes)
-  my_vec    <- 1:len
-  ngrids    <- nrow(grid)
-  chunk_len <-
-    round(len / ncores) + 1 # divide equally across all available cores..
-  chunks    <- split(my_vec, f = ceiling(seq_along(my_vec) / chunk_len))
-  # this produces a sf as LINES with grid cell ids appended as attributes.
-  ## if parallel index is true, use parallel data processing to speed things up. This is a slow process for >>1 state and grid cells <0.50
-  par.ind <-
-    ifelse(ngrids > 200 || nrow(bbs_routes) > 300, TRUE, FALSE)
-  if (par.ind) {
-    cl        <- parallel::makeCluster(ncores)
-    doParallel::registerDoParallel(cl)
-    # i = 0
-    # while (!exists("bbs.grid.lines") &&
-    #        i < 2) {
-    #   # will try this 2 times.
-    #   i = i + 1
-      # print(paste0(i, " of 2 attempts in parallel"))
-      try(bbs.grid.lines <-
-            foreach::foreach(
-              j = 1:length(chunks),
-              .combine = dplyr::bind_rows,
-              .packages = "sf"
-            ) %dopar% {
-              df = bbs_routes[chunks[[j]],]
-              sf::st_intersection(grid, df)
-            }, silent = TRUE)
-    # }
-    # rm(i)
-    parallel::stopCluster(cl) # prob should add a tryCatch here...
-  }
-  rm(chunks, chunk_len, my_vec, len)
+  # len       <- nrow(bbs_routes)
+  # my_vec    <- 1:len
+  # ngrids    <- nrow(grid)
+  # chunk_len <-
+  #   round(len / ncores) + 1 # divide equally across all available cores..
+  # chunks    <- split(my_vec, f = ceiling(seq_along(my_vec) / chunk_len))
+  # # this produces a sf as LINES with grid cell ids appended as attributes.
+  # ## if parallel index is true, use parallel data processing to speed things up. This is a slow process for >>1 state and grid cells <0.50
+  # par.ind <-
+  #   ifelse(ngrids > 200 || nrow(bbs_routes) > 300, TRUE, FALSE)
+  # if (par.ind) {
+  #   cl        <- parallel::makeCluster(ncores)
+  #   doParallel::registerDoParallel(cl)
+  #   # i = 0
+  #   # while (!exists("bbs.grid.lines") &&
+  #   #        i < 2) {
+  #   #   # will try this 2 times.
+  #   #   i = i + 1
+  #     # print(paste0(i, " of 2 attempts in parallel"))
+  #     try(bbs.grid.lines <-
+  #           foreach::foreach(
+  #             j = 1:length(chunks),
+  #             .combine = dplyr::bind_rows,
+  #             .packages = "sf"
+  #           ) %dopar% {
+  #             df = bbs_routes[chunks[[j]],]
+  #             sf::st_intersection(grid, df)
+  #           }, silent = TRUE)
+  #   # }
+  #   # rm(i)
+  #   parallel::stopCluster(cl) # prob should add a tryCatch here...
+  # }
+  # rm(chunks, chunk_len, my_vec, len)
+  #
+  # if (!par.ind | !exists("bbs.grid.lines")) {
+  #   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
+  # }
 
-  if (!par.ind | !exists("bbs.grid.lines")) {
-    bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
-  }
+  ### alternative for Linux/HPC to intersect
+  bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   message("[note]...overlay was great success! jagshemash \n")
 
   # Calculate total lengths of routes WITHIN EAcH GRID CELL -------------------

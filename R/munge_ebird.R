@@ -124,7 +124,7 @@ for(i in seq_along(fns)){
     rm(DT)
   } # end ii loop
   # browser()
-  cat("writing the filtered ", names(fns)[i], "to file in case your machine crashes....:\n", myfns[i],"\n")
+  cat("\nwriting the filtered ", names(fns)[i], "to file in case your machine crashes....:\n", myfns[i],"\n")
   data.table::fwrite(rbindlist(data), file = myfns[i], nThread = ncores)
 
   rm(data) # empty data list for next i
