@@ -98,7 +98,9 @@ munged <- munge_ebird(
     ydays = ydays,
     max.birds.checklist = max.birds.checklist
   )
-
+tm=data.table::as.ITime(munged$time_observations_started)
+munged[,starttime := (hour(tm)*60+minute(tm))] ## num minutes after midnight
+rm(tm)
 
 ## RETURN OBJEcT
 cat(nrow(munged), " rows remain after munging ebird sampling events and observations\n")

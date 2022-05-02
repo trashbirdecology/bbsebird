@@ -42,9 +42,7 @@ make_bundle <- function(bbs,
                         cell.covs   = c("area"),
                         site.covs   = c(
                           "starttime",
-                          # bbs
                           "endtime",
-                          # bbs
                           "wind",
                           "noise",
                           "cars",
@@ -66,9 +64,6 @@ make_bundle <- function(bbs,
                         dev.mode    = FALSE,
                         dir.outputs = "/outputs",
                         save.neighborhood = TRUE) {
-  ## for dev
-  # ebird=ebird_spatial;bbs=bbs_spatial;grid=grid
-
 
   # EVALUATE ARGS -----------------------------------------------------------
   ## first, test and evaluate args as necessary.
@@ -130,10 +125,10 @@ make_bundle <- function(bbs,
 
   # Ensure no duplicates exist ----------------------------------------------
   bbs   <-
-    bbs |> distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
+    bbs |> dplyr::distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
   ## (duplicates in ebird, though it might be because we have multiple observers. huge amount of excess data being imported...)
   ebird <-
-    ebird |> distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
+    ebird |> dplyr::distinct(year.id, site.id, cell.id, c, .keep_all = TRUE)
 
   # Subset for dev.mode=TRUE ------------------------------------------------
   if (dev.mode) {
@@ -477,6 +472,7 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
         !is.character(cov.dat$cov) && !(max(cov.dat$cov, na.rm = TRUE) > 1)
       }
       if (cov.name %in% c("endtime", "starttime")) {
+        # browser()
         cov.dat$cov <- as.integer(cov.dat$cov)
       }
 
@@ -484,15 +480,15 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
         ifelse(is.factor(cov.dat$cov),
                TRUE,
                FALSE)
-      if (is.time)
-        cov.dat$cov <- cov.dat$cov@hour * 60 + cov.dat$cov@minute
-      if (is.time &
-          grepl("minute|time_observations_started", cov.name)) {
-        message("[notice] converting covariate ",
-                cov.name ,
-                " from minutes to hours")
-        cov.dat$cov <- cov.dat$cov / 60
-      }
+      # if (is.time)
+      #   cov.dat$cov <- cov.dat$cov@hour * 60 + cov.dat$cov@minute
+      # if (is.time &
+      #     grepl("minute|time_observations_started", cov.name)) {
+      #   message("[notice] converting covariate ",
+      #           cov.name ,
+      #           " from minutes to hours")
+      #   cov.dat$cov <- cov.dat$cov / 60
+      # }
       if (scale.covs &
           is.binary)
         cat("  [note] site covariate ",
@@ -539,7 +535,6 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
     } # j loop
   }# end Xsite i loop
   cat("  [note] done munging site-level covariates\n")
-
 
   ## rename LL elements
   bbs   <- LL$bbs
@@ -669,25 +664,25 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
   saveRDS(nb, fnb)
 
   rm(nb, N, adj, sumNumNeigh)
-
+# browser()
 
   # BUNDLE UP DATA ----------------------------------------------------------
   # make index logical for whether or
   # # if return.orig.dat == TRUE then we want to keep all
   bundle.out <- list(
-    bbs.df      = bbs   |> distinct(year.ind, site.ind, .keep_all = TRUE),
+    bbs.df      = bbs   |> dplyr::distinct(year.ind, site.ind, .keep_all = TRUE),
     ebird.df    = ebird |> dplyr::distinct(year.ind, site.ind, .keep_all = TRUE),
     grid.df     = cell.index |> dplyr::distinct(cell.ind, cell.id, X, Y, .keep_all = TRUE) |>
       dplyr::mutate(X = nb.coords[,1], Y = nb.coords[,2]),
     coords      = nb.coords,
-    EN        = EN.mat,
+    EN          = EN.mat,
     # max C per grid per year  (zero-filled)
-    Xb = simplify2array(Xsite$bbs),
-    Xe = simplify2array(Xsite$ebird),
+    Xb = as.array(Xsite$bbs),
+    Xe = as.array(Xsite$ebird),
     # Xgrid      = Xgrid,
-    Xg         = simplify2array(Xgrid),
+    Xg         = as.array(Xgrid),
     # proportion of routes in grid cell as matrix (dim <nsites by ngrids>)
-    prop      = as.matrix(prop$bbs), ## keeping this here during dev phase.
+    prop       = as.matrix(prop$bbs), ## keeping this here during dev phase.
     propb      = as.matrix(prop$bbs),
     prope      = as.matrix(prop$ebird),
     # % BBS route per grid cell (dims <ngrid nroutes>)
