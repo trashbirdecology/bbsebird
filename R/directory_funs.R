@@ -13,7 +13,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   # first, create the proj directory if necessary
   dir.create(dir.proj, showWarnings = FALSE)
   # redefine dir.proj if subdir specified
-  dir.proj <- paste0(dir.proj, "/")
+  dir.proj <- paste0("/", dir.proj, "/")
   dir.proj.orig <- dir.proj ## save this to save the files that are common across projects....
   if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj,"/", subdir.proj, "/")
   dir.proj <- gsub(x=dir.proj, pattern = "//","/")
