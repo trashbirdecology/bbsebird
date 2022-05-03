@@ -62,10 +62,10 @@ make_bundle <- function(bbs,
                           "number_observers"
                         ),
                         dev.mode    = FALSE,
-                        dir.outputs = "/outputs",
+                        dir.outputs = "/outputs/",
                         save.neighborhood = TRUE) {
 
-if(!is.null(dir.outputs)) dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
+dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
 
 # ### for dEV convenience
 #   drop.na.cov.obs = TRUE
