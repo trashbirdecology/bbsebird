@@ -12,7 +12,6 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
   # first, create the proj directory if necessary
   dir.create(dir.proj, showWarnings = FALSE)
-  dir.proj <- paste0("/", dir.proj, "/")
   dir.proj.orig <- dir.proj ## save this to save the files that are common across projects....
   # redefine dir.proj if subdir specified
   if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj,"/", subdir.proj, "/")
@@ -98,11 +97,15 @@ for(i in (x+1):z){
 }
 
 ## Ensure directories are created (need to fix bug in earlier part of script...not making dirs)
+if("Linux" %in% Sys.info()[1]){ ind <- TRUE}else{ind <- FALSE}
 for(i in seq_along(paths)){
   if(!dir.exists(paths[[i]])) dir.create(paths[[i]], showWarnings = FALSE)
   paths[[i]]   <- gsub(x=paths[[i]],pattern="//",replacement="/") # replace all double forward slashes...
+  if(ind ) paths[[i]]   <- paste0("/", paths[[i]])
 }
 names(paths)[which(names(paths)=="dir.proj")] <- "project"
+
+
 
 
 return(paths)

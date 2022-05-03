@@ -6,6 +6,7 @@
 \usage{
 make_base_grid_bbs(
   grid,
+  dir.out = NULL,
   cws.routes.dir,
   usgs.routes.dir,
   cws.layer = "ALL_ROUTES",
@@ -14,12 +15,13 @@ make_base_grid_bbs(
   ncores = parallel::detectCores() - 1,
   keep.empty.cells = TRUE,
   overwrite = FALSE,
-  dir.out = NULL,
   save.route.lines = TRUE
 )
 }
 \arguments{
 \item{grid}{a spatial grid over which the eBird data will be overlaid.}
+
+\item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
 
 \item{cws.routes.dir}{Directory for where the CWS (Canadian BBS) shapefiles are stored.}
 
@@ -36,8 +38,6 @@ make_base_grid_bbs(
 \item{keep.empty.cells}{logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.}
 
 \item{overwrite}{logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out}
-
-\item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
 
 \item{save.route.lines}{logical. If TRUE (default) will save the BBS routes segments as .RDS to dir.out}
 }
