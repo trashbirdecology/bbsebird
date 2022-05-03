@@ -112,7 +112,7 @@ for(i in seq_along(fns)){
         if(filt.ind == "more")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= f]
         if(filt.ind == "range") {
           DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= min(f)]
-          DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= max(f)]
+          DT <- DT[eval(parse(text=paste0("`",n,"`"))) <= max(f)]
         }
         # remove key
         data.table::setkey(DT, NULL)
