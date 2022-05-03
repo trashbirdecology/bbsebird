@@ -21,6 +21,7 @@
 #' @importFrom dplyr mutate full_join select mutate group_by ungroup distinct rename left_join summarise filter
 #' @export make_base_grid_bbs
 make_base_grid_bbs <- function(grid,
+                             dir.out = NULL,
                              ## observations data frame. must contain at least var rteno
                              cws.routes.dir,
                              usgs.routes.dir,
@@ -33,7 +34,6 @@ make_base_grid_bbs <- function(grid,
                              ncores = parallel::detectCores() - 1,
                              keep.empty.cells = TRUE,
                              overwrite = FALSE,
-                             dir.out = NULL,
                              save.route.lines = TRUE) {
   # first, if overwrite is false and this file exists. import and return asap.
   if(is.null(dir.out)) dir.out <- "grids"
