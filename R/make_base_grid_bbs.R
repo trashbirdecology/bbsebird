@@ -36,7 +36,8 @@ make_base_grid_bbs <- function(grid,
                              dir.out = NULL,
                              save.route.lines = TRUE) {
   # first, if overwrite is false and this file exists. import and return asap.
-  f <- paste0(dir.out, "bbs_base_grid.rds")
+  if(is.null(dir.out)) dir.out <- "grids"
+  f <- paste0(dir.out, "/bbs_base_grid.rds")
   if (file.exists(f) & !overwrite) {
     cat("File ",
         f,

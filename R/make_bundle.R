@@ -65,6 +65,47 @@ make_bundle <- function(bbs,
                         dir.outputs = "/outputs",
                         save.neighborhood = TRUE) {
 
+# ### for dEV convenience
+#   drop.na.cov.obs = TRUE
+#   mins.to.hours = TRUE
+#   scale.covs  = TRUE
+#   fill.cov.nas = NA
+#   max.ebird = 25
+#   use.ebird.in.EN = TRUE
+#   EN.arg    = "max"
+#   X           = "cell.lon.centroid"
+#   Y           = "cell.lat.centroid"
+#   cell.id     = "gridcellid"
+#   year.id     = "year"
+#   site.id     = c("checklist_id", "rteno", "sampling_event_identifier")
+#   obs.id      = c("obsn", "observer_id")
+#   cell.covs   = c("area")
+# site.covs   = c(
+#   "starttime",
+#   "endtime",
+#   "wind",
+#   "noise",
+#   "cars",
+#   "minute",
+#   "assistant",
+#   "obsfirstyearbbs",
+#   "obsfirstyearonbbs",
+#   "obsfirstyearroute",
+#   "obsfirstyearonroute",
+#   "time_observations_started_hsm",
+#   "time_observations_started",
+#   "duration_minutes",
+#   # "effort_distance_km",
+#   # "effort_area_ha",
+#   "protocol_type",
+#   # "protocol_code",
+#   "number_observers"
+# )
+# dev.mode    = FALSE
+# dir.outputs = "/outputs"
+# save.neighborhood = TRUE
+
+
   # EVALUATE ARGS -----------------------------------------------------------
   ## first, test and evaluate args as necessary.
   EN.arg <- tolower(EN.arg)
@@ -172,7 +213,6 @@ make_bundle <- function(bbs,
 
     rm(T.keep, G.keep, e.samp.keep, b.samp.keep)
   }
-
 
 
 # KEEP N CHECKLISTS IF SPECIFIED ------------------------------------------
