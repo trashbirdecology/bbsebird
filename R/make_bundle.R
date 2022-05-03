@@ -680,16 +680,15 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
 
   ## SPATIAL NEIGHBORHOOD ----------------------------------------------------
   ## For now just using default values for building neighborhood...
-  # temp.fn.ind <-
-  fnb <-
-    paste0(dir.outputs,
-           "/neighborhood",
-           ifelse(dev.mode, "-dev", ""),
-           ".rds")
-  dir.create(paste0(dir.outputs, "/neighborhood"), showWarnings = FALSE)
-  cat("  [note] creating spatial neighborhood and saving output to ",
-      fnb,
-      "\n")
+  # fnb <-
+  #   paste0(dir.outputs,
+  #          "/neighborhood",
+  #          ifelse(dev.mode, "-dev", ""),
+  #          ".rds")
+  # dir.create(paste0(dir.outputs, "/neighborhood"), showWarnings = FALSE)
+  # cat("  [note] creating spatial neighborhood and saving output to ",
+  #     fnb,
+  #     "\n")
   # browser()
   # nb.coords <- sf::st_coordinates(sf::st_geometry(grid))
   nb.coords <- as.matrix(cbind(grid$X, grid$Y))
@@ -702,7 +701,7 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
   sumNumNeigh = length(unlist(nb))
   nbWB <- spdep::nb2WB(nb)
   nbWB$sumNumNeigh = sumNumNeigh
-  saveRDS(nb, fnb)
+  # saveRDS(nb, fnb)
 
   rm(nb, N, adj, sumNumNeigh)
 # browser()
