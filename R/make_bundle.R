@@ -65,6 +65,8 @@ make_bundle <- function(bbs,
                         dir.outputs = "/outputs",
                         save.neighborhood = TRUE) {
 
+if(!is.null(dir.outputs)) dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
+
 # ### for dEV convenience
 #   drop.na.cov.obs = TRUE
 #   mins.to.hours = TRUE
