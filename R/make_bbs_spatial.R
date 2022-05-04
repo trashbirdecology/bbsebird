@@ -169,18 +169,6 @@ make_bbs_spatial <- function(df,
   bbs_routes <- sf::st_zm(bbs_routes, drop = TRUE, what = "ZM")
 
   # Project/reproject grid to match bbs_routes layer --------------------------------
-  # match grid projection/crs to target
-  rename_geometry <- function(g, name){
-    current = attr(g, "sf_column")
-    names(g)[names(g)==current] = name
-    st_geometry(g)=name
-    sf::st_set_geometry(x=g, value=name)
-    return(g)
-  }
-
-  grid       <- rename_geometry(grid, "geometry")
-  bbs_routes <- rename_geometry(bbs_routes, "geometry")
-
   grid <- sf::st_transform(grid, crs = crs.string)
 
   # Clip bbs_routes to grid extent and overlay grid cells ------------------------------------------
@@ -231,8 +219,6 @@ make_bbs_spatial <- function(df,
   # if (!par.ind | !exists("bbs.grid.lines")) {
   #   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   # }
-
-    ### alternative for Linux/HPC to intersect
   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   message("[note]...overlay was great success! jagshemash \n")
 
