@@ -58,6 +58,8 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, grid = NULL, o
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
 
+  sf::st_geometry(grid)<- grid[,1]
+
   # cat("Joining ebird to spatial grid. Takes at least a couple of minutes for smaller eBird datasets.\n")
   ebird_spatial <- sf::st_join(grid, df)
   ### maybe delete::must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
