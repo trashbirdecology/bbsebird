@@ -12,10 +12,14 @@ col_names <- list(
   lat  = c("lati", "latitude", "cell_lat_centroid", "cell_lati_centroid"),
   lon = c("longitude", "long", "cell_lon_centroid", "cell_long_centroid")
 )
+
 for(i in seq_along(col_names)){
   oldnames <- col_names[[i]]
   newnames <- rep(names(col_names)[i], length=length(oldnames))
   data.table::setnames(data, oldnames, newnames,skip_absent = TRUE) # do not reassign, saves in place
 }
+
+
+
 return(data)
 }

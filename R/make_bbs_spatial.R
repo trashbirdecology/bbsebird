@@ -37,6 +37,13 @@ make_bbs_spatial <- function(df,
                              overwrite = FALSE,
                              dir.out = NULL,
                              save.route.lines = TRUE) {
+
+  while(substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-
+      substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
+  while(substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
+  while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
+
+  stopifnot(dir.exists(cws.routes.dir) || dir.exists(usgs.routes.dir))
   # first, if overwrite is false and this file exists. import and return asap.
   f <- paste0(dir.out, "bbs_spatial.rds")
   if (file.exists(f) & !overwrite) {
@@ -46,10 +53,6 @@ make_bbs_spatial <- function(df,
     bbs_spatial <- readRDS(f)
     return(bbs_spatial)
   }
-
-  while(substr(cws.routes.dir,1,1)=="/") f <-  substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
-  while(substr(usgs.routes.dir,1,1)=="/") f <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
-
 
   ## munge col names to ensure consitency
   df <-  munge_col_names(df)
@@ -215,8 +218,16 @@ make_bbs_spatial <- function(df,
   # if (!par.ind | !exists("bbs.grid.lines")) {
   #   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   # }
+    rename_geometry <- function(g, name){
+      current = attr(g, "sf_column")
+      names(g)[names(g)==current] = name
+      st_geometry(g)=name
+      g
+    }
 
-  ### alternative for Linux/HPC to intersect
+  grid       <- rename_geometry(grid, "geometry")
+  bbs_routes <- rename_geometry(bbs_routes, "geometry")
+    ### alternative for Linux/HPC to intersect
   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   message("[note]...overlay was great success! jagshemash \n")
 
