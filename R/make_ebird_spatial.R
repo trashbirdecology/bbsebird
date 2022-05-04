@@ -26,7 +26,7 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
   ## munge col names to ensure consitency
   df         <-  munge_col_names(df)
   grid       <-  munge_col_names(grid)
-  grid       <- rename_geometry(grid, "geometry")
+  grid       <-  rename_geometry(grid, "geometry")
 
 
 

@@ -55,8 +55,8 @@ make_bbs_spatial <- function(df,
   }
 
   ## munge col names to ensure consitency
-  df <-  munge_col_names(df)
-  grid  <-  munge_col_names(grid)
+  df    <-  munge_col_names(df)
+  grid  <-  munge_col_names(data = grid)
   ## set CRS
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
@@ -143,6 +143,8 @@ make_bbs_spatial <- function(df,
   usgs_routes <-
     usgs_routes[, tolower(names(usgs_routes)) %in% keep]
 
+
+
   ### join CWS and USGS routes
   bbs_routes <- dplyr::bind_rows(usgs_routes, cws_routes) |>
     # Keep only the necessary information.
@@ -168,6 +170,17 @@ make_bbs_spatial <- function(df,
 
   # Project/reproject grid to match bbs_routes layer --------------------------------
   # match grid projection/crs to target
+  rename_geometry <- function(g, name){
+    current = attr(g, "sf_column")
+    names(g)[names(g)==current] = name
+    st_geometry(g)=name
+    sf::st_set_geometry(x=g, value=name)
+    return(g)
+  }
+
+  grid       <- rename_geometry(grid, "geometry")
+  bbs_routes <- rename_geometry(bbs_routes, "geometry")
+
   grid <- sf::st_transform(grid, crs = crs.string)
 
   # Clip bbs_routes to grid extent and overlay grid cells ------------------------------------------
@@ -218,15 +231,7 @@ make_bbs_spatial <- function(df,
   # if (!par.ind | !exists("bbs.grid.lines")) {
   #   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   # }
-    rename_geometry <- function(g, name){
-      current = attr(g, "sf_column")
-      names(g)[names(g)==current] = name
-      st_geometry(g)=name
-      g
-    }
 
-  grid       <- rename_geometry(grid, "geometry")
-  bbs_routes <- rename_geometry(bbs_routes, "geometry")
     ### alternative for Linux/HPC to intersect
   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   message("[note]...overlay was great success! jagshemash \n")
