@@ -47,6 +47,9 @@ make_bbs_spatial <- function(df,
     return(bbs_spatial)
   }
 
+  while(substr(cws.routes.dir,1,1)=="/") f <-  substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
+  while(substr(usgs.routes.dir,1,1)=="/") f <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
+
 
   ## munge col names to ensure consitency
   df <-  munge_col_names(df)
