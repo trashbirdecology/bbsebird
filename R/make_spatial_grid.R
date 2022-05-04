@@ -179,6 +179,10 @@ make_spatial_grid <- function(dir.out,
   dir.create(dir.out, showWarnings = FALSE)
   fn <- paste0(dir.out, "/", "grid.rds")
   fn <- stringr::str_replace(fn, "//", "/")
+
+  ### munge colnames to stay consistent
+  grid <- munge_col_names(grid)
+
   cat("Saving spatial grid as .RDS to file: ", fn)
   saveRDS(grid, file = fn)
 
