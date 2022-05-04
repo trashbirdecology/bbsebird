@@ -10,7 +10,8 @@
 #' @importFrom sf st_as_sf st_transform
 #' @importFrom dplyr mutate
 #' @export make_ebird_spatial
-make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, grid = NULL, overwrite=FALSE) {
+make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
+                               grid = NULL, overwrite=FALSE) {
 
   # first, if overwrite is false and this file exists. import and return asap.
   f <-paste0(dir.out, "ebird_spatial.rds")
@@ -58,7 +59,7 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, grid = NULL, o
     "overlaying eBird and the spatial sampling grid. \ntakes ~1-2 min for a few states/provinces.\n"
   )
 
-  sf::st_geometry(grid)<- grid[,1]
+  sf::st_geometry(grid)<- names(grid)[1]
 
   # cat("Joining ebird to spatial grid. Takes at least a couple of minutes for smaller eBird datasets.\n")
   ebird_spatial <- sf::st_join(grid, df)
@@ -69,8 +70,9 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, grid = NULL, o
 
   # SAve to file
   if(!is.null(dir.out)){
-  cat("Writing to file: ", f, "\n")
-  saveRDS(ebird_spatial, file=f)
+    while(substr(f,1,1)=="/") f <- substr(f,2, nchar(f))  ## in linux must remove leading /, idfk
+    cat("Writing to file: ", f, "\n")
+    saveRDS(ebird_spatial, file=f)
 }
 
   return(ebird_spatial)
