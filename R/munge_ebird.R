@@ -22,7 +22,7 @@ munge_ebird <- function(fns.obs,
                         complete.only = TRUE,
                         ncores=NULL,
                         ydays = NULL,
-                        overwrite=FALSE
+                        overwrite = FALSE
                         ){
 
 # EVAL ARGS ----------------------------------------------------------
@@ -49,10 +49,10 @@ less.equal <- list(
 range.equal<-list(
     "OBSERVATION DATE" = years
 )
+#
+# more.equal <-list(NULL)
 
-more.equal <-list(NULL)
-
-filters <- list("equal"=f.equal, "less"=less.equal, "range"=range.equal, "more"=more.equal)
+filters <- list("equal"=f.equal, "less"=less.equal, "range"=range.equal)
 filters <- lapply(filters, function(x){
   x <- x[!unlist(lapply(x, is.null))]
 })
@@ -71,7 +71,7 @@ fns <- list(observations=fns.obs, samplingevents=fns.samps)
 # tictoc::tic()
 
 dataout<-data<-list(NULL)
-tictoc::tic("FILTER THEN RBIND")
+# tictoc::tic("FILTER THEN RBIND")
 for(i in seq_along(fns)){
   fs    <- fns[[i]]
   type  <- names(fns)[i]
@@ -88,19 +88,17 @@ for(i in seq_along(fns)){
   for(ii in seq_along(fs)){
     x <- fs[ii]
     DT <-
-      # <- rbindlist(lapply(fs, function(x) {
       data.table::fread(x,
                         nThread = ncores,
-                        # nrows = 1e2, ## FOR DEV PURPOSES
                         fill=FALSE,
                         drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
-    # }))
-    cat("...import success. jagshemash!\n")
+    # cat("...import ",  ," success. jagshemash!\n")
     # subset by filter types
     for(k in seq_along(filters)){
-      filt.ind <- tolower(names(filters)[k])
-      filt.temp <- filters[[k]][names(filters[[k]])  %in% toupper(colnames(DT))] ##keep only those relevnat to file (obs vs samp)
+      filt.ind   <- tolower(names(filters)[k])
+      filt.temp  <- filters[[k]][names(filters[[k]])  %in% toupper(colnames(DT))] ##keep only those relevnat to file (obs vs samp)
       if(length(filt.temp)==0) next()
+      ## subset by sub-filters
       for(j in seq_along(filt.temp)){
         f <- as.vector(unlist(filt.temp[j]))
         n <- names(filt.temp)[j]
@@ -111,25 +109,32 @@ for(i in seq_along(fns)){
         if(filt.ind == "less")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) <= f]
         if(filt.ind == "more")  DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= f]
         if(filt.ind == "range") {
-          DT <- DT[eval(parse(text=paste0("`",n,"`"))) >= min(f)]
-          DT <- DT[eval(parse(text=paste0("`",n,"`"))) <= max(f)]
+          if (tolower(n) %in% c("observation date", "observation.date", "observation_date")) {
+            DT <- DT[year(`OBSERVATION DATE`) >= min(f)]
+            DT <- DT[year(`OBSERVATION DATE`) <= max(f)]
+          } else{
+            DT <- DT[eval(parse(text = paste0("`", n, "`"))) >= min(f)]
+            DT <- DT[eval(parse(text = paste0("`", n, "`"))) <= max(f)]
+          }
         }
         # remove key
         data.table::setkey(DT, NULL)
-        cat("\n\tend ", names(fns)[i], " loop ", k,"-",j,"-",ii, nrow(DT) , "rows remain after", names(filt.temp)[j], "filter")
-      }#end j loop one fitler type
-    } # end k loop all filters
+        cat("\tend ", type, " loop ", k,"-",j,"-",ii, nrow(DT) , "rows remain after", names(filt.temp)[j], "filter\n")
+      }#end j loop one filter type
+    } # end k loop for ALL filters
     if(ii==1) data<-vector("list", length(fs))
     data[[ii]] <- DT
     rm(DT)
   } # end ii loop
-  # browser()
-  cat("\nwriting the filtered ", names(fns)[i], "to file in case your machine crashes....:\n", myfns[i],"\n")
-  data.table::fwrite(rbindlist(data), file = myfns[i], nThread = ncores)
+
+
+  cat("\nwriting the filtered ", type, "to file.:\n", myfns[i],"\n")
+  data <- rbindlist(data)
+  data.table::fwrite(data, file = myfns[i], nThread = ncores)
 
   rm(data) # empty data list for next i
 }# end i loop
-tictoc::toc()
+# tictoc::toc()
 gc()
 
 
@@ -138,10 +143,9 @@ names(myfns) <- names(fns)## filtered data filenames
 data <- vector("list", length(myfns)); names(data) <- names(myfns)
 cat("importing the filtered observations and sampling events data (", length(myfns),"files)\n")
 ## not doing this in parallel because of potential memory crashes on non HPC
-for(i in seq_along(data)){
+for(i in seq_along(myfns)){
   data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores)#, verbose = TRUE)
 }
-
 
 # COMBINE -----------------------------------------------------------------
 cat("binding the filtered datasets....\n")
@@ -152,7 +156,6 @@ gc()
 # FILTER YDAYS ------------------------------------------------------------
 cat("filtering data by ydays arg...\n")
 if(!is.null(ydays)) data <- data[yday(`OBSERVATION DATE`) %in% ydays]
-
 
 # REMOVE presence-only ----------------------------------------------------
 ## i want to see how much time is saved if igrab row numbers from a vector then only grab those rows
@@ -167,7 +170,8 @@ if (zerofill) {
 }
 
 if(!is.null(max.birds.checklist)){
-  data <- data[`OBSERVATION COUNT` <= max.birds.checklist]
+  data <-
+    data[`OBSERVATION COUNT` <= max.birds.checklist]
 }
 
 ## If i convert to integer before remocving "X", the "X" goes to NA so don't do that first!
@@ -210,9 +214,12 @@ data[,year  := year(date)]
 data[,yday  := yday(date)]
 data[,month := month(date)]
 
+## Finally, convert start time to minutes after midnight...
+data[, starttime := (hour(as.ITime(data$time_observations_started)) *
+                         60 + minute(as.ITime(data$time_observations_started)))] ## num minutes after midnight
 
 
-# Save it .... -------------------------------------------------
+
 cat("saving munged data to file:\n  ", fn.out, "\n")
 data.table::fwrite(data, file = fn.out)
 

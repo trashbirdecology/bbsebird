@@ -85,7 +85,7 @@ if (is.null(fns.obs)) fns.obs   <-  get_ebird_obs_files(
       species = species,
       countries = countries
     )
-
+stopifnot(length(fns.obs) > 0 )
 ## IMPORT AND MUNGE THE DATA
 ## this function will import the munged .csv.gz if it exists and !overwrite and gets this far down...
 munged <- munge_ebird(
@@ -106,7 +106,6 @@ munged <- munge_ebird(
     ydays = ydays,
     max.birds.checklist = max.birds.checklist
   )
-munged[,starttime := (hour(as.ITime(munged$time_observations_started))*60+minute(as.ITime(munged$time_observations_started)))] ## num minutes after midnight
 
 ## RETURN OBJEcT
 cat(nrow(munged), " rows remain after munging ebird sampling events and observations\n")

@@ -14,7 +14,7 @@
 #' @export make_gam
 make_gam <- function(coords,
                      method = "cubic2d",
-                     nd = 20,
+                     nd = NULL,
                      K        = NULL,
                      nruns = 10,
                      num.nn = 20,
@@ -25,6 +25,7 @@ make_gam <- function(coords,
                      scale.coords = TRUE
                      ) {
   # ARGS --------------------------------------------------------------------
+  if(is.null(nd)) nd <- min(nrow(coords)/2, 50)
   coords <- as.matrix(coords)
   method <- tolower(method)
   stopifnot(method %in% c("cubic2d", "jagam", "mgcv", "cubicalt"))
@@ -52,6 +53,8 @@ make_gam <- function(coords,
 
   # SPLINES PKGS ------------------------------------------------------------
   cat("   [note] using method cubic2d\n")
+  if (nd > 25) cat("   this may take a while for many knots or coordinate pairs\n")
+
   # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
   knots <-
     fields::cover.design(
@@ -134,6 +137,7 @@ make_gam <- function(coords,
 
   if (method %in% "cubic2d") {
     cat("   [note] using method cubic2d\n")
+    if(nrow(XY)> 1e4)  cat("   this may take a while for massive data\n")
     # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
     knots <-
       fields::cover.design(
