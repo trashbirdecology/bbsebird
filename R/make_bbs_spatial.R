@@ -48,9 +48,9 @@ make_bbs_spatial <- function(df,
   }
 
 
-  # force colanmes to lower just in case
-  names(df) <- tolower(names(df))
-
+  ## munge col names to ensure consitency
+  df <-  munge_col_names(df)
+  grid  <-  munge_col_names(grid)
   ## set CRS
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
