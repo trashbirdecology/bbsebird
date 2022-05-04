@@ -71,6 +71,7 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
   # SAve to file
   if(!is.null(dir.out)){
     cat("Writing to file: ", f, "\n")
+    while(substr(f,1,1)=="/") f <-  substr(f,2, nchar(f))  ## in linux must remove leading /, idfk
     saveRDS(ebird_spatial, file=f)
 }
 
