@@ -62,6 +62,7 @@ make_ebird <-
   ### w.r.t. memory capacity.....
   ### this function also grabs filenames for previously-partitioned data if
   ### overwrite==FALSE && data exists for mmyyyy && countries...
+
 if(is.null(fns.samps)){ fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
                                                       mmyyyy,
                                                       outpath = NULL,

@@ -17,7 +17,7 @@ munge_ebird <- function(fns.obs,
                         remove.bbs.obs = TRUE,
                         max.effort.km = NULL,
                         max.effort.mins = NULL,
-                        max.birds.checklist = 55,
+                        max.birds.checklist = NULL,
                         max.num.observers = 10,
                         complete.only = TRUE,
                         ncores=NULL,
@@ -49,8 +49,6 @@ less.equal <- list(
 range.equal<-list(
     "OBSERVATION DATE" = years
 )
-#
-# more.equal <-list(NULL)
 
 filters <- list("equal"=f.equal, "less"=less.equal, "range"=range.equal)
 filters <- lapply(filters, function(x){
@@ -68,10 +66,8 @@ if(file.exists(fn.out) && !overwrite){
 
 # IMPORT & FILTER OBS + SAMP EVENTS------------------------------------------------------------------
 fns <- list(observations=fns.obs, samplingevents=fns.samps)
-# tictoc::tic()
 
 dataout<-data<-list(NULL)
-# tictoc::tic("FILTER THEN RBIND")
 for(i in seq_along(fns)){
   fs    <- fns[[i]]
   type  <- names(fns)[i]
@@ -128,13 +124,12 @@ for(i in seq_along(fns)){
   } # end ii loop
 
 
-  cat("\nwriting the filtered ", type, "to file.:\n", myfns[i],"\n")
   data <- rbindlist(data)
+  cat("\nwriting the filtered ", type, "to file.:\n", myfns[i],"\n")
   data.table::fwrite(data, file = myfns[i], nThread = ncores)
 
   rm(data) # empty data list for next i
 }# end i loop
-# tictoc::toc()
 gc()
 
 
@@ -147,6 +142,7 @@ for(i in seq_along(myfns)){
   data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores)#, verbose = TRUE)
 }
 
+# browser()
 # COMBINE -----------------------------------------------------------------
 cat("binding the filtered datasets....\n")
 data <- data.table::rbindlist(data, fill=TRUE)
