@@ -24,8 +24,11 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
   }
 
   ## munge col names to ensure consitency
-  df <-  munge_col_names(df)
-  grid  <-  munge_col_names(grid)
+  df         <-  munge_col_names(df)
+  grid       <-  munge_col_names(grid)
+  grid       <- rename_geometry(grid, "geometry")
+
+
 
   # convert ebird data frame to spatial object
   cat("assigning coordinates to `df`. takes a  minute for a few states' worth of ebird data.\n")
