@@ -28,10 +28,8 @@ if(index == "spatial"){
   data <-  sf::st_set_geometry(data,"geometry")
 }
 
-
 names(data) <- tolower(gsub(x = names(data),pattern = " ", replacement = "_")) # replace spaces
 names(data) <- tolower(gsub(x = names(data),pattern = "\\.", replacement = "_")) # replace periods
-
 
 return(data)
 }

@@ -39,6 +39,12 @@ make_bbs_spatial <- function(df,
                              save.route.lines = FALSE) {
 
   while(substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-
+
+  ## munge col names to ensure consitency
+  df    <-  munge_col_names(df)
+  grid  <-  munge_col_names(data = grid)
+  ## set CRS
+  crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
       substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
   while(substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
   while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
@@ -53,12 +59,6 @@ make_bbs_spatial <- function(df,
     bbs_spatial <- readRDS(f)
     return(bbs_spatial)
   }
-
-  ## munge col names to ensure consitency
-  df    <-  munge_col_names(df)
-  grid  <-  munge_col_names(data = grid)
-  ## set CRS
-  crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
   ## Import and merge CAN and USA BBS routes -------------
   cat("importing route layers")
@@ -173,10 +173,6 @@ make_bbs_spatial <- function(df,
 
   # Clip bbs_routes to grid extent and overlay grid cells ------------------------------------------
   # append original (projected) grid to bbs_routes spatial lines layer
-  cat(
-    "overlaying bbs routes and study area grid. this may take a minute or three...or ten....sorry bruh\n\n"
-  )
-
   ### chunk up processing of st_intersection to speed up overlay
   # add process for:: if ngrids>X and chunks > Y then parallel, else just run straight up
     message(
@@ -236,6 +232,7 @@ make_bbs_spatial <- function(df,
 
   # create an object describing the rtenos as lines if we want to plot later on
   geom  <- sf::st_geometry(bbs.grid.lines)
+
   route.line.geometry <- bbs.grid.lines |> select(rteno) |>
     sf::st_drop_geometry() |>
     mutate(geometry  = geom)
@@ -266,12 +263,19 @@ make_bbs_spatial <- function(df,
   ### keep only the routes that appear on the df data...
   # bbs.grid  <- bbs.grid[which(bbs.grid$rteno %in% unique(df$rteno)),]
 
-  bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp, by="gridcellid")
+  bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp |> dplyr::select(-lat, -lon), by="gridcellid")
 
   # Add attributes and obs to BBS gridded layer -----------------------------
+  ## force RTENO to integer for safety
+  bbs.grid$rteno <- as.integer(bbs.grid$rteno)
+  df$rteno       <- as.integer(df$rteno)
+
+  ## remove the lat and long from bbs original data (since we just need th egrid cell centroid )
+  # df[,c(-which(names(df) %in% c("lat" ,"lon"))]
 
   ## add the BBS observations to the BBS spatial object
-  bbs_spatial <- left_join(bbs.grid, df, by="rteno")
+
+  bbs_spatial <- dplyr::left_join(bbs.grid, df)#, by="rteno", year)
 
   # if empty cells not desired, will remove them.
   if (!keep.empty.cells) {

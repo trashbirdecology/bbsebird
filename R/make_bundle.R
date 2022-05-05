@@ -102,13 +102,7 @@ dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
 #   "protocol_type",
 #   # "protocol_code",
 #   "number_observers"
-# )
-# dev.mode    = FALSE
-# dir.outputs = "/outputs"
-# save.neighborhood = TRUE
-
-
-  # EVALUATE ARGS -----------------------------------------------------------
+# ) # EVALUATE ARGS -----------------------------------------------------------
   ## first, test and evaluate args as necessary.
   EN.arg <- tolower(EN.arg)
   stopifnot(EN.arg %in% c("mean", "max", "min"))
@@ -124,6 +118,12 @@ dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
   names(bbs)   <- tolower(names(bbs))
   names(ebird) <- tolower(names(ebird))
   names(grid)  <- tolower(names(grid))
+
+# dev.mode    = FALSE
+# dir.outputs = "/outputs"
+# save.neighborhood = TRUE
+
+
 
   if("grid.study.area." %in% names(bbs)) bbs <- bbs |> dplyr::select(-"grid.study.area.")
   if("grid.study.area" %in% names(ebird)) ebird <- ebird |> dplyr::select(-"grid.study.area")
