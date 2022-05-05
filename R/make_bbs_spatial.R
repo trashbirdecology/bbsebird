@@ -59,7 +59,7 @@ make_bbs_spatial <- function(df,
   }
 
   ## Import and merge CAN and USA BBS routes -------------
-  cat("importing route layers")
+  cat("importing BBS route layers")
   # LOAD DATA
   ## CWS route shapefiles
   #### Becauset eh shapfile/gdb sent to me is really old, I cant use sf to import and st_ transform. So, I have to import usign sp readOGR, sp::spTransform, and then convert to sf before merign wtih bbs.
@@ -272,18 +272,36 @@ make_bbs_spatial <- function(df,
   # df[,c(-which(names(df) %in% c("lat" ,"lon"))]
 
   ## add the BBS observations to the BBS spatial object
-  bbs_spatial <- dplyr::left_join(bbs.grid, df |> dplyr::select(-lat, -lon))#, by="rteno", year)
+  # bbs_spatial <- dplyr::left_join(bbs.grid, df |> dplyr::select(-lat, -lon))#, by="rteno", year)
+  bbs_spatial <- dplyr::full_join(bbs.grid, df |> dplyr::select(-lat, -lon))#, by="rteno", year)
 
-  # if empty cells not desired, will remove them.
-  if (!keep.empty.cells) {
-    bbs_spatial <-  bbs_spatial |> dplyr::filter(!is.na(rteno))
+  ## this join doesnt include all the empty cells without BBS data, so we should add those back in for each year...
+  if(keep.empty.cells){
+    have <- bbs_spatial   |> dplyr::distinct(gridcellid, year)
+    all <-  grid.expanded |> dplyr::distinct(gridcellid, year)
+    toadd <- inner_join(setdiff(all, have), grid.expanded)
+    ## add back into bbs_spatial
+    bbs_spatial <- dplyr::bind_rows(bbs_spatial, toadd)
+    View(bbs_spatial)
   }
+
+
+
+
+
+  #   # if empty cells not desired, will remove them.
+  # if (!keep.empty.cells) {
+  #   bbs_spatial <-  bbs_spatial |> dplyr::filter(!is.na(rteno))
+  # }
 
 
 
   # just to be safe I guess
   if (dplyr::is_grouped_df(bbs_spatial))
     bbs_spatial <- bbs_spatial |> dplyr::ungroup()
+
+
+
 
   # remove rownames
   rownames(bbs_spatial) <- NULL
