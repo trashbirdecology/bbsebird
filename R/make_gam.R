@@ -51,22 +51,6 @@ make_gam <- function(coords,
   }
 
 
-  # SPLINES PKGS ------------------------------------------------------------
-  cat("   [note] using method cubic2d\n")
-  if (nd > 25) cat("   this may take a while for many knots or coordinate pairs\n")
-
-  # XY <- bf.in[c("X", "Y")] ### the "scaled down" coordinates
-  knots <-
-    fields::cover.design(
-      cbind(XY[,1], XY[,2]),
-      nd = nd,
-      nruns = nruns,
-      num.nn = num.nn,
-      max.loop = max.loop
-    )$design
-
-
-
   # JAGAM -------------------------------------------------------------------------
   # if not specified, K is defined as:
   ### this is kind of arbitrary. based on some Wood, Simon paper about min 20
@@ -116,9 +100,7 @@ make_gam <- function(coords,
       dim(jagam.mod$jags.data$X)[2]        # number of basis functions/knots
 
   }#end JAGAM
-
-
-  # CUBIC --------------------------------------------------
+  # CUBIC STREBEL ET AL --------------------------------------------------
   if (method %in% c("strebel")) {
     ### follow the methods of Strebel et al. (which follows methods of Royle and Kery AHM)
     cat("  [note] creating 2D cubic splines following Strebel et al. \n")
@@ -135,6 +117,7 @@ make_gam <- function(coords,
     nbfs  <- dim(Z.mat)[2]
   }
 
+  # CUBIC 2D --------------------------------------------------
   if (method %in% "cubic2d") {
     cat("   [note] using method cubic2d\n")
     if(nrow(XY)> 1e4)  cat("   this may take a while for massive data\n")

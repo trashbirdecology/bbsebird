@@ -219,6 +219,9 @@ t.tot <- Sys.time() ## start tracking runtime
     t.run <- round(as.numeric(Sys.time()-t.run)/60, 0)
   }  # END NO PARALLEL PROCESSING
 
+
+
+
 t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
     ### write the runtimes to file
     times <- data.frame(
