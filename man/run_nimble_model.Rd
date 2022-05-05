@@ -21,7 +21,10 @@ run_nimble_model(
   calculate = FALSE,
   block.name = "alpha+b",
   block.samp.type = "AF_slice",
-  parallel = TRUE
+  parallel = TRUE,
+  mod.name = NULL,
+  other = NULL,
+  fn.times = "runtimes.csv"
 )
 }
 \arguments{

@@ -37,9 +37,13 @@ run_nimble_model <- function(code,
                            calculate = FALSE,
                            block.name      = "alpha+b",
                            block.samp.type = "AF_slice",
-                           parallel = TRUE
+                           parallel = TRUE,
+                           mod.name = NULL,
+                           other = NULL,
+                           fn.times = "runtimes.csv"
                            ) {
   ## arg eval
+  block.name <- tolower(block.name)
   if (is.null(nb))
     nb <- round(ni / nt * .25, 0)
   stopifnot((ni-nb)/nt > 50)
@@ -47,16 +51,17 @@ run_nimble_model <- function(code,
     ncores <- min(nc, parallel::detectCores() - 1)
 
   if(ncores > parallel::detectCores()){
-    ncores <- parallel::detectCores()
+    ncores <- parallel::detectCores()-1
     cat("ncores requested is greater than available cores. Requesting only", ncores, "workers at this time.")
   }
 
-  block.name <- tolower(block.name)
+t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
+t.tot <- Sys.time() ## start tracking runtime
 
   # RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
     print(
-      "ncores is greater than 1. Invoking multiple workers. Nimble messages/updates are suppressed in parallel mode.\n"
+      "ncores is greater than 1. Invoking multiple workers. Nimble messages/updates are suppressed in parallel mode. Only total run time is captured in runtime savefile.\n"
     )
     ## need to add an output file for cluster logs
     # https://stackoverflow.com/questions/24327137/error-in-unserializesocklistn-error-reading-from-connection-on-unix
@@ -135,10 +140,12 @@ run_nimble_model <- function(code,
     }
     parallel::stopCluster(cl)
     names(out) <- paste0("chain_", seq_len(ncores))
-} # end parallel processing
+} # END PARALLEL PROCESSING
 # browser()
   # NO PARALLEL PROCESSING --------------------------------------------------
   if (ncores == 1 | !parallel) {
+
+    t.build <- Sys.time()
     Rmodel   <- nimbleModel(
       code = code,
       data = data,
@@ -146,12 +153,19 @@ run_nimble_model <- function(code,
       inits = inits,
       calculate = calculate
     )
+    t.build <- round(as.numeric(Sys.time()-t.build)/60, 0)
+
+    t.compile <- Sys.time()
     Rmodel.comp <- compileNimble(Rmodel)
-    ## configure MCMC alg
+    t.compile <- round(as.numeric(Sys.time()-t.compile)/60, 0)
+
+    ## configure MCMC algorithm
+    t.confmcmc <- Sys.time()
     Rmodel.conf <- configureMCMC(Rmodel,
                                  monitors = monitors,
                                  thin = nt,
                                  nburnin = nb)
+    t.confmcmc <- round(as.numeric(Sys.time()-t.confmcmc)/60, 0)
     ## add block on b across all T
     if (block.name == "alpha+b") {
       Rmodel.conf$removeSampler(c('alpha', 'b'))
@@ -186,11 +200,14 @@ run_nimble_model <- function(code,
     } # end block all samplers
 
     # Build and compile
+    t.buildcompwblock <- Sys.time()
     Rmcmc  <- buildMCMC(Rmodel.conf)
     Cmcmc  <-
       compileNimble(Rmcmc, project = Rmodel, resetFunctions = TRUE)
+    t.buildcompwblock <- round(as.numeric(Sys.time()-t.buildcompwblock)/60, 0)
 
     # Run
+    t.run <- Sys.time()
     out <- runMCMC(
       Cmcmc,
       niter = ni,
@@ -199,7 +216,38 @@ run_nimble_model <- function(code,
       samples = TRUE,
       samplesAsCodaMCMC = TRUE
     )
+    t.run <- round(as.numeric(Sys.time()-t.run)/60, 0)
   }  # END NO PARALLEL PROCESSING
+
+t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
+    ### write the runtimes to file
+    times <- data.frame(
+      dir = other,
+      name = mod.name,
+      nbfs = constants$K,
+      build = t.build,
+      comp  = t.compile,
+      configmcmc = t.confmcmc,
+      buildcompwblock = t.buildcompwblock,
+      run   = t.run,
+      total = t.tot,
+      parallel = parallel,
+      niters = ni,
+      nchains = nc,
+      nburnin = nb,
+      nthin = nt
+    )
+    makefile <- ifelse(file.exists(fn.times), FALSE, TRUE)
+    if(makefile){
+      suppressMessages(file.create(fn.times, showWarnings = FALSE))
+      header <- paste(names(times), collapse=",")
+      #if first time, add headers
+      write(header, fn.times, append=FALSE)
+    }else{
+      line = paste(times[1,], collapse=",")
+      write(x=line,file=fn.times, append = TRUE)
+    }
+      # browseURL(fn.times)
 
 return(out)
 

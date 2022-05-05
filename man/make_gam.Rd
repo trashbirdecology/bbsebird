@@ -7,7 +7,7 @@
 make_gam(
   coords,
   method = "cubic2d",
-  nd = 20,
+  nd = NULL,
   K = NULL,
   nruns = 10,
   num.nn = 20,

@@ -27,7 +27,7 @@ make_bundle(
     "time_observations_started_hsm", "time_observations_started", "duration_minutes",
     "protocol_type", "number_observers"),
   dev.mode = FALSE,
-  dir.outputs = "/outputs",
+  dir.outputs = "/outputs/",
   save.neighborhood = TRUE
 )
 }

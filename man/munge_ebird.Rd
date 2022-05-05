@@ -17,7 +17,7 @@ munge_ebird(
   remove.bbs.obs = TRUE,
   max.effort.km = NULL,
   max.effort.mins = NULL,
-  max.birds.checklist = 55,
+  max.birds.checklist = NULL,
   max.num.observers = 10,
   complete.only = TRUE,
   ncores = NULL,

@@ -16,7 +16,7 @@ make_bbs_spatial(
   keep.empty.cells = TRUE,
   overwrite = FALSE,
   dir.out = NULL,
-  save.route.lines = TRUE
+  save.route.lines = FALSE
 )
 }
 \arguments{
