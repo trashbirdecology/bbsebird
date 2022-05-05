@@ -253,7 +253,7 @@ t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
       # try(write(x=line,file=fn.times, append = TRUE))
     }
 
-    try(saveRDS(results,  paste0(dir.out, "/samps/",fn, ".rds")))
+    try(saveRDS(out,  paste0(dir.out, "/samps/",fn, ".rds")))
 
 return(out)
 
