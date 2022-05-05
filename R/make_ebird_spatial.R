@@ -25,8 +25,8 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
 
   ## munge col names to ensure consitency
   df         <-  munge_col_names(df)
-  grid       <-  munge_col_names(grid)
-  grid       <-  rename_geometry(grid, "geometry")
+  # grid       <-  munge_col_names(grid)
+  # # grid       <-  rename_geometry(grid, "geometry")
 
 
 
@@ -79,7 +79,5 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
     while(substr(f,1,1)=="/") f <-  substr(f,2, nchar(f))  ## in linux must remove leading /, idfk
     saveRDS(ebird_spatial, file=f)
 }
-
-  return(ebird_spatial)
-
+return(ebird_spatial)
 }

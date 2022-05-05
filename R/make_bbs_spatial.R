@@ -183,7 +183,7 @@ make_bbs_spatial <- function(df,
   # append original (projected) grid to bbs_routes spatial lines layer
   ### chunk up processing of st_intersection to speed up overlay
   # add process for:: if ngrids>X and chunks > Y then parallel, else just run straight up
-    message(
+    cat(
       "[note] overlaying bbs route and grid (study area). This may take a few minutes depending on size of grid cells and extent of study area..\n"
     )
   # len       <- nrow(bbs_routes)
@@ -224,7 +224,7 @@ make_bbs_spatial <- function(df,
   #   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
   # }
   bbs.grid.lines <- sf::st_intersection(grid, bbs_routes)
-  message("[note]...overlay was great success! jagshemash \n")
+  cat("[note]...overlay was great success!! jagshemash!!!!\n")
 
   # Calculate total lengths of routes WITHIN EAcH GRID CELL -------------------
   bbs.grid.lines.df <- bbs.grid.lines
@@ -283,7 +283,7 @@ make_bbs_spatial <- function(df,
 
 
   if (keep.empty.cells)
-    message(
+    cat(
       "FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists.\n"
     )
 
