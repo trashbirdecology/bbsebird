@@ -37,12 +37,24 @@ make_bbs_spatial <- function(df,
                              overwrite = FALSE,
                              dir.out = NULL,
                              save.route.lines = FALSE) {
+## for dev purposes
+  # df = bbs
+  # cws.routes.dir = dirs$cws.routes.dir
+  # usgs.routes.dir = dirs$usgs.routes.dir
+  # dir.out = dirs$bbs.out
+  # cws.layer = "ALL_ROUTES"
+  # usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020"
+  # ncores = parallel::detectCores() - 1
+  # save.route.lines = FALSE
+
 
   ## munge col names to ensure consitency
   df    <-  munge_col_names(df)
-  grid  <-  munge_col_names(data = grid)
+
   ## set CRS
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
+
+  # munge paths for use in linux
       while(substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-  substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
       while(substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
       while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
@@ -151,7 +163,6 @@ make_bbs_spatial <- function(df,
     ## 2. ShapeLength or variations thereof: we need to calc route/line length within our desired projections.
     dplyr::select(rteno, geometry)
 
-
   ## Calculate segment lengths and then add up to grab route lengths
   ## (some routes have gaps and are therefore represented on different line objects/rows)
   bbs_routes$segmentlength <-  bbs_routes |> sf::st_length() # this is not currently incompatible when called inside using (.) native pipe operator,
@@ -169,7 +180,7 @@ make_bbs_spatial <- function(df,
   # Project/reproject grid to match bbs_routes layer --------------------------------
   grid <- sf::st_transform(grid, crs = crs.string)
 
-  # Clip bbs_routes to grid extent and overlay grid cells ------------------------------------------
+  # Clip bbs_routes to grid extent and overlay the grid cells ------------------------------------------
   # append original (projected) grid to bbs_routes spatial lines layer
   ### chunk up processing of st_intersection to speed up overlay
   # add process for:: if ngrids>X and chunks > Y then parallel, else just run straight up
@@ -231,10 +242,10 @@ make_bbs_spatial <- function(df,
   # create an object describing the rtenos as lines if we want to plot later on
   geom  <- sf::st_geometry(bbs.grid.lines)
 
-  route.line.geometry <- bbs.grid.lines |> select(rteno) |>
-    sf::st_drop_geometry() |>
-    mutate(geometry  = geom)
-  rm(geom)
+  # route.line.geometry <- bbs.grid.lines |> select(rteno) |>
+  #   sf::st_drop_geometry() |>
+  #   mutate(geometry  = geom)
+  # rm(geom)
   # Expand the grid/study area to include all years and cell combos  -------------
   # expand the grid to include all years and grid cell ids
   grid.expanded <- grid |>
@@ -259,54 +270,20 @@ make_bbs_spatial <- function(df,
 
   ## overlay the bbs routes to the grid, again.
   ### keep only the routes that appear on the df data...
-  # bbs.grid  <- bbs.grid[which(bbs.grid$rteno %in% unique(df$rteno)),]
+  bbs.grid    <- dplyr::full_join(grid.expanded, bbs.temp, by="gridcellid")
+  bbs_spatial <- dplyr::left_join(bbs.grid, df)
 
-  bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp, by="gridcellid")
-
-  # Add attributes and obs to BBS gridded layer -----------------------------
-  ## force RTENO to integer for safety
-  bbs.grid$rteno <- as.integer(bbs.grid$rteno)
-  df$rteno       <- as.integer(df$rteno)
-
-  ## remove the lat and long from bbs original data (since we just need th egrid cell centroid )
-  # df[,c(-which(names(df) %in% c("lat" ,"lon"))]
-
-  ## add the BBS observations to the BBS spatial object
-  # bbs_spatial <- dplyr::left_join(bbs.grid, df |> dplyr::select(-lat, -lon))#, by="rteno", year)
-  bbs_spatial <- dplyr::full_join(bbs.grid, df |> dplyr::select(-lat, -lon))#, by="rteno", year)
-
-  ## this join doesnt include all the empty cells without BBS data, so we should add those back in for each year...
-  if(keep.empty.cells){
-    have <- bbs_spatial   |> dplyr::distinct(gridcellid, year)
-    all <-  grid.expanded |> dplyr::distinct(gridcellid, year)
-    toadd <- inner_join(setdiff(all, have), grid.expanded)
-    ## add back into bbs_spatial
-    bbs_spatial <- dplyr::bind_rows(bbs_spatial, toadd)
-    View(bbs_spatial)
+  # if empty cells not desired, will remove them.
+  if (!keep.empty.cells) {
+    bbs_spatial <-  bbs_spatial |> dplyr::filter(!is.na(rteno))
   }
-
-
-
-
-
-  #   # if empty cells not desired, will remove them.
-  # if (!keep.empty.cells) {
-  #   bbs_spatial <-  bbs_spatial |> dplyr::filter(!is.na(rteno))
-  # }
-
-
 
   # just to be safe I guess
   if (dplyr::is_grouped_df(bbs_spatial))
     bbs_spatial <- bbs_spatial |> dplyr::ungroup()
 
 
-
-
-  # remove rownames
-  rownames(bbs_spatial) <- NULL
-
-  if (!nrow(bbs_spatial |> dplyr::distinct(year, gridcellid, rteno, c)) == nrow(bbs_spatial))
+  if (keep.empty.cells)
     message(
       "FYI: the output of this function is returning grid cell, year, and route combinations where no BBS data exists.\n"
     )
