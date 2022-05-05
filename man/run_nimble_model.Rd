@@ -23,7 +23,7 @@ run_nimble_model(
   block.samp.type = "AF_slice",
   parallel = TRUE,
   mod.name = NULL,
-  other = NULL,
+  dir.out = NULL,
   fn.times = "runtimes.csv"
 )
 }
@@ -59,6 +59,10 @@ run_nimble_model(
 \item{block.samp.type}{optional one of c("AF_slice", "RW_block").}
 
 \item{parallel}{logical if TRUE will run chains in parallel (using foreach).}
+
+\item{dir.out}{path where samps and runtimes wll be saved}
+
+\item{fn.times}{filename of runtimes output. Optional. Defaults to runtimes.csv}
 }
 \description{
 Run Nimble Model in Parallel

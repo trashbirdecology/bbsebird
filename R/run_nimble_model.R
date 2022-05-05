@@ -16,6 +16,8 @@
 #' @param ntries optional If using parameter block sampler, specify the maximum number of tries
 #' @param block.name optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
+#' @param dir.out path where samps and runtimes wll be saved
+#' @param fn.times filename of runtimes output. Optional. Defaults to runtimes.csv
 #' @importFrom parallel makeCluster stopCluster detectCores
 #' @importFrom foreach %dopar% foreach
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
@@ -39,7 +41,7 @@ run_nimble_model <- function(code,
                            block.samp.type = "AF_slice",
                            parallel = TRUE,
                            mod.name = NULL,
-                           other = NULL,
+                           dir.out = NULL,
                            fn.times = "runtimes.csv"
                            ) {
   ## arg eval
@@ -225,7 +227,7 @@ t.tot <- Sys.time() ## start tracking runtime
 t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
     ### write the runtimes to file
     times <- data.frame(
-      dir = other,
+      dir = dir.out,
       name = mod.name,
       nbfs = constants$K,
       build = t.build,
@@ -245,12 +247,13 @@ t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
       suppressMessages(file.create(fn.times, showWarnings = FALSE))
       header <- paste(names(times), collapse=",")
       #if first time, add headers
-      write(header, fn.times, append=FALSE)
+      try(write(header, fn.times, append=FALSE))
     }else{
       line = paste(times[1,], collapse=",")
-      write(x=line,file=fn.times, append = TRUE)
+      # try(write(x=line,file=fn.times, append = TRUE))
     }
-      # browseURL(fn.times)
+
+    try(saveRDS(results,  paste0(dir.out, "/samps/",fn, ".rds")))
 
 return(out)
 
