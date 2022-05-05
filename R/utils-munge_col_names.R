@@ -22,7 +22,6 @@ for(i in seq_along(col_names)){
   newnames <- rep(names(col_names)[i], length=length(oldnames))
   data.table::setnames(data, oldnames, newnames,skip_absent = TRUE)} # do not reassign, saves in place
 
-
 ## if its spatial, treat a little differently
 # if(index == "spatial"){
 #   geom.col <-  attr(data, "sf_column")

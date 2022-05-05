@@ -171,7 +171,6 @@ if(!is.null(max.birds.checklist)){
 }
 
 ## If i convert to integer before remocving "X", the "X" goes to NA so don't do that first!
-cat("....done\n")
 cat("Taking out the garbage because this data can be massive.....\n")
 gc()
 
@@ -206,9 +205,9 @@ data <- data[,which(unlist(lapply(data, function(x)!all(is.na(x))))), with=FALSE
 data[,effort_distance_km := ifelse(protocol_type != "Traveling",
                                    0, effort_distance_km)]
 
-data[,year  := year(date)]
-data[,yday  := yday(date)]
-data[,month := month(date)]
+data[,year  := year(observation_date)]
+data[,yday  := yday(observation_date)]
+data[,month := month(observation_date)]
 
 ## Finally, convert start time to minutes after midnight...
 data[, starttime := (hour(as.ITime(data$time_observations_started)) *

@@ -47,12 +47,10 @@ make_bbs_spatial <- function(df,
   # ncores = parallel::detectCores() - 1
   # save.route.lines = FALSE
 
-
   ## munge col names to ensure consitency
   df    <-  munge_col_names(df)
 
   ## set CRS
-
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
   # munge paths for use in linux
