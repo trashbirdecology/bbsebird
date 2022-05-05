@@ -38,16 +38,14 @@ make_bbs_spatial <- function(df,
                              dir.out = NULL,
                              save.route.lines = FALSE) {
 
-  while(substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-
-
   ## munge col names to ensure consitency
   df    <-  munge_col_names(df)
   grid  <-  munge_col_names(data = grid)
   ## set CRS
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
-      substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
-  while(substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
-  while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
+      while(substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-  substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
+      while(substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
+      while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
 
   stopifnot(dir.exists(cws.routes.dir) || dir.exists(usgs.routes.dir))
   # first, if overwrite is false and this file exists. import and return asap.
@@ -263,7 +261,7 @@ make_bbs_spatial <- function(df,
   ### keep only the routes that appear on the df data...
   # bbs.grid  <- bbs.grid[which(bbs.grid$rteno %in% unique(df$rteno)),]
 
-  bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp |> dplyr::select(-lat, -lon), by="gridcellid")
+  bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp, by="gridcellid")
 
   # Add attributes and obs to BBS gridded layer -----------------------------
   ## force RTENO to integer for safety
@@ -274,8 +272,7 @@ make_bbs_spatial <- function(df,
   # df[,c(-which(names(df) %in% c("lat" ,"lon"))]
 
   ## add the BBS observations to the BBS spatial object
-
-  bbs_spatial <- dplyr::left_join(bbs.grid, df)#, by="rteno", year)
+  bbs_spatial <- dplyr::left_join(bbs.grid, df |> dplyr::select(-lat, -lon))#, by="rteno", year)
 
   # if empty cells not desired, will remove them.
   if (!keep.empty.cells) {
