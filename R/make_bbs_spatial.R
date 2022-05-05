@@ -36,7 +36,7 @@ make_bbs_spatial <- function(df,
                              keep.empty.cells = TRUE,
                              overwrite = FALSE,
                              dir.out = NULL,
-                             save.route.lines = TRUE) {
+                             save.route.lines = FALSE) {
 
   while(substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-
       substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
@@ -263,12 +263,15 @@ make_bbs_spatial <- function(df,
                     routelength)
 
   ## overlay the bbs routes to the grid, again.
+  ### keep only the routes that appear on the df data...
+  # bbs.grid  <- bbs.grid[which(bbs.grid$rteno %in% unique(df$rteno)),]
+
   bbs.grid  <- dplyr::left_join(grid.expanded, bbs.temp, by="gridcellid")
 
   # Add attributes and obs to BBS gridded layer -----------------------------
 
   ## add the BBS observations to the BBS spatial object
-  bbs_spatial <- left_join(bbs.grid, df)
+  bbs_spatial <- left_join(bbs.grid, df, by="rteno")
 
   # if empty cells not desired, will remove them.
   if (!keep.empty.cells) {

@@ -125,8 +125,12 @@ dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
   names(ebird) <- tolower(names(ebird))
   names(grid)  <- tolower(names(grid))
 
-  if("grid.study.area." %in% names(bbs)) bbs <- bbs |> dplyr::select(-grid.study.area.)
-  if("grid.study.area" %in% names(bbs)) bbs <- bbs |> dplyr::select(-grid.study.area)
+  if("grid.study.area." %in% names(bbs)) bbs <- bbs |> dplyr::select(-"grid.study.area.")
+  if("grid.study.area" %in% names(ebird)) ebird <- ebird |> dplyr::select(-"grid.study.area")
+  if("grid_study_area_" %in% names(bbs)) bbs <- bbs |> dplyr::select(-"grid_study_area_")
+  if("grid_study_area_" %in% names(ebird)) ebird <- ebird |> dplyr::select(-"grid_study_area_")
+  if("geometry" %in% names(bbs)) bbs <- bbs |> dplyr::select(-"geometry")
+  if("geometry" %in% names(ebird)) ebird <- ebird |> dplyr::select(-"geometry")
 
 
   # Rename Data Table Colnames ----------------------------------------------
