@@ -222,8 +222,6 @@ run_nimble_model <- function(code,
   }  # END NO PARALLEL PROCESSING
 
 
-
-
   t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
   ### write the runtimes to file
   times <- data.frame(
