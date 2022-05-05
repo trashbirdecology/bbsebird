@@ -25,25 +25,25 @@
 #' @export run_nimble_model
 
 run_nimble_model <- function(code,
-                           data,
-                           constants = NULL,
-                           inits,
-                           monitors = NULL,
-                           ncores = NULL,
-                           ni = 10000,
-                           nb = 100,
-                           nt = 1,
-                           nc = 1,
-                           aI = 200,
-                           ntries = 5,
-                           calculate = FALSE,
-                           block.name      = "alpha+b",
-                           block.samp.type = "AF_slice",
-                           parallel = TRUE,
-                           mod.name = NULL,
-                           dir.out = NULL,
-                           fn.times = "runtimes.csv"
-                           ) {
+                             data,
+                             constants = NULL,
+                             inits,
+                             monitors = NULL,
+                             ncores = NULL,
+                             ni = 10000,
+                             nb = 100,
+                             nt = 1,
+                             nc = 1,
+                             aI = 200,
+                             ntries = 5,
+                             calculate = FALSE,
+                             block.name      = "alpha+b",
+                             block.samp.type = "AF_slice",
+                             parallel = TRUE,
+                             mod.name = NULL,
+                             dir.out = NULL,
+                             fn.times = "runtimes.csv"
+) {
   ## arg eval
   block.name <- tolower(block.name)
   if (is.null(nb))
@@ -57,8 +57,8 @@ run_nimble_model <- function(code,
     cat("ncores requested is greater than available cores. Requesting only", ncores, "workers at this time.")
   }
 
-t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
-t.tot <- Sys.time() ## start tracking runtime
+  t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
+  t.tot <- Sys.time() ## start tracking runtime
 
   # RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
@@ -142,8 +142,8 @@ t.tot <- Sys.time() ## start tracking runtime
     }
     parallel::stopCluster(cl)
     names(out) <- paste0("chain_", seq_len(ncores))
-} # END PARALLEL PROCESSING
-# browser()
+  } # END PARALLEL PROCESSING
+  # browser()
   # NO PARALLEL PROCESSING --------------------------------------------------
   if (ncores == 1 | !parallel) {
 
@@ -224,37 +224,38 @@ t.tot <- Sys.time() ## start tracking runtime
 
 
 
-t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
-    ### write the runtimes to file
-    times <- data.frame(
-      dir = dir.out,
-      name = mod.name,
-      nbfs = constants$K,
-      build = t.build,
-      comp  = t.compile,
-      configmcmc = t.confmcmc,
-      buildcompwblock = t.buildcompwblock,
-      run   = t.run,
-      total = t.tot,
-      parallel = parallel,
-      niters = ni,
-      nchains = nc,
-      nburnin = nb,
-      nthin = nt
-    )
-    makefile <- ifelse(file.exists(fn.times), FALSE, TRUE)
-    if(makefile){
-      suppressMessages(file.create(fn.times, showWarnings = FALSE))
-      header <- paste(names(times), collapse=",")
-      #if first time, add headers
-      try(write(header, fn.times, append=FALSE))
-    }else{
-      line = paste(times[1,], collapse=",")
-      # try(write(x=line,file=fn.times, append = TRUE))
-    }
+  t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
+  ### write the runtimes to file
+  times <- data.frame(
+    dir = dir.out,
+    name = mod.name,
+    nbfs = constants$K,
+    build = t.build,
+    comp  = t.compile,
+    configmcmc = t.confmcmc,
+    buildcompwblock = t.buildcompwblock,
+    run   = t.run,
+    total = t.tot,
+    parallel = parallel,
+    niters = ni,
+    nchains = nc,
+    nburnin = nb,
+    nthin = nt
+  )
+  makefile <- ifelse(file.exists(fn.times), FALSE, TRUE)
+  if(makefile){
+    suppressMessages(file.create(fn.times, showWarnings = FALSE))
+    header <- paste(names(times), collapse=",")
+    #if first time, add headers
+    try(write(header, fn.times, append=FALSE))
+  }else{
+    line = paste(times[1,], collapse=",")
+    # try(write(x=line,file=fn.times, append = TRUE))
+  }
 
-    try(saveRDS(out,  paste0(dir.out, "/samps/",fn, ".rds")))
+  try(saveRDS(out,  paste0(dir.out, "/samps/",fn, ".rds")))
 
-return(out)
+  return(out)
+
 
 } #END FUNCTION
