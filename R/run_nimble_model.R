@@ -22,6 +22,7 @@
 #' @importFrom foreach %dopar% foreach
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom nimble compileNimble buildMCMC runMCMC nimbleModel configureMCMC runMCMC buildMCMC
+#'
 #' @export run_nimble_model
 
 run_nimble_model <- function(code,
