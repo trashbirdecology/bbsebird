@@ -52,6 +52,7 @@ make_bbs_spatial <- function(df,
   df    <-  munge_col_names(df)
 
   ## set CRS
+
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
   # munge paths for use in linux
