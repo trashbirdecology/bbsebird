@@ -62,11 +62,10 @@ partition_ebird_events <-
 
       if (any(x)) {
         message(
-          "Overwrite is FALSE and partitioned files exist for specified countries. Not overwriting existing files for countries: \n",
+          "Overwrite is FALSE and sampling events files are already partitioned for specified countries. Not overwriting existing files for countries: \n",
           countries[x], "\n")
         if(all(x)) return(fns.temp)
-        else{countries <- countries[!x]}
-      }
+      }else{countries <- countries[!x]}
       rm(pattern, x)
     } # end first test
 
@@ -114,9 +113,12 @@ if (length(fn.txt) == 0) {
 
 
 ## IMPORT THE SAMPLING EVENTS
-    cat("Importing the eBird sampling events data. This process takes ~3-4 mins on >10 cores....hang in there buddy...\n")
+    ## b/c Linux permissions to write to temp file....
+    if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
+    dir.create(tmpdir)
+    cat("Importing the partitioned eBird sampling events data. This process takes ~3-4 mins on >10 cores....hang in there buddy...\n")
     samps <-
-      data.table::fread(file = fn.txt, nThread = ncores,
+      data.table::fread(file = fn.txt, nThread = ncores,tmpdir = tmpdir,
                         drop = c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
     message("Ignore the `COLUMN name X not found` warnings...\n")
     gc() # ~3GB saved maybe
