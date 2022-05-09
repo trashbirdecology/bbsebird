@@ -6,21 +6,32 @@
 #' @param subdir.proj The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using 'dubcorms::set_proj_shorthand'
 #' @importFrom stringr str_replace str_detect
 #' @export dir_spec
-
 dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   if(is.null(dir.proj)) dir.proj <- getwd()
 
   # first, create the proj directory if necessary
   dir.create(dir.proj, showWarnings = FALSE)
-  dir.proj.orig <- dir.proj ## save this to save the files that are common across projects....
+
+
   # redefine dir.proj if subdir specified
   if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj,"/", subdir.proj, "/")
   dir.proj <- gsub(x=dir.proj, pattern = "//","/")
-  dir.create(dir.proj, showWarnings = FALSE)
+  dir.create(dir.proj, showWarnings = TRUE)
 
+  ## Check that dir.orig.data is correctly specified
+  ind <- dir.exists(dir.orig.data)
+
+  if(!ind){
+    p1 =  paste0(".","/",dir.orig.data) ## keep separate, yes
+    p2 = paste0(getwd(), "/",dir.orig.data)
+    dir.orig.data <- ifelse(dir.exists(p2), yes = p2, no = p1)
+
+  }
+
+
+  ## Append "/" to end of dir.orig.data
   if (!endsWith(dir.orig.data, "/")){
     dir.orig.data <- paste0(dir.orig.data, "/")}
-
   ## Where is your original eBird data stored?
   dir.ebird.in <- paste0(dir.orig.data, "ebird")
   ## Where are the BBS route shapefiles stored?
@@ -35,78 +46,82 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
       "No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification for dirs$dir.bbs.in.\n"
     )
 
-  if (!length(list.files(dir.ebird.in) > 0))
-    stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
+  if(!dir.exists(dir.ebird.in)){
+    # if linux ensure "./" at beginning of path if not absolute
+    if(dir.exists(paste0("./", dir.ebird.in))) dir.ebird.in <- paste0("./", dir.ebird.in)
+  }
 
+  if (!length(list.files(dir.ebird.in) > 0)){
+
+    stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
+  }
 
   # trim trailing and leading forward/back slash from dir.proj
   ### because Linux is a PITA
   if(startsWith(dir.proj, "/")){ dir.proj <- substr(dir.proj, 2, nchar(dir.proj))}
   # specify directories within dir.proj
-  models <- "/models/"  # save model files
-  bbs.out <- "/bbs/"
-  ebird.out <- "/ebird/"
-  results <- "/results/"
-  plots <- "/plots/"
-  spatial <- "/spatial/"
+  models <- "/models"  # save model files
+  bbs.out <- "/bbs"
+  ebird.out <- "/ebird"
+  results <- "/results"
+  plots <- "/plots"
+  spatial <- "/spatial"
   # spatial <- paste0(dir.proj.orig, "spatial-data/")
   # add dir.proj to directories and dir.create them
   mylist <- list(
-      'bbs.out',
-      'ebird.out',
-      'results',
-      'models',
-      'plots',
-      'spatial'
-      )
+    'bbs.out',
+    'ebird.out',
+    'results',
+    'models',
+    'plots',
+    'spatial'
+  )
 
   mylist <- lapply(mylist, function(x) paste0(subdir.proj, eval(parse(text=x))))
 
-subset.names <-            c(
-                           "plots",
-                           "models",
-                           "bbs.out",
-                           "ebird.out",
-                           "spatial",
-                           "results"
-                         )
+  subset.names <-            c(
+    "plots",
+    "models",
+    "bbs.out",
+    "ebird.out",
+    "spatial",
+    "results"
+  )
 
-base.names <- c("dir.proj",
-                "dir.ebird.in",
-                "cws.routes.dir",
-                "usgs.routes.dir")
+  base.names <- c("dir.proj",
+                  "dir.ebird.in",
+                  "cws.routes.dir",
+                  "usgs.routes.dir")
 
-paths <- list()
+  paths <- list()
   for(i in seq_along(subset.names)){
     # if(subset.names[i] == "spatial"){
     #   paths[[i]] <-  spatial} else{
-        paths[[i]] <- gsub(x=paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), pattern="//",replacement="/")
-        # }
-     paths[[i]] <- gsub(x=paths[[i]], pattern = "//", replacement = "/")
-     names(paths)[[i]] <- subset.names[i]
-     dir.create(paths[[i]], recursive=TRUE, showWarnings = FALSE)
-     stopifnot(dir.exists(paths[[i]]))
-}
+    paths[[i]] <- gsub(x=paste0(dir.proj, "/", eval(parse(text=subset.names[i]))), pattern="//",replacement="/")
+    # }
+    paths[[i]] <- gsub(x=paths[[i]], pattern = "//", replacement = "/")
+    names(paths)[[i]] <- subset.names[i]
+    dir.create(paths[[i]], recursive=TRUE, showWarnings = FALSE)
+    stopifnot(dir.exists(paths[[i]]))
+  }
 
-x=length(paths)
-y=length(base.names)
-z=x+y
-for(i in (x+1):z){
-  j = i-x
-  paths[[i]] <- gsub(x=eval(parse(text=base.names[j])),pattern="//",replacement="/")
-  names(paths)[i] <- base.names[j]
-}
+  x=length(paths)
+  y=length(base.names)
+  z=x+y
+  for(i in (x+1):z){
+    j = i-x
+    paths[[i]] <- gsub(x=eval(parse(text=base.names[j])),pattern="//",replacement="/")
+    names(paths)[i] <- base.names[j]
+  }
 
-## Ensure directories are created (need to fix bug in earlier part of script...not making dirs)
-if("Linux" %in% Sys.info()[1]){ ind <- TRUE}else{ind <- FALSE}
-for(i in seq_along(paths)){
-  dir.create(paths[[i]], showWarnings = FALSE)
-  paths[[i]]   <- gsub(x=paths[[i]],pattern="//",replacement="/") # replace all double forward slashes...
-  if(ind ) paths[[i]]   <- paste0("/", paths[[i]])
-}
-names(paths)[which(names(paths)=="dir.proj")] <- "project"
+  ## Ensure directories are created (need to fix bug in earlier part of script...not making dirs)
+  for(i in seq_along(paths)){
+    dir.create(paths[[i]], showWarnings = FALSE)
+    paths[[i]]   <- gsub(x=paths[[i]],pattern="//",replacement="/") # replace all double forward slashes...
+  }
+  names(paths)[which(names(paths)=="dir.proj")] <- "project"
 
-return(paths)
+  return(paths)
 }
 
 
