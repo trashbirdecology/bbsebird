@@ -1,7 +1,7 @@
 #' Specify Input/Output Directories For Project
 #'
 #' @description  Produces a list comprising directories for munged data, JAGS data lists, figures, and model outputs. Should be used with `list2env()` to assign directories to desired environment (typically .GlobalEnv)
-#' @param dir.orig.data Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.
+#' @param dir.orig.data Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database. Usually, the original BBS data will be downloaded here.
 #' @param dir.proj Project directory. Assumes current working directory. This is where the directories and output files will be stored.
 #' @param subdir.proj The name of a subdirectory to exist within dir.proj. Can be quickly created outside this function using 'dubcorms::set_proj_shorthand'
 #' @importFrom stringr str_replace str_detect
@@ -33,7 +33,9 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   if (!endsWith(dir.orig.data, "/")){
     dir.orig.data <- paste0(dir.orig.data, "/")}
   ## Where is your original eBird data stored?
-  dir.ebird.in <- paste0(dir.orig.data, "ebird/")
+  ebird.in <- paste0(dir.orig.data, "ebird/")
+  ## Where is or should the original BBS data be stored?
+  bbs.in <- paste0(dir.orig.data, "bbs/")
   ## Where are the BBS route shapefiles stored?
   cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
   cws.routes.dir <- gsub(x=cws.routes.dir,pattern= "//",replacement = "/")
@@ -43,17 +45,21 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
   if (!any(length(list.files(cws.routes.dir)) > 0))
     message(
-      "No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification for dirs$dir.bbs.in.\n"
+      "No files exist `cws.routes.dir` or `usgs.routes.dir`. Please check directory specification for dirs$bbs.in.\n"
     )
 
-  if(!dir.exists(dir.ebird.in)){
+  if(!dir.exists(ebird.in)){
     # if linux ensure "./" at beginning of path if not absolute
-    if(dir.exists(paste0("./", dir.ebird.in))) dir.ebird.in <- paste0("./", dir.ebird.in)
+    if(dir.exists(paste0("./", ebird.in))) ebird.in <- paste0("./", ebird.in)
+  }
+  if(!dir.exists(bbs.in)){
+    # if linux ensure "./" at beginning of path if not absolute
+    if(dir.exists(paste0("./", bbs.in))) bbs.in <- paste0("./", bbs.in)
   }
 
-  if (!length(list.files(dir.ebird.in) > 0)){
+  if (!length(list.files(ebird.in) > 0)){
 
-    stop("No files exist in `dir.ebird.in`. Please check directory specification.\n")
+    stop("No files exist in `ebird.in`. Please check directory specification.\n")
   }
 
   # trim trailing and leading forward/back slash from dir.proj
@@ -90,7 +96,8 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   )
 
   base.names <- c("dir.proj",
-                  "dir.ebird.in",
+                  "bbs.in",
+                  "ebird.in",
                   "cws.routes.dir",
                   "usgs.routes.dir")
 
@@ -107,7 +114,6 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
     # ind <- ifelse(, TRUE, FALSE)
 
   }
-
   x=length(paths)
   y=length(base.names)
   z=x+y
