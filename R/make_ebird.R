@@ -47,7 +47,7 @@ make_ebird <-
 # ncores  = NULL
 # out.filetype = ".csv.gz"
 # overwrite = FALSE
-# dir.ebird.in = dirs$dir.ebird.in
+# dir.ebird.in = dirs$ebird.in
 # dir.out = dirs$project
 # ARGS
   if(!grep("-", mmyyyy)==1){stop("argument `mmyyyy` must include hyphen between month and year (i.e. mm-yyyy).")}
