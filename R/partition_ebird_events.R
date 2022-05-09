@@ -34,10 +34,10 @@ partition_ebird_events <-
       ncores <- parallel::detectCores() - 1
 
     if(is.null(outpath)) outpath <- paste0(dir.ebird.in, "/", "partitioned_",mmyyyy,"/")
+    outpath <- gsub(pattern = "//", replacement = "/", x=outpath)
     dir.create(outpath, showWarnings=FALSE)
     ## FIRST CHECK TO SEE IF PARTITIONS ALREADY EXIST WHEN OVERWRITE IS FALSE
     fns.temp <-
-        tolower(
           list.files(
             outpath,
             pattern = out.filetype,
@@ -45,7 +45,9 @@ partition_ebird_events <-
             recursive = TRUE,
             full.names = TRUE
           )
-        )
+
+    fns.temp <- gsub(pattern = "//", replacement = "/", x=fns.temp)
+
     if (!overwrite & length(fns.temp)>0) {
       pattern <-
         tolower(paste0(outpath, "partitioned-sampling-events_",
@@ -54,7 +56,7 @@ partition_ebird_events <-
                mmyyyy, out.filetype))
 
       for (i in seq_along(pattern)) {
-        z=any(stringr::str_detect(string = fns.temp, pattern=pattern[i] ))
+        z=any(stringr::str_detect(string = tolower(fns.temp), pattern=pattern[i] ))
         if(i==1) x = z else x=c(x, z);rm(z)
       }
 
@@ -64,33 +66,32 @@ partition_ebird_events <-
           countries[x], "\n")
         if(all(x)) return(fns.temp)
         else{countries <- countries[!x]}
-      } else{
       }
       rm(pattern, x)
     } # end first test
 
     fns <-
-      tolower(
         list.files(
           dir.ebird.in,
           pattern = "sampling_rel",
           recursive = FALSE,
           full.names = TRUE
         )
-      )
     fn.txt <-
-      fns[stringr::str_detect(fns, mmyyyy) &
-            stringr::str_detect(fns, ".txt.gz")]
-cat("Partitioning the sampling events data into country-level files for specified countries. This will take ~15 mins.\n")
+      fns[stringr::str_detect(tolower(fns), mmyyyy) &
+            stringr::str_detect(tolower(fns), ".txt.gz")]
+    cat("Partitioning the sampling events data into country-level files for specified countries. This will take ~15 mins.\n")
     ## if fn.xtxt ==0 then NO need to unpack....
+
+
 if (length(fn.txt) == 0) {
       fn.tar <-
-        fns[stringr::str_detect(fns, mmyyyy) &
-              stringr::str_detect(fns, ".tar")]
+        fns[stringr::str_detect(tolower(fns), mmyyyy) &
+              stringr::str_detect(tolower(fns), ".tar")]
       fn.tar.contents <-
         untar(tarfile = fn.tar, list = TRUE) # this just lists files doesnt unpack them....
       fn.txt <-
-        fn.tar.contents[stringr::str_detect(fn.tar.contents, pattern = ".txt.gz")]
+        fn.tar.contents[stringr::str_detect(tolower(fn.tar.contents), pattern = ".txt.gz")]
       stopifnot(length(fn.txt) > 0)
       cat("Attempting to unpack tarball contents ", fn.txt, "\n")
       untar(tarfile = fn.tar,
@@ -100,15 +101,15 @@ if (length(fn.txt) == 0) {
 
     ## Resample the directory
     fns    <-
-      tolower(list.files(
+      list.files(
         dir.ebird.in,
         pattern = "sampling",
         recursive = FALSE,
         full.names = TRUE
-      ))
+      )
     fn.txt <-
-      fns[stringr::str_detect(fns, mmyyyy) &
-            stringr::str_detect(fns, ".txt.gz")]
+      fns[stringr::str_detect(tolower(fns), mmyyyy) &
+            stringr::str_detect(tolower(fns), ".txt.gz")]
     stopifnot(length(fn.txt) == 1)
 
 
