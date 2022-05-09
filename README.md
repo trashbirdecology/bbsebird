@@ -8,7 +8,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- badges: end -->
 
 # bbsebird
-
+NOTE -- readme out of date as of 5-7-2022. will update asap
 The purpose of this R package (*likely to undergo a name change…*) is
 to:
 
