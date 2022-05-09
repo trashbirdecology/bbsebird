@@ -33,7 +33,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   if (!endsWith(dir.orig.data, "/")){
     dir.orig.data <- paste0(dir.orig.data, "/")}
   ## Where is your original eBird data stored?
-  dir.ebird.in <- paste0(dir.orig.data, "ebird")
+  dir.ebird.in <- paste0(dir.orig.data, "ebird/")
   ## Where are the BBS route shapefiles stored?
   cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
   cws.routes.dir <- gsub(x=cws.routes.dir,pattern= "//",replacement = "/")
@@ -62,11 +62,11 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   if(startsWith(dir.proj, "/") && !pmatch(getwd(), dir.proj)){ dir.proj <- substr(dir.proj, 2, nchar(dir.proj))}
   # specify directories within dir.proj
   # models <- "/models"  # save model files
-  bbs.out <- "/bbs"
-  ebird.out <- "/ebird"
-  results <- "/results"
-  plots <- "/plots"
-  spatial <- "/spatial"
+  bbs.out <- "/bbs/"
+  ebird.out <- "/ebird/"
+  results <- "/results/"
+  plots <- "/plots/"
+  spatial <- "/spatial/"
   # spatial <- paste0(dir.proj.orig, "spatial-data/")
   # add dir.proj to directories and dir.create them
   mylist <- list(

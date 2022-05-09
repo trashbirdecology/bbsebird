@@ -76,7 +76,9 @@ for(i in seq_along(fns)){
   fs    <- fns[[i]]
   type  <- names(fns)[i]
   if(i==1) myfns <- NULL
-  myfns  <- c(myfns, paste0(dir.out, "filtered_", type ,".csv.gz"))
+  myfns  <- c(myfns, paste0(dir.out, "/filtered_", type ,".csv.gz"))
+  myfns  <- gsub("//","/", myfns)
+
   if(file.exists(myfns[i])&&!overwrite){
     message("file ", myfns[i], " exists. Not overwriting existing data while overwrite=FALSE.\n")
     next()

@@ -16,7 +16,8 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
   if(!is.null(dir.out)) while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
 
   # first, if overwrite is false and this file exists. import and return asap.
-  f <- paste0(dir.out, "ebird_spatial.rds")
+  f <- paste0(dir.out, "/ebird_spatial.rds")
+  f <- gsub("//","/", f)
   if(file.exists(f) & !overwrite){
     cat("File ", f," exists and overwrite.ebird = FALSE. Importing existing spatial ebird data from .RDS")
     ebird_spatial <-readRDS(f)
@@ -76,7 +77,7 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
   # SAve to file
   if(!is.null(dir.out)){
     cat("Writing to file: ", f, "\n")
-    while(substr(f,1,1)=="/") f <-  substr(f,2, nchar(f))  ## in linux must remove leading /, idfk
+    # while(substr(f,1,1)=="/") f <-  substr(f,2, nchar(f))  ## in linux must remove leading /, idfk
     saveRDS(ebird_spatial, file=f)
 }
 return(ebird_spatial)
