@@ -99,7 +99,9 @@ if(length(fns.obs.to.unzip)>0){
     fns <- unzip(x, list = TRUE)[,1]
     fn  <- fns[grepl(pattern="ebd_", x = fns, ignore.case=TRUE)]
     cat("unziping file...")
-    unzip(x, files=fn, exdir=dir.ebird.in, overwrite=FALSE)
+    while(substr(dir.ebird.in, nchar(dir.ebird.in), nchar(dir.ebird.in))=="/") dir.ebird.in <- substr(dir.ebird.in, 1,
+                                                                                                 nchar(dir.ebird.in)-1)
+    unzip(x, files=fn, exdir=, overwrite=FALSE)
     cat("...done\n")
     return(list.files(dir.ebird.in, fn, full.names=TRUE))
   }))

@@ -7,6 +7,7 @@
 #' @param countries countries
 #' @param mmyyyy month-year used for searching ebird files.
 #' @param overwrite if TRUE will overwrite any existing files.
+#' @param ...
 #'
 #' @export make_ebird
 #'
@@ -62,23 +63,26 @@ make_ebird <-
   ### w.r.t. memory capacity.....
   ### this function also grabs filenames for previously-partitioned data if
   ### overwrite==FALSE && data exists for mmyyyy && countries...
+  # browser()
 
 if(is.null(fns.samps)){ fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
-                                                      mmyyyy,
+                                                      mmyyyy = mmyyyy,
                                                       outpath = NULL,
-                                                      overwrite = FALSE,
+                                                      overwrite = overwrite,
                                                       out.filetype = ".csv.gz",
                                                       countries = countries)
-### I need to run twice on the first go around -- this is a really lazy and gross fix.....
+}
+#### I need to run twice on the first go around -- this is a really lazy and gross fix.....
 #### I should go into partition_ebird_events() and re-eval the directory for the fns.samps
-fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
-                                     mmyyyy,
+if(is.null(fns.samps)) {fns.samps <-  partition_ebird_events(dir.ebird.in = dir.ebird.in,
+                                     mmyyyy = mmyyyy,
                                      outpath = NULL,
                                      overwrite = FALSE,
                                      out.filetype = ".csv.gz",
                                      countries = countries)
 }
 ## OBSERVATIONS FILENAMES
+# browser()
 if (is.null(fns.obs)) fns.obs   <-  get_ebird_obs_files(
       dir.ebird.in = dir.ebird.in,
       mmyyyy = mmyyyy,
