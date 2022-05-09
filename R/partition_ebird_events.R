@@ -80,11 +80,11 @@ partition_ebird_events <-
     fn.txt <-
       fns[stringr::str_detect(tolower(fns), mmyyyy) &
             stringr::str_detect(tolower(fns), ".txt.gz")]
-    cat("Partitioning the sampling events data into country-level files for specified countries. This will take ~15 mins.\n")
     ## if fn.xtxt ==0 then NO need to unpack....
 
 
 if (length(fn.txt) == 0) {
+     cat("Partitioning the sampling events data into country-level files for specified countries. This will take ~15 mins.\n")
       fn.tar <-
         fns[stringr::str_detect(tolower(fns), mmyyyy) &
               stringr::str_detect(tolower(fns), ".tar")]
@@ -114,11 +114,11 @@ if (length(fn.txt) == 0) {
 
 
 ## IMPORT THE SAMPLING EVENTS
-    cat("Importing the ebird sampling events data. This process takes ~3-4 mins on 15 cores....hang in there buddy...\n")
+    cat("Importing the eBird sampling events data. This process takes ~3-4 mins on >10 cores....hang in there buddy...\n")
     samps <-
       data.table::fread(file = fn.txt, nThread = ncores,
                         drop = c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
-    message("ignore COLUMN name X not found warnings...\n")
+    message("Ignore the `COLUMN name X not found` warnings...\n")
     gc() # ~3GB saved maybe
 
 ## FIND ROW NUMBERS ASSOCIATED WITH SAMPS DT for each country of interest
@@ -127,7 +127,7 @@ if (length(fn.txt) == 0) {
     temp <- countries[which(!countries %in% unique(vec$`COUNTRY CODE`))]
     if(length(temp)>0)
       warning(
-        "the following countries were not found in sampling data. please check specification is correct for countries:\n\t",
+        "!! the following countries were not found in sampling data. please check specification is correct for countries:\n\t",
           temp
       )
     rowinds <- which(vec$`COUNTRY CODE` %in% countries)
@@ -179,7 +179,7 @@ if (length(fn.txt) == 0) {
       rm(chunks)
       } else{
         message(fn,
-                " exists and overwrite=FALSE. Not overwriting existing files.\n")
+                " exists and overwrite==FALSE. Not overwriting files.\n")
       }
       samps[[1]] <- NULL #attempt remove data from memory after saving...
       gc()

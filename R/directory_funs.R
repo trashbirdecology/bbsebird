@@ -16,14 +16,14 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   # redefine dir.proj if subdir specified
   if(!is.null(subdir.proj)) dir.proj <- paste0(dir.proj,"/", subdir.proj, "/")
   dir.proj <- gsub(x=dir.proj, pattern = "//","/")
-  dir.create(dir.proj, showWarnings = TRUE)
+  dir.create(dir.proj, showWarnings = FALSE)
 
   ## Check that dir.orig.data is correctly specified
-  ind <- dir.exists(dir.orig.data)
+  ind <- dir.exists(dir.orig.data) & list.files(dir.orig.data)>0
 
-  if(!ind){
+  if(!any(ind)){
     p1 =  paste0(".","/",dir.orig.data) ## keep separate, yes
-    p2 = paste0(getwd(), "/",dir.orig.data)
+    p2 = paste0("/", getwd(), "/",dir.orig.data)
     dir.orig.data <- ifelse(dir.exists(p2), yes = p2, no = p1)
 
   }
@@ -57,10 +57,11 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   }
 
   # trim trailing and leading forward/back slash from dir.proj
-  ### because Linux is a PITA
-  if(startsWith(dir.proj, "/")){ dir.proj <- substr(dir.proj, 2, nchar(dir.proj))}
+  ### because Linux is a PITA can only have leading forward salsh if its full path
+
+  if(startsWith(dir.proj, "/") && !pmatch(getwd(), dir.proj)){ dir.proj <- substr(dir.proj, 2, nchar(dir.proj))}
   # specify directories within dir.proj
-  models <- "/models"  # save model files
+  # models <- "/models"  # save model files
   bbs.out <- "/bbs"
   ebird.out <- "/ebird"
   results <- "/results"
@@ -72,7 +73,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
     'bbs.out',
     'ebird.out',
     'results',
-    'models',
+    # 'models',
     'plots',
     'spatial'
   )
@@ -81,7 +82,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 
   subset.names <-            c(
     "plots",
-    "models",
+    # "models",
     "bbs.out",
     "ebird.out",
     "spatial",
@@ -103,6 +104,8 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
     names(paths)[[i]] <- subset.names[i]
     dir.create(paths[[i]], recursive=TRUE, showWarnings = FALSE)
     stopifnot(dir.exists(paths[[i]]))
+    # ind <- ifelse(, TRUE, FALSE)
+
   }
 
   x=length(paths)
@@ -118,6 +121,8 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   for(i in seq_along(paths)){
     dir.create(paths[[i]], showWarnings = FALSE)
     paths[[i]]   <- gsub(x=paths[[i]],pattern="//",replacement="/") # replace all double forward slashes...
+    paths[[i]]
+
   }
   names(paths)[which(names(paths)=="dir.proj")] <- "project"
 
