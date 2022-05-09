@@ -59,7 +59,7 @@ filters <- lapply(filters, function(x){
 # SEE IF MUNGED DATA EXISTS AND IMPORT ------------------------------------
 fn.out <- paste0(dir.out, "munged_ebird_data", ".csv.gz")
 if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
-dir.create(tmpdir)
+dir.create(tmpdir, showWarnings = FALSE)
 
 if(file.exists(fn.out) && !overwrite){
   cat("Munged data exists and overwrite=FALSE. Importing previously munged eBird data...\n",fn.out,"\n")
@@ -69,7 +69,7 @@ if(file.exists(fn.out) && !overwrite){
 # IMPORT & FILTER OBS + SAMP EVENTS------------------------------------------------------------------
 fns <- list(observations=fns.obs, samplingevents=fns.samps)
 if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
-dir.create(tmpdir)
+dir.create(tmpdir, showWarnings = FALSE)
 
 dataout<-data<-list(NULL)
 for(i in seq_along(fns)){
@@ -141,7 +141,7 @@ gc()
 
 # IMPORT FILTERED FILES ---------------------------------------------------
 if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
-dir.create(tmpdir)
+dir.create(tmpdir, showWarnings = FALSE)
 
 names(myfns) <- names(fns)## filtered data filenames
 data <- vector("list", length(myfns)); names(data) <- names(myfns)
