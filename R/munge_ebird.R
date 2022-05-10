@@ -93,15 +93,17 @@ for(i in seq_along(fns)){
   cat("importing and performing initial filtering on", type," files:\n\n", paste0(fs, sep="\n"),"\nthis may take a while...\n")
   for(ii in seq_along(fs)){
     x <- fs[ii]
+    cat("    ...importing\n")
     DT <-
       data.table::fread(x,
                         nThread = ncores,
                         fill=FALSE,tmpdir = tmpdir,
                         drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
-    # cat("...import ",  ," success. jagshemash!\n")
+    cat("    ...import success. jagshemash!\n")
+    cat("Applying filters\n")
     # subset by filter types
     for(k in seq_along(filters)){
-      filt.ind   <- tolower(names(filters)[k])
+      filt.ind   <- names(filters)[k]
       filt.temp  <- filters[[k]][names(filters[[k]])  %in% toupper(colnames(DT))] ##keep only those relevnat to file (obs vs samp)
       if(length(filt.temp)==0) next()
       ## subset by sub-filters
@@ -139,8 +141,9 @@ for(i in seq_along(fns)){
   data.table::fwrite(data, file = myfns[i], nThread = ncores)
 
   rm(data) # empty data list for next i
-}# end i loop
+  cat('garbage time\n')
 gc()
+}# end i loop
 
 
 # IMPORT FILTERED FILES ---------------------------------------------------
@@ -159,11 +162,9 @@ for(i in seq_along(myfns)){
 # COMBINE -----------------------------------------------------------------
 cat("binding the filtered datasets....\n")
 data <- data.table::rbindlist(data, fill=TRUE)
-gc()
-
 
 # FILTER YDAYS ------------------------------------------------------------
-cat("filtering data by ydays arg...\n")
+cat("filtering remaining data by ydays arg...\n")
 if(!is.null(ydays)) data <- data[yday(`OBSERVATION DATE`) %in% ydays]
 
 # REMOVE presence-only ----------------------------------------------------
@@ -204,8 +205,6 @@ blanks    <- data[`GROUP IDENTIFIER`==""]
 noblank   <- unique(data[`GROUP IDENTIFIER`!=""], by = c("GROUP IDENTIFIER"))
 data   <- data.table::rbindlist(list(blanks, noblank))
 rm(blanks, noblank)
-gc()
-
 
 # Handle column names -----------------------------------------------------
 data <- munge_col_names(data)

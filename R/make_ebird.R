@@ -114,8 +114,8 @@ munged <- munge_ebird(
   )
 
 ## RETURN OBJEcT
-cat(nrow(munged), " rows remain after munging ebird sampling events and observations\n")
-
+stopifnot(length(nrow(munged)) > 0)
+cat(nrow(munged), " rows remain after filtering the ebird sampling events and observations\n")
 return(munged)
 } # END FUNCTION
 
