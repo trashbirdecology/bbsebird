@@ -46,7 +46,7 @@ partition_ebird_events <-
             full.names = TRUE
           )
 
-    fns.temp <- gsub(pattern = "//", replacement = "/", x=fns.temp)
+    if( length(fns.temp)>0)fns.temp <- gsub(pattern = "//", replacement = "/", x=fns.temp)
 
     if (!overwrite & length(fns.temp)>0) {
       pattern <-
@@ -87,6 +87,7 @@ if (length(fn.txt) == 0) {
       fn.tar <-
         fns[stringr::str_detect(tolower(fns), mmyyyy) &
               stringr::str_detect(tolower(fns), ".tar")]
+      if(length(fn.tar)==0)stop("check .tar files in ", dir.ebird.in,". No files for ", mmyyyy, "found. \n")
       fn.tar.contents <-
         untar(tarfile = fn.tar, list = TRUE) # this just lists files doesnt unpack them....
       fn.txt <-
