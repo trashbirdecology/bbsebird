@@ -115,11 +115,11 @@ if (length(fn.txt) == 0) {
 
 ## IMPORT THE SAMPLING EVENTS
     ## b/c Linux permissions to write to temp file....
-    if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
-    dir.create(tmpdir)
+    # if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
+    # dir.create(tmpdir)
     cat("Importing the partitioned eBird sampling events data. This process takes ~3-4 mins on >10 cores....hang in there buddy...\n")
     samps <-
-      data.table::fread(file = fn.txt, nThread = ncores,tmpdir = tmpdir,
+      data.table::fread(file = fn.txt, nThread = ncores#,tmpdir = tmpdir,
                         drop = c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
     message("Ignore the `COLUMN name X not found` warnings...\n")
     gc() # ~3GB saved maybe

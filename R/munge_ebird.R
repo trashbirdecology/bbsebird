@@ -62,18 +62,18 @@ filters <- lapply(filters, function(x){
 
 # SEE IF MUNGED DATA EXISTS AND IMPORT ------------------------------------
 fn.out <- paste0(dir.out, "munged_ebird_data", ".csv.gz")
-if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
-dir.create(tmpdir, showWarnings = FALSE)
+# if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
+# dir.create(tmpdir, showWarnings = FALSE)
 
 if(file.exists(fn.out) && !overwrite){
   cat("Munged data exists and overwrite=FALSE. Importing previously munged eBird data...\n",fn.out,"\n")
-  data <- data.table::fread(fn.out, nThread = ncores, tmpdir = tmpdir)
+  data <- data.table::fread(fn.out, nThread = ncores)#, tmpdir = tmpdir)
 }else{
 
 # IMPORT & FILTER OBS + SAMP EVENTS------------------------------------------------------------------
 fns <- list(observations=fns.obs, samplingevents=fns.samps)
-if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
-dir.create(tmpdir, showWarnings = FALSE)
+# if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
+# dir.create(tmpdir, showWarnings = FALSE)
 
 dataout<-data<-list(NULL)
 for(i in seq_along(fns)){
@@ -97,7 +97,7 @@ for(i in seq_along(fns)){
     DT <-
       data.table::fread(x,
                         nThread = ncores,
-                        fill=FALSE,tmpdir = tmpdir,
+                        fill=FALSE,#tmpdir = tmpdir,
                         drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
     cat("    ...import success. jagshemash!\n")
     cat("Applying filters\n")
@@ -147,15 +147,15 @@ gc()
 
 
 # IMPORT FILTERED FILES ---------------------------------------------------
-if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
-dir.create(tmpdir, showWarnings = FALSE)
+# if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
+# dir.create(tmpdir, showWarnings = FALSE)
 
 names(myfns) <- names(fns)## filtered data filenames
 data <- vector("list", length(myfns)); names(data) <- names(myfns)
 cat("importing the filtered observations and sampling events data (", length(myfns),"files)\n")
 ## not doing this in parallel because of potential memory crashes on non HPC
 for(i in seq_along(myfns)){
-  data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores, tmpdir = tmpdir)#, verbose = TRUE)
+  data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores)#, tmpdir = tmpdir)#, verbose = TRUE)
 }
 
 # browser()
