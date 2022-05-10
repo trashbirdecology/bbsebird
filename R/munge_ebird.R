@@ -215,8 +215,11 @@ data <- data[,which(unlist(lapply(data, function(x)!all(is.na(x))))), with=FALSE
 # browser()
 
 ## For non-traveling protocol, force the variable for effort_distance_lkm to zero
-data[,effort_distance_km := ifelse(protocol_type != "Traveling",
-                                   0, effort_distance_km)]
+if("protocol_code" %in% names(data)) {
+  ## not sure why its not finding protocol_type
+  data[, effort_distance_km := ifelse(protocol_code != "Traveling",
+                                      0, effort_distance_km)]
+}
 
 data[,year  := year(observation_date)]
 data[,yday  := yday(observation_date)]
