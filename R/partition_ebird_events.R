@@ -154,7 +154,7 @@ if (length(fn.txt) == 0) {
           out.filetype
         )
       if((file.exists(fn) & !overwrite)){
-        print(fn, "already exists and overwrite is FALSE. Not overwriting...\n")
+        # print(fn, "already exists and overwrite is FALSE. Not overwriting...\n")
         samps[[1]] <- NULL
         next()
       }
