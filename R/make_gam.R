@@ -17,7 +17,7 @@ make_gam <- function(coords,
                      nd = NULL,
                      K        = NULL,
                      nruns = 10,
-                     num.nn = 20,
+                     num.nn = 10,
                      ll.to.utm = TRUE,
                      max.loop = 40,
                      print.plot = TRUE,
@@ -25,7 +25,7 @@ make_gam <- function(coords,
                      scale.coords = TRUE
                      ) {
   # ARGS --------------------------------------------------------------------
-  if(is.null(nd)) nd <- min(nrow(coords)-1, 150)
+  if(is.null(nd)) nd <- min(nrow(coords)/2, 150)
   coords <- as.matrix(coords)
   method <- tolower(method)
   stopifnot(method %in% c("cubic2d", "jagam", "mgcv", "cubicalt"))
