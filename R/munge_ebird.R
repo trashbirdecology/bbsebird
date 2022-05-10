@@ -32,6 +32,10 @@ stopifnot(is.logical(zerofill))
 stopifnot(is.logical(remove.bbs.obs))
 if(is.null(ncores))ncores <- parallel::detectCores()-1
 setDTthreads(ncores)
+# force upper
+states <- toupper(states)
+countries <- toupper(countries)
+
 
 # CREATE LISTS FOR SUBSETTING ---------------------------------------------
 f.equal <-
@@ -209,8 +213,9 @@ data <- munge_col_names(data)
 # Random Light Munging ----------------------------------------------------
 ## remove any column where all values are NA (this is mostly just for rouge "country" variable)
 data <- data[,which(unlist(lapply(data, function(x)!all(is.na(x))))), with=FALSE]
+# browser()
 
-## For non-traveling protocol, force effiort_distance_lkm to zero
+## For non-traveling protocol, force the variable for effort_distance_lkm to zero
 data[,effort_distance_km := ifelse(protocol_type != "Traveling",
                                    0, effort_distance_km)]
 
