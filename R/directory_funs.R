@@ -110,7 +110,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
     paths[[i]] <- gsub(x=paths[[i]], pattern = "//", replacement = "/")
     names(paths)[[i]] <- subset.names[i]
     dir.create(paths[[i]], recursive=TRUE, showWarnings = FALSE)
-    stopifnot(dir.exists(paths[[i]]))
+    if(!dir.exists(paths[[i]])) warning("directory ",  paths[[i]], " is misspecified or DNE.\n")
     # ind <- ifelse(, TRUE, FALSE)
 
   }
