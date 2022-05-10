@@ -35,7 +35,7 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
   ## Where is your original eBird data stored?
   ebird.in <- paste0(dir.orig.data, "ebird")
   ## Where is or should the original BBS data be stored?
-  bbs.in <- paste0(dir.orig.data, "bbs")
+  bbs.in <- paste0(dir.orig.data, "bbs/")
   ## Where are the BBS route shapefiles stored?
   cws.routes.dir <- paste0(dir.orig.data, "/bbs/route_shapefiles/cws")
   cws.routes.dir <- gsub(x=cws.routes.dir,pattern= "//",replacement = "/")
