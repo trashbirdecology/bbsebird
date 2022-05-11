@@ -97,10 +97,9 @@ for(i in seq_along(fns)){
     DT <-
       data.table::fread(x,
                         nThread = ncores,
-                        fill=FALSE,#tmpdir = tmpdir,
+                        fill=FALSE,
                         drop=c("SPECIES COMMENTS","V48", "TRIP COMMENTS", "REASON", "REVIEWED", "HAS MEDIA", "AGE/SEX"))
-    cat("    ...import success. jagshemash!\n")
-    cat("Applying filters\n")
+    cat("    ...import success. jagshemash! Applying filters now...\n")
     # subset by filter types
     for(k in seq_along(filters)){
       filt.ind   <- names(filters)[k]
@@ -157,9 +156,6 @@ cat("importing the filtered observations and sampling events data (", length(myf
 for(i in seq_along(myfns)){
   data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores)#, tmpdir = tmpdir)#, verbose = TRUE)
 }
-
-# browser()
-# COMBINE -----------------------------------------------------------------
 cat("binding the filtered datasets....\n")
 data <- data.table::rbindlist(data, fill=TRUE)
 
@@ -206,13 +202,12 @@ noblank   <- unique(data[`GROUP IDENTIFIER`!=""], by = c("GROUP IDENTIFIER"))
 data   <- data.table::rbindlist(list(blanks, noblank))
 rm(blanks, noblank)
 
-# Handle column names -----------------------------------------------------
-data <- munge_col_names(data)
-
 # Random Light Munging ----------------------------------------------------
 ## remove any column where all values are NA (this is mostly just for rouge "country" variable)
 data <- data[,which(unlist(lapply(data, function(x)!all(is.na(x))))), with=FALSE]
-# browser()
+
+## munge column names
+data <- munge_col_names(data)
 
 ## For non-traveling protocol, force the variable for effort_distance_lkm to zero
 if("protocol_code" %in% names(data)) {
@@ -231,6 +226,7 @@ data[, starttime := (hour(as.ITime(data$time_observations_started)) *
 
 
 
+# Export ------------------------------------------------------------------
 cat("saving munged data to file:\n  ", fn.out, "\n")
 data.table::fwrite(data, file = fn.out)
 
