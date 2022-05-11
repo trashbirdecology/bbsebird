@@ -62,6 +62,9 @@ filters <- lapply(filters, function(x){
 
 # SEE IF MUNGED DATA EXISTS AND IMPORT ------------------------------------
 fn.out <- paste0(dir.out, "munged_ebird_data", ".csv.gz")
+fn.out <- gsub(pattern="//", replacement = "/", fn.out)
+fn.out <- gsub(pattern="//", replacement = "/", fn.out)
+
 # if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
 # dir.create(tmpdir, showWarnings = FALSE)
 
