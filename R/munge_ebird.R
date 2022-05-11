@@ -93,7 +93,8 @@ for(i in seq_along(fns)){
   cat("importing and performing initial filtering on", type," files:\n\n", paste0(fs, sep="\n"),"\nthis may take a while...\n")
   for(ii in seq_along(fs)){
     x <- fs[ii]
-    x  <- gsub("//","/", x)
+    x  <- gsub("//","/", x)  # yes double for now beavusd i cannot figure this shit out...
+    x  <- gsub("//","/", x) # FUCKING LINUX
     cat("    ...importing\n")
     DT <-
       data.table::fread(x,
@@ -155,6 +156,9 @@ data <- vector("list", length(myfns)); names(data) <- names(myfns)
 cat("importing the filtered observations and sampling events data (", length(myfns),"files)\n")
 ## not doing this in parallel because of potential memory crashes on non HPC
 for(i in seq_along(myfns)){
+  myfns  <- gsub("//","/", myfns)
+  myfns  <- gsub("//","/", myfns)
+
   data[[i]] <- data.table::fread(file = myfns[i], nThread = ncores)#, tmpdir = tmpdir)#, verbose = TRUE)
 }
 cat("binding the filtered datasets....\n")
