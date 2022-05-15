@@ -179,11 +179,11 @@ run_nimble_model <- function(code,
       inits = inits,
       calculate = calculate
     )
-    t.build <- round(as.numeric(Sys.time()-t.build)/60, 2)
+    t.build <- round(as.numeric(Sys.time()-t.build), 2)
 
     t.compile <- Sys.time()
     Rmodel.comp <- compileNimble(Rmodel)
-    t.compile <- round(as.numeric(Sys.time()-t.compile)/60, 2)
+    t.compile <- round(as.numeric(Sys.time()-t.compile), 2)
 
     ## configure MCMC algorithm
     t.confmcmc <- Sys.time()
@@ -191,7 +191,7 @@ run_nimble_model <- function(code,
                                  monitors = monitors,
                                  thin = nt,
                                  nburnin = nb)
-    t.confmcmc <- round(as.numeric(Sys.time()-t.confmcmc)/60, 2)
+    t.confmcmc <- round(as.numeric(Sys.time()-t.confmcmc), 2)
     ## add block on b across all T
     if (block.name == "alpha+b") {
       Rmodel.conf$removeSampler(c('alpha', 'b'))
@@ -230,7 +230,7 @@ run_nimble_model <- function(code,
     Rmcmc  <- buildMCMC(Rmodel.conf)
     Cmcmc  <-
       compileNimble(Rmcmc, project = Rmodel, resetFunctions = TRUE)
-    t.buildcompwblock <- round(as.numeric(Sys.time()-t.buildcompwblock)/60, 2)
+    t.buildcompwblock <- round(as.numeric(Sys.time()-t.buildcompwblock), 2)
 
     # Run
     t.run <- Sys.time()
@@ -242,11 +242,11 @@ run_nimble_model <- function(code,
       samples = TRUE,
       samplesAsCodaMCMC = TRUE
     )
-    t.run <- round(as.numeric(Sys.time()-t.run)/60, 2)
+    t.run <- round(as.numeric(Sys.time()-t.run), 2)
   }  # END NO PARALLEL PROCESSING
 
 
-  t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 2)
+  t.tot <- round(as.numeric(Sys.time()-t.tot), 2)
   ### write the runtimes to file
   times <- data.frame(
     totalruntime = t.tot,
