@@ -63,18 +63,20 @@ filters <- lapply(filters, function(x){
 # SEE IF MUNGED DATA EXISTS AND IMPORT ------------------------------------
 fn.out <- paste0(dir.out, "munged_ebird_data", ".csv.gz")
 fn.out <- gsub(pattern="//", replacement = "/", fn.out)
-fn.out <- gsub(pattern="//", replacement = "/", fn.out)
 
 # if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
 # dir.create(tmpdir, showWarnings = FALSE)
 
 if(file.exists(fn.out) && !overwrite){
+  ### Linux file matching is case sensitive
   cat("Munged data exists and overwrite=FALSE. Importing previously munged eBird data...\n",fn.out,"\n")
   data <- data.table::fread(fn.out, nThread = ncores)#, tmpdir = tmpdir)
 }else{
 
 # IMPORT & FILTER OBS + SAMP EVENTS------------------------------------------------------------------
 fns <- list(observations=fns.obs, samplingevents=fns.samps)
+## ensure we have the cases correct here...
+
 # if(Sys.info()[1]=="Linux"){ tmpdir <- paste0(dir.proj, "/tempdir/") }else{tmpdir <- tempdir()}
 # dir.create(tmpdir, showWarnings = FALSE)
 
@@ -84,7 +86,7 @@ for(i in seq_along(fns)){
   type  <- names(fns)[i]
   if(i==1) myfns <- NULL
   myfns  <- c(myfns, paste0(dir.out, "/filtered_", type ,".csv.gz"))
-  myfns  <- gsub("//","/", myfns)
+  myfns <- gsub(pattern="//", replacement = "/", myfns)
 
   if(file.exists(myfns[i])&&!overwrite){
     message("file ", myfns[i], " exists. Not overwriting existing data while overwrite=FALSE.\n")
@@ -95,10 +97,8 @@ for(i in seq_along(fns)){
   ## import files
   cat("importing and performing initial filtering on", type," files:\n\n", paste0(fs, sep="\n"),"\nthis may take a while...\n")
   for(ii in seq_along(fs)){
-    x <- fs[ii]
-    x  <- gsub("//","/", x)  # yes double for now beavusd i cannot figure this shit out...
+    x  <- fs[ii]
     x  <- gsub("//","/", x) # FUCKING LINUX
-    cat("    ...importing\n")
     DT <-
       data.table::fread(x,
                         nThread = ncores,

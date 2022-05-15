@@ -46,6 +46,12 @@ run_nimble_model <- function(code,
                              dir.out = NULL,
                              fn.times = "runtimes.csv"
 ) {
+  fn.ind <- substr(fn.times, nchar(fn.times)-3, nchar(fn.times))
+  if(!fn.ind %in% c(".csv")){
+    warning("arg fn.times should have file extension .csv")
+    stop()
+  }
+
   ## arg eval
   block.name <- tolower(block.name)
   if (is.null(nb))
@@ -240,18 +246,18 @@ run_nimble_model <- function(code,
     niters = ni,
     nchains = nc,
     nburnin = nb,
-    nthin = nt
+    nthin = nt,
+    OS    = paste(Sys.info()[1:2], collapse = "_")
   )
-  makefile <- ifelse(file.exists(fn.times), FALSE, TRUE)
-  if(makefile){
-    suppressMessages(file.create(fn.times, showWarnings = FALSE))
-    header <- paste(names(times), collapse=",")
-    #if first time, add headers
-    try(write(header, fn.times, append=FALSE))
+  if(ifelse(file.exists(fn.times), FALSE, TRUE)){
+    write.csv(times, fn.times, row.names = FALSE)
   }else{
-    line = paste(times[1,], collapse=",")
-    # try(write(x=line,file=fn.times, append = TRUE))
+    timesin  <- read.csv(fn.times)
+    line     <- times[1,]
+    try(timesout <- rbind(timesin, line))
+    try(write.csv(timesout, fn.times, row.names = FALSE))
   }
+
 
   try(saveRDS(out,  paste0(dir.out, "/samps/",fn, ".rds")))
 
