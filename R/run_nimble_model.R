@@ -7,13 +7,14 @@
 #' @param parallel logical if TRUE will run chains in parallel (using foreach).
 #' @param ncores maximum number of cores to employ. Actual number used is the minimum of nc and ncores
 #' @param monitors optional Character vector of parameters to monitor.
+#' @param monitors2 optional Character vector of parameters to monitor.
 #' @param ni number iterations to run
 #' @param calculate logical if TRUE will calculate the model logprob. Used as argument 'calculate' in function nimble::nimbleModel()
 #' @param nb number of burn-in iterations to discard (I think it's PRE-THINNING burnin discard...)
 #' @param nt thinning rate (every Nth iteration will be saved)
 #' @param nc number of chains to run (in parallel)
 #' @param aI adapt interval, used in nimble::addSamplers
-#' @param ntries optional If using parameter block sampler, specify the maximum number of tries
+#' @param ntries optional If using parameter block sampler, specify the maximum number of tries. Defaults to ~50% of the number of GAM basis functions.
 #' @param block.name optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
 #' @param dir.out path where samps and runtimes wll be saved
@@ -31,13 +32,14 @@ run_nimble_model <- function(code,
                              constants = NULL,
                              inits,
                              monitors = NULL,
+                             monitors2 = NULL,
                              ncores = NULL,
                              ni = 10000,
                              nb = 100,
                              nt = 1,
                              nc = 1,
                              aI = 200,
-                             ntries = 5,
+                             ntries = NULL,
                              calculate = FALSE,
                              block.name      = "alpha+b",
                              block.samp.type = "AF_slice",
@@ -64,6 +66,20 @@ run_nimble_model <- function(code,
     ncores <- parallel::detectCores()-1
     cat("ncores requested is greater than available cores. Requesting only", ncores, "workers at this time.")
   }
+
+  if (is.null(ntries)) {
+    if (constants$K > 0) {
+      ntries <-
+        round(constants$K/2, 0)
+    } else{
+      if (dim(constants$Z.mat)[2] > 0) {
+        ntries <- round(dim(constants$Z.mat)[2]/2, 0)
+      }
+    }
+    if (is.null(ntries))
+      ntries <- 10
+  }
+
 
   t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
   t.tot <- Sys.time() ## start tracking runtime
@@ -163,11 +179,11 @@ run_nimble_model <- function(code,
       inits = inits,
       calculate = calculate
     )
-    t.build <- round(as.numeric(Sys.time()-t.build)/60, 0)
+    t.build <- round(as.numeric(Sys.time()-t.build)/60, 2)
 
     t.compile <- Sys.time()
     Rmodel.comp <- compileNimble(Rmodel)
-    t.compile <- round(as.numeric(Sys.time()-t.compile)/60, 0)
+    t.compile <- round(as.numeric(Sys.time()-t.compile)/60, 2)
 
     ## configure MCMC algorithm
     t.confmcmc <- Sys.time()
@@ -175,7 +191,7 @@ run_nimble_model <- function(code,
                                  monitors = monitors,
                                  thin = nt,
                                  nburnin = nb)
-    t.confmcmc <- round(as.numeric(Sys.time()-t.confmcmc)/60, 0)
+    t.confmcmc <- round(as.numeric(Sys.time()-t.confmcmc)/60, 2)
     ## add block on b across all T
     if (block.name == "alpha+b") {
       Rmodel.conf$removeSampler(c('alpha', 'b'))
@@ -214,7 +230,7 @@ run_nimble_model <- function(code,
     Rmcmc  <- buildMCMC(Rmodel.conf)
     Cmcmc  <-
       compileNimble(Rmcmc, project = Rmodel, resetFunctions = TRUE)
-    t.buildcompwblock <- round(as.numeric(Sys.time()-t.buildcompwblock)/60, 0)
+    t.buildcompwblock <- round(as.numeric(Sys.time()-t.buildcompwblock)/60, 2)
 
     # Run
     t.run <- Sys.time()
@@ -226,27 +242,27 @@ run_nimble_model <- function(code,
       samples = TRUE,
       samplesAsCodaMCMC = TRUE
     )
-    t.run <- round(as.numeric(Sys.time()-t.run)/60, 0)
+    t.run <- round(as.numeric(Sys.time()-t.run)/60, 2)
   }  # END NO PARALLEL PROCESSING
 
 
-  t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 0)
+  t.tot <- round(as.numeric(Sys.time()-t.tot)/60, 2)
   ### write the runtimes to file
   times <- data.frame(
-    dir = dir.out,
+    totalruntime = t.tot,
     name = mod.name,
     nbfs = constants$K,
     build = t.build,
     comp  = t.compile,
     configmcmc = t.confmcmc,
     buildcompwblock = t.buildcompwblock,
-    run   = t.run,
-    total = t.tot,
+    runmod   = t.run,
     parallel = parallel,
     niters = ni,
     nchains = nc,
     nburnin = nb,
     nthin = nt,
+    dir = dir.out,
     OS    = paste(Sys.info()[1:2], collapse = "_")
   )
   if(ifelse(file.exists(fn.times), FALSE, TRUE)){
