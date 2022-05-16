@@ -9,6 +9,7 @@
 #' @param monitors optional Character vector of parameters to monitor.
 #' @param monitors2 optional Character vector of parameters to monitor.
 #' @param ni number iterations to run
+#' @param seed seed number
 #' @param calculate logical if TRUE will calculate the model logprob. Used as argument 'calculate' in function nimble::nimbleModel()
 #' @param nb number of burn-in iterations to discard (I think it's PRE-THINNING burnin discard...)
 #' @param nt thinning rate (every Nth iteration will be saved)
@@ -39,6 +40,7 @@ run_nimble_model <- function(code,
                              nt = 1,
                              nc = 1,
                              aI = 200,
+                             seed = NULL,
                              ntries = NULL,
                              calculate = FALSE,
                              block.name      = "alpha+b",
@@ -48,6 +50,7 @@ run_nimble_model <- function(code,
                              dir.out = NULL,
                              fn.times = "runtimes.csv"
 ) {
+
   fn.ind <- substr(fn.times, nchar(fn.times)-3, nchar(fn.times))
   if(!fn.ind %in% c(".csv")){
     warning("arg fn.times should have file extension .csv")
@@ -55,6 +58,8 @@ run_nimble_model <- function(code,
   }
 
   ## arg eval
+  if (is.null(seed)) seed <- sample(1:1e3, 1)
+
   block.name <- tolower(block.name)
   if (is.null(nb))
     nb <- round(ni / nt * .25, 0)
@@ -158,6 +163,7 @@ run_nimble_model <- function(code,
         thin = nt,
         nburnin = nb,
         samples = TRUE,
+        setSeed = seed,
         samplesAsCodaMCMC = TRUE
       )
 
