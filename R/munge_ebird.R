@@ -54,11 +54,11 @@ range.equal<-list(
     "OBSERVATION DATE" = years
 )
 
+
 filters <- list("equal"=f.equal, "less"=less.equal, "range"=range.equal)
 filters <- lapply(filters, function(x){
   x <- x[!unlist(lapply(x, is.null))]
 })
-
 
 # SEE IF MUNGED DATA EXISTS AND IMPORT ------------------------------------
 fn.out <- paste0(dir.out, "munged_ebird_data", ".csv.gz")
@@ -113,6 +113,7 @@ for(i in seq_along(fns)){
       ## subset by sub-filters
       for(j in seq_along(filt.temp)){
         f <- as.vector(unlist(filt.temp[j]))
+        if(length(f)==0 || is.null(f)) next()
         n <- names(filt.temp)[j]
         # set key
         eval(parse(text=paste0("setkey(DT,`", n ,"`)")))
@@ -217,12 +218,15 @@ data <- data[,which(unlist(lapply(data, function(x)!all(is.na(x))))), with=FALSE
 ## munge column names
 data <- munge_col_names(data)
 
+data <- data.table::as.data.table(data)
+
 ## For non-traveling protocol, force the variable for effort_distance_lkm to zero
 if("protocol_code" %in% names(data)) {
   ## not sure why its not finding protocol_type
   data[, effort_distance_km := ifelse(protocol_code != "Traveling",
                                       0, effort_distance_km)]
 }
+
 
 data[,year  := year(observation_date)]
 data[,yday  := yday(observation_date)]
