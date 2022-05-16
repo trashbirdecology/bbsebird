@@ -247,8 +247,8 @@ run_nimble_model <- function(code,
 
 
   t.tot <- round(as.numeric(Sys.time()-t.tot), 2)
-  if(attributes(t.tot)$units=="hours") t.tot <- t.tot/60     # convert from hr to mins
-  if(attributes(t.tot)$units=="days") t.tot <- t.tot/(60*24) # convert from days to mins
+  if(attributes(t.tot)$units=="hours") t.tot <- t.tot*60     # convert from hr to mins
+  if(attributes(t.tot)$units=="days")  t.tot <- t.tot*60*24 # convert from days to mins
   ### write the runtimes to file
   times <- data.frame(
     totalmins = t.tot,
