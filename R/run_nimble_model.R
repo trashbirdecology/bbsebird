@@ -60,7 +60,8 @@ run_nimble_model <- function(code,
   ## arg eval
   if (is.null(seed)) seed <- sample(1:1e3, 1)
 
-  block.name <- tolower(block.name)
+  if(!(tolower(block.samp.type) %in% c("af_slice", "rw_block"))) block.name <- "none"
+  if(!is.null(block.name)) block.name <- tolower(block.name)
   if (is.null(nb))
     nb <- round(ni / nt * .25, 0)
   stopifnot((ni-nb)/nt > 50)
@@ -86,9 +87,9 @@ run_nimble_model <- function(code,
   }
 
 
+# START RUNTIMES ----------------------------------------------------------
   t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
   t.tot <- Sys.time() ## start tracking runtime
-  t.tot.units <- attributes(t.tot)$units
   # RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
     print(
@@ -252,12 +253,14 @@ run_nimble_model <- function(code,
   }  # END NO PARALLEL PROCESSING
 
 
-  t.tot <- round(as.numeric(Sys.time()-t.tot), 2)
-  if(attributes(t.tot)$units=="hours") t.tot <- t.tot*60     # convert from hr to mins
-  if(attributes(t.tot)$units=="days")  t.tot <- t.tot*60*24 # convert from days to mins
+# END RUNTIMES -----------------------------------------------------------
+  t.tot <- Sys.time()-t.tot
+  if(attributes(t.tot)$units=="secs") t.tot <- round(t.tot/60,0)     # convert from hr to mins
+  if(attributes(t.tot)$units=="hours") t.tot <- round(t.tot*60)      # convert from hr to mins
+  if(attributes(t.tot)$units=="days")  t.tot <- round(t.tot*60*24)   # convert from days to mins
   ### write the runtimes to file
   times <- data.frame(
-    totalmins = t.tot,
+    totalmins = as.numeric(t.tot),
     name = mod.name,
     nbfs = constants$K,
     build = t.build,
