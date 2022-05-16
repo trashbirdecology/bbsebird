@@ -83,7 +83,7 @@ run_nimble_model <- function(code,
 
   t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
   t.tot <- Sys.time() ## start tracking runtime
-
+  t.tot.units <- attributes(t.tot)$units
   # RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
     print(
@@ -247,9 +247,11 @@ run_nimble_model <- function(code,
 
 
   t.tot <- round(as.numeric(Sys.time()-t.tot), 2)
+  if(attributes(t.tot)$units=="hours") t.tot <- t.tot/60     # convert from hr to mins
+  if(attributes(t.tot)$units=="days") t.tot <- t.tot/(60*24) # convert from days to mins
   ### write the runtimes to file
   times <- data.frame(
-    totalruntime = t.tot,
+    totalmins = t.tot,
     name = mod.name,
     nbfs = constants$K,
     build = t.build,
