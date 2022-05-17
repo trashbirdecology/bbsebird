@@ -106,7 +106,7 @@ dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
 # dev.mode    = FALSE
 # dir.outputs = "/outputs/"
 # save.neighborhood = FALSE
-#
+
 # EVALUATE ARGS -----------------------------------------------------------
   ## first, test and evaluate args as necessary.
   EN.arg <- tolower(EN.arg)
@@ -190,7 +190,7 @@ dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
     ## keep max 30 grid cells,
     ## sample 5 and grab potentially adjacent neighbors.
     G.keep <-
-      sample(sort(unique(grid$cellid)) - 1, 30) # but dont grab the last one
+      sample(sort(unique(grid$cellid)) - 1, min(0.5*nrow(grid), 30)) # but dont grab the last one
     G.keep  <- c(G.keep + 1, G.keep)
     grid <- grid[grid$cellid %in% G.keep, ]
 
