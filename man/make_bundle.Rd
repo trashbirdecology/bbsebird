@@ -17,10 +17,10 @@ make_bundle(
   EN.arg = "max",
   X = "cell.lon.centroid",
   Y = "cell.lat.centroid",
-  cell.id = "gridcellid",
-  year.id = "year",
-  site.id = c("checklist_id", "rteno", "sampling_event_identifier"),
-  obs.id = c("obsn", "observer_id"),
+  cellid = "gridcellid",
+  yearid = "year",
+  siteid = c("checklist_id", "rteno", "sampling_event_identifier"),
+  obsid = c("obsn", "observer_id"),
   cell.covs = c("area"),
   site.covs = c("starttime", "endtime", "wind", "noise", "cars", "minute", "assistant",
     "obsfirstyearbbs", "obsfirstyearonbbs", "obsfirstyearroute", "obsfirstyearonroute",
@@ -28,7 +28,7 @@ make_bundle(
     "protocol_type", "number_observers"),
   dev.mode = FALSE,
   dir.outputs = "/outputs/",
-  save.neighborhood = TRUE
+  save.neighborhood = FALSE
 )
 }
 \arguments{
@@ -56,13 +56,13 @@ make_bundle(
 
 \item{Y}{variable name associated with the x-coordinate (e.g., latitude, Northing, Y) across 'grid', 'bbs', and 'ebird'}
 
-\item{cell.id}{column name(s) of the grid cell identifier}
+\item{cellid}{column name(s) of the grid cell identifier}
 
-\item{year.id}{column name of the temporal identifier}
+\item{yearid}{column name of the temporal identifier}
 
-\item{site.id}{column name(s) of the site  identifier (e.g., BBS route, eBird checklists)}
+\item{siteid}{column name(s) of the site  identifier (e.g., BBS route, eBird checklists)}
 
-\item{obs.id}{column name(s) of the observer identifier}
+\item{obsid}{column name(s) of the observer identifier}
 
 \item{cell.covs}{column name(s) of the grid-level covariates}
 

@@ -11,13 +11,15 @@ run_nimble_model(
   constants = NULL,
   inits,
   monitors = NULL,
+  monitors2 = NULL,
   ncores = NULL,
   ni = 10000,
   nb = 100,
   nt = 1,
   nc = 1,
   aI = 200,
-  ntries = 5,
+  seed = NULL,
+  ntries = NULL,
   calculate = FALSE,
   block.name = "alpha+b",
   block.samp.type = "AF_slice",
@@ -38,6 +40,8 @@ run_nimble_model(
 
 \item{monitors}{optional Character vector of parameters to monitor.}
 
+\item{monitors2}{optional Character vector of parameters to monitor.}
+
 \item{ncores}{maximum number of cores to employ. Actual number used is the minimum of nc and ncores}
 
 \item{ni}{number iterations to run}
@@ -50,7 +54,9 @@ run_nimble_model(
 
 \item{aI}{adapt interval, used in nimble::addSamplers}
 
-\item{ntries}{optional If using parameter block sampler, specify the maximum number of tries}
+\item{seed}{seed number}
+
+\item{ntries}{optional If using parameter block sampler, specify the maximum number of tries. Defaults to ~50\% of the number of GAM basis functions.}
 
 \item{calculate}{logical if TRUE will calculate the model logprob. Used as argument 'calculate' in function nimble::nimbleModel()}
 

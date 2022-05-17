@@ -7,7 +7,7 @@
 dir_spec(dir.orig.data, dir.proj = NULL, subdir.proj = NULL)
 }
 \arguments{
-\item{dir.orig.data}{Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database.}
+\item{dir.orig.data}{Location of the original BBS and eBird data. This directory should house multiple directories, including the BBS route shapefiles, the eBird database. Usually, the original BBS data will be downloaded here.}
 
 \item{dir.proj}{Project directory. Assumes current working directory. This is where the directories and output files will be stored.}
 

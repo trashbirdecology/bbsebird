@@ -4,10 +4,12 @@
 \alias{make_model_data}
 \title{Make List of Data and Constants for Nimble/JAGS}
 \usage{
-make_model_data(data)
+make_model_data(data, site.cov.output = "vector")
 }
 \arguments{
 \item{data}{List of data objects and constants as produced by make_bundle}
+
+\item{site.cov.output}{one of c("vector", "array", "matrix"). Defines the format of the site-level covariates}
 }
 \description{
 Make List of Data and Constants for Nimble/JAGS

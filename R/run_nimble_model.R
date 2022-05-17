@@ -68,6 +68,8 @@ run_nimble_model <- function(code,
   if (is.null(ncores))
     ncores <- min(nc, parallel::detectCores() - 1)
 
+
+
   if(ncores > parallel::detectCores()){
     ncores <- parallel::detectCores()-1
     cat("ncores requested is greater than available cores. Requesting only", ncores, "workers at this time.")
@@ -90,7 +92,7 @@ run_nimble_model <- function(code,
 # START RUNTIMES ----------------------------------------------------------
   t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
   t.tot <- Sys.time() ## start tracking runtime
-  # RUN IN PARALLEL ---------------------------------------------------------
+# RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
     print(
       "ncores is greater than 1. Invoking multiple workers. Nimble messages/updates are suppressed in parallel mode. Only total run time is captured in runtime savefile.\n"
@@ -161,6 +163,7 @@ run_nimble_model <- function(code,
       results <- runMCMC(
         Cmcmc,
         niter = ni,
+        inits = inits, nchains = nc,
         thin = nt,
         nburnin = nb,
         samples = TRUE,
@@ -175,7 +178,7 @@ run_nimble_model <- function(code,
     names(out) <- paste0("chain_", seq_len(ncores))
   } # END PARALLEL PROCESSING
   # browser()
-  # NO PARALLEL PROCESSING --------------------------------------------------
+# NO PARALLEL PROCESSING --------------------------------------------------
   if (ncores == 1 | !parallel) {
 
     t.build <- Sys.time()
@@ -183,22 +186,22 @@ run_nimble_model <- function(code,
       code = code,
       data = data,
       constants = constants,
-      inits = inits,
-      calculate = calculate
+      inits = inits
     )
-    t.build <- round(as.numeric(Sys.time()-t.build), 2)
+    t.build <- Sys.time()-t.build
 
     t.compile <- Sys.time()
     Rmodel.comp <- compileNimble(Rmodel)
-    t.compile <- round(as.numeric(Sys.time()-t.compile), 2)
+    t.compile <- Sys.time()-t.compile
 
     ## configure MCMC algorithm
     t.confmcmc <- Sys.time()
     Rmodel.conf <- configureMCMC(Rmodel,
                                  monitors = monitors,
                                  thin = nt,
-                                 nburnin = nb)
-    t.confmcmc <- round(as.numeric(Sys.time()-t.confmcmc), 2)
+                                 nburnin = nb, calculate = calculate)
+    t.confmcmc <- Sys.time()-t.confmcmc
+
     ## add block on b across all T
     if (block.name == "alpha+b") {
       Rmodel.conf$removeSampler(c('alpha', 'b'))

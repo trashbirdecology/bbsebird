@@ -41,6 +41,8 @@ make_ebird(
 \item{overwrite}{if TRUE will overwrite any existing files.}
 
 \item{countries}{countries}
+
+\item{...}{}
 }
 \description{
 Munge eBird for Use Case

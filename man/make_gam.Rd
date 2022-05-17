@@ -10,7 +10,7 @@ make_gam(
   nd = NULL,
   K = NULL,
   nruns = 10,
-  num.nn = 20,
+  num.nn = 10,
   ll.to.utm = TRUE,
   max.loop = 40,
   print.plot = TRUE,
