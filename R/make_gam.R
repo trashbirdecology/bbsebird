@@ -25,7 +25,7 @@ make_gam <- function(coords,
                      scale.coords = TRUE
                      ) {
   # ARGS --------------------------------------------------------------------
-  if(is.null(nd)) nd <- min(nrow(coords)/4, 150)
+  if(is.null(nd)) nd <- min(round(nrow(coords)/4), 150)
   coords <- as.matrix(coords)
   method <- tolower(method)
   stopifnot(method %in% c("cubic2d", "jagam", "mgcv", "cubicalt"))
@@ -143,7 +143,7 @@ make_gam <- function(coords,
   # plot --------------------------------------------------------------------
   if (print.plot) {
     ## cubic spline basis functions have continutous (smooth) 1st AND second derivatives.
-
+    if(is.null(plot.main)) plot.main <- paste0(ifelse(ll.to.utm, "utm ", "latlon "), ifelse(scale.coords, "scaled ", " not scaled"))
     if (!method %in% c("cubic2d")) {
       "plotting currently only supported for CUBIC2D basis functions"
     } else{
