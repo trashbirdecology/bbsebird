@@ -3,7 +3,7 @@
 #' @param data List of data objects and constants as produced by make_bundle
 #' @param site.cov.output one of c("vector", "array", "matrix"). Defines the format of the site-level covariates
 #' @export make_model_data
-make_model_data <- function(data, site.cov.output="vector") {
+make_model_data <- function(data, site.cov.output="matrix") {
 
   stopifnot(site.cov.output %in% c("vector", "array", "matrix"))
 
