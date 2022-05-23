@@ -20,11 +20,11 @@
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
 #' @param dir.out path where samps and runtimes wll be saved
 #' @param fn.times filename of runtimes output. Optional. Defaults to runtimes.csv
+#' @param save.output Logical. If TRUE will attempt to save MCMC results output as .rds to file.
 #' @importFrom parallel makeCluster stopCluster detectCores
 #' @importFrom foreach %dopar% foreach
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom nimble compileNimble buildMCMC runMCMC nimbleModel configureMCMC runMCMC buildMCMC
-#'
 #'
 #' @export run_nimble_model
 
@@ -48,40 +48,46 @@ run_nimble_model <- function(code,
                              parallel = TRUE,
                              mod.name = NULL,
                              dir.out = NULL,
-                             fn.times = "runtimes.csv"
-) {
-
-  fn.ind <- substr(fn.times, nchar(fn.times)-3, nchar(fn.times))
-  if(!fn.ind %in% c(".csv")){
+                             fn.times = "runtimes.csv",
+                             save.output = TRUE) {
+  fn.ind <- substr(fn.times, nchar(fn.times) - 3, nchar(fn.times))
+  if (!fn.ind %in% c(".csv")) {
     warning("arg fn.times should have file extension .csv")
     stop()
   }
 
   ## arg eval
-  if (is.null(seed)) seed <- sample(1:1e3, 1)
+  if (is.null(seed))
+    seed <- sample(1:1e3, 1)
 
-  if(!(tolower(block.samp.type) %in% c("af_slice", "rw_block"))) block.name <- "none"
-  if(!is.null(block.name)) block.name <- tolower(block.name)
+  if (!(tolower(block.samp.type) %in% c("af_slice", "rw_block")))
+    block.name <- "none"
+  if (!is.null(block.name))
+    block.name <- tolower(block.name)
   if (is.null(nb))
     nb <- round(ni / nt * .25, 0)
-  stopifnot((ni-nb)/nt > 50)
+  stopifnot((ni - nb) / nt > 50)
   if (is.null(ncores))
     ncores <- min(nc, parallel::detectCores() - 1)
 
 
 
-  if(ncores > parallel::detectCores()){
-    ncores <- parallel::detectCores()-1
-    cat("ncores requested is greater than available cores. Requesting only", ncores, "workers at this time.")
+  if (ncores > parallel::detectCores()) {
+    ncores <- parallel::detectCores() - 1
+    cat(
+      "ncores requested is greater than available cores. Requesting only",
+      ncores,
+      "workers at this time."
+    )
   }
 
   if (is.null(ntries)) {
     if (constants$K > 0) {
       ntries <-
-        round(constants$K/2, 0)
+        round(constants$K / 2, 0)
     } else{
       if (dim(constants$Z.mat)[2] > 0) {
-        ntries <- round(dim(constants$Z.mat)[2]/2, 0)
+        ntries <- round(dim(constants$Z.mat)[2] / 2, 0)
       }
     }
     if (is.null(ntries))
@@ -89,10 +95,12 @@ run_nimble_model <- function(code,
   }
 
 
-# START RUNTIMES ----------------------------------------------------------
-  t.build <- t.compile <- t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
+  # START RUNTIMES ----------------------------------------------------------
+  t.build <-
+    t.compile <-
+    t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
   t.tot <- Sys.time() ## start tracking runtime
-# RUN IN PARALLEL ---------------------------------------------------------
+  # RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
     print(
       "ncores is greater than 1. Invoking multiple workers. Nimble messages/updates are suppressed in parallel mode. Only total run time is captured in runtime savefile.\n"
@@ -163,7 +171,8 @@ run_nimble_model <- function(code,
       results <- runMCMC(
         Cmcmc,
         niter = ni,
-        inits = inits, nchains = nc,
+        inits = inits,
+        nchains = nc,
         thin = nt,
         nburnin = nb,
         samples = TRUE,
@@ -178,9 +187,8 @@ run_nimble_model <- function(code,
     names(out) <- paste0("chain_", seq_len(ncores))
   } # END PARALLEL PROCESSING
   # browser()
-# NO PARALLEL PROCESSING --------------------------------------------------
+  # NO PARALLEL PROCESSING --------------------------------------------------
   if (ncores == 1 | !parallel) {
-
     t.build <- Sys.time()
     Rmodel   <- nimbleModel(
       code = code,
@@ -188,19 +196,22 @@ run_nimble_model <- function(code,
       constants = constants,
       inits = inits
     )
-    t.build <- Sys.time()-t.build
+    t.build <- Sys.time() - t.build
 
     t.compile <- Sys.time()
     Rmodel.comp <- compileNimble(Rmodel)
-    t.compile <- Sys.time()-t.compile
+    t.compile <- Sys.time() - t.compile
 
     ## configure MCMC algorithm
     t.confmcmc <- Sys.time()
-    Rmodel.conf <- configureMCMC(Rmodel,
-                                 monitors = monitors,
-                                 thin = nt,
-                                 nburnin = nb, calculate = calculate)
-    t.confmcmc <- Sys.time()-t.confmcmc
+    Rmodel.conf <- configureMCMC(
+      Rmodel,
+      monitors = monitors,
+      thin = nt,
+      nburnin = nb,
+      calculate = calculate
+    )
+    t.confmcmc <- Sys.time() - t.confmcmc
 
     ## add block on b across all T
     if (block.name == "alpha+b") {
@@ -240,7 +251,8 @@ run_nimble_model <- function(code,
     Rmcmc  <- buildMCMC(Rmodel.conf)
     Cmcmc  <-
       compileNimble(Rmcmc, project = Rmodel, resetFunctions = TRUE)
-    t.buildcompwblock <- round(as.numeric(Sys.time()-t.buildcompwblock), 2)
+    t.buildcompwblock <-
+      round(as.numeric(Sys.time() - t.buildcompwblock), 2)
 
     # Run
     t.run <- Sys.time()
@@ -252,16 +264,19 @@ run_nimble_model <- function(code,
       samples = TRUE,
       samplesAsCodaMCMC = TRUE
     )
-    t.run <- round(as.numeric(Sys.time()-t.run), 2)
+    t.run <- round(as.numeric(Sys.time() - t.run), 2)
   }  # END NO PARALLEL PROCESSING
 
 
-# END RUNTIMES -----------------------------------------------------------
-  t.tot <- Sys.time()-t.tot
+  # END RUNTIMES -----------------------------------------------------------
+  t.tot <- Sys.time() - t.tot
   temp <- attributes(t.tot)$units
-  if(temp=="secs")  t.tot <- round(t.tot/60,0)  # convert from hr to mins
-  if(temp=="hours") t.tot <- round(t.tot*60)    # convert from hr to mins
-  if(temp=="days")  t.tot <- round(t.tot*60*24) # convert from days to mins
+  if (temp == "secs")
+    t.tot <- round(t.tot / 60, 0)  # convert from hr to mins
+  if (temp == "hours")
+    t.tot <- round(t.tot * 60)    # convert from hr to mins
+  if (temp == "days")
+    t.tot <- round(t.tot * 60 * 24) # convert from days to mins
   ### write the runtimes to file
   times <- data.frame(
     totalmins = as.numeric(t.tot),
@@ -280,17 +295,18 @@ run_nimble_model <- function(code,
     dir = dir.out,
     OS    = paste(Sys.info()[1:2], collapse = "_")
   )
-  if(ifelse(file.exists(fn.times), FALSE, TRUE)){
+  if (ifelse(file.exists(fn.times), FALSE, TRUE)) {
     write.csv(times, fn.times, row.names = FALSE)
-  }else{
+  } else{
     timesin  <- read.csv(fn.times)
-    line     <- times[1,]
+    line     <- times[1, ]
     try(timesout <- rbind(timesin, line))
     try(write.csv(timesout, fn.times, row.names = FALSE))
   }
 
-
-  try(saveRDS(out,  paste0(dir.out, "/samps/",fn, ".rds")))
+  if (save.output) {
+    try(saveRDS(out,  paste0(dir.out, "/samps/", fn, ".rds")))
+  }
 
   return(out)
 
