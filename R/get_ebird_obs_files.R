@@ -36,8 +36,9 @@ get_ebird_obs_files <- function(dir.ebird.in,
                ")(?=.*rel)")
 
       }))
+      f.out <- NULL
       for(i in seq_along(s)){
-        if(i==1) f.out <- NULL
+        # if(i==1) f.out <- NULL
         f.out <- c(f.out, fns.obs[which(grepl(pattern=paste(s[i]), x=fns.obs, perl=TRUE, ignore.case = TRUE))])
       }
       fns.out <- unique(f.out)
@@ -48,8 +49,9 @@ get_ebird_obs_files <- function(dir.ebird.in,
 
       p <- unlist(lapply(countries, function(x) {paste0("ebd_", x, "_rel", mmyyyy)}))
 
+      f.out <- NULL
       for(i in seq_along(p)){
-        if(i==1) f.out <- NULL
+        # if(i==1) f.out <- NULL
         f.out <-
           c(f.out, fns.obs[which(grepl(pattern=paste(p[i]), x=tolower(fns.obs), perl=TRUE, ignore.case = TRUE))])
       }
@@ -66,7 +68,6 @@ if(length(fns.obs)<length(countries)){
     "Please check the availability of data in dir.ebird.in directory for selections listed in arguments: countries and/or species and mmyyyy."
   )
 }
-
 
 # Unzip or grab decompressed filepaths ------------------------------------
 fns.obs.zip      <- fns.obs[grepl(".zip", tolower(fns.obs))] ## zip are STATE-LEVEL OBS
@@ -118,5 +119,7 @@ stopifnot(all(file.exists(fns.obs.txt)))
 
 # END FUNCTION ------------------------------------------------------------
 OUT=c(fns.obs.txt.gz, fns.obs.txt)
+if(length(OUT)==0)warning("observation files not found. please check ebird file directory...\n")
+
 return(OUT)
 }

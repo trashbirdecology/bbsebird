@@ -91,6 +91,7 @@ if (is.null(fns.obs)) fns.obs   <-  get_ebird_obs_files(
       species = species,
       countries = countries
     )
+
 stopifnot(length(fns.obs) > 0 )
 
 ## IMPORT AND MUNGE THE DATA

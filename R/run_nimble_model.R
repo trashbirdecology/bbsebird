@@ -71,7 +71,6 @@ run_nimble_model <- function(code,
     ncores <- min(nc, parallel::detectCores() - 1)
 
 
-
   if (ncores > parallel::detectCores()) {
     ncores <- parallel::detectCores() - 1
     cat(
@@ -100,6 +99,7 @@ run_nimble_model <- function(code,
     t.compile <-
     t.confmcmc <- t.buildcompwblock <- t.run <- t.tot <- NULL
   t.tot <- Sys.time() ## start tracking runtime
+
   # RUN IN PARALLEL ---------------------------------------------------------
   if (ncores > 1 && parallel) {
     print(
