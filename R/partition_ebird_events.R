@@ -194,11 +194,11 @@ p = unlist(lapply(countries, function(c){
   paste0("(?=.*", c,")(?=.*", eval(mmyyyy),")(?=.*", eval(out.filetype) ,")")
 
 }))
-f.out <- NULL
 for(i in seq_along(p)){
+if (i==1 ) f.out <- NULL
   f.out <- c(f.out, fns.out[which(grepl(pattern=paste(p[i]), x=fns.out, perl=TRUE, ignore.case = TRUE))])
 }
-fns.out <- unique(f.out)
+if(exists("f.out"))       fns.out <- unique(f.out)
 
 return(fns.out) ### return the filenames for use in eBird import/munging functions
   } # END FUNCTION

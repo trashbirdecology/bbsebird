@@ -18,7 +18,7 @@ get_ebird_obs_files <- function(dir.ebird.in,
   if(length(fns.obs)==0){
     fns.obs <- (list.files(path=dir.ebird.in, pattern="ebd_", recursive = TRUE, full.names=TRUE, ignore.case = TRUE))
     fns.obs <- fns.obs[setdiff(1:length(fns.obs), which(grepl(pattern="sampling",    x=tolower(fns.obs))))]
-
+# browser()
   ## Filter by mmyyyy
   fns.obs <- fns.obs[grepl(mmyyyy, tolower(fns.obs))]
   ## Import all data if desired
@@ -38,10 +38,9 @@ get_ebird_obs_files <- function(dir.ebird.in,
       }))
       f.out <- NULL
       for(i in seq_along(s)){
-        # if(i==1) f.out <- NULL
         f.out <- c(f.out, fns.obs[which(grepl(pattern=paste(s[i]), x=fns.obs, perl=TRUE, ignore.case = TRUE))])
       }
-      fns.out <- unique(f.out)
+      if(exists("f.out"))       fns.out <- unique(f.out)
     }else{fns.out <- NULL} # end species IF
 
   ## Filter by country  or grab all data
@@ -51,11 +50,10 @@ get_ebird_obs_files <- function(dir.ebird.in,
 
       f.out <- NULL
       for(i in seq_along(p)){
-        # if(i==1) f.out <- NULL
         f.out <-
           c(f.out, fns.obs[which(grepl(pattern=paste(p[i]), x=tolower(fns.obs), perl=TRUE, ignore.case = TRUE))])
       }
-      fns.obs <- unique(f.out)
+      if(exists("f.out"))      fns.obs <- unique(f.out)
       }else{fns.obs <- fns.out}
 
   }
@@ -81,6 +79,7 @@ fns.obs.tar.to.unpack <- setdiff(
                                 gsub(pattern = ".tar", replacement = "", x=fns.obs.tar, ignore.case = TRUE),
                                 gsub(pattern = ".txt.gz", replacement = "", x=fns.obs.txt.gz, ignore.case = TRUE))
 fns.obs.txt      <- setdiff(fns.obs.txt, fns.obs.txt.gz)
+
 ##UNPACK TARBALLS ------------------------------------------------------------------
 if(length(fns.obs.tar.to.unpack)>0){
   cat("attempting to unpack", length(fns.obs.tar.to.unpack), "tarballs\n")
