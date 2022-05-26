@@ -22,6 +22,7 @@ make_bundle(
   siteid = c("checklist_id", "rteno", "sampling_event_identifier"),
   obsid = c("obsn", "observer_id"),
   cell.covs = c("area"),
+  drop.empty.cells = FALSE,
   site.covs = c("starttime", "endtime", "wind", "noise", "cars", "minute", "assistant",
     "obsfirstyearbbs", "obsfirstyearonbbs", "obsfirstyearroute", "obsfirstyearonroute",
     "time_observations_started_hsm", "time_observations_started", "duration_minutes",
@@ -65,6 +66,8 @@ make_bundle(
 \item{obsid}{column name(s) of the observer identifier}
 
 \item{cell.covs}{column name(s) of the grid-level covariates}
+
+\item{drop.empty.cells}{IN DEVELOPMENT NOT RELIABLE FOR MODELING PURPOSES!!! logical Default FALSE If TRUE will remove all grid cells that have no count data (neither ebird nor bbs).}
 
 \item{site.covs}{column name(s) of the site-level covariates}
 
