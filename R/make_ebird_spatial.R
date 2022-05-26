@@ -72,7 +72,7 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, max.checklists
 
 
   ## Randomly select N checklists per grid cell and year
-  browser()
+  # browser()
   if(!is.null(max.checklists) && max.checklists > 0){
       ebird_spatial <- ebird_spatial |>
                        dplyr::group_by(yearid, cellid)  |>
