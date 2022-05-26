@@ -18,7 +18,7 @@ get_ebird_obs_files <- function(dir.ebird.in,
   if(length(fns.obs)==0){
     fns.obs <- (list.files(path=dir.ebird.in, pattern="ebd_", recursive = TRUE, full.names=TRUE, ignore.case = TRUE))
     fns.obs <- fns.obs[setdiff(1:length(fns.obs), which(grepl(pattern="sampling",    x=tolower(fns.obs))))]
-# browser()
+
   ## Filter by mmyyyy
   fns.obs <- fns.obs[grepl(mmyyyy, tolower(fns.obs))]
   ## Import all data if desired
