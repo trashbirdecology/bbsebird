@@ -20,6 +20,7 @@
 #' @param dev.mode logical if TRUE will return a reduced data set to use in development/debugging purposes. This method reduces the number of time units to 2, the maximum number of grid cells to 10, and 2 sites from each data source
 #' @param save.neighborhood logical if TRUE will save the neighborhood network to file as "neighborhood.rds" at 'dir.outputs'.
 #' @param fill.cov.nas value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.
+#' @param drop.empty.cells IN DEVELOPMENT NOT RELIABLE FOR MODELING PURPOSES!!! logical Default FALSE If TRUE will remove all grid cells that have no count data (neither ebird nor bbs).
 #' @importFrom dplyr group_by mutate select distinct arrange filter slice
 #' @export make_bundle
 
@@ -40,6 +41,7 @@ make_bundle <- function(bbs,
                         siteid     = c("checklist_id", "rteno", "sampling_event_identifier"),
                         obsid      = c("obsn", "observer_id"),
                         cell.covs   = c("area"),
+                        drop.empty.cells = FALSE,
                         site.covs   = c(
                           "starttime",
                           "endtime",
@@ -176,7 +178,8 @@ dir.create(dir.outputs, showWarnings=FALSE, recursive=TRUE)
   ebird <-
     ebird |> dplyr::distinct(yearid, siteid, cellid, c, .keep_all = TRUE)
 
-  # Subset for dev.mode=TRUE ------------------------------------------------
+
+# Subset for dev.mode=TRUE ------------------------------------------------
   if (dev.mode) {
     message(
       paste0(
@@ -257,7 +260,7 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
   #
 }
 
-  # DROP COLS WHERE ALL ROWS == NA ------------------------------------------
+# DROP COLS WHERE ALL ROWS == NA ------------------------------------------
   ### some covariates may have all NA. prior to subsetting, let's remove those columns.
   all_na <- function(x) {
     any(!is.na(x))
@@ -299,6 +302,7 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
         "after removing all NA observations without associated covariate information, no eBird data exists. \nConsider removing some site.covs from data subsetting/model and/or specifying dev.mode=FALSE..\n"
       )
   }
+
 
 # MAKE INDEXES ------------------------------------------------------------
   ## Global Indexes-----------------------------------------------------------------
@@ -584,7 +588,7 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
 
 
  # BBS rte-observer index --------------------------------------------------
-  ### create an index for route-observer combination effect
+ ### create an index for route-observer combination effect
  bbs <- bbs |>
     dplyr::distinct(siteind, obsind) |>
     dplyr::mutate(rteobsind = 1:n()) |>
@@ -596,8 +600,6 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
   ### dimensions are ngrid by nyear
   Xgrid <- list(NULL)
   cellindex <- cellindex |> arrange(cellind)
-  # if("sf" %in% class(cellind))
-  # browser()
   cellind  <- as.data.frame(cellindex)
   cell.covs  <- cell.covs[cell.covs %in% colnames(cellindex)]
   if (!length(cell.covs) == 0) {
@@ -607,7 +609,8 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
     }# end Xgrid loop
   }# end if cell.covs
 
-  # BASIS FUNCTIONS -------------------------------------------------------------
+
+# BASIS FUNCTIONS -------------------------------------------------------------
   # create basis functions and data for GAM model components
   ## first, we need to grab the maximum number of birds per grid cell/year
   ## argument use.ebird.in.EN lets user ignore the eBird data when producing the GAM data
@@ -642,6 +645,14 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
   ## next, add the missing grid cells and fill in with grand MEAN
   gy.all <- expand.grid(cellind = cellindex$cellind,
                         yearind = yearindex$yearind)
+
+  if(drop.empty.cells){
+    remove <- setdiff(gy.all$cellind, c(bbs$cellind, ebird$cellind))
+    if(length(remove) > 0){
+        gy.all <- gy.all[!gy.all$cellind %in% remove,]
+    }
+  }
+
   EN <-
     full_join(gy.all, EN, by = c("cellind", "yearind"))
   EN$c[is.na(EN$c)] <-
@@ -706,7 +717,7 @@ if (!dev.mode & (is.numeric(max.ebird)|is.integer(max.ebird))){
   rm(nb, N, adj, sumNumNeigh)
 # browser()
 
-  # BUNDLE UP DATA ----------------------------------------------------------
+# BUNDLE UP DATA ----------------------------------------------------------
   # make index logical for whether or
   # # if return.orig.dat == TRUE then we want to keep all
   bundle.out <- list(
