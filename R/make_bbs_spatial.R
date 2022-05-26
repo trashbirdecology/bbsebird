@@ -58,7 +58,12 @@ make_bbs_spatial <- function(df,
       while(substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
       while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
 
-  stopifnot(dir.exists(cws.routes.dir) || dir.exists(usgs.routes.dir))
+
+  ## add this for the fkn HPCs SDLGJSLKJSDLKFJ
+  c <- paste0("/", cws.routes.dir)
+  u <- paste0("/", usgs.routes.dir)
+  if(!dir.exists(cws.routes.dir) && dir.exists(c)) cws.routes.dir <- c
+  if(!dir.exists(usgs.routes.dir) && dir.exists(u)) usgs.routes.dir <- u
   # first, if overwrite is false and this file exists. import and return asap.
   f <- paste0(dir.out, "bbs_spatial.rds")
   if (file.exists(f) & !overwrite) {
