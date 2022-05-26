@@ -20,7 +20,7 @@ make_ebird(
   years = NULL,
   max.effort.km = NULL,
   max.effort.mins = NULL,
-  max.birds.checklist = 55,
+  max.birds.checklist = 100,
   max.num.observers = 10,
   ncores = NULL,
   out.filetype = ".csv.gz",

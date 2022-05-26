@@ -26,7 +26,8 @@ run_nimble_model(
   parallel = TRUE,
   mod.name = NULL,
   dir.out = NULL,
-  fn.times = "runtimes.csv"
+  fn.times = "runtimes.csv",
+  save.output = TRUE
 )
 }
 \arguments{
@@ -69,6 +70,8 @@ run_nimble_model(
 \item{dir.out}{path where samps and runtimes wll be saved}
 
 \item{fn.times}{filename of runtimes output. Optional. Defaults to runtimes.csv}
+
+\item{save.output}{Logical. If TRUE will attempt to save MCMC results output as .rds to file.}
 }
 \description{
 Run Nimble Model in Parallel

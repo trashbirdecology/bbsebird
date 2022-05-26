@@ -4,13 +4,14 @@
 #' @param df A data frame with columns c(lat, lon) and optional attributes (columns).
 #' @param crs.target the integer representing the target CRS.
 #' @param grid  a spatial grid over which the eBird data will be overlaid.
+#' @param max.checklists Maximum number of eBird checklists to retain within a single grid cell and year combination.
 #' @param dir.out path to where the resulting spatial data frame will be saved. If NULL will not save to file.
 #' @param overwrite logical if TRUE will overwrite any existing file named "ebird_spatial.rds" in path dir.out
 #' @importFrom sp CRS coordinates proj4string
 #' @importFrom sf st_as_sf st_transform
 #' @importFrom dplyr mutate
 #' @export make_ebird_spatial
-make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
+make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, max.checklists = 15,
                                grid = NULL, overwrite=FALSE) {
 
   # first, if overwrite is false and this file exists. import and return asap.
@@ -56,7 +57,7 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
   cat("\t...done\n")
   ## Exit function if no grid is provided
   if (is.null(grid)){
-    cat("No `grid` provided. Returning ebird spatial data without grid.\n")
+    cat("No `grid` provided. Returning ebird spatial data frame without grid and not saving to file....\n")
     return(df)}
 
   cat(
@@ -65,14 +66,21 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL,
 
   sf::st_geometry(grid)<- names(grid)[1]
 
-  # cat("Joining ebird to spatial grid. Takes at least a couple of minutes for smaller eBird datasets.\n")
   ebird_spatial <- sf::st_join(grid, df)
-  ### maybe delete::must be done in this order to retain the 'grid cell id' numbers. Slightly slower than using
-
   #remove rownames
   rownames(ebird_spatial) <- NULL
 
-  # SAve to file
+
+  ## Randomly select N checklists per grid cell and year
+  browser()
+  if(!is.null(max.checklists) && max.checklists > 0){
+      ebird_spatial <- ebird_spatial |>
+                       dplyr::group_by(yearid, cellid)  |>
+                       dplyr::slice_sample(n=max.checklists)
+  }
+
+
+  # Save to file
   if(!is.null(dir.out)){
     cat("Writing to file: ", f, "\n")
     # while(substr(f,1,1)=="/") f <-  substr(f,2, nchar(f))  ## in linux must remove leading /, idfk

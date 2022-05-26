@@ -8,6 +8,7 @@ make_ebird_spatial(
   df,
   crs.target = 4326,
   dir.out = NULL,
+  max.checklists = 15,
   grid = NULL,
   overwrite = FALSE
 )
@@ -18,6 +19,8 @@ make_ebird_spatial(
 \item{crs.target}{the integer representing the target CRS.}
 
 \item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
+
+\item{max.checklists}{Maximum number of eBird checklists to retain within a single grid cell and year combination.}
 
 \item{grid}{a spatial grid over which the eBird data will be overlaid.}
 
