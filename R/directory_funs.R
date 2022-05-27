@@ -140,7 +140,8 @@ dir_spec <- function(dir.orig.data, dir.proj=NULL, subdir.proj=NULL) {
 #'
 #' Generates a shorthand name for project based on species, country, states, years, and grid cell size.
 #' @param species string of species names using ISO-366-2
-#' @param regions string of countries or states
+#' @param countries string of countries
+#' @param states string of states/province abbreviations
 #' @param grid.size size of desired grid cell
 #' @param years Vector of years. will take the min and max value
 #' @export set_proj_shorthand

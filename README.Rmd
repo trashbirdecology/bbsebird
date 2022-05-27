@@ -56,6 +56,7 @@ remotes::install_github("trashbirdecology/bbsebird",
 pkgs <- c("bbsebird")
 lapply(pkgs, require, character.only = TRUE, quietly = TRUE)
 rm(pkgs)
+
 ```
 
 If using this README, this is the only RMD chunk you shoudl have to edit. Most important are where the eBird data and BBS shapefiles are stored (dir.orig.data) and where you wish to save resulting data/models (dir.proj). The latter need not exist -- if it does not exist the package will create the directory for you. 

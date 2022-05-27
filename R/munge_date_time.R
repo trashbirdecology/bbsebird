@@ -4,8 +4,9 @@
 #' @param max.yday maximum day of the year to include in resulting dataset
 #' @param sunlight logical If TRUE will calculate all sunlight, moonlight, rise and set times. This is computationally demanding for the eBird data, so do not set to TRUE unless needed.
 #' @param base.date character or date string (YYYY-MM-DD) to use as the origin date for calculating Julian date.
-#' @importFrom lubridate as_date yday
+#' @importFrom lubridate as_date
 #' @importFrom hms as_hms
+#' @importFrom data.table yday
 #' @importFrom dplyr filter select mutate bind_rows
 #' @importFrom parallel splitIndices
 #' @importFrom suncalc getSunlightTimes
@@ -26,7 +27,7 @@ munge_date_time <-
 
     if ("date" %in% names) {
       dat$date   <- lubridate::as_date(dat$date)
-      dat$yday   <- lubridate::yday(dat$date)
+      dat$yday   <- data.table::yday(dat$date)
       dat$julian <-
         julian(dat$date, origin = lubridate::as_date(base.date))
       ## filter on the ydays (if provided)

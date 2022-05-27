@@ -369,6 +369,7 @@ munge_date_time <-
 #' @param nc number of chains
 #' @param nt thinning rate for MCMC. Used in filenames
 #' @param nbfs number of basis functions used in the model.
+#' @param mod.name a shorthand name for saving outputs.
 #' @export set.filenames
 
 set.filenames <-

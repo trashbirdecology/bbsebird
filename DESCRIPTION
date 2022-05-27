@@ -54,13 +54,12 @@ Imports:
     coda,
     vroom, 
     lubridate,
-    mcmcplots
+    spdep
 Suggests: 
     knitr,
     dclone,
     rmarkdown,
     spelling,
-    spdep
 LazyData: true
 Remotes: 
     github::trashbirdecology/bbsAssistant,

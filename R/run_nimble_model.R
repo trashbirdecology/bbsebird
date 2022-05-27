@@ -19,6 +19,7 @@
 #' @param block.name optional one of c("alpha+b", "all"). If "alpha+b" will block each alpha and b across all T. If "all" will block all alpha and b for each Ts.
 #' @param block.samp.type optional one of c("AF_slice", "RW_block").
 #' @param dir.out path where samps and runtimes wll be saved
+#' @param mod.name a shorthand name for saving outputs.
 #' @param fn.times filename of runtimes output. Optional. Defaults to runtimes.csv
 #' @param save.output Logical. If TRUE will attempt to save MCMC results output as .rds to file.
 #' @importFrom parallel makeCluster stopCluster detectCores
