@@ -32,8 +32,6 @@ to:
 Download development version from GitHub with:
 
 ``` r
-# install.packages("devtools")
-# remotes::install_github("trashbirdecology/bbsassistant") # to be safe
 remotes::install_github("trashbirdecology/bbsebird")
 ```
 
@@ -56,15 +54,17 @@ requires two components of the EBD to be saved to local file:
 2.  the **sampling events** (i.e. information about the observation
     process)
 
-# DATA MUNGING
-
-## Step 1: Setup
+## Step 1: Load Packages
 
 ``` r
-#explicitly load some packages
+remotes::install_github("trashbirdecology/bbsAssistant",
+                        force = FALSE,
+                        upgrade = "never") ## "never" for dev purposes... to avoid interactivity
+remotes::install_github("trashbirdecology/bbsebird",
+                        force = FALSE,
+                        upgrade = "never") ## "never" for dev purposes... to avoid interactivity
 pkgs <- c("bbsebird")
-# install.packages("mapview") # you can use thsi package to get interactive map views..
-invisible(lapply(pkgs, library, character.only = TRUE))
+lapply(pkgs, require, character.only = TRUE, quietly = TRUE)
 rm(pkgs)
 ```
 
@@ -75,36 +75,16 @@ stored (dir.orig.data) and where you wish to save resulting data/models
 will create the directory for you.
 
 ``` r
-# REQUIRED ARGUMENTS
-dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - aaaaa"
-dir.orig.data  = "C:/Users/jburnett/OneDrive - DOI/research/cormorants/dubcorm-data-backup/" 
-species             = c("house sparrow", "houspa") # include abbrev. assoc. wtih ebird files...
-##bbs arguments
-usgs.layer          = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020" # name of the USGS BBS route shapefile to use
-cws.layer           = "ALL_ROUTES" # name of the Canadian (CWS) BBS route shapefile.
-
-##ebird arguments
-mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
-max.birds.checklist = 100 ## maximum number of eBird checklists to keep  per cell/year  (in bbsebird::make_bundle())
-
-year.range          = 2008:2019
 crs.target          = 4326 #target CRS for all created spatial layers
-##grid arguments
-grid.size           = 0.50 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
-### default grid is in WGS84
-##ebird arguments
-ydays               = 91:245
-
-# Region(s)
+grid.size           = 0.5 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
+species             = c("wood thrush", "woothr")
+mmyyyy              = "feb-2022" # the month and year of the eBird data downloads on file
+years               = 2008:2019
 countries           = c("US") ## string of  countries Call /code{bbsebird::iso.codes} to find relevant
-countries.iso3      = c("USA")
-states    <- c("US-FL")
-
-## Munge the states and countries indexes for use in dir/proj dir reation
-if(!exists("states")) states <- NULL
-if(!exists("countries")) countries <- NULL
-if(!is.null(states)){regions <- states}else{regions <- countries}
-stopifnot(all(tolower(states) %in% tolower(bbsAssistant::region_codes$iso_3166_2)))
+states              = c("us-wv")
+ydays               = 91:245
+max.birds.checklist = 55 ## maximum number of birds within a single eBird checklist (removes any over
+max.checklists      = 10 
 ```
 
 This chunk will create new environmental variables for project and data
@@ -113,18 +93,31 @@ above.
 
 ``` r
 # set_proj_shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
+if (!is.na(pmatch("C:/Users/aroyle", getwd()))){
+  setwd("C:/users/aroyle/OneDrive - DOI/AAAA-IntegratedModels")}else{
+if (!is.na(pmatch("C:/Users/jburnett", getwd()))){ # use na because if FALSE does not return as logical..
+  if(Sys.info()[1] == "Linux") {dir.proj <- "/home/jburnett/integratedmodels/"}
+  if(Sys.info()[4] == "IGSACEESLTAROYB") #JLB's SAS comp
+    dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - aaaaa/"
+  if(Sys.info()[4] == "IGSACEESWSWLIN8") # Bill Link's Comp
+    dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - AAAA-IntegratedModels/"
+}}
+dir.orig.data   <-  paste0(dir.proj,"/dataorig")  # ebird data + bbs routes
+## subdir.proj is optional but recommended when creating data/models for different species, regions, and/or grid cell sizes...
 subdir.proj <-
   set_proj_shorthand(
     species = species,
     countries = countries,
     states = states,
     grid.size = grid.size,
-    years = year.range
+    years = years
   )
-
+## if ebird and/or bbs route files don't exist in dir.orig.data this will throw a warning. 
 dirs        <-  dir_spec(dir.orig.data = dir.orig.data,  
                          dir.proj = dir.proj,
-                         subdir.proj = subdir.proj) # create and/or specify dirs
+                         subdir.proj = subdir.proj) 
+## returns a list of directories
+names(dirs)
 ```
 
 ## Step 2: Make Data
@@ -135,7 +128,6 @@ The following chunk creates a spatial sampling grid of size grid.size
 with units defaulting to the units of crs.target.
 
 ``` r
-## entirity of North America takes a couple mins...even longer for <<<0.50 grid size
 grid <-
   make_spatial_grid(
     dir.out = dirs$spatial,
@@ -146,10 +138,8 @@ grid <-
   )
 overlay <- grid$grid.overlay
 grid    <- grid$grid
-par(mfrow=c(1,2))
 plot(grid[2])    # just the underlying grid
-plot(overlay[2]) # political boundaries
-par(mfrow=c(1,1))
+plot(overlay[2]) # cells clipped to political boundaries
 ```
 
 Create the BBS data. This chunk relies on R package . The resulting data
@@ -169,7 +159,6 @@ if("bbs.rds" %in% list.files(dirs$bbs.out)){
     year.range = years) |> as.data.table()
   bbs <- munge_col_names(bbs) # munge column names to mesh with eBird
   saveRDS(bbs, paste0(dirs$bbs.out, "/bbs.rds")) # suggest saving data to file for easy access
-  rm(bbs_orig)
 }
 # Overlay BBS and study area / sampling grid
 ### note, sometimes when running this in a notebook/rmd a random .rdf" path error occurs.
@@ -184,27 +173,29 @@ bbs <- make_bbs_spatial(
   overwrite = FALSE
 )
 # unique num obs per cell
-# plot((bbs |> group_by(gridcellid) |> summarise(n_obs=n_distinct(obsn)))[2]) 
+plot((bbs |> group_by(gridcellid) |> summarise(n_obs=n_distinct(obsn)))[2])
 # unique num routes per cell
-# plot((bbs |> group_by(gridcellid) |> summarise(n_rts=n_distinct(rteno)))[2])
+plot((bbs |> group_by(gridcellid) |> summarise(n_rts=n_distinct(rteno)))[2])
+# max count per cell
+plot((bbs |> group_by(gridcellid) |> summarise(c_max=max(c, na.rm=TRUE)))[2])
 ```
 
 Munge the eBird data (original data must be saved to file):
 
 ``` r
-# This will tak ea while if not previously created or partitioned
 ebird <-
   make_ebird(
-    dir.ebird.in = dirs$dir.ebird.in,
+    dir.ebird.in = dirs$ebird.in,
     dir.out = dirs$ebird.out,
     mmyyyy = mmyyyy,
     countries = countries,
     species = species,
+    max.birds.checklist = max.birds.checklist, 
     states = states, 
-    years = year.range, 
+    years = years, 
     overwrite = FALSE
   )
-# Create spatial ebird
+
 ebird <-
   make_ebird_spatial(
     ebird,
@@ -212,7 +203,7 @@ ebird <-
     grid = grid,
     overwrite = FALSE
   )
-## visualizing the ebird_spatial data takes a while, do not recommend...
+## visualizing the ebird_spatial data takes a while, do not recommend!
 ```
 
 ## Step 3: Bundle (“Integrate”) Data for Use in BUGS
@@ -222,24 +213,15 @@ suggest creating a list using `make_bundle` and subsequently grabbing
 useful data from there.
 
 ``` r
-message("[note] sometimes when running this chunk in notebook/rmarkdown it crashes. try restarting session or running interactively\n")
-dat.full  <- make_bundle(bbs, ebird, grid)
+dat.full  <- make_bundle(bbs, ebird, grid, max.ebird = max.birds.checklist)
+### make_bunlde provides site-level covariates as both vectors and matrices
+### e.g., dat.full$bbs.df$obsfirstyearbbs == dat.full$Xb$obsfirstyearbbs
 gam.dat.full  <-
   make_gam(
-    coords = dat.full$coords,
-    scale.coords = TRUE, 
-    ll.to.utm = TRUE, 
+    coords = dat.full$coords, 
     # coords = cbind(dat.full$coords[,1], dat.full$coords[,2]),
-    method = "cubic2d", #or "mgcv" 
-    # nd = length(states)*3, ## num knots - arbitrary choice for now....
-    num.nn = 10,
-    nruns = 10,
-    print.plot = TRUE,
-    plot.main = "utm scaled"
-  )
-
+    method = "cubic2d")
 dat.full <- c(dat.full, gam.dat.full)
-
 ## Add Constants/Data Common to Models 
 model.dat.full      <- make_model_data(data = dat.full)
 ```
@@ -256,24 +238,29 @@ saveRDS(dat.full, file=paste0(dirs$project, "/datain/bundle.rds"))
 saveRDS(model.dat.full, file=paste0(dirs$project, "/datain/model-dat.rds"))
 ```
 
-Also recommend creating a very small version of the same data for
-testing models:
+You can also create a very small version of the same data for testing
+models, but do not use the ‘dev’ data for inference!
 
 ``` r
-dat.dev   <- make_bundle(bbs, ebird, grid, dev.mode = TRUE) # full data
+dat.dev   <- make_bundle(bbs, ebird, grid, dev.mode = TRUE, max.ebird = max.birds.checklist) # full data
 gam.dat.dev  <-
   make_gam(
     coords = dat.dev$coords, 
     method = "cubic2d",
     scale.coords = TRUE, 
     ll.to.utm = TRUE,
-    nd = 5,
-    num.nn = 10,
+    nd = 2,
+    # num.nn = 10,
     nruns = 10,
     max.loop = 4,
     print.plot = TRUE,
     plot.main = "utm scaled dev mode"
   )
+# stopifnot(dat.dev$G < dat.full$G)
+dat.dev  <- c(dat.dev, gam.dat.dev)
+model.dat.dev       <- make_model_data(data = dat.dev)
+saveRDS(dat.dev,  file=paste0(dirs$project, "/datain/bundle-dev.rds"))
+saveRDS(model.dat.dev, file=paste0(dirs$project, "/datain/model-dat-dev.rds"))
 ```
 
 ``` r
@@ -283,103 +270,54 @@ saveRDS(dat.dev,  file=paste0(dirs$project, "/datain/bundle-dev.rds"))
 saveRDS(model.dat.dev, file=paste0(dirs$project, "/datain/model-dat-dev.rds"))
 ```
 
-# MODELS
+# Step 4: Nimble Models
 
 ``` r
-# suggest clearing up mem
-rm(list=setdiff(ls(), c("dirs","dir.proj", "grid.size", "species", "regions","year.range")))
-library(bbsebird); library(nimble)
-if(Sys.info()[1] == "Linux") setwd("/home/jburnett/integratedmodels/")
-
-# IMportant specifications:
-dev.mode = TRUE # want to go into development mode (use smaller data??)
-overwrite <- FALSE # want to overwrite existing results if exists?
+# overwrite = TRUE ## TRUE will re-run any existing models...
+dev.mode = FALSE # if TRUE, this will use reduced dataset AND run fewer iterations for quick testing...
+if(dev.mode) model.dat <- model.dat.dev else model.dat <- model.dat.full
+## let's just keep useful stuff
+rm(list=setdiff(ls(), c("dev.mode", "model.dat", "dir.proj", "overwrite")))
+library(bbsebird, quietly = TRUE) # load nimble
+library(nimble,  quietly = TRUE) # load nimble
 ```
 
-Define the directory for the desiored project (species, region, years,
-grid size):
+Set MCMC specs:
 
 ``` r
-dir.plots  <- paste0(dirs$project, "/plots/")
-dir.samps  <- paste0(dirs$project, "/samps/")
-lapply(list(dir.plots, dir.samps), dir.create,  showWarnings = FALSE, recursive = TRUE)
+if(dev.mode)  parallel = FALSE; ni <- 100;  nt <- 1;  nb <- 500;  nc <- 1; ncores <- nc
+if(!dev.mode) parallel = TRUE;  ni <- 25e4; nt <- 50; nb <- 3000; nc <-1;  ncores <- nc
+cat(round((ni-nb)/nt, 0), "iterations will remain after thinning and burn-in\n")
 ```
 
-## Step A: Import Data
+If blocking is required, specify here:
 
 ``` r
-if(dev.mode){pattern="model-dat-dev.rds"}else{pattern="model-dat.rds"}
-(model.dat.fn <-
-   list.files(
-     dirs$project,
-     pattern = pattern,
-     recursive = TRUE,
-     full.names = TRUE
-   ))
-model.dat <- readRDS(model.dat.fn) 
+block.samp.type <- "noblock" # or "AF_slice" or "RW_block"
 ```
 
-## Step B: MCMC and Model Specs
+This model file (currently private…) creates the Nimble code, data,
+constants, initial values, etc…
 
 ``` r
-if(dev.mode) parallel = FALSE; ni <- 1200; nt <- 1; nb <- 500; nc <- 1; ncores <- nc
-if(!dev.mode) parallel = FALSE; ni <- 25e4; nt <- 100; nb <- 7500; nc <-1; ncores <- nc
-
-block.samp.type <- "AF_slice" # specify block sampler type
-# number samples: 
-round((ni-nb)/nt, 0)
-```
-
-## Step C: Specify Model File, Make Data Lists
-
-optional: test model on 1 iteration
-
-``` r
-# source model file and make data lists
-model <- "bbs-ls-ebird-gam"
-testmod <- ifelse(dev.mode, TRUE, FALSE) # specify TRUE to test the model; suggest using only in dev.mode (compiling takes a long time...)
-
-# source(paste0(system.file(package="bbsebird"), "/inst/models/"), model,".R")
-source(paste0(dir.proj, "/models/", model, ".R"))
-```
-
-Sourcing the model file creates objects:
-
-``` r
+source(paste0(dir.proj, "models/bbs-ls-ebird-gam.R"))
 str(data)
 str(constants)
-str(mod.name)
 str(inits)
-# code
+sort(monitors)
 ```
 
-Specify some filenames (messy yes but for now it is what it is)
+Create and specify export directories and filepaths for saving MCMC
+samples and plots:
 
 ``` r
-  fn <- paste0(mod.name, "_",
-               "parallel=", 
-               parallel, "_",
-               ni,"iters_",
-               nc,"chains_",
-               nb,"nb_",
-               nt, "nt_",
-               constants$K, "bfs"
-  )
-  fn.samps <- paste0(dir.samps, fn, ".rds")
-  fn.monhat <- paste0(dir.samps, fn, "_monitorhats.rds")
-  fn.hatplot <- paste0(dir.samps, fn, "_hats.pdf")
-  fn.gif <- paste0(dir.plots, fn, "_animation.gif")
-  fn.trace <- paste0(dir.plots, fn, "_trace.pdf")
-  fn.ey    <- paste0(dir.plots, fn, "_Ey.pdf")
-  fn.cat    <- paste0(dir.plots, fn, "_cat.pdf")
-  fn.ggmcmc    <- paste0(dir.plots, fn, "_ggmcmc.pdf")
+fns <- set.filenames(mod.name = mod.name, dir.proj = dir.proj, ni = ni, nb=nb, nc = nc, nt = nt, nbfs = constants$K)
+names(fns) # use them...or not ~shrug~
 ```
-
-## Step D: Run Model
 
 ``` r
 if(!overwrite & file.exists(fn.samps)){
-  cat("file", fn.samps, "exists and overwrite=FALSE. Importing samples. \n")
+  cat("file", fn.samps, "exists and overwrite is FALSE. Importing existing samples. \n")
   results <- readRDS(fn.samps)
 }else{
   t1 <- Sys.time()
@@ -393,35 +331,12 @@ if(!overwrite & file.exists(fn.samps)){
     ni=ni,
     nb=nb,
     nt=nt,
-    nc=1,
+    nc=nc,
     ncores = ncores, 
-    dir.out = dir.proj, 
+    dir.out = dir.proj,
+    block.samp.type = block.samp.type, 
     mod.name = mod.name
   )
   (t2=Sys.time()-t1)
 }
-```
-
-## Step E: Quick Viz
-
-``` r
-# traceplot
-{pdf(fn.trace)
-  par(mfrow=c(4,4))
-  coda::traceplot(results)
-  dev.off()
-}
-{if(is.list(results)) chain <- results[[1]] else chain <- results
-
-# caterpillar plots of ALL monitors...  
-pdf(fn.cat)
-for(i in seq_along(monitors)){
-mcmcplots::caterplot(chain, monitors[i], greek = TRUE)
-}
-dev.off()
-}
-
-
-browseURL(fn.trace)
-browseURL(fn.cat)
 ```

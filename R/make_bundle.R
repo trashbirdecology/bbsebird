@@ -11,6 +11,7 @@
 #' @param yearid column name of the temporal identifier
 #' @param dir.outputs directory location of where to save the JAGAM.bugs model file created by mgcv::jagam(). Defaults to ./models/
 #' @param obsid  column name(s) of the observer identifier
+#' @param drop.empty.cells IN DEVELOPMENT NOT RELIABLE FOR MODELING PURPOSES!!! logical Default FALSE If TRUE will remove all grid cells that have no count data (neither eBird nor bbs).
 #' @param cell.covs column name(s) of the grid-level covariates
 #' @param EN.arg if "max" will use the maximum value of observed birds at each grid cell to produce matrix of expected number of birds at the grid cell level. Alternatives include "min", "mean".
 #' @param use.ebird.in.EN logical if TRUE will use data across both eBird and BBS observations to create basis functions.
@@ -20,8 +21,8 @@
 #' @param dev.mode logical if TRUE will return a reduced data set to use in development/debugging purposes. This method reduces the number of time units to 2, the maximum number of grid cells to 10, and 2 sites from each data source
 #' @param save.neighborhood logical if TRUE will save the neighborhood network to file as "neighborhood.rds" at 'dir.outputs'.
 #' @param fill.cov.nas value with with to fill missing covariate values. User can specify value as FALSE if no fill is requested.
-#' @param drop.empty.cells IN DEVELOPMENT NOT RELIABLE FOR MODELING PURPOSES!!! logical Default FALSE If TRUE will remove all grid cells that have no count data (neither ebird nor bbs).
 #' @importFrom dplyr group_by mutate select distinct arrange filter slice
+#' @importFrom spdep poly2nb nb2WB
 #' @export make_bundle
 
 make_bundle <- function(bbs,

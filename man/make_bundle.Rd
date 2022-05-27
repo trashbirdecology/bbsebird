@@ -67,7 +67,7 @@ make_bundle(
 
 \item{cell.covs}{column name(s) of the grid-level covariates}
 
-\item{drop.empty.cells}{IN DEVELOPMENT NOT RELIABLE FOR MODELING PURPOSES!!! logical Default FALSE If TRUE will remove all grid cells that have no count data (neither ebird nor bbs).}
+\item{drop.empty.cells}{IN DEVELOPMENT NOT RELIABLE FOR MODELING PURPOSES!!! logical Default FALSE If TRUE will remove all grid cells that have no count data (neither eBird nor bbs).}
 
 \item{site.covs}{column name(s) of the site-level covariates}
 

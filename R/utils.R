@@ -343,6 +343,7 @@ munge_date_time <-
       ### add sunlight information to spatial data sets
       dat <- dplyr::left_join(dat, dat.sun)
 
+
     } # END SUNLIGHT
 
 
@@ -350,3 +351,95 @@ munge_date_time <-
     return(dat)
 
   }
+
+
+
+
+
+# set model filenames ---------------------------------------------------------
+#' @title Specify Model Output Filenames
+#' @description Helper function for creating filenames for exporting MCMC samples and plots thereof.
+#' @param mod.name
+#' @param dir.proj location of where to send exported files. If NULL or not specified will send to current working directory.
+#' @param dir.plots path to save the MCMC samples as .rds object
+#' @param dev.mode  logical If TRUE will append "dev_" preceding all filenames.
+#' @param dir.samps path to save the MCMC samples as .rds object
+#' @param ni number of iterations (pre-thinning and pre-burnin)
+#' @param nb number of iterations to discard
+#' @param nc number of chains
+#' @param nt thinning rate for MCMC. Used in filenames
+#' @param nbfs number of basis functions used in the model.
+#' @export set.filenames
+
+set.filenames <-
+  function(mod.name,
+           dir.proj  = getwd(),
+           dir.plots = NULL,
+           dir.samps = NULL,
+           ni = NULL,
+           nb = NULL,
+           nc = NULL,
+           nt = NULL,
+           nbfs = NULL,
+           dev.mode = FALSE
+           ) {
+    if (dev.mode)
+      mod.name <- paste0("dev_", mod.name)
+
+    if (is.null(dir.plots))
+      dir.plots  <-
+        paste0(dir.proj, "/plots/") # saves plots various plots inside this top dir
+    if (is.null(dir.samps))
+      dir.samps  <-
+        paste0(dir.samps, "/samps/") # saves plots various plots inside this top dir
+
+    dir.proj  <- gsub("//", "/", dir.proj)
+    dir.samps <- gsub("//", "/", dir.samps)
+    dir.plots <- gsub("//", "/", dir.plots)
+
+    lapply(
+      list(dir.plots, dir.samps),
+      dir.create,
+      showWarnings = FALSE,
+      recursive = TRUE
+    )
+
+    fn <- paste0(mod.name,
+                 "_",
+                 ni,
+                 "iters_",
+                 nc,
+                 "chains_",
+                 nb,
+                 "nb_",
+                 nt,
+                 "nt_",
+                 constants$K,
+                 "bfs")
+    fn.samps   <- paste0(dir.samps, fn, ".rds")
+    fn.monhat  <- paste0(dir.samps, fn, "_monitorhats.rds")
+    fn.hatplot <- paste0(dir.samps, fn, "_hats.pdf")
+    fn.gif     <- paste0(dir.plots, fn, "_anim.gif")
+    fn.trace   <- paste0(dir.plots, fn, "_trace.pdf")
+    fn.ey      <- paste0(dir.plots, fn, "_Ey.pdf")
+    fn.cat     <- paste0(dir.plots, fn, "_cat.pdf")
+    fn.ggmcmc  <- paste0(dir.plots, fn, "_ggmcmc.pdf")
+
+    fns <-
+      list(
+        dir.samps = dir.samps,
+        dir.plots = dir.plots,
+        fn = fn,
+        fn.ey = fn.ey,
+        fn.cat = fn.cat,
+        fn.ggmcmc = fn.ggmcmc,
+        fn.samps = fn.samps,
+        fn.monhat = fn.monhat,
+        fn.hatplot = fn.hatplot,
+        fn.gif = fn.gif,
+        fn.trace = fn.trace
+      )
+    return(fns)
+
+  } # End mod.filenames
+
