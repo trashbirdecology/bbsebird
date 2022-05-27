@@ -392,7 +392,7 @@ set.filenames <-
         paste0(dir.proj, "/plots/") # saves plots various plots inside this top dir
     if (is.null(dir.samps))
       dir.samps  <-
-        paste0(dir.samps, "/samps/") # saves plots various plots inside this top dir
+        paste0(dir.proj, "/samps/") # saves plots various plots inside this top dir
 
     dir.proj  <- gsub("//", "/", dir.proj)
     dir.samps <- gsub("//", "/", dir.samps)
