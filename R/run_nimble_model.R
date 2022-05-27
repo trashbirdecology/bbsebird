@@ -296,8 +296,10 @@ run_nimble_model <- function(code,
     nchains = nc,
     nburnin = nb,
     nthin = nt,
+    user    = paste(Sys.info()[6]),
+    machine = paste(Sys.info()[4]),
     dir = dir.out,
-    OS    = paste(Sys.info()[1:2], collapse = "_")
+    OS    = paste(Sys.info()[1:2])
   )
   if (ifelse(file.exists(fn.times), FALSE, TRUE)) {
     write.csv(times, fn.times, row.names = FALSE)
