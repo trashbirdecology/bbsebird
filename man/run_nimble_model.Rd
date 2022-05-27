@@ -67,6 +67,8 @@ run_nimble_model(
 
 \item{parallel}{logical if TRUE will run chains in parallel (using foreach).}
 
+\item{mod.name}{a shorthand name for saving outputs.}
+
 \item{dir.out}{path where samps and runtimes wll be saved}
 
 \item{fn.times}{filename of runtimes output. Optional. Defaults to runtimes.csv}

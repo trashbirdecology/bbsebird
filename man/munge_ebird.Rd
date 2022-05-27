@@ -31,6 +31,34 @@ munge_ebird(
 \item{fns.samps}{Filenames to sampling events file}
 
 \item{dir.out}{Directory of where to save the filtered and munged data files}
+
+\item{zerofill}{....}
+
+\item{years}{....}
+
+\item{countries}{....}
+
+\item{states}{....}
+
+\item{species}{....}
+
+\item{protocol}{....}
+
+\item{remove.bbs.obs}{....}
+
+\item{max.effort.km}{....}
+
+\item{max.effort.mins}{....}
+
+\item{max.birds.checklist}{....}
+
+\item{max.num.observers}{....}
+
+\item{ncores}{....}
+
+\item{ydays}{....}
+
+\item{overwrite}{....}
 }
 \description{
 Filter and zero-fill ebird data.

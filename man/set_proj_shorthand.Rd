@@ -15,11 +15,13 @@ set_proj_shorthand(
 \arguments{
 \item{species}{string of species names using ISO-366-2}
 
+\item{countries}{string of countries}
+
+\item{states}{string of states/province abbreviations}
+
 \item{grid.size}{size of desired grid cell}
 
 \item{years}{Vector of years. will take the min and max value}
-
-\item{regions}{string of countries or states}
 }
 \description{
 Generates a shorthand name for project based on species, country, states, years, and grid cell size.

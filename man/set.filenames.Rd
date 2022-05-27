@@ -18,6 +18,8 @@ set.filenames(
 )
 }
 \arguments{
+\item{mod.name}{a shorthand name for saving outputs.}
+
 \item{dir.proj}{location of where to send exported files. If NULL or not specified will send to current working directory.}
 
 \item{dir.plots}{path to save the MCMC samples as .rds object}

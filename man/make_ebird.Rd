@@ -42,7 +42,29 @@ make_ebird(
 
 \item{countries}{countries}
 
-\item{...}{}
+\item{states}{...}
+
+\item{species}{...}
+
+\item{complete.only}{...}
+
+\item{protocol}{...}
+
+\item{remove.bbs.obs}{...}
+
+\item{max.effort.km}{...}
+
+\item{max.effort.mins}{...}
+
+\item{max.birds.checklist}{...}
+
+\item{max.num.observers}{...}
+
+\item{ncores}{....}
+
+\item{out.filetype}{...}
+
+\item{ydays}{...}
 }
 \description{
 Munge eBird for Use Case
