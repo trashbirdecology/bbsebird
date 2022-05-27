@@ -25,7 +25,7 @@ make_gam <- function(coords,
                      scale.coords = TRUE
                      ) {
   # ARGS --------------------------------------------------------------------
-  if(is.null(nd)) nd <- min(round(nrow(coords)/4), 150)
+  if(is.null(nd)) nd <- min(round(nrow(coords)/2), 150)
   coords <- as.matrix(coords)
   method <- tolower(method)
   stopifnot(method %in% c("cubic2d", "jagam", "mgcv", "cubicalt"))
@@ -33,12 +33,10 @@ make_gam <- function(coords,
   stopifnot(is.numeric(coords[, 1]) | is.integer(coords[, 1]))
   stopifnot(is.numeric(coords[, 2]) | is.integer(coords[, 2]))
 
-
   # LL to UTM? --------------------------------------------------------------
   if(ll.to.utm){
     coords <- as.data.frame(longlat_to_UTM(coords[,1], coords[,2]))
   }
-
   XY <- matrix(NA, nrow = nrow(coords), ncol = 2)
 
   # SCALE XY ----------------------------------------------------------------
@@ -66,9 +64,8 @@ make_gam <- function(coords,
     }
     if (is.null(K)) {
       ###logic for K selection borrowed from AHM2 book , which cites Giminez et al. 2009 and Rupert et al. 2003
-      K <- max(20, min(round(nrow(XY) / 4), 150))
+      K <- max(20, min(round(nrow(XY) / 2), 150))
     }
-
     cat(
       "  [note] K is currently set to ",
       K,
