@@ -6,7 +6,7 @@ output: github_document
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  eval=FALSE,## this is false for development purposes.
+  eval=FALSE,
   comment = "#>",
   message=FALSE, 
   warning=FALSE, 

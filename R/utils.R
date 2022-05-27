@@ -359,7 +359,7 @@ munge_date_time <-
 # set model filenames ---------------------------------------------------------
 #' @title Specify Model Output Filenames
 #' @description Helper function for creating filenames for exporting MCMC samples and plots thereof.
-#' @param mod.name
+#' @param mod.name ...
 #' @param dir.proj location of where to send exported files. If NULL or not specified will send to current working directory.
 #' @param dir.plots path to save the MCMC samples as .rds object
 #' @param dev.mode  logical If TRUE will append "dev_" preceding all filenames.

@@ -54,6 +54,8 @@ munge_ebird(
 
 \item{max.num.observers}{....}
 
+\item{complete.only}{....}
+
 \item{ncores}{....}
 
 \item{ydays}{....}
