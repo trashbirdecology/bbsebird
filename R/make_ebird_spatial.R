@@ -11,7 +11,7 @@
 #' @importFrom sf st_as_sf st_transform
 #' @importFrom dplyr mutate
 #' @export make_ebird_spatial
-make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, max.checklists = 15,
+make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, max.checklists = 10,
                                grid = NULL, overwrite=FALSE) {
 
   # first, if overwrite is false and this file exists. import and return asap.
@@ -74,9 +74,30 @@ make_ebird_spatial <- function(df, crs.target=4326, dir.out=NULL, max.checklists
   ## Randomly select N checklists per grid cell and year
   # browser()
   if(!is.null(max.checklists) && max.checklists > 0){
-      ebird_spatial <- ebird_spatial |>
-                       dplyr::group_by(yearid, cellid)  |>
-                       dplyr::slice_sample(n=max.checklists)
+    # names(ebird_spatial) |> sort()
+    maxnpercellyear <- ebird_spatial |>
+      dplyr::mutate(rownum=1:nrow(ebird_spatial)) |>
+      dplyr::filter(!is.na(year)) |>
+      dplyr::distinct(year, gridcellid, sampling_event_identifier, rownum) |>
+      dplyr::add_count(year, gridcellid, name="nrow") |>
+      dplyr::distinct(year, gridcellid, nrow, rownum) |>
+      dplyr::mutate(nkeep=ifelse(nrow > max.checklists, max.checklists, nrow)) |>
+      dplyr::select(year, gridcellid, nkeep, rownum)
+    maxnpercellyear
+    ## so, if rownum <10, we can just pull all those events out because we must keep them all...
+    rowstokeep <-
+      maxnpercellyear |> dplyr::filter(nkeep < 10) |> dplyr::select(rownum)
+    keepers    <- ebird_spatial[as.vector(rowstokeep$rownum),]
+    tofilter <-
+      maxnpercellyear |> dplyr::filter(nkeep == 10) |> dplyr::select(rownum)
+    tofilter <- ebird_spatial[as.vector(tofilter$rownum),]
+    keepers2 <- tofilter |>
+                dplyr::group_by(year, gridcellid)  |>
+                dplyr::sample_n(size=10, replace=FALSE) ## can't figure out how to make slice_sample work effetively =-thoguht it was workign but then all of a sudden it wont take argds.
+
+    ebird_spatial <-
+      dplyr::bind_rows(keepers, keepers2)
+    rm(keepers, keepers2)
   }
 
 

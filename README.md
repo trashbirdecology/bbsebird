@@ -273,8 +273,8 @@ saveRDS(model.dat.dev, file=paste0(dirs$project, "/datain/model-dat-dev.rds"))
 # Step 4: Nimble Models
 
 ``` r
-# overwrite = TRUE ## TRUE will re-run any existing models...
-dev.mode = FALSE # if TRUE, this will use reduced dataset AND run fewer iterations for quick testing...
+overwrite = FALSE ## TRUE will re-run any existing models...
+dev.mode = TRUE # if TRUE, this will use reduced dataset AND run fewer iterations for quick testing...
 if(dev.mode) model.dat <- model.dat.dev else model.dat <- model.dat.full
 ## let's just keep useful stuff
 rm(list=setdiff(ls(), c("dev.mode", "model.dat", "dir.proj", "overwrite")))
@@ -316,7 +316,7 @@ names(fns) # use them...or not ~shrug~
 ```
 
 ``` r
-if(!overwrite & file.exists(fn.samps)){
+if(!overwrite & file.exists(fns$fn.samps)){
   cat("file", fn.samps, "exists and overwrite is FALSE. Importing existing samples. \n")
   results <- readRDS(fn.samps)
 }else{

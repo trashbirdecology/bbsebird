@@ -8,7 +8,7 @@ make_ebird_spatial(
   df,
   crs.target = 4326,
   dir.out = NULL,
-  max.checklists = 15,
+  max.checklists = 10,
   grid = NULL,
   overwrite = FALSE
 )
