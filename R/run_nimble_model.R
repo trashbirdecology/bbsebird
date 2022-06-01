@@ -2,6 +2,7 @@
 #' Function will run a Nimble model for 'nc' indepdendent chains
 #' @param code nimble model code
 #' @param data data as a list
+#' @param fn.samps filepath for .rds file where sample monitors will be saved.
 #' @param constants constants as list
 #' @param inits list of initial values
 #' @param parallel logical if TRUE will run chains in parallel (using foreach).
@@ -31,6 +32,7 @@
 
 run_nimble_model <- function(code,
                              data,
+                             fn.samps = NULL,
                              constants = NULL,
                              inits,
                              monitors = NULL,
@@ -51,6 +53,10 @@ run_nimble_model <- function(code,
                              dir.out = NULL,
                              fn.times = "runtimes.csv",
                              save.output = TRUE) {
+  ext <-tolower(substr(fn.samps,start = nchar(fn.samps)-3, stop=nchar(fn.samps)))
+  ext2 <-tolower(substr(fn.samps,start = nchar(fn.samps)-4, stop=nchar(fn.samps)))
+  if(save.output && !(ext==".rds"|ext2==".rds")){stop("When save.output is TRUE, `fn.samps` MUST end with `.rds`. please respecify arg `fn.samps`")}
+
   fn.ind <- substr(fn.times, nchar(fn.times) - 3, nchar(fn.times))
   if (!fn.ind %in% c(".csv")) {
     warning("arg fn.times should have file extension .csv")
@@ -299,7 +305,7 @@ run_nimble_model <- function(code,
     user    = paste(Sys.info()[6]),
     machine = paste(Sys.info()[4]),
     dir = dir.out,
-    OS    = paste(Sys.info()[1:2])
+    OS    = paste(Sys.info()[1:2], collapse = ", ")
   )
   if (ifelse(file.exists(fn.times), FALSE, TRUE)) {
     write.csv(times, fn.times, row.names = FALSE)
@@ -311,8 +317,9 @@ run_nimble_model <- function(code,
   }
 
   if (save.output) {
-    try(saveRDS(out,  paste0(dir.out, "/samps/", fn, ".rds")))
-  }
+    if(is.null(fn.samps)) {try(saveRDS(out,  paste0(dir.out, "/samps/", "mysamples", ".rds"))) }else{
+      try(saveRDS(out, fn.samps))}
+    }
 
   return(out)
 

@@ -8,6 +8,7 @@ Function will run a Nimble model for 'nc' indepdendent chains}
 run_nimble_model(
   code,
   data,
+  fn.samps = NULL,
   constants = NULL,
   inits,
   monitors = NULL,
@@ -34,6 +35,8 @@ run_nimble_model(
 \item{code}{nimble model code}
 
 \item{data}{data as a list}
+
+\item{fn.samps}{filepath for .rds file where sample monitors will be saved.}
 
 \item{constants}{constants as list}
 
