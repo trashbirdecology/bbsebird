@@ -307,6 +307,7 @@ run_nimble_model <- function(code,
     dir = dir.out,
     OS    = paste(Sys.info()[1:2], collapse = ", ")
   )
+  message("saving run times to", fn.times, "\n")
   if (ifelse(file.exists(fn.times), FALSE, TRUE)) {
     write.csv(times, fn.times, row.names = FALSE)
   } else{

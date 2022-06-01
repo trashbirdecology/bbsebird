@@ -132,7 +132,7 @@ if("bbs.rds" %in% list.files(dirs$bbs.out)){
   bbs  <- bbsAssistant::munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
-    species = species, 
+    # species = species, 
     year.range = years) |> as.data.table()
   bbs <- munge_col_names(bbs) # munge column names to mesh with eBird
   saveRDS(bbs, paste0(dirs$bbs.out, "/bbs.rds")) # suggest saving data to file for easy access
