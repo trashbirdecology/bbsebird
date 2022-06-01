@@ -288,6 +288,15 @@ run_nimble_model <- function(code,
     t.tot <- round(t.tot * 60 * 24 * 7, 0) # convert from weeks to mins
 
   ### write the runtimes to file
+  ##htese if.nulls are lazy because i need to re-write runtime writing scheme for when parallel is true...
+  if(is.null(t.build)) t.build <- 0
+  if(is.null(t.buildcompwblock)) t.buildcompwblock <- 0
+  if(is.null(t.compile)) t.compile <- 0
+  if(is.null(t.tot)) t.tot <- 0
+  if(is.null(t.confmcmc)) t.confmcmc <- 0
+
+
+
   times <- data.frame(
     totalmins = round(as.numeric(t.tot), 2),
     name = mod.name,
