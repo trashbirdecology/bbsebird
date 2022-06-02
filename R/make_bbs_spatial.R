@@ -54,12 +54,12 @@ make_bbs_spatial <- function(df,
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
   # munge paths for use in linux
-      while(substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-  substr(cws.routes.dir,2, nchar(cws.routes.dir))  ## in linux must remove leading /, idfk
-      while(substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))  ## in linux must remove leading /, idfk
-      while(substr(dir.out,1,1)=="/") dir.out <-  substr(dir.out,2, nchar(dir.out))  ## in linux must remove leading /, idfk
+  if(!dir.exists(cws.routes.dir) && substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-  substr(cws.routes.dir,2, nchar(cws.routes.dir))
+  if(!dir.exists(usgs.routes.dir) && substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))
+  if(!dir.exists(dir.out) && substr(dir.out,1,1)=="/") dir.out <-
+    substr(dir.out,2, nchar(dir.out))
 
-
-  ## add this for the fkn HPCs SDLGJSLKJSDLKFJ
+  ## add this for the fkn HPCs SDLGJSLKJSDLKFJdgskfjlk JSDFJ
   c <- paste0("/", cws.routes.dir)
   u <- paste0("/", usgs.routes.dir)
   if(!dir.exists(cws.routes.dir) && dir.exists(c)) cws.routes.dir <- c
@@ -103,7 +103,7 @@ make_bbs_spatial <- function(df,
   usgs_routes <- sf::st_transform(usgs_routes, crs = crs.string)
 
   # Housekeeping for data inside USGS and CWS routes to match BBS dataset release
-  # These fields are applicable only to the Sauer shapefile.
+  # These fields are applicable only to the SAUER shapefile for USGS (USA) routes...
   if (usgs.layer == "bbsrte_2012_alb") {
     usgs_routes <- usgs_routes |>
       dplyr::mutate(
@@ -295,6 +295,7 @@ make_bbs_spatial <- function(df,
   # Outputs -----------------------------------------------------------------
   if(save.route.lines){
   f2 <- paste0(dir.out, "bbs_route_lines.rds")
+  if(!dir.exists(dir.out)) dir.create(dir.out)
   cat("`save.route.lines == TRUE`; saving the BBS routes as linefiles to :\n  ", f2, "\n")
   saveRDS(bbs.grid.lines.df, file = f2)
   }
