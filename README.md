@@ -72,7 +72,7 @@ will create the directory for you.
 crs.target          = 4326 #target CRS for all created spatial layers
 grid.size           = 0.5 # size in decimal degrees (for US/CAN a good est is 1.00dec deg == 111.11km)
 species             = c("wood thrush", "woothr")
-mmyyyy              = "feb-2022" # the month and year of the eBird data downloads on file
+mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
 years               = 2008:2019
 countries           = c("US") ## string of  countries Call /code{bbsebird::iso.codes} to find relevant
 states              = c("us-wv")
@@ -92,7 +92,7 @@ if (!is.na(pmatch("C:/Users/aroyle", getwd()))){
 if (!is.na(pmatch("C:/Users/jburnett", getwd()))){ # use na because if FALSE does not return as logical..
   if(Sys.info()[1] == "Linux") {dir.proj <- "/home/jburnett/integratedmodels/"}
   if(Sys.info()[4] == "IGSACEESLTAROYB") #JLB's SAS comp
-    dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - aaaaa/"
+    dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - AAAA-IntegratedModels/"
   if(Sys.info()[4] == "IGSACEESWSWLIN8") # Bill Link's Comp
     dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - AAAA-IntegratedModels/"
 }}
@@ -149,8 +149,8 @@ if("bbs.rds" %in% list.files(dirs$bbs.out)){
   bbs  <- bbsAssistant::munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
-    # species = species, 
-    year.range = years) |> as.data.table()
+    species = species,
+    year.range = years) 
   bbs <- munge_col_names(bbs) # munge column names to mesh with eBird
   saveRDS(bbs, paste0(dirs$bbs.out, "/bbs.rds")) # suggest saving data to file for easy access
 }
@@ -189,7 +189,6 @@ ebird <-
     years = years, 
     overwrite = FALSE
   )
-
 ebird <-
   make_ebird_spatial(
     ebird,
@@ -197,7 +196,7 @@ ebird <-
     grid = grid,
     overwrite = FALSE
   )
-## visualizing the ebird_spatial data takes a while, do not recommend!
+## visualizing the ebird_spatial data takes a while, do not recommend if unnecessary
 ```
 
 ## Step 3: Bundle (“Integrate”) Data for Use in BUGS
@@ -232,8 +231,9 @@ saveRDS(dat.full, file=paste0(dirs$project, "/datain/bundle.rds"))
 saveRDS(model.dat.full, file=paste0(dirs$project, "/datain/model-dat.rds"))
 ```
 
-You can also create a very small version of the same data for testing
-models, but do not use the ‘dev’ data for inference!
+You can also create a subsetted version of the dat.full data for testing
+models/debugging/etc., but **do not use the ‘dev’ data for inference**
+because it’s not meant for that!
 
 ``` r
 dat.dev   <- make_bundle(bbs, ebird, grid, dev.mode = TRUE, max.ebird = max.birds.checklist) # full data
@@ -279,7 +279,7 @@ library(nimble,  quietly = TRUE) # load nimble
 Set MCMC specs:
 
 ``` r
-if(dev.mode){  parallel = FALSE; ni <- 100;  nt <- 1;  nb <- 10;  nc <- 1; ncores <- nc}
+if(dev.mode){ parallel = FALSE; ni <- 100;  nt <- 1;  nb <- 10;  nc <- 1; ncores <- nc}
 if(!dev.mode){ parallel = TRUE;  ni <- 25e4; nt <- 50; nb <- 3000; nc <-1;  ncores <- nc}
 cat(round((ni-nb)/nt, 0), "iterations will remain after thinning and burn-in\n")
 ```
@@ -294,11 +294,11 @@ This model file (currently private…) creates the Nimble code, data,
 constants, initial values, etc…
 
 ``` r
-source(paste0(dir.proj, "models/bbs-ls-ebird-gam.R"))
-str(data)
-str(constants)
-str(inits)
-sort(monitors)
+source(paste0(dir.proj, "models/bbs-ls-ebird-gam.R")) ## eventually this will be released into the package itself...needs review first
+# str(data)
+# str(constants)
+# str(inits)
+# sort(monitors)
 ```
 
 Create and specify export directories and filepaths for saving MCMC
@@ -306,7 +306,7 @@ samples and plots:
 
 ``` r
 fns <- set.filenames(mod.name = mod.name, dir.proj = dir.proj, ni = ni, nb=nb, nc = nc, nt = nt, nbfs = constants$K)
-names(fns) # use them...or not ~shrug~
+# names(fns) # use them...or not ~shrug~
 ```
 
 ``` r
@@ -327,10 +327,27 @@ if(!overwrite & file.exists(fns$fn.samps)){
     nt=nt,
     nc=nc,
     ncores = ncores, 
-    dir.out = dir.proj,
+    dir.out = dir.proj,      
+    fn.samps = fns$fn.samps, # where to save the MCMC samples
     block.samp.type = block.samp.type, 
     mod.name = mod.name
   )
   (t2=Sys.time()-t1)
 }
+```
+
+``` r
+pdf(fns$fn.trace)
+mcmcOutput::tracePlot(results)
+dev.off()
+{
+  if(is.list(results)) chain <- results[[1]] else chain <- results
+  pdf(fns$fn.cat)
+  for(i in seq_along(monitors)){
+    mcmcplots::caterplot(chain, monitors[i], greek = TRUE)
+  }
+  dev.off()
+}
+# browseURL(fns$fn.cat)
+# browseURL(fns$fn.trace)
 ```

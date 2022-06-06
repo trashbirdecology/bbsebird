@@ -1,4 +1,4 @@
-#' @title Manipulate the BBS route shapefiles
+#' @title Manipulate the BBS Route Shapefiles and/or Overlay BBS Data to Grid
 #' @description This function is meant to intake two shapefiles, one per cws and usgs munges them such that they conform to the USGS data release for BBS observations and route metadata.
 #' @param df A data frame with columns c(latitude, longitude) and optional attributes (columns).
 #' @param crs.target the integer representing the target CRS.
