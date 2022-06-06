@@ -24,8 +24,8 @@
 make_bbs_spatial <- function(df,
                              grid,
                              ## observations data frame. must contain at least var rteno
-                             cws.routes.dir,
-                             usgs.routes.dir,
+                             cws.routes.dir=NULL,
+                             usgs.routes.dir=NULL,
                              #name of cws layer in cws.routes.dir
                              cws.layer = "ALL_ROUTES",
                              # usgs.layer="bbsrte_2012_alb", # this one is from Sauer//outdated, not tested well yet
@@ -47,13 +47,15 @@ make_bbs_spatial <- function(df,
   # ncores = parallel::detectCores() - 1
   # save.route.lines = FALSE
 
+  ### NEED TO ADD OPT OUTS FOR WHEN route files aren't available (i.e., usgs.routes.dir + cws.routes.dir == TRUE)
+
   ## munge col names to ensure consitency
   df    <-  munge_col_names(df)
 
   ## set CRS
   crs.string <- sp::CRS(SRS_string = paste0("EPSG:", crs.target))
 
-  # munge paths for use in linux
+  # munge paths for use in linux ## this may be obsolete but no time to test rn
   if(!dir.exists(cws.routes.dir) && substr(cws.routes.dir,1,1)=="/") cws.routes.dir <-  substr(cws.routes.dir,2, nchar(cws.routes.dir))
   if(!dir.exists(usgs.routes.dir) && substr(usgs.routes.dir,1,1)=="/") usgs.routes.dir <-  substr(usgs.routes.dir,2, nchar(usgs.routes.dir))
   if(!dir.exists(dir.out) && substr(dir.out,1,1)=="/") dir.out <-

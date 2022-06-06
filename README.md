@@ -57,12 +57,6 @@ requires two components of the EBD to be saved to local file:
 ## Step 1: Load Packages
 
 ``` r
-remotes::install_github("trashbirdecology/bbsAssistant",
-                        force = FALSE,
-                        upgrade = "never") ## "never" for dev purposes... to avoid interactivity
-remotes::install_github("trashbirdecology/bbsebird",
-                        force = FALSE,
-                        upgrade = "never") ## "never" for dev purposes... to avoid interactivity
 pkgs <- c("bbsebird")
 lapply(pkgs, require, character.only = TRUE, quietly = TRUE)
 rm(pkgs)
@@ -155,7 +149,7 @@ if("bbs.rds" %in% list.files(dirs$bbs.out)){
   bbs  <- bbsAssistant::munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
-    species = species, 
+    # species = species, 
     year.range = years) |> as.data.table()
   bbs <- munge_col_names(bbs) # munge column names to mesh with eBird
   saveRDS(bbs, paste0(dirs$bbs.out, "/bbs.rds")) # suggest saving data to file for easy access
@@ -285,8 +279,8 @@ library(nimble,  quietly = TRUE) # load nimble
 Set MCMC specs:
 
 ``` r
-if(dev.mode)  parallel = FALSE; ni <- 100;  nt <- 1;  nb <- 500;  nc <- 1; ncores <- nc
-if(!dev.mode) parallel = TRUE;  ni <- 25e4; nt <- 50; nb <- 3000; nc <-1;  ncores <- nc
+if(dev.mode){  parallel = FALSE; ni <- 100;  nt <- 1;  nb <- 10;  nc <- 1; ncores <- nc}
+if(!dev.mode){ parallel = TRUE;  ni <- 25e4; nt <- 50; nb <- 3000; nc <-1;  ncores <- nc}
 cat(round((ni-nb)/nt, 0), "iterations will remain after thinning and burn-in\n")
 ```
 

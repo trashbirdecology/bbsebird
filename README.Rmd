@@ -47,16 +47,9 @@ When your account is approved, you will gain access to the [eBird Basic Database
 
 ## Step 1: Load Packages
 ```{r libraries}
-remotes::install_github("trashbirdecology/bbsAssistant",
-                        force = FALSE,
-                        upgrade = "never") ## "never" for dev purposes... to avoid interactivity
-remotes::install_github("trashbirdecology/bbsebird",
-                        force = FALSE,
-                        upgrade = "never") ## "never" for dev purposes... to avoid interactivity
 pkgs <- c("bbsebird")
 lapply(pkgs, require, character.only = TRUE, quietly = TRUE)
 rm(pkgs)
-
 ```
 
 If using this README, this is the only RMD chunk you shoudl have to edit. Most important are where the eBird data and BBS shapefiles are stored (dir.orig.data) and where you wish to save resulting data/models (dir.proj). The latter need not exist -- if it does not exist the package will create the directory for you. 
@@ -81,7 +74,7 @@ if (!is.na(pmatch("C:/Users/aroyle", getwd()))){
 if (!is.na(pmatch("C:/Users/jburnett", getwd()))){ # use na because if FALSE does not return as logical..
   if(Sys.info()[1] == "Linux") {dir.proj <- "/home/jburnett/integratedmodels/"}
   if(Sys.info()[4] == "IGSACEESLTAROYB") #JLB's SAS comp
-    dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - aaaaa/"
+    dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - AAAA-IntegratedModels/"
   if(Sys.info()[4] == "IGSACEESWSWLIN8") # Bill Link's Comp
     dir.proj <- "C:/Users/jburnett/DOI/Royle, Andy - AAAA-IntegratedModels/"
 }}
@@ -132,8 +125,8 @@ if("bbs.rds" %in% list.files(dirs$bbs.out)){
   bbs  <- bbsAssistant::munge_bbs_data(
     bbs_list = bbs_orig,
     states   = states,
-    # species = species, 
-    year.range = years) |> as.data.table()
+    species = species,
+    year.range = years) 
   bbs <- munge_col_names(bbs) # munge column names to mesh with eBird
   saveRDS(bbs, paste0(dirs$bbs.out, "/bbs.rds")) # suggest saving data to file for easy access
 }
