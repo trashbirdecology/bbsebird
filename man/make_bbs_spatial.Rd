@@ -2,13 +2,13 @@
 % Please edit documentation in R/make_bbs_spatial.R
 \name{make_bbs_spatial}
 \alias{make_bbs_spatial}
-\title{Manipulate the BBS route shapefiles}
+\title{Manipulate the BBS Route Shapefiles and/or Overlay BBS Data to Grid}
 \usage{
 make_bbs_spatial(
   df,
   grid,
-  cws.routes.dir,
-  usgs.routes.dir,
+  cws.routes.dir = NULL,
+  usgs.routes.dir = NULL,
   cws.layer = "ALL_ROUTES",
   usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020",
   crs.target = 4326,
@@ -16,7 +16,7 @@ make_bbs_spatial(
   keep.empty.cells = TRUE,
   overwrite = FALSE,
   dir.out = NULL,
-  save.route.lines = FALSE
+  save.route.lines = TRUE
 )
 }
 \arguments{
@@ -42,7 +42,7 @@ make_bbs_spatial(
 
 \item{dir.out}{path to where the resulting spatial data frame will be saved. If NULL will not save to file.}
 
-\item{save.route.lines}{logical. If TRUE (default) will save the BBS routes segments as .RDS to dir.out}
+\item{save.route.lines}{logical. If TRUE (default) will save the BBS routes segments as .RDS to dir.out path.}
 }
 \description{
 This function is meant to intake two shapefiles, one per cws and usgs munges them such that they conform to the USGS data release for BBS observations and route metadata.

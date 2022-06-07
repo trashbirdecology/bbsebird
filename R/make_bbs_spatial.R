@@ -11,7 +11,7 @@
 #' @param keep.empty.cells logical if FALSE will remove any grid cells with which BBS data do not align. Do not recommend doing this.
 #' @param usgs.layer Name of the layer to import.
 #' @param ncores max number of cores to engage for parallel data processing. Defaults to one fewer CPUs than the machine has. Parallel processing is used only when a high number of routes and/or grid cells are in the data.
-#' @param save.route.lines logical. If TRUE (default) will save the BBS routes segments as .RDS to dir.out
+#' @param save.route.lines logical. If TRUE (default) will save the BBS routes segments as .RDS to dir.out path.
 #' @importFrom foreach %dopar%
 #' @importFrom doParallel registerDoParallel
 #' @importFrom parallel stopCluster detectCores makeCluster
@@ -36,8 +36,8 @@ make_bbs_spatial <- function(df,
                              keep.empty.cells = TRUE,
                              overwrite = FALSE,
                              dir.out = NULL,
-                             save.route.lines = FALSE) {
-## for dev purposes
+                             save.route.lines = TRUE) {
+## for dev purposes cuz im lazy and don't want to enter browse mode
   # df = bbs
   # cws.routes.dir = dirs$cws.routes.dir
   # usgs.routes.dir = dirs$usgs.routes.dir
@@ -45,7 +45,8 @@ make_bbs_spatial <- function(df,
   # cws.layer = "ALL_ROUTES"
   # usgs.layer = "US_BBS_Route-Paths-Snapshot_Taken-Feb-2020"
   # ncores = parallel::detectCores() - 1
-  # save.route.lines = FALSE
+  # save.route.lines = TRUE
+  # keep.empty.cells=TRUE
 
   ### NEED TO ADD OPT OUTS FOR WHEN route files aren't available (i.e., usgs.routes.dir + cws.routes.dir == TRUE)
 
