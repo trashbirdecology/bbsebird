@@ -28,7 +28,6 @@ Depends:
     R (>= 4.1)
 Imports: 
     auk,
-    countrycode (>= 1.3.0),
     foreach (>= 1.5.1),
     hms,
     mgcv,
@@ -43,7 +42,6 @@ Imports:
     tibble,
     tidyr (>= 1.1.4),
     parallel,
-    tictoc,
     grDevices,
     stats,
     suncalc,
@@ -54,11 +52,12 @@ Imports:
     coda,
     vroom,
     lubridate,
-    spdep,
-    R.utils
+    spdep
 Suggests: 
     knitr,
     dclone,
+    R.utilsm
+    countrycode (>= 1.3.0),
     rmarkdown,
     spelling,
 LazyData: true

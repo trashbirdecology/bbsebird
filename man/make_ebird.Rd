@@ -52,6 +52,8 @@ make_ebird(
 
 \item{remove.bbs.obs}{...}
 
+\item{years}{...}
+
 \item{max.effort.km}{...}
 
 \item{max.effort.mins}{...}
