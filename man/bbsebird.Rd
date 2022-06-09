@@ -6,7 +6,7 @@
 \alias{bbsebird-package}
 \title{bbsebird: Unifying BBS and eBird Data for Integrating Modeling}
 \description{
-Imports, munges and aligns eBird and BBS data to a spatial sampling grid of user's select size. Additionally, produces bundles of data for use in JAGS, Nimble or STAN and runs select BUGS models in parallel in JAGS and Nimble via R.
+Data integration and analysis of eBird and BBS data. Imports, munges and aligns eBird and BBS data to a spatial sampling grid of user's select size. Additionally, produces bundles of data for use in subsequent analyses. Package contains integrated population generalized additive models for estimating bird abundance using Nimble.
 }
 \seealso{
 Useful links:
@@ -16,7 +16,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Jessica Burnett \email{jburnett@usgs.gov} (\href{https://orcid.org/0000-0002-0896-5099}{ORCID})
+\strong{Maintainer}: Jessica Burnett \email{jessicaleighburnett@gmail.com} (\href{https://orcid.org/0000-0002-0896-5099}{ORCID})
 
 Other contributors:
 \itemize{
