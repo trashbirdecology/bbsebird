@@ -5,18 +5,20 @@
 #' @export find_UTM_zone
 find_UTM_zone <- function(longitude, latitude) {
 
+  stopifnot(length(longitude)==length(latitude))
+
   # Special zones for Svalbard and Norway
-  if (latitude >= 72.0 && latitude < 84.0 )
-    if (longitude >= 0.0  && longitude <  9.0)
+  if (all(latitude >= 72.0) && all(latitude < 84.0 ))
+    if (all(longitude >= 0.0)  && all(longitude <  9.0))
       return(31);
-  if (longitude >= 9.0  && longitude < 21.0)
+  if (all(longitude >= 9.0)  && all(longitude < 21.0))
     return(33)
-  if (longitude >= 21.0 && longitude < 33.0)
+  if (all(longitude >= 21.0) && all(longitude < 33.0))
     return(35)
-  if (longitude >= 33.0 && longitude < 42.0)
+  if (all(longitude >= 33.0) && all(longitude < 42.0))
     return(37)
 
-  (floor((longitude + 180) / 6) %% 60) + 1
+  return((floor((longitude + 180) / 6) %% 60) + 1)
 }
 
 

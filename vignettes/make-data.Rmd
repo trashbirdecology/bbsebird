@@ -28,13 +28,15 @@ species             = c("wood thrush", "woothr")
 mmyyyy              = "dec-2021" # the month and year of the eBird data downloads on file
 years               = 2008:2019
 countries           = c("US") ## string of  countries Call /code{bbsebird::iso.codes} to find relevant
-#states              = sort(c("us-wv", "us-ky", "us-tn", "us-va", "us-nc"))
-states              = sort(c("us-ga", "us-fl", "us-al", "us-sc"))
+states              = sort(c("us-FL"))
+# states              = sort(c("us-ga", "us-fl", "us-al", "us-sc"))
 ydays               = 91:245
 max.birds.checklist = 55 ## maximum number of birds within a single eBird checklist (removes any over
 max.checklists      = 10 # max number checklists per grid cell and year
 
 ```
+
+
 ```{r dirs-set}
 # set_proj_shorthand: this will make all directories within a new dir in dir.proj. this is useful for iterating over species/time/space and saving all resulting information in those directories.
 if (!is.na(pmatch("C:/Users/aroyle", getwd()))){
@@ -63,6 +65,8 @@ dirs        <-  dir_spec(dir.orig.data = dir.orig.data,
                          subdir.proj = subdir.proj)
 
 ```
+
+
 ```{r spatial-grid}
 grid <-
   make_spatial_grid(
@@ -74,8 +78,9 @@ grid <-
   )
 overlay <- grid$grid.overlay
 grid    <- grid$grid
-
 ```
+
+
 ```{r bbs-data}
 ## if the files already exist, don't overwrite unless you've made changes to data specs
 if("bbs.rds" %in% list.files(dirs$bbs.out)){
@@ -137,33 +142,28 @@ dat.full  <- make_bundle(bbs, ebird, grid, max.ebird = max.birds.checklist)
 gam.dat.full  <-
   make_gam(
     coords = dat.full$coords,
-    # coords = cbind(dat.full$coords[,1], dat.full$coords[,2]),
     method = "cubic2d")
+
 dat.full <- c(dat.full, gam.dat.full)
 ## Add Constants/Data Common to Models
 model.dat.full      <- make_model_data(data = dat.full)
-
-
 ```
+
 ```{r export}
 dir.create(paste0(dirs$project, "/datain"), showWarnings = FALSE)
 saveRDS(dat.full, file=paste0(dirs$project, "/datain/bundle.rds"))
 saveRDS(model.dat.full, file=paste0(dirs$project, "/datain/model-dat.rds"))
-
-
 ```
+
 ```{r devdata}
 dat.dev   <- make_bundle(bbs, ebird, grid, dev.mode = TRUE, max.ebird = max.birds.checklist) # full data
 gam.dat.dev  <-
   make_gam(
     coords = dat.dev$coords,
     method = "cubic2d",
-    scale.coords = TRUE,
-    ll.to.utm = TRUE,
     nd = 4,
     # num.nn = 10,
     nruns = 10,
-    max.loop = 4,
     print.plot = TRUE,
     plot.main = "utm scaled dev mode"
   )
@@ -172,78 +172,11 @@ dat.dev  <- c(dat.dev, gam.dat.dev)
 model.dat.dev       <- make_model_data(data = dat.dev)
 saveRDS(dat.dev,  file=paste0(dirs$project, "/datain/bundle-dev.rds"))
 saveRDS(model.dat.dev, file=paste0(dirs$project, "/datain/model-dat-dev.rds"))
-
-
 ```
+
 ```{r exportdevdata}
 dat.dev  <- c(dat.dev, gam.dat.dev)
 model.dat.dev       <- make_model_data(data = dat.dev)
 saveRDS(dat.dev,  file=paste0(dirs$project, "/datain/bundle-dev.rds"))
 saveRDS(model.dat.dev, file=paste0(dirs$project, "/datain/model-dat-dev.rds"))
-
-
 ```
-```{r model-setup}
-overwrite = FALSE ## TRUE will re-run any existing models...
-dev.mode = FALSE # if TRUE, this will use reduced dataset AND run fewer iterations for quick testing...
-if(dev.mode) model.dat <- model.dat.dev else model.dat <- model.dat.full
-
-## let's just keep useful shit
-rm(list=setdiff(ls(), c("dev.mode", "model.dat", "dir.proj", "overwrite", "dirs")))
-library(bbsebird, quietly = TRUE) # load bbsebird
-library(nimble,  quietly = TRUE) # load nimble
-
-
-```
-```{r mcmc-specs}
-if(dev.mode){ parallel = FALSE; ni <- 1000;  nt <- 1;  nb <- 250;  nc <- 1; ncores <- nc}
-#if(!dev.mode){ parallel = TRUE;  ni <- 15e5; nt <- 150; nb <- 3000*3; nc <-3;  ncores <- nc}
-#if(!dev.mode){ parallel = FALSE;  ni <- 15e5; nt <- 150; nb <- 3000*3; nc <-1;  ncores <- nc}
-if(!dev.mode){ parallel = FALSE;  ni <- 1e6; nt <- 150; nb <- 5000; nc <-1;  ncores <- nc}
-cat(round((ni-nb)/nt, 0), "iterations will remain after thinning and burn-in\n")
-
-block.samp.type <- "noblock" # or "AF_slice" or "RW_block"
-
-```
-```{r source-mod-file}
-source(paste0(dir.proj, "/models/bbs-ls-ebird-gam.R"))
-
-```
-```{r outpaths}
-fns <- set.filenames(mod.name = mod.name, dir.proj = dirs$project, ni = ni, nb=nb, nc = nc, nt = nt, nbfs = constants$K)
-
-
-```
-```{r run-model}
-if(!overwrite & file.exists(fns$fn.samps)){
-  cat("file", fns$fn.samps, "exists and overwrite is FALSE. Importing existing samples. \n")
-  results <- readRDS(fns$fn.samps)
-}else{
-  t1 <- Sys.time()
-  results <- bbsebird::run_nimble_model(
-    code = code,
-    data = data,
-    constants = constants,
-    inits = inits,
-    monitors = monitors,
-    parallel=parallel,
-    ni=ni,
-    nb=nb,
-    nt=nt,
-    nc=nc,
-    ncores = ncores,
-    dir.out = dir.proj,
-    block.samp.type = block.samp.type,
-    mod.name = mod.name,
-    fn.samps = fns$fn.samps
-  )
-  (t2=Sys.time()-t1)
-}
-
-
-```
-```{r }
-### PRINT MESSAGE IN .OUT FILE LINUX for sanity
-message("batch job done you big ol slut")
-```
-
