@@ -22,7 +22,7 @@ partition_ebird_events <-
            countries = c("US", "CA", "MX"),
            ncores = NULL) {
 
-    if(!"Linux" %in% Sys.info()[1])stopifnot(memory.limit()[1] > 57e3) # i think i acutally needed like 55GB...
+    # if(!"Linux" %in% Sys.info()[1])stopifnot(memory.limit()[1] > 57e3) # i think i acutally needed like 55GB...
     country.ind <- countries <- toupper(countries)
     out.filetype <- tolower(out.filetype)
     stopifnot(out.filetype %in% c(".csv.gz", ".csv", ".txt"))
