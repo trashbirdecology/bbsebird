@@ -56,7 +56,6 @@ Imports:
 Suggests: 
     knitr,
     dclone,
-    R.utilsm
     countrycode (>= 1.3.0),
     rmarkdown,
     spelling,
