@@ -53,6 +53,9 @@ run_nimble_model <- function(code,
                              dir.out = NULL,
                              fn.times = "runtimes.csv",
                              save.output = TRUE) {
+
+  # browser()
+
   ext <-tolower(substr(fn.samps,start = nchar(fn.samps)-3, stop=nchar(fn.samps)))
   ext2 <-tolower(substr(fn.samps,start = nchar(fn.samps)-4, stop=nchar(fn.samps)))
   if(save.output && !(ext==".rds"|ext2==".rds")){stop("When save.output is TRUE, `fn.samps` MUST end with `.rds`. please respecify arg `fn.samps`")}
@@ -298,13 +301,13 @@ run_nimble_model <- function(code,
 
 
   times <- data.frame(
-    totalmins = round(as.numeric(t.tot), 2),
+    totalmins = t.tot,
     name = mod.name,
     nbfs = constants$K,
-    build = round(t.build, 2),
-    comp  = round(t.compile, 2),
-    configmcmc = round(t.confmcmc, 2),
-    buildcompwblock = round(t.buildcompwblock, 2),
+    build = t.build,
+    comp  = t.compile,
+    configmcmc = t.confmcmc,
+    buildcompwblock = t.buildcompwblock,
     runmod   = t.run,
     parallel = parallel,
     niters = ni,
