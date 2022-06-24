@@ -193,7 +193,7 @@ run_nimble_model <- function(code,
     parallel::stopCluster(cl)
     names(out) <- paste0("chain_", seq_len(ncores))
   } # END PARALLEL PROCESSING
-  # browser()
+
   # NO PARALLEL PROCESSING --------------------------------------------------
   if (ncores == 1 | !parallel) {
     t.build <- Sys.time()
@@ -294,7 +294,7 @@ run_nimble_model <- function(code,
   if(is.null(t.compile)) t.compile <- 0
   if(is.null(t.tot)) t.tot <- 0
   if(is.null(t.confmcmc)) t.confmcmc <- 0
-
+  if(is.null(t.run)) t.run <- 0
 
 
   times <- data.frame(
